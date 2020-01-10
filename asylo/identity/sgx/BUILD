@@ -129,18 +129,6 @@ cc_proto_library(
 )
 
 proto_library(
-    name = "miscselect_proto",
-    srcs = ["miscselect.proto"],
-    visibility = ["//asylo:implementation"],
-)
-
-cc_proto_library(
-    name = "miscselect_cc_proto",
-    visibility = ["//asylo:implementation"],
-    deps = [":miscselect_proto"],
-)
-
-proto_library(
     name = "sgx_local_assertion_authority_config_proto",
     srcs = ["sgx_local_assertion_authority_config.proto"],
     visibility = ["//visibility:public"],
@@ -1002,10 +990,10 @@ cc_library(
         ":code_identity_cc_proto",
         ":hardware_types",
         ":machine_configuration_cc_proto",
-        ":miscselect_cc_proto",
         "//asylo/crypto:sha256_hash_cc_proto",
         "//asylo/identity/platform/sgx:attributes_cc_proto",
         "//asylo/identity/platform/sgx:attributes_util",
+        "//asylo/identity/platform/sgx:miscselect_cc_proto",
         "//asylo/identity/platform/sgx:miscselect_util",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "@com_google_absl//absl/memory",
@@ -1022,13 +1010,13 @@ cc_test_and_cc_enclave_test(
     deps = [
         ":hardware_types",
         ":machine_configuration_cc_proto",
-        ":miscselect_cc_proto",
         ":proto_format",
         ":sgx_identity_cc_proto",
         ":sgx_identity_util",
         "//asylo/crypto:sha256_hash_cc_proto",
         "//asylo/identity/platform/sgx:architecture_bits",
         "//asylo/identity/platform/sgx:attributes_util",
+        "//asylo/identity/platform/sgx:miscselect_cc_proto",
         "//asylo/identity/platform/sgx:miscselect_util",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/test/util:status_matchers",

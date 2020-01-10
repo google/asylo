@@ -23,41 +23,40 @@
 
 #include "absl/strings/string_view.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
-#include "asylo/identity/sgx/miscselect.pb.h"
+#include "asylo/identity/platform/sgx/miscselect.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
-// This file implements equality, and inequality operations for the Miscselect
-// message. It also implements functions to set, clear, test, and print the
-// various MiscselectBits of the uint32 and proto representations of a
-// MISCSELECT structure.
+/// @file miscselect_util.h
+/// @brief This library implements operations and utility functions on the proto
+/// and uint32 representations of the MISCSELECT structure.
 
 namespace asylo {
 namespace sgx {
 
-// Checks two Miscselect protos for equality.
+/// Checks two Miscselect protos for equality.
 bool operator==(const Miscselect &lhs, const Miscselect &rhs);
 
-// Checks two Miscselect protos for inequality.
+/// Checks two Miscselect protos for inequality.
 bool operator!=(const Miscselect &lhs, const Miscselect &rhs);
 
-// Sets the given |bit| of |miscselect| to true, or returns a non-OK Status if
-// the |bit| was invalid.
+/// Sets the given `bit` of `miscselect` to true, or returns a non-OK Status if
+/// the `bit` was invalid.
 Status SetMiscselectBit(MiscselectBit bit, uint32_t *miscselect);
 Status SetMiscselectBit(MiscselectBit bit, Miscselect *miscselect);
 
-// Sets the given |bit| of |miscselect| to false, or returns a non-OK Status if
-// the |bit| was invalid.
+/// Sets the given `bit` of `miscselect` to false, or returns a non-OK Status if
+/// the `bit` was invalid.
 Status ClearMiscselectBit(MiscselectBit bit, uint32_t *miscselect);
 Status ClearMiscselectBit(MiscselectBit bit, Miscselect *miscselect);
 
-// Returns whether the given |bit| of |miscselect| is set, or returns a non-OK
-// Status if the |bit| was invalid.
+/// Returns whether the given `bit` of `miscselect` is set, or returns a non-OK
+/// Status if the `bit` was invalid.
 StatusOr<bool> IsMiscselectBitSet(MiscselectBit bit, uint32_t miscselect);
 StatusOr<bool> IsMiscselectBitSet(MiscselectBit bit,
                                   const Miscselect &miscselect);
 
-// Returns a printable list of the MISCSELECT bits set in |miscselect|.
+/// Returns a printable list of the bits set in `miscselect`.
 std::vector<absl::string_view> GetPrintableMiscselectList(uint32_t miscselect);
 std::vector<absl::string_view> GetPrintableMiscselectList(
     const Miscselect &miscselect);

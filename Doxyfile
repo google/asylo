@@ -819,6 +819,7 @@ asylo/identity/attestation/sgx/sgx_local_assertion_generator.h \
 asylo/identity/attestation/sgx/sgx_local_assertion_verifier.h \
 asylo/identity/platform/sgx/architecture_bits.h \
 asylo/identity/platform/sgx/attributes_util.h \
+asylo/identity/platform/sgx/miscselect_util.h \
 asylo/identity/sealing/secret_sealer.h \
 asylo/identity/sealing/sgx/sgx_local_secret_sealer.h \
 asylo/identity/sgx/sgx_identity_util.h \

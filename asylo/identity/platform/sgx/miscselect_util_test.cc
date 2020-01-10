@@ -22,7 +22,7 @@
 
 #include <gtest/gtest.h>
 #include "asylo/identity/platform/sgx/architecture_bits.h"
-#include "asylo/identity/sgx/miscselect.pb.h"
+#include "asylo/identity/platform/sgx/miscselect.pb.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {

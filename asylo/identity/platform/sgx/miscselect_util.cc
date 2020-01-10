@@ -22,7 +22,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
-#include "asylo/identity/sgx/miscselect.pb.h"
+#include "asylo/identity/platform/sgx/miscselect.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"

@@ -36,6 +36,16 @@ cc_proto_library(
     deps = [":attributes_proto"],
 )
 
+proto_library(
+    name = "miscselect_proto",
+    srcs = ["miscselect.proto"],
+)
+
+cc_proto_library(
+    name = "miscselect_cc_proto",
+    deps = [":miscselect_proto"],
+)
+
 cc_library(
     name = "attributes_util",
     srcs = ["attributes_util.cc"],
@@ -77,10 +87,9 @@ cc_library(
     srcs = ["miscselect_util.cc"],
     hdrs = ["miscselect_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
     deps = [
         ":architecture_bits",
-        "//asylo/identity/sgx:miscselect_cc_proto",
+        ":miscselect_cc_proto",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
     ],
@@ -93,9 +102,9 @@ cc_test_and_cc_enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":architecture_bits",
+        ":miscselect_cc_proto",
         ":miscselect_util",
         "//asylo/identity/sgx:hardware_types",
-        "//asylo/identity/sgx:miscselect_cc_proto",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
