@@ -782,7 +782,10 @@ ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
   }
 
   auto msg_name_extent = output.next();
-  msg->msg_namelen = msg_name_extent.size();
+  // The returned |msg_namelen| should not exceed the buffer size.
+  if (msg_name_extent.size() <= msg->msg_namelen) {
+    msg->msg_namelen = msg_name_extent.size();
+  }
   memcpy(msg->msg_name, msg_name_extent.As<char>(), msg->msg_namelen);
 
   // A single buffer is passed from the untrusted side, copy it into the
@@ -799,7 +802,10 @@ ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
   }
 
   auto msg_control_extent = output.next();
-  msg->msg_controllen = msg_control_extent.size();
+  // The returned |msg_controllen| should not exceed the buffer size.
+  if (msg_control_extent.size() <= msg->msg_controllen) {
+    msg->msg_controllen = msg_control_extent.size();
+  }
   memcpy(msg->msg_control, msg_control_extent.As<char>(), msg->msg_controllen);
 
   return result;
@@ -1038,7 +1044,10 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
     return -1;
   }
 
-  *optlen = opt_received.size();
+  // The returned |optlen| should not exceed the buffer size.
+  if (opt_received.size() <= *optlen) {
+    *optlen = opt_received.size();
+  }
   memcpy(optval, opt_received.data(), *optlen);
   return result;
 }
@@ -1211,7 +1220,14 @@ int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
   }
 
   auto klinux_addr_buffer = output.next();
-  memcpy(dst, klinux_addr_buffer.data(), klinux_addr_buffer.size());
+  size_t max_size = 0;
+  if (af == AF_INET) {
+    max_size = sizeof(struct in_addr);
+  } else if (af == AF_INET6) {
+    max_size = sizeof(struct in6_addr);
+  }
+  memcpy(dst, klinux_addr_buffer.data(),
+         std::min(klinux_addr_buffer.size(), max_size));
   return result;
 }
 
@@ -1317,7 +1333,8 @@ char *enc_untrusted_if_indextoname(unsigned int ifindex, char *ifname) {
   CheckStatusAndParamCount(status, output, "enc_untrusted_indextoname", 2);
 
   Extent ifname_buffer = output.next();
-  memcpy(ifname, ifname_buffer.As<char>(), ifname_buffer.size());
+  memcpy(ifname, ifname_buffer.As<char>(),
+         std::min(ifname_buffer.size(), static_cast<size_t>(IF_NAMESIZE)));
   int klinux_errno = output.next<int>();
   if (ifname_buffer.empty()) {
     errno = FromkLinuxErrorNumber(klinux_errno);
