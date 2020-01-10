@@ -77,12 +77,20 @@ class ExitLogHook : public DispatchTable::ExitHook {
   const std::function<void(ExitLogEntry)> store_log_entry_;
 };
 
+// A hook factory which will generate one hook object per exit call.
+class ExitLogHookFactory : public DispatchTable::ExitHookFactory {
+ public:
+  ExitLogHookFactory() = default;
+  std::unique_ptr<DispatchTable::ExitHook> CreateExitHook() override {
+    return absl::make_unique<ExitLogHook>(
+        [](ExitLogEntry entry) { LOG(ERROR) << entry << std::endl; });
+  }
+};
+
 }  // namespace
 
-std::unique_ptr<DispatchTable::ExitHook> ExitLogHookFactory::CreateExitHook() {
-  return absl::make_unique<ExitLogHook>(
-      [](ExitLogEntry entry) { LOG(ERROR) << entry << std::endl; });
-}
-
+LoggingDispatchTable::LoggingDispatchTable(bool enable_logging)
+    : DispatchTable(enable_logging ? absl::make_unique<ExitLogHookFactory>()
+                                   : nullptr) {}
 }  // namespace primitives
 }  // namespace asylo

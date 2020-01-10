@@ -24,6 +24,7 @@
 #include "absl/types/optional.h"
 #include "asylo/platform/primitives/remote/proxy_server.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
+#include "asylo/platform/primitives/util/exit_log.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -35,7 +36,7 @@ namespace primitives {
 // to forward majority of exit calls invoked by the enclave loaded by proxy
 // server over the remote connector to the untrusted host. Registration of exit
 // handlers is only needed for those exit calls that can be handled locally.
-class LocalExitCallForwarder : public DispatchTable {
+class LocalExitCallForwarder : public LoggingDispatchTable {
  public:
   // Base class for exit calls to be potentially handled by proxy server.
   // Each handler needs to be declared as follows:

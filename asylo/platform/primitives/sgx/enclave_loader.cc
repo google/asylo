@@ -30,18 +30,6 @@
 
 namespace asylo {
 namespace primitives {
-namespace {
-
-std::unique_ptr<Client::ExitCallProvider> MakeExitCallProvider(
-    const EnclaveLoadConfig &load_config) {
-  if (load_config.exit_logging()) {
-    return absl::make_unique<DispatchTable>(
-        absl::make_unique<ExitLogHookFactory>());
-  }
-  return absl::make_unique<DispatchTable>();
-}
-
-}  // namespace
 
 StatusOr<std::shared_ptr<Client>> LoadEnclave(
     const EnclaveLoadConfig &load_config) {
@@ -62,7 +50,8 @@ StatusOr<std::shared_ptr<Client>> LoadEnclave(
   bool debug = sgx_config.debug();
   bool is_embedded_enclave = sgx_config.has_embedded_enclave_config();
   bool is_file_enclave = sgx_config.has_file_enclave_config();
-  auto exit_call_provider = MakeExitCallProvider(load_config);
+  auto exit_call_provider = absl::make_unique<LoggingDispatchTable>(
+      /*enable_logging=*/load_config.exit_logging());
 
   if (is_embedded_enclave) {
     std::string section_name =

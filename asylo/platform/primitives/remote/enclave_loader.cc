@@ -18,6 +18,7 @@
 
 #include "asylo/platform/primitives/enclave_loader.h"
 
+#include "absl/memory/memory.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/platform/primitives/remote/proxy_client.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
@@ -31,18 +32,6 @@
 
 namespace asylo {
 namespace primitives {
-namespace {
-
-std::unique_ptr<Client::ExitCallProvider> MakeExitCallProvider(
-    const EnclaveLoadConfig &load_config) {
-  if (load_config.exit_logging()) {
-    return absl::make_unique<DispatchTable>(
-        absl::make_unique<ExitLogHookFactory>());
-  }
-  return absl::make_unique<DispatchTable>();
-}
-
-}  // namespace
 
 StatusOr<std::shared_ptr<Client>> LoadEnclave(
     const EnclaveLoadConfig &load_config) {
@@ -53,13 +42,13 @@ StatusOr<std::shared_ptr<Client>> LoadEnclave(
       absl::WrapUnique(reinterpret_cast<RemoteProxyClientConfig *>(
           remote_config.remote_proxy_config()));
 
-  auto exit_call_provider = MakeExitCallProvider(load_config);
   std::shared_ptr<primitives::RemoteEnclaveProxyClient> primitive_client;
-  ASYLO_ASSIGN_OR_RETURN(
-      primitive_client,
-      primitives::RemoteEnclaveProxyClient::Create(
-          enclave_name, std::move(client_config), std::move(exit_call_provider),
-          remote_config.loader_case()));
+  ASYLO_ASSIGN_OR_RETURN(primitive_client,
+                         primitives::RemoteEnclaveProxyClient::Create(
+                             enclave_name, std::move(client_config),
+                             absl::make_unique<LoggingDispatchTable>(
+                                 /*enable_logging=*/load_config.exit_logging()),
+                             remote_config.loader_case()));
   ASYLO_RETURN_IF_ERROR(primitive_client->Connect(load_config));
   return std::move(primitive_client);
 }

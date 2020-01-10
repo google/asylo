@@ -114,9 +114,7 @@ Status LocalExitCallForwarder::PerformUnknownExit(uint64_t untrusted_selector,
 
 LocalExitCallForwarder::LocalExitCallForwarder(
     bool exit_logging, const RemoteEnclaveProxyServer *server)
-    : DispatchTable(exit_logging ? absl::make_unique<ExitLogHookFactory>()
-                                 : nullptr),
-      server_(CHECK_NOTNULL(server)) {}
+    : LoggingDispatchTable(exit_logging), server_(CHECK_NOTNULL(server)) {}
 
 Status LocalExitCallForwarder::Run(const std::shared_ptr<Client> &client,
                                    void *context, MessageReader *input,

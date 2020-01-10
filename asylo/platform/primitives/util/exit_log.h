@@ -30,11 +30,12 @@
 namespace asylo {
 namespace primitives {
 
-// A hook factory which will generate one hook object per exit call.
-class ExitLogHookFactory : public DispatchTable::ExitHookFactory {
+// A variation of DispatchTable that performs logging of exit calls, if
+// `enable_logging` parameter in constructor is true (otherwise it is identical
+// to the regular DispatchTable).
+class LoggingDispatchTable : public DispatchTable {
  public:
-  ExitLogHookFactory() = default;
-  std::unique_ptr<DispatchTable::ExitHook> CreateExitHook() override;
+  explicit LoggingDispatchTable(bool enable_logging);
 };
 
 }  // namespace primitives
