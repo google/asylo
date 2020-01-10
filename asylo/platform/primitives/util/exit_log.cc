@@ -30,32 +30,54 @@
 namespace asylo {
 namespace primitives {
 
-ExitLogEntry::ExitLogEntry(absl::Time start, absl::Duration duration,
-                           uint64_t untrusted_selector)
-    : start_(start),
-      duration_(duration),
-      untrusted_selector_(untrusted_selector) {}
+namespace {
 
-std::ostream& operator<<(std::ostream& os, const ExitLogEntry& entry) {
-  os << "[Exit Call] Selector: " << entry.untrusted_selector_ << ": "
-     << entry.start_ << " " << entry.duration_;
-  return os;
-}
+// A log entry representing a single exit call.
+class ExitLogEntry {
+ public:
+  ExitLogEntry(absl::Time start, absl::Duration duration,
+               uint64_t untrusted_selector)
+      : start_(start),
+        duration_(duration),
+        untrusted_selector_(untrusted_selector) {}
 
-ExitLogHook::ExitLogHook(std::function<void(ExitLogEntry)> store_log_entry)
-    : store_log_entry_(std::move(store_log_entry)) {}
+  friend std::ostream& operator<<(std::ostream& os, const ExitLogEntry& entry) {
+    os << "[Exit Call] Selector: " << entry.untrusted_selector_ << ": "
+       << entry.start_ << " " << entry.duration_;
+    return os;
+  }
 
-Status ExitLogHook::PreExit(uint64_t untrusted_selector) {
-  start_ = absl::Now();
-  untrusted_selector_ = untrusted_selector;
-  return Status::OkStatus();
-}
+ private:
+  const absl::Time start_;
+  const absl::Duration duration_;
+  const uint64_t untrusted_selector_;
+};
 
-Status ExitLogHook::PostExit(Status result) {
-  auto duration = absl::Now() - start_;
-  store_log_entry_(ExitLogEntry(start_, duration, untrusted_selector_));
-  return result;
-}
+// A hook which will log a single exit call.
+class ExitLogHook : public DispatchTable::ExitHook {
+ public:
+  explicit ExitLogHook(std::function<void(ExitLogEntry)> store_log_entry)
+      : store_log_entry_(std::move(store_log_entry)) {}
+
+  Status PreExit(uint64_t untrusted_selector) override {
+    start_ = absl::Now();
+    untrusted_selector_ = untrusted_selector;
+    return Status::OkStatus();
+  }
+
+  Status PostExit(Status result) override {
+    auto duration = absl::Now() - start_;
+    store_log_entry_(ExitLogEntry(start_, duration, untrusted_selector_));
+    return result;
+  }
+
+ private:
+  absl::Time start_;
+  uint64_t untrusted_selector_;
+  const std::function<void(ExitLogEntry)> store_log_entry_;
+};
+
+}  // namespace
 
 std::unique_ptr<DispatchTable::ExitHook> ExitLogHookFactory::CreateExitHook() {
   return absl::make_unique<ExitLogHook>(
