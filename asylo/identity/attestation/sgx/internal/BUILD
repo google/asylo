@@ -181,6 +181,23 @@ cc_library(
 )
 
 cc_library(
+    name = "dcap_intel_architectural_enclave_path_setter",
+    testonly = 1,
+    srcs = ["dcap_intel_architectural_enclave_path_setter.cc"],
+    hdrs = ["dcap_intel_architectural_enclave_path_setter.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo/identity/attestation/sgx:__pkg__"],
+    deps = [
+        ":dcap_intel_architectural_enclave_interface",
+        ":host_dcap_library_interface",
+        "//asylo/util:error_codes",
+        "//asylo/util:status",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_library(
     name = "dcap_library_interface",
     hdrs = ["dcap_library_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -317,6 +334,7 @@ sgx_enclave_test(
     test_args = ["--report_oracle_enclave_path='{report_oracle_enclave_path}'"],
     deps = [
         ":dcap_intel_architectural_enclave_interface",
+        ":dcap_intel_architectural_enclave_path_setter",
         ":host_dcap_library_interface",
         ":intel_ecdsa_quote",
         ":report_oracle_enclave_cc_proto",

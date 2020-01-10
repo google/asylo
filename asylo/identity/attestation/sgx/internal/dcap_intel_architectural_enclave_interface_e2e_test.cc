@@ -32,8 +32,8 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
-#include "tools/cpp/runfiles/runfiles.h"
 #include "asylo/identity/attestation/sgx/internal/dcap_intel_architectural_enclave_interface.h"
+#include "asylo/identity/attestation/sgx/internal/dcap_intel_architectural_enclave_path_setter.h"
 #include "asylo/identity/attestation/sgx/internal/host_dcap_library_interface.h"
 #include "asylo/identity/attestation/sgx/internal/intel_ecdsa_quote.h"
 #include "asylo/identity/attestation/sgx/internal/report_oracle_enclave.pb.h"
@@ -75,6 +75,7 @@ using ::testing::Eq;
 class DcapIntelArchitecturalEnclaveInterfaceE2eTest : public ::testing::Test {
  public:
   static void SetUpTestSuite() {
+    SetIntelEnclaveDirFromFlags();
     ASYLO_ASSERT_OK(EnclaveManager::Configure(EnclaveManagerOptions{}));
     ASYLO_ASSERT_OK_AND_ASSIGN(enclave_manager_, EnclaveManager::Instance());
   }
