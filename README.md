@@ -24,9 +24,9 @@ backends, libraries, and languages.
 The Asylo project documentation can be found at
 [asylo.dev](https://asylo.dev/docs).
 
-[Example source code](https://github.com/google/asylo-examples/archive/master.tar.gz)
-that contains a working Bazel workspace can be downloaded from the Asylo website
-and used as a template for a new project.
+The [`asylo-examples`](https://github.com/google/asylo-examples) repository
+contains a working Bazel workspace with example source code that can be used as
+a template for starting a new project.
 
 ## Support
 
@@ -39,7 +39,7 @@ There are several ways of getting support with Asylo:
     [Stack Overflow](https://stackoverflow.com) using the
     [`asylo`](https://stackoverflow.com/questions/tagged/asylo) tag.
 
-## Build Environment in Docker (Recommended)
+## Build Environment in Docker (recommended)
 
 Asylo provides a custom Docker image that contains all required dependencies, as
 well as Asylo's custom toolchain, which is required for compiling enclave
@@ -69,18 +69,15 @@ daemon.json file, you may also need to explicitly configure IPv6 subnet as shown
 
 To run the `hello_world` example, first use the following set of commands to
 grab the
-[examples source code](https://github.com/google/asylo-examples/archive/master.tar.gz),
-and save it to any directory of your choice.
+[`asylo-examples` repository source code](https://github.com/google/asylo-examples):
 
 ```bash
 MY_PROJECT=~/asylo-examples
-mkdir -p "${MY_PROJECT}"
-wget -q -O - https://github.com/google/asylo-examples/archive/master.tar.gz | \
-    tar -zxv --strip 1 --directory "${MY_PROJECT}"
+git clone https://github.com/google/asylo-examples.git "${MY_PROJECT}"
 ```
 
 Next, use Docker to build and run the `hello_world` application, using a
-simulated enclave backend.
+simulated enclave backend:
 
 ```bash
 NAMES="${USER}"
@@ -139,9 +136,9 @@ that use Asylo's toolchain.
 #### Running your own enclave application
 
 You can follow the [steps above](#running-the-hello_world-example) to build your
-own enclave application instead. You can use the examples code in `MY_PROJECT`
-as a template for a new project, or simply change `MY_PROJECT` to point to your
-own Bazel project instead.
+own enclave application instead. You can use the example code in `MY_PROJECT` as
+a template for a new project, or simply change `MY_PROJECT` to point to your own
+Bazel project instead.
 
 #### Running an interactive terminal
 
@@ -167,7 +164,7 @@ bazel run --config=sgx-sim //hello_world -- --names="${NAMES}"
 #### Running the regression tests
 
 To run our regression test suite, first clone the Asylo repository to a
-directory of your choice.
+directory of your choice:
 
 ```bash
 ASYLO_SDK=~/asylo-sdk
@@ -194,26 +191,23 @@ files to `/opt/asylo/sdk`.
 ## Manual Installation
 
 If you don't want to use the Asylo Docker image, you can manually install Asylo
-and its dependencies instead.
-
-See [INSTALL.md](/INSTALL.md) for detailed installation steps.
+and its dependencies instead. See [INSTALL.md](/INSTALL.md) for detailed
+installation steps.
 
 ### Examples
 
 The following examples assume that the Asylo SDK was installed at `ASYLO_SDK`,
-which can be a directory of your choice. For example:
+which can be a directory of your choice.
 
 #### Running the `hello_world` example
 
-To run the `hello_world` example, first use the following commands to grab the
-[examples source code](https://github.com/google/asylo-examples/archive/master.tar.gz)
-and save it to any directory of your choice.
+To run the `hello_world` example, first use the following set of commands to
+grab the
+[`asylo-examples` repository source code](https://github.com/google/asylo-examples):
 
 ```bash
 MY_PROJECT=~/asylo-examples
-mkdir -p "${MY_PROJECT}"
-wget -q -O - https://github.com/google/asylo-examples/archive/master.tar.gz | \
-    tar -zxv --strip 1 --directory "${MY_PROJECT}"
+git clone https://github.com/google/asylo-examples.git "${MY_PROJECT}"
 ```
 
 Next, use Bazel to build and run the `hello_world` application, which uses a
@@ -239,7 +233,7 @@ point to your own Bazel project instead.
 #### Running the regression test suite
 
 If you haven't already, use the following commands to clone the Asylo source
-code repository and copy it to a directory of your choice.
+code repository and copy it to a directory of your choice:
 
 ```bash
 ASYLO_SDK=~/asylo-sdk
