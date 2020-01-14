@@ -139,15 +139,3 @@ sh_test(
     toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
     deps = ["//asylo/test/util:shell_testing"],
 )
-
-# A trivially passing test for build tests and populating tags meant for
-# refactoring migrations.
-sh_test(
-    name = "passing_test",
-    srcs = ["passing_test.sh"],
-    tags = ASYLO_ALL_BACKENDS + [
-        "asylo-cfh",
-        "asylo-transition",
-    ],
-    visibility = ["//visibility:public"],
-)
