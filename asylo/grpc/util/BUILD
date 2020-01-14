@@ -23,11 +23,10 @@ licenses(["notice"])  # Apache v2.0
 # An enclave configuration that should keep up with gRPC's resource usage.
 sgx_enclave_configuration(
     name = "grpc_enclave_config",
-    # gRPC needs more than the default amount of heap to run. ~1.2GB was
-    # determined via bisect on our available tests. Increases to this amount
-    # should be considered if issues are raised.
-    heap_max_size = "0x47000000",
-    tcs_num = "200",
+    # Allocate additional thread control structures, as we assume gRPC
+    # workloads will be more heavily threaded than workloads which do not
+    # use gRPC.
+    tcs_num = "32",
     visibility = ["//visibility:public"],
 )
 

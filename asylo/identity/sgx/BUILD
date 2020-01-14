@@ -231,11 +231,17 @@ cc_library(
     ],
 )
 
+sgx.enclave_configuration(
+    name = "sgx_remote_assertion_generator_impl_test_enclave_config",
+    # Allocate enough threads for the multi-threaded test
+    tcs_num = "64",
+)
+
 cc_test_and_cc_enclave_test(
     name = "sgx_remote_assertion_generator_impl_test",
     srcs = ["sgx_remote_assertion_generator_impl_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_config = "//asylo/grpc/util:grpc_enclave_config",
+    enclave_test_config = ":sgx_remote_assertion_generator_impl_test_enclave_config",
     deps = [
         ":code_identity_cc_proto",
         ":sgx_identity_cc_proto",
