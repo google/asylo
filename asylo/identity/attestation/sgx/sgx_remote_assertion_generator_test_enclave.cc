@@ -21,6 +21,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_generator.h"
+#include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_generator.h"
 #include "asylo/identity/attestation/sgx/sgx_remote_assertion_generator_test_enclave.pb.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
@@ -115,10 +116,15 @@ class SgxRemoteAssertionGeneratorTestEnclave final : public TrustedApplication {
  private:
   Status ResetGenerator(EnclaveIdentityType identity_type,
                         absl::string_view authority_type) {
-    if (identity_type == CODE_IDENTITY &&
-        authority_type == kSgxAgeRemoteAssertionAuthority) {
-      generator_ = absl::make_unique<SgxAgeRemoteAssertionGenerator>();
-      return Status::OkStatus();
+    if (identity_type == CODE_IDENTITY) {
+      if (authority_type == kSgxAgeRemoteAssertionAuthority) {
+        generator_ = absl::make_unique<SgxAgeRemoteAssertionGenerator>();
+        return Status::OkStatus();
+      } else if (authority_type == kSgxIntelEcdsaQeRemoteAssertionAuthority) {
+        generator_ =
+            absl::make_unique<SgxIntelEcdsaQeRemoteAssertionGenerator>();
+        return Status::OkStatus();
+      }
     }
 
     return Status(

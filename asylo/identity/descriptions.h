@@ -63,6 +63,17 @@ inline void SetSgxAgeRemoteAssertionDescription(
       sgx::kSgxAgeRemoteAssertionAuthority);
 }
 
+/// Sets `assertion_description` to describe an SGX remote assertion generated
+/// by the Intel ECDSA Quoting Enclave (QE).
+///
+/// \param assertion_description The `AssertionDescription` to populate.
+inline void SetSgxIntelEcdsaQeRemoteAssertionDescription(
+    AssertionDescription *assertion_description) {
+  assertion_description->set_identity_type(EnclaveIdentityType::CODE_IDENTITY);
+  assertion_description->set_authority_type(
+      sgx::kSgxIntelEcdsaQeRemoteAssertionAuthority);
+}
+
 /// Sets `identity_description` to describe an SGX identity.
 ///
 /// \param identity_description The `EnclaveIdentityDescription` to populate.

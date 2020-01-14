@@ -83,6 +83,7 @@ sgx_cc_unsigned_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":sgx_age_remote_assertion_generator",
+        ":sgx_intel_ecdsa_qe_remote_assertion_generator",
         ":sgx_remote_assertion_generator_test_enclave_cc_proto",
         "//asylo:enclave_cc_proto",
         "//asylo:enclave_runtime",
@@ -223,6 +224,41 @@ cc_enclave_test(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
         "@com_google_absl//absl/synchronization",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+enclave_test(
+    name = "sgx_intel_ecdsa_qe_remote_assertion_e2e_test",
+    srcs = ["sgx_intel_ecdsa_qe_remote_assertion_e2e_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {
+        "sgx_remote_assertion_generator_test_enclave": ":sgx_remote_assertion_generator_test_enclave.so",
+    },
+    tags = [
+        "noregression",
+        # To manually run this test, first copy the libsgx_pce.signed.so and
+        # libsgx_qe3.signed.so binaries to the output directory where
+        # the host driver is, then run it. The prebuilt binaries may be
+        # downloaded using the script from Intel's DCAP library github repo:
+        # https://github.com/intel/SGXDataCenterAttestationPrimitives/blob/master/QuoteGeneration/download_prebuilt.sh
+        "manual",
+    ],
+    test_args = [
+        "--generator_test_enclave_path='{sgx_remote_assertion_generator_test_enclave}'",
+    ],
+    deps = [
+        ":sgx_remote_assertion_generator_test_enclave_cc_proto",
+        ":sgx_remote_assertion_generator_test_enclave_wrapper",
+        "//asylo/identity:descriptions",
+        "//asylo/identity/attestation/sgx/internal:dcap_intel_architectural_enclave_path_setter",
+        "//asylo/identity/attestation/sgx/internal:host_dcap_library_interface",
+        "//asylo/platform/core:untrusted_core",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest",
     ],
 )

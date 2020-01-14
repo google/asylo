@@ -200,6 +200,16 @@ TEST_F(SgxIdentityUtilInternalTest, SetSgxAgeRemoteAssertionDescription) {
   EXPECT_EQ(description.authority_type(), kSgxAgeRemoteAssertionAuthority);
 }
 
+TEST_F(SgxIdentityUtilInternalTest,
+       SetSgxIntelEcdsaQeRemoteAssertionDescription) {
+  AssertionDescription description;
+  SetSgxIntelEcdsaQeRemoteAssertionDescription(&description);
+
+  EXPECT_EQ(description.identity_type(), CODE_IDENTITY);
+  EXPECT_EQ(description.authority_type(),
+            kSgxIntelEcdsaQeRemoteAssertionAuthority);
+}
+
 // Tests to verify the correctness of IsValidSignerAssignedIdentity()
 
 TEST_F(SgxIdentityUtilInternalTest,
