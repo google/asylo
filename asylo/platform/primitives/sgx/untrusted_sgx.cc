@@ -168,7 +168,8 @@ StatusOr<std::shared_ptr<Client>> SgxBackend::Load(
   }
 
   if (status != SGX_SUCCESS) {
-    return Status(status, "Failed to create an enclave");
+    return Status(status, absl::StrCat("Failed to create an enclave for ",
+                                       enclave_path));
   }
 
   client->size_ = sgx_enclave_size(client->id_);
