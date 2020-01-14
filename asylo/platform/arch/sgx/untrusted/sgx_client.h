@@ -29,9 +29,8 @@ namespace asylo {
 
 /// Enclave loader for Intel Software Guard Extensions (SGX) based enclaves
 /// located in shared object files read from the file system.
-ABSL_DEPRECATED(
-    "Use EnclaveLoadConfig directly instead of this loader, or use LoadEnclave "
-    "from EnclaveManager.")
+/// \deprecated Use EnclaveLoadConfig directly instead of this loader, or use
+///             LoadEnclave from EnclaveManager.
 class SgxLoader : public EnclaveLoader {
  public:
   /// Constructs an SgxLoader for an enclave object file on the file system,
@@ -51,9 +50,8 @@ class SgxLoader : public EnclaveLoader {
 
 /// Enclave loader for Intel Software Guard Extensions (SGX) based enclaves
 /// embedded in the binary of the calling process.
-ABSL_DEPRECATED(
-    "Use EnclaveLoadConfig directly instead of this loader, or use LoadEnclave "
-    "from EnclaveManager.")
+/// \deprecated Use EnclaveLoadConfig directly instead of this loader, or use
+///             LoadEnclave from EnclaveManager.
 class SgxEmbeddedLoader : public EnclaveLoader {
  public:
   /// Constructs an SgxEmbeddedLoader for an enclave object embedded in the

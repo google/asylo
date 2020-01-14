@@ -73,7 +73,6 @@ class AesGcmSivNonceGenerator : public NonceGenerator<kAesGcmSivNonceSize> {
 /// `T::allocator_type` is same as `CleansingAllocator<typename T::value_type>`.
 ///
 /// \deprecated Do not use. This class will be removed in a future release.
-ABSL_DEPRECATED("AesGcmSivCryptor will be removed in a future release")
 class AesGcmSivCryptor {
  public:
   /// Constructs an AES GCM SIV cryptor that enforces the input

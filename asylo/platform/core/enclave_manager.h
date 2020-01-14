@@ -43,9 +43,8 @@
 namespace asylo {
 class EnclaveLoader;
 
-/// \deprecated
 /// Enclave Manager configuration.
-ABSL_DEPRECATED("EnclaveManager no longer needs to be configured")
+/// \deprecated EnclaveManager no longer needs to be configured.
 class EnclaveManagerOptions {};
 
 /// A manager object responsible for creating and managing enclave instances.
@@ -68,12 +67,11 @@ class EnclaveManager {
   ///         an error describing why it could not be returned.
   static StatusOr<EnclaveManager *> Instance();
 
-  /// \deprecated
+  /// \deprecated EnclaveManager no longer needs to be configured.
   /// Configures the enclave manager.
   ///
   /// \param options Configuration options as described in
   ///                EnclaveManagerOptions.
-  ABSL_DEPRECATED("EnclaveManager no longer needs to be configured")
   static Status Configure(const EnclaveManagerOptions &options);
 
   /// Loads an enclave.
@@ -132,7 +130,7 @@ class EnclaveManager {
   /// \param base_address Start address to load enclave(optional).
   /// \param enclave_size The size of the enclave in memory(only needed if
   /// |base_address| is specified).
-  ABSL_DEPRECATED("LoadEnclave should accept an EnclaveLoadConfig")
+  /// \deprecated Use LoadEnclave(const EnclaveLoadConfig &load_config)
   Status LoadEnclave(absl::string_view name, const EnclaveLoader &loader,
                      void *base_address = nullptr,
                      const size_t enclave_size = 0);
@@ -159,7 +157,7 @@ class EnclaveManager {
   /// \param base_address Start address to load enclave(optional).
   /// \param enclave_size The size of the enclave in memory(only needed if
   /// |base_address| is specified).
-  ABSL_DEPRECATED("LoadEnclave should accept an EnclaveLoadConfig")
+  /// \deprecated Use LoadEnclave(const EnclaveLoadConfig &load_config)
   Status LoadEnclave(absl::string_view name, const EnclaveLoader &loader,
                      EnclaveConfig config, void *base_address = nullptr,
                      const size_t enclave_size = 0);
