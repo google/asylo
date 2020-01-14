@@ -160,10 +160,11 @@ def _make_asylo_backend_rule(executable = False, test = False):
         transition_doc = "an explicit backend transition",
     )
 
-_SUPPORTED_PKGS = [
+_UNSUPPORTED_PKGS = [
     # Bazel (v1.0.1) does not support transitions from external dependencies,
     # which com_google_asylo_backend_provider is, so no packages are supported
     # yet.
+    "",
 ]
 
 def transitions_supported(package_name):
@@ -175,10 +176,10 @@ def transitions_supported(package_name):
     Returns:
         True only if package_name is expected to work with transitions.
     """
-    for pkg in _SUPPORTED_PKGS:
+    for pkg in _UNSUPPORTED_PKGS:
         if package_name.startswith(pkg):
-            return True
-    return False
+            return False
+    return True
 
 with_asylo_binary = _placeholder
 with_asylo_test = _placeholder
