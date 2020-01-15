@@ -486,7 +486,6 @@ cc_library(
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-        "//asylo/grpc/auth:enclave_auth_context",
         "@com_github_grpc_grpc//:grpc++",
     ],
 )
