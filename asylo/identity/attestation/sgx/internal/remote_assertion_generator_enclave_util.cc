@@ -18,11 +18,15 @@
 
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave_util.h"
 
+#include <string>
 #include <utility>
 
 #include <google/protobuf/repeated_field.h>
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/certificate_interface.h"
+#include "asylo/crypto/certificate_util.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/trivial_object_util.h"
@@ -250,6 +254,46 @@ StatusOr<std::unique_ptr<::grpc::Server>> CreateAndStartServer(
             << remote_assertion_generator_server_address;
 
   return std::move(server);
+}
+
+Status CheckCertificateChainsForAttestationPublicKey(
+    const VerifyingKey &attestation_public_key,
+    const google::protobuf::RepeatedPtrField<CertificateChain> &certificate_chains,
+    const CertificateFactoryMap &certificate_factories,
+    const VerificationConfig &verification_config) {
+  if (certificate_chains.empty()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Must provide at least one certificate chain");
+  }
+
+  std::string attestation_public_key_der;
+  ASYLO_ASSIGN_OR_RETURN(attestation_public_key_der,
+                         attestation_public_key.SerializeToDer());
+
+  for (const auto &certificate_chain : certificate_chains) {
+    if (certificate_chain.certificates().empty()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Certificate chain cannot be empty");
+    }
+
+    CertificateInterfaceVector certificate_chain_interface;
+    ASYLO_ASSIGN_OR_RETURN(
+        certificate_chain_interface,
+        CreateCertificateChain(certificate_factories, certificate_chain));
+
+    std::string subject_key_der;
+    ASYLO_ASSIGN_OR_RETURN(subject_key_der,
+                           certificate_chain_interface[0]->SubjectKeyDer());
+    if (subject_key_der != attestation_public_key_der) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Certificate chain's end-entity key does not match"
+                    "attestation key");
+    }
+
+    ASYLO_RETURN_IF_ERROR(VerifyCertificateChain(certificate_chain_interface,
+                                                 verification_config));
+  }
+  return Status::OkStatus();
 }
 
 }  // namespace sgx

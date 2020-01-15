@@ -26,6 +26,8 @@
 #include <google/protobuf/repeated_field.h>
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/certificate_interface.h"
+#include "asylo/crypto/certificate_util.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
@@ -95,6 +97,15 @@ StatusOr<Reportdata> GenerateReportdataForPceSignReportProtocol(
 StatusOr<std::unique_ptr<::grpc::Server>> CreateAndStartServer(
     std::string remote_assertion_generator_server_address,
     SgxRemoteAssertionGeneratorImpl *remote_assertion_generator_service);
+
+// Checks that each chain in |certificate_chains| passes the following checks:
+// 1) The subject key of the end-entity certificate is |attestation_public_key|.
+// 2) The certificate chain is valid.
+Status CheckCertificateChainsForAttestationPublicKey(
+    const VerifyingKey &attestation_public_key,
+    const google::protobuf::RepeatedPtrField<CertificateChain> &certificate_chains,
+    const CertificateFactoryMap &certificate_factories,
+    const VerificationConfig &verification_config);
 
 }  // namespace sgx
 }  // namespace asylo

@@ -26,7 +26,11 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/certificate_interface.h"
+#include "asylo/crypto/certificate_util.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
+#include "asylo/crypto/fake_certificate.h"
+#include "asylo/crypto/fake_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/attestation/sgx/internal/attestation_key.pb.h"
@@ -44,6 +48,7 @@ namespace sgx {
 namespace {
 
 using ::testing::Eq;
+using ::testing::Not;
 using ::testing::SizeIs;
 
 constexpr char kIncorrectSecretName[] =
@@ -54,6 +59,10 @@ constexpr char kIncorrectSecretPurpose[] =
     "Incorrect Assertion Generator Enclave Attestation Key and Certificates";
 constexpr char kIncorrectAad[] = "Incorrect Aad";
 constexpr char kIncorrectSealedSecret[] = "Incorrect Enclave Secret";
+constexpr char kSubjectKey1[] = "some key";
+constexpr char kSubjectKey2[] = "some other key";
+constexpr char kIssuer1[] = "issuer of certs";
+constexpr char kIssuer2[] = "i55u3r 0f c3rt5";
 constexpr char kCertificateChain[] = R"proto(
   certificates: { format: X509_DER data: "child" }
   certificates: { format: X509_DER data: "root" }
@@ -360,6 +369,127 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   ASYLO_ASSERT_OK(
       SetTrivialObjectFromHexString(kReportdata, &expected_reportdata.data));
   EXPECT_THAT(actual_reportdata.data, Eq(expected_reportdata.data));
+}
+
+TEST(RemoteAssertionGeneratorEnclaveUtilTest,
+     CheckCertificateChainsForPublicKeyWithNoChainsFails) {
+  CertificateFactoryMap factories(
+      {{Certificate::X509_PEM, FakeCertificate::Create}});
+  VerificationConfig verification_config(/*all_fields=*/true);
+  FakeVerifyingKey public_key(ECDSA_P256_SHA256, kSubjectKey1);
+
+  UpdateCertsInput update_certs_input;
+  EXPECT_THAT(CheckCertificateChainsForAttestationPublicKey(
+                  public_key, update_certs_input.certificate_chains(),
+                  factories, verification_config),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       "Must provide at least one certificate chain"));
+}
+
+TEST(RemoteAssertionGeneratorEnclaveUtilTest,
+     CheckCertificateChainsForPublicKeyWithEmptyChainFails) {
+  CertificateFactoryMap factories(
+      {{Certificate::X509_PEM, FakeCertificate::Create}});
+  VerificationConfig verification_config(/*all_fields=*/true);
+  FakeVerifyingKey public_key(ECDSA_P256_SHA256, kSubjectKey1);
+
+  UpdateCertsInput update_certs_input;
+  *update_certs_input.add_certificate_chains() =
+      CertificateChain::default_instance();
+  EXPECT_THAT(CheckCertificateChainsForAttestationPublicKey(
+                  public_key, update_certs_input.certificate_chains(),
+                  factories, verification_config),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       "Certificate chain cannot be empty"));
+}
+
+TEST(RemoteAssertionGeneratorEnclaveUtilTest,
+     CheckCertificateChainsForPublicKeyWithWrongSubjectKeyFails) {
+  CertificateFactoryMap factories(
+      {{Certificate::X509_PEM, FakeCertificate::Create}});
+  VerificationConfig verification_config(/*all_fields=*/true);
+  FakeVerifyingKey public_key(ECDSA_P256_SHA256, kSubjectKey1);
+
+  // End-entity certificate not matching the expected public key.
+  FakeCertificate end_entity_cert(kSubjectKey2, kIssuer1,
+                                  /*is_ca=*/absl::nullopt,
+                                  /*pathlength=*/absl::nullopt);
+  FakeCertificate ca_cert(kIssuer1, kIssuer1, /*is_ca=*/true, /*pathlength=*/1);
+
+  UpdateCertsInput update_certs_input;
+  CertificateChain *certificate_chain =
+      update_certs_input.add_certificate_chains();
+
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      *certificate_chain->add_certificates(),
+      end_entity_cert.ToCertificateProto(Certificate::X509_PEM));
+  ASYLO_ASSERT_OK_AND_ASSIGN(*certificate_chain->add_certificates(),
+                             ca_cert.ToCertificateProto(Certificate::X509_PEM));
+
+  EXPECT_THAT(CheckCertificateChainsForAttestationPublicKey(
+                  public_key, update_certs_input.certificate_chains(),
+                  factories, verification_config),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       "Certificate chain's end-entity key does not match"
+                       "attestation key"));
+}
+
+TEST(RemoteAssertionGeneratorEnclaveUtilTest,
+     CheckCertificateChainsForPublicKeyWithInvalidChainFails) {
+  CertificateFactoryMap factories(
+      {{Certificate::X509_PEM, FakeCertificate::Create}});
+  VerificationConfig verification_config(/*all_fields=*/true);
+  FakeVerifyingKey public_key(ECDSA_P256_SHA256, kSubjectKey1);
+
+  // Invalid chain where the CA cert cannot be used to verify the end-entity
+  // cert.
+  FakeCertificate end_entity_cert(kSubjectKey1, kIssuer1,
+                                  /*is_ca=*/absl::nullopt,
+                                  /*pathlength=*/absl::nullopt);
+  FakeCertificate ca_cert(kIssuer2, kIssuer2, /*is_ca=*/true, /*pathlength=*/1);
+
+  UpdateCertsInput update_certs_input;
+  CertificateChain *certificate_chain =
+      update_certs_input.add_certificate_chains();
+
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      *certificate_chain->add_certificates(),
+      end_entity_cert.ToCertificateProto(Certificate::X509_PEM));
+  ASYLO_ASSERT_OK_AND_ASSIGN(*certificate_chain->add_certificates(),
+                             ca_cert.ToCertificateProto(Certificate::X509_PEM));
+
+  EXPECT_THAT(CheckCertificateChainsForAttestationPublicKey(
+                  public_key, update_certs_input.certificate_chains(),
+                  factories, verification_config),
+              Not(IsOk()));
+}
+
+TEST(RemoteAssertionGeneratorEnclaveUtilTest,
+     CheckCertificateChainsForPublicKeyWithSuccess) {
+  CertificateFactoryMap factories(
+      {{Certificate::X509_PEM, FakeCertificate::Create}});
+  VerificationConfig verification_config(/*all_fields=*/true);
+  FakeVerifyingKey public_key(ECDSA_P256_SHA256, kSubjectKey1);
+
+  UpdateCertsInput update_certs_input;
+  CertificateChain *certificate_chain =
+      update_certs_input.add_certificate_chains();
+
+  FakeCertificate end_entity_cert(kSubjectKey1, kIssuer1,
+                                  /*is_ca=*/absl::nullopt,
+                                  /*pathlength=*/absl::nullopt);
+  FakeCertificate ca_cert(kIssuer1, kIssuer1, /*is_ca=*/true, /*pathlength=*/1);
+
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      *certificate_chain->add_certificates(),
+      end_entity_cert.ToCertificateProto(Certificate::X509_PEM));
+  ASYLO_ASSERT_OK_AND_ASSIGN(*certificate_chain->add_certificates(),
+                             ca_cert.ToCertificateProto(Certificate::X509_PEM));
+
+  ASYLO_EXPECT_OK(CheckCertificateChainsForAttestationPublicKey(
+      public_key, update_certs_input.certificate_chains(), factories,
+      verification_config))
+      << certificate_chain->DebugString();
 }
 
 }  // namespace
