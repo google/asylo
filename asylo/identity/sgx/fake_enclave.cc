@@ -38,7 +38,6 @@
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/secs_attributes.h"
-#include "asylo/identity/sgx/secs_miscselect.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 
 namespace asylo {
@@ -122,7 +121,7 @@ void FakeEnclave::SetRandomIdentity() {
   set_attributes(TrivialRandomObject<SecsAttributeSet>());
 
   // All bits of MISCSELECT, except for bit 0, must be zero.
-  miscselect_ = TrivialRandomObject<uint32_t>() & kMiscselectAllBits;
+  miscselect_ = TrivialRandomObject<uint32_t>() & kValidMiscselectBitmask;
 
   // If ATTRIBUTES.KSS is zero, all KSS-related fields must be zero, else they
   // should be set randomly.
@@ -379,10 +378,9 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
   // GetHardwareKey() function in such a scenario.
   SecsAttributeSet reserved_attributes =
       ~SecsAttributeSet::GetAllSupportedBits();
-  uint32_t misc_select_reserved_bits = kMiscselectReservedBits;
   if (tinfo.reserved1 != TrivialZeroObject<decltype(tinfo.reserved1)>() ||
       tinfo.reserved2 != TrivialZeroObject<decltype(tinfo.reserved2)>() ||
-      (tinfo.miscselect & misc_select_reserved_bits) != 0 ||
+      (tinfo.miscselect & ~kValidMiscselectBitmask) != 0 ||
       (tinfo.attributes & reserved_attributes) !=
           TrivialZeroObject<SecsAttributeSet>()) {
     LOG(FATAL) << "Reserved fields/bits in input parameters are not zeroed.";

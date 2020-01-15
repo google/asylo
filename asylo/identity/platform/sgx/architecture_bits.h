@@ -19,6 +19,9 @@
 #ifndef ASYLO_IDENTITY_PLATFORM_SGX_ARCHITECTURE_BITS_H_
 #define ASYLO_IDENTITY_PLATFORM_SGX_ARCHITECTURE_BITS_H_
 
+#include <cstddef>
+#include <cstdint>
+
 namespace asylo {
 namespace sgx {
 
@@ -103,6 +106,21 @@ enum class AttributeBit {
 /// All valid bit positions in the ATTRIBUTES bit vector.
 extern const AttributeBit kAllAttributeBits[15];
 
+/// The number of ATTRIBUTES flag bits.
+extern const size_t kNumAttributeFlagBits;
+
+/// The number of ATTRIBUTES XFRM bits.
+extern const size_t kNumAttributeXfrmBits;
+
+/// The total number of ATTRIBUTES bits.
+extern const size_t kNumAttributeBits;
+
+/// A bitmask over all valid ATTRIBUTES flag bits.
+extern const uint64_t kValidAttributeFlagsBitmask;
+
+/// A bitmask over all valid ATTRIBUTES XFRM bits.
+extern const uint64_t kValidAttributeXfrmBitmask;
+
 /// The following enum defines the various MISCSELECT bits and assigns them a
 /// value that is same as their bit position in the SECS MISCSELECT bit vector.
 /// The names of these bits are taken verbatim from the Intel SDM (Software
@@ -115,6 +133,12 @@ enum class MiscselectBit {
 
 /// All valid bit positions in the MISCSELECT bit vector.
 extern const MiscselectBit kAllMiscselectBits[1];
+
+/// The total number of MISCSELECT bits.
+extern const size_t kNumMiscselectBits;
+
+/// A bitmask over all valid MISCSELECT bits.
+extern const uint32_t kValidMiscselectBitmask;
 
 }  // namespace sgx
 }  // namespace asylo

@@ -37,7 +37,6 @@
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/mock_hardware_interface.h"
-#include "asylo/identity/sgx/secs_miscselect.h"
 #include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
@@ -47,9 +46,9 @@
 namespace asylo {
 namespace {
 
-using asylo::sgx::kMiscselectAllBits;
 using asylo::sgx::kReportdataSize;
 using asylo::sgx::kSgxIntelEcdsaQeRemoteAssertionAuthority;
+using asylo::sgx::kValidMiscselectBitmask;
 using asylo::sgx::MockHardwareInterface;
 using asylo::sgx::MockIntelArchitecturalEnclaveInterface;
 using asylo::sgx::Report;
@@ -76,7 +75,7 @@ class SgxIntelEcdsaQeRemoteAssertionGeneratorTests : public testing::Test {
     info.reserved1.fill(0);
     info.reserved2.fill(0);
     info.reserved3.fill(0);
-    info.miscselect &= kMiscselectAllBits;
+    info.miscselect &= kValidMiscselectBitmask;
     info.attributes = {};
     return info;
   }

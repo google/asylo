@@ -34,13 +34,6 @@ namespace asylo {
 namespace sgx {
 namespace {
 
-constexpr size_t kByteBits = 8;
-constexpr size_t kNumFlagsBits =
-    sizeof(static_cast<SecsAttributeSet *>(nullptr)->flags) * kByteBits;
-constexpr size_t kNumXfrmBits =
-    sizeof(static_cast<SecsAttributeSet *>(nullptr)->xfrm) * kByteBits;
-constexpr size_t kNumSecsAttributeBits = kNumFlagsBits + kNumXfrmBits;
-
 // DoNotCare attribute bits.
 // The following XFRM attributes are *generally* considered as not affecting
 // the security of the enclave, and are ignored during attestation
@@ -120,17 +113,17 @@ StatusOr<SecsAttributeSet> SecsAttributeSet::FromBits(
   SecsAttributeSet attributes = {};
   for (AttributeBit attribute : attribute_list) {
     size_t bit_position = static_cast<size_t>(attribute);
-    if (bit_position >= kNumSecsAttributeBits) {
+    if (bit_position >= kNumAttributeBits) {
       return Status(
           error::GoogleError::INVALID_ARGUMENT,
           absl::StrFormat("SecsAttributeBit specifies a bit position %d "
                           " that is larger than the max allowed value of %d",
-                          bit_position, kNumSecsAttributeBits - 1));
+                          bit_position, kNumAttributeBits - 1));
     }
-    if (bit_position < kNumFlagsBits) {
+    if (bit_position < kNumAttributeFlagBits) {
       attributes.flags |= (1ULL << bit_position);
     } else {
-      attributes.xfrm |= (1ULL << (bit_position - kNumFlagsBits));
+      attributes.xfrm |= (1ULL << (bit_position - kNumAttributeFlagBits));
     }
   }
   return attributes;
@@ -146,19 +139,19 @@ void SecsAttributeSet::Clear() {
 
 bool SecsAttributeSet::IsSet(AttributeBit attribute) const {
   size_t bit_position = static_cast<size_t>(attribute);
-  if (bit_position >= kNumSecsAttributeBits) {
+  if (bit_position >= kNumAttributeBits) {
     // The only way this can happen is if someone does some funny business with
     // integer casting instead of using SecsAttributeBit values as an input.
     LOG(ERROR) << "SecsAttributeBit specifies a bit position " << bit_position
                << " that is larger than the max allowed value of "
-               << kNumSecsAttributeBits - 1;
+               << kNumAttributeBits - 1;
     return false;
   }
 
-  if (bit_position < kNumFlagsBits) {
-    return (flags & (1ULL << bit_position)) != 0;
+  if (bit_position < kNumAttributeFlagBits) {
+    return flags & (1ULL << bit_position);
   } else {
-    return (xfrm & (1ULL << (bit_position - kNumFlagsBits))) != 0;
+    return xfrm & (1ULL << (bit_position - kNumAttributeFlagBits));
   }
 }
 

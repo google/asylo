@@ -82,6 +82,17 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
 )
 
+cc_test_and_cc_enclave_test(
+    name = "architecture_bits_test",
+    srcs = ["architecture_bits_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":architecture_bits",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 cc_library(
     name = "miscselect_util",
     srcs = ["miscselect_util.cc"],

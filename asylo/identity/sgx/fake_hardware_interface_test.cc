@@ -32,7 +32,6 @@
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/identity/sgx/secs_miscselect.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/test/util/proto_matchers.h"
@@ -387,14 +386,15 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithMiscselect) {
   FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
 
   // Only least-significant bit in miscselect can be set.
-  enclave->set_miscselect(TrivialRandomObject<uint32_t>() & kMiscselectAllBits);
+  enclave->set_miscselect(TrivialRandomObject<uint32_t>() &
+                          kValidMiscselectBitmask);
   for (int i = 0; i < 100; i++) {
     key1 = hardware_->GetKey(*request);
     ASYLO_ASSERT_OK(key1) << HexDumpObjectPair("Enclave", *enclave,
                                                "Keyrequest", *request);
     uint32_t prev = enclave->get_miscselect();
     enclave->set_miscselect(TrivialRandomObject<uint32_t>() &
-                            kMiscselectAllBits);
+                            kValidMiscselectBitmask);
     key2 = hardware_->GetKey(*request);
     ASYLO_ASSERT_OK(key2) << HexDumpObjectPair("Enclave", *enclave,
                                                "Keyrequest", *request);

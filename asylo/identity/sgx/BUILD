@@ -638,7 +638,6 @@ cc_library(
     hdrs = [
         "identity_key_management_structs.h",
         "secs_attributes.h",
-        "secs_miscselect.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
