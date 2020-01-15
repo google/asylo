@@ -18,4 +18,4 @@ syntax = "proto2";
 
 package asylo.sgx;
 
-import public "third_party/asylo/identity/platform/sgx/attributes.proto";
+import public "asylo/identity/platform/sgx/attributes.proto";

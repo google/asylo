@@ -18,4 +18,4 @@ syntax = "proto2";
 
 package asylo;
 
-import public "third_party/asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.proto";
+import public "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.proto";

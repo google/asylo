@@ -18,4 +18,4 @@ syntax = "proto2";
 
 package asylo;
 
-import public "third_party/asylo/crypto/sha256_hash.proto";
+import public "asylo/crypto/sha256_hash.proto";
