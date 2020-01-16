@@ -310,6 +310,9 @@ ObjectId::ObjectId(bssl::UniquePtr<ASN1_OBJECT> object)
     : object_(std::move(object)) {}
 
 bool operator==(const ObjectId &lhs, const ObjectId &rhs) {
+  if (lhs.object_ == nullptr || rhs.object_ == nullptr) {
+    return lhs.object_ == rhs.object_;
+  }
   return OBJ_cmp(lhs.object_.get(), rhs.object_.get()) == 0;
 }
 

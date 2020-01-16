@@ -251,6 +251,21 @@ TEST(Asn1Test, ObjectIdEquality) {
   }
 }
 
+TEST(Asn1Test, ObjectIdEqualityWithEmptyOid) {
+  ObjectId cn;
+  ASYLO_ASSERT_OK_AND_ASSIGN(cn, ObjectId::CreateFromShortName("CN"));
+  ObjectId empty;
+
+  EXPECT_THAT(cn, Not(Eq(empty)));
+  EXPECT_THAT(cn, Ne(empty));
+
+  EXPECT_THAT(empty, Ne(cn));
+  EXPECT_THAT(empty, Not(Eq(cn)));
+
+  EXPECT_THAT(empty, Eq(empty));
+  EXPECT_THAT(empty, Not(Ne(empty)));
+}
+
 TEST(Asn1Test, ObjectIdCopyConstructionPreservesEquality) {
   for (const auto &ids : kShortLongNidOids) {
     ObjectId oid;
