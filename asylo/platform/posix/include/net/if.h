@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-// Macros from third_party/newlib/src/newlib/libc/sys/linux/include/net/if.h
+// Macros from newlib/src/newlib/libc/sys/linux/include/net/if.h
 // This is the subset of macros which Asylo supports.
 #define IFF_UP 0x1           /* interface is up */
 #define IFF_BROADCAST 0x2    /* broadcast address valid */

@@ -21,7 +21,7 @@ To build the hello_driver program:
 To run the program, invoke the driver binary (from bazel-bin), and pass in the
 path to the enclave:
 
-`` `bazel info
-bazel-bin`/third_party/asylo/platform/primitives/examples/hello_dlopen_driver
---enclave_path=`bazel info --config=asylo
-bazel-bin`/third_party/asylo/platform/primitives/examples/hello_dlopen_enclave_dlopen.so``
+```bash
+$(bazel info bazel-bin)/asylo/platform/primitives/examples/hello_dlopen_driver \
+  --enclave_path="$(bazel info --config=asylo bazel-bin)/asylo/platform/primitives/examples/hello_dlopen_enclave_dlopen.so"
+```

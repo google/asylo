@@ -62,7 +62,7 @@ cc_library(
 )
 
 # We use the version of Lua bundled with Redis for now, instead of depending
-# on //third_party/lua. We want to make sure Redis users get a consistent
+# on a pre-installed version. We want to make sure Redis users get a consistent
 # experience, down to Lua language features. This reflects the intention of
 # the Redis developers; see
 # https://github.com/antirez/redis/blob/unstable/deps/README.md#lua.
