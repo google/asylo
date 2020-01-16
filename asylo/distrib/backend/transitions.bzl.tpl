@@ -22,9 +22,9 @@ def _asylo_toolchain_and_backend_transition_impl(settings, attr):
     """Returns the configuration to use the Asylo toolchain."""
     result = {
         "//command_line_option:crosstool_top": "@com_google_asylo_toolchain//toolchain:crosstool",
-        "//command_line_option:custom_malloc": "//third_party/unsupported_toolchains/enclave/toolchains:malloc",
+        "//command_line_option:custom_malloc": "@com_google_asylo_toolchain//toolchain:malloc",
         "//command_line_option:dynamic_mode": "off",
-        "//command_line_option:host_crosstool_top": "//third_party/crosstool",
+        "//command_line_option:host_crosstool_top": "@bazel_tools//tools/cpp:toolchain",
         BACKEND_LABEL: attr.backend or settings[BACKEND_LABEL],
     }
     return result
