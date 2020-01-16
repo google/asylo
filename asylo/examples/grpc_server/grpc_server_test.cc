@@ -74,8 +74,8 @@ class GrpcServerTest : public ::testing::Test {
   // returns the translated word, else returns a non-OK status.
   asylo::StatusOr<std::string> MakeRpc(const std::string &input_word) {
     std::unique_ptr<TranslatorClient> client;
-    ASYLO_ASSIGN_OR_RETURN(
-        client, TranslatorClient::Create(absl::StrCat("[::1]:", server_port_)));
+    ASYLO_ASSIGN_OR_RETURN(client, TranslatorClient::Create(absl::StrCat(
+                                       "localhost:", server_port_)));
     return client->GrpcGetTranslation(input_word);
   }
 

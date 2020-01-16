@@ -111,8 +111,8 @@ class GrpcServerTest : public ::testing::Test {
   // the same grpc::Status as the stub function call. If the RPC is successful,
   // returns the translated word, else returns a non-OK status.
   asylo::StatusOr<std::string> MakeRpc(const std::string &input_word) {
-    return GrpcClientEnclaveGetTranslation(absl::StrCat("[::1]:", server_port_),
-                                           input_word);
+    return GrpcClientEnclaveGetTranslation(
+        absl::StrCat("localhost:", server_port_), input_word);
   }
 
  private:
