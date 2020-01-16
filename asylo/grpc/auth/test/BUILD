@@ -14,6 +14,10 @@
 # limitations under the License.
 #
 
+load(":generate_end2end_tests.bzl", "grpc_end2end_tests")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
 licenses(["notice"])  # Apache v2.0
 
 # Description:
@@ -22,9 +26,6 @@ licenses(["notice"])  # Apache v2.0
 package(
     default_visibility = ["//asylo/grpc/auth/test:__subpackages__"],
 )
-
-load(":generate_end2end_tests.bzl", "grpc_end2end_tests")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # A binary that packages a test fixture for the enclave gRPC stack with the
 # gRPC end2end tests library.

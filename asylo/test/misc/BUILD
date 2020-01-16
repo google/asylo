@@ -29,6 +29,9 @@ load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
 load("//asylo/bazel:sgx_rules.bzl", "sgx_debug_sign_enclave", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 licenses(["notice"])
 

@@ -12,11 +12,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
 
 load("//asylo/bazel:asylo.bzl", "cc_enclave_test", "enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:sgx_rules.bzl", "sgx_cc_unsigned_enclave", "sgx_debug_sign_enclave")
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 licenses(["notice"])
 

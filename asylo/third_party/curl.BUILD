@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+
 licenses(["notice"])  # Apache v2.0
 
 exports_files(["COPYING"])
@@ -25,6 +27,8 @@ cc_library(
     name = "curl",
     srcs = [
         "include/curl_config.h",
+        "lib/altsvc.c",
+        "lib/altsvc.h",
         "lib/amigaos.h",
         "lib/arpa_telnet.h",
         "lib/asyn.h",
@@ -48,6 +52,8 @@ cc_library(
         "lib/curl_endian.h",
         "lib/curl_fnmatch.c",
         "lib/curl_fnmatch.h",
+        "lib/curl_get_line.c",
+        "lib/curl_get_line.h",
         "lib/curl_gethostname.c",
         "lib/curl_gethostname.h",
         "lib/curl_gssapi.h",
@@ -77,6 +83,8 @@ cc_library(
         "lib/curl_threads.h",
         "lib/curlx.h",
         "lib/dict.h",
+        "lib/doh.c",
+        "lib/doh.h",
         "lib/dotdot.c",
         "lib/dotdot.h",
         "lib/easy.c",
@@ -145,11 +153,13 @@ cc_library(
         "lib/nwos.c",
         "lib/parsedate.c",
         "lib/parsedate.h",
-        "lib/pingpong.h",
         "lib/pingpong.c",
+        "lib/pingpong.h",
         "lib/pop3.h",
         "lib/progress.c",
         "lib/progress.h",
+        "lib/psl.c",
+        "lib/psl.h",
         "lib/quic.h",
         "lib/rand.c",
         "lib/rand.h",
@@ -199,6 +209,8 @@ cc_library(
         "lib/transfer.h",
         "lib/url.c",
         "lib/url.h",
+        "lib/urlapi.c",
+        "lib/urlapi-int.h",
         "lib/urldata.h",
         "lib/vauth/cleartext.c",
         "lib/vauth/cram.c",
@@ -212,11 +224,15 @@ cc_library(
         "lib/vtls/gskit.h",
         "lib/vtls/gtls.h",
         "lib/vtls/mbedtls.h",
+        "lib/vtls/mesalink.c",
+        "lib/vtls/mesalink.h",
         "lib/vtls/nssg.h",
+        "lib/vtls/openssl.c",
         "lib/vtls/openssl.h",
         "lib/vtls/polarssl.h",
         "lib/vtls/polarssl_threadlock.h",
         "lib/vtls/schannel.h",
+        "lib/vtls/sectransp.h",
         "lib/vtls/vtls.c",
         "lib/vtls/vtls.h",
         "lib/vtls/wolfssl.h",
@@ -225,20 +241,6 @@ cc_library(
         "lib/wildcard.c",
         "lib/wildcard.h",
         "lib/x509asn1.h",
-        "lib/psl.h",
-        "lib/psl.c",
-        "lib/vtls/sectransp.h",
-        "lib/vtls/mesalink.h",
-        "lib/vtls/mesalink.c",
-        "lib/curl_get_line.h",
-        "lib/curl_get_line.c",
-        "lib/urlapi-int.h",
-        "lib/urlapi.c",
-        "lib/altsvc.h",
-        "lib/altsvc.c",
-        "lib/doh.h",
-        "lib/doh.c",
-	"lib/vtls/openssl.c",
     ],
     hdrs = [
         "include/curl/curl.h",
@@ -261,7 +263,7 @@ cc_library(
         "-DHAVE_LIBZ",
         "-DHAVE_ZLIB_H",
         "-Wno-string-plus-int",
-	"-DCURL_MAX_WRITE_SIZE=65536",
+        "-DCURL_MAX_WRITE_SIZE=65536",
     ],
     defines = ["CURL_STATICLIB"],
     includes = ["include"],
@@ -270,8 +272,8 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "@zlib//:zlib",
         "@boringssl//:ssl",
+        "@zlib",
     ],
 )
 

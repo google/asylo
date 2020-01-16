@@ -214,7 +214,7 @@ def _cc_binary_attrs(
         # The data field is not allowed.
         "linkshared": attr.int(default = 0 if executable else 1, doc = "linkshared for cc_binary."),
         "linkstatic": attr.int(default = 0 if executable else 1, doc = "linkstatic for cc_binary."),
-        # Attributes not in native.cc_binary.
+        # Attributes not in normal cc_binary.
         "_malloc": attr.label(default = malloc),  # The default malloc target.
         "additional_linker_inputs": attr.label_list(
             allow_files = [".lds"],

@@ -3,6 +3,8 @@
 # zero-configuration, transactional SQL database engine.
 #
 
+load("//third_party/bazel_rules/rules_cc/cc:defs.bzl", "cc_library")
+
 licenses(["unencumbered"])  # Public Domain
 
 SQLITE_COPTS = [
@@ -40,7 +42,7 @@ cc_library(
     srcs = [
         "sqlite3.c",
         "sqlite3.h",
-	"sqlite3ext.h",
+        "sqlite3ext.h",
     ],
     copts = SQLITE_COPTS,
     defines = [
@@ -59,7 +61,7 @@ cc_library(
     name = "sqlite3_shell",
     srcs = ["shell.c"],
     copts = SQLITE_COPTS,
-    alwayslink = 1,
-    deps = [":org_sqlite"],
     visibility = ["//visibility:public"],
+    deps = [":org_sqlite"],
+    alwayslink = 1,
 )

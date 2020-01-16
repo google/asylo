@@ -15,6 +15,9 @@
 #
 load("//asylo/bazel:asylo.bzl", "cc_test_and_cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 # This package defines Asylo-internal targets for SGX provisioning.
 

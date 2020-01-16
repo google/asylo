@@ -21,6 +21,7 @@ load(
     cc_test = "cc_test_and_cc_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 licenses(["notice"])
 

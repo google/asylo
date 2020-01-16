@@ -14,6 +14,10 @@
 # limitations under the License.
 #
 
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS", "cc_enclave_test")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 licenses(["notice"])  # Apache v2.0
 
 # asylo system library supplements.
@@ -21,9 +25,6 @@ licenses(["notice"])  # Apache v2.0
 package(
     default_visibility = ["//asylo:implementation"],
 )
-
-load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS", "cc_enclave_test")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 filegroup(
     name = "system_headers",

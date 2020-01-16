@@ -14,9 +14,10 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@rules_cc//cc:defs.bzl", "cc_test")
+
+licenses(["notice"])  # Apache v2.0
 
 cc_test(
     name = "loader_test",

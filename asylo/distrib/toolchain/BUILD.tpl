@@ -16,6 +16,12 @@
 
 load("@com_google_asylo_toolchain//toolchain:crosstool.bzl",
      "cc_toolchain_config_rule")
+load(
+    "@rules_cc//cc:defs.bzl",
+    "cc_library",
+    "cc_toolchain",
+    "cc_toolchain_suite",
+)
 
 licenses(["notice"])
 

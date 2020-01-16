@@ -19,6 +19,9 @@ load(
     cc_test = "cc_test_and_cc_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 licenses(["notice"])  # Apache v2.0
 

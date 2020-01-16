@@ -1,6 +1,7 @@
 """Starlark support for backend and toolchain transitions."""
 
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
+load("@rules_cc//cc:defs.bzl", "cc_binary")
 
 BACKEND_LABEL = "@com_google_asylo_backend_provider//:backend"
 PRETRANSITION_TAGS = [
@@ -209,7 +210,7 @@ def _cc_binary(name, backends = backend_tools.should_be_all_backends, name_by_ba
             kwargs = kwargs,
         )
     else:
-        native.cc_binary(
+        cc_binary(
             name = name,
             data = kwargs.pop("data", []) + kwargs.pop("backend_dependent_data", []),
             **kwargs

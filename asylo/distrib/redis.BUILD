@@ -2,6 +2,8 @@
 #   Redis (http://redis.io) is an open source, advanced key-value store.
 #   This is a bazel BUILD file for Redis 5.0.5.
 
+load("//third_party/bazel_rules/rules_cc/cc:defs.bzl", "cc_library")
+
 package(
     default_visibility = ["//visibility:public"],
     features = [
@@ -316,8 +318,8 @@ cc_library(
         "src/zipmap.h",
     ],
     copts = ZCALLOC_COPT,
-    alwayslink = 1,
     deps = [":redis_lib"],
+    alwayslink = 1,
 )
 
 cc_library(

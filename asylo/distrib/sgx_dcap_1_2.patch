@@ -899,9 +899,11 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationL
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,269 @@
+@@ -0,0 +1,271 @@
 +# Description: sgx_data_center_attestation_primitives is the Intel SGX Data
 +# Center Attestation Primitives library for linux.
++
++load("@rules_cc//cc:defs.bzl", "cc_library")
 +
 +licenses(["notice"])
 +

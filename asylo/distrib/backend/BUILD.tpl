@@ -16,6 +16,7 @@
 
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "asylo_backend")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 
 licenses(["notice"])
 

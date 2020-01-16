@@ -17,6 +17,9 @@
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:dlopen_enclave.bzl", "dlopen_enclave_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 licenses(["notice"])
 

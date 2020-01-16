@@ -24,6 +24,7 @@ load(
 load("//asylo/bazel:dlopen_enclave.bzl", "dlopen_enclave_test", "primitives_dlopen_enclave")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 licenses(["notice"])
 

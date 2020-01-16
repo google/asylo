@@ -15,6 +15,7 @@
 #
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 licenses(["notice"])
 

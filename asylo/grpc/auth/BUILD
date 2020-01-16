@@ -20,6 +20,7 @@ load(
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 licenses(["notice"])
 

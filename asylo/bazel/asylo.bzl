@@ -40,6 +40,7 @@ load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+load("@rules_cc//cc:defs.bzl", "cc_library", native_cc_test = "cc_test")
 
 # website-docs-metadata
 # ---
@@ -147,7 +148,7 @@ def enclave_loader(
     This macro creates three build targets:
       1) name: shell script that runs `name_host_loader`.
       2) name_loader: cc_binary used as loader in `name`. This is a normal
-                      native cc_binary. It cannot be directly run because there
+                      cc_binary. It cannot be directly run because there
                       is an undeclared dependency on the enclaves.
       3) name_host_loader: genrule that builds `name_loader` with the host
                            crosstool.
@@ -506,7 +507,7 @@ def cc_enclave_binary(
     # The user probably wants their tags applied to the loader.
     loader_kwargs["tags"] = kwargs.pop("tags", [])
 
-    native.cc_library(
+    cc_library(
         name = application_library_name,
         linkstatic = application_library_linkstatic,
         alwayslink = application_library_linkstatic,
@@ -643,7 +644,7 @@ def enclave_test(
     This macro creates three build targets:
      1) name: sh_test that runs the enclave_test.
      2) name_driver: cc_test used as test loader in `name`. This is a normal
-                     native cc_test. It cannot be directly run because there is
+                     cc_test. It cannot be directly run because there is
                      an undeclared dependency on enclave.
      3) name_host_driver: genrule that builds name_driver with host crosstool.
 
@@ -782,7 +783,7 @@ def cc_test(
         targets. See enclave_info.bzl:all_backends documentation for details.
       **kwargs: cc_test arguments.
     """
-    native.cc_test(
+    native_cc_test(
         name = name,
         srcs = srcs,
         deps = deps,
