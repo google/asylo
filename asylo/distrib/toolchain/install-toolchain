@@ -23,9 +23,9 @@ set -e
 readonly install_default=/opt/asylo/toolchains/default
 
 # Dependency source files to use when fetching from online.
-readonly gcc_tag=gcc-7_4_0-release
-readonly gcc_default="gcc-${gcc_tag}.tar.gz"  # github renames the archive.
-readonly gcc_default_sha="e1b1a60ca5c93e9838e6c0252d0aa977b76088114e68bc2753ff59c85328b308"
+readonly gcc_tag=releases/gcc-7.4.0
+readonly gcc_default="gcc-${gcc_tag//\//-}.tar.gz"  # github renames the archive.
+readonly gcc_default_sha="9d4f845f88a4eab077e777725fafd768239ede9baed6e452909e48d7abeb97c1"
 readonly binutils_default=binutils-2.24.tar.gz
 readonly binutils_default_sha="4930b2886309112c00a279483eaef2f0f8e1b1b62010e0239c16b22af7c346d4"
 readonly newlib_default=newlib-2.5.0.20170922.tar.gz
