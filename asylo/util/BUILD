@@ -577,7 +577,6 @@ cc_test(
     name = "thread_test",
     srcs = ["thread_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "thread_enclave_test",
     deps = [
         ":mutex_guarded",
         ":thread",
