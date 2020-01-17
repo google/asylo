@@ -29,7 +29,10 @@ policies on two gRPC endpoints, and how to enforce a per-call authorization
 policy based on enclave identity in the gRPC server.
 
 The source files for this example are located in the
-[asylo/examples/secure_grpc](/asylo/examples/secure_grpc) folder.
+[secure_grpc](https://github.com/google/asylo-examples/tree/master/secure_grpc)
+directory of [asylo-examples](https://github.com/google/asylo-examples).
+Download the latest release
+[here](https://github.com/google/asylo-examples/releases).
 
 This guide builds on the concepts introduced in the
 [Asylo gRPC Server Example](https://asylo.dev/docs/guides/grpc_server.html).

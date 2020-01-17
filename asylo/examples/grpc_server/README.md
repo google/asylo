@@ -47,7 +47,10 @@ The Asylo enclave runtime features rich POSIX support that allows full-featured
 serve as secure nodes in your distributed systems and cloud applications.
 
 The source files for this example are located in the
-[asylo/examples/grpc_server](/asylo/examples/grpc_server) folder.
+[grpc_server](https://github.com/google/asylo-examples/tree/master/grpc_server)
+directory of [asylo-examples](https://github.com/google/asylo-examples).
+Download the latest release
+[here](https://github.com/google/asylo-examples/releases).
 
 ## Setting up the environment
 
