@@ -234,15 +234,6 @@ def asylo_deps(toolchain_path = None):
             strip_prefix = "abseil-cpp-a2e6adecc294dc4cd98cc285a9134ce58e0f2ad0",
         )
 
-    # Absl for python
-    if not native.existing_rule("io_abseil_py"):
-        http_archive(
-            name = "io_abseil_py",
-            urls = ["https://github.com/abseil/abseil-py/archive/pypi-v0.8.1.tar.gz"],
-            sha256 = "0a145cb81101d1add8b87eaae58c5d51521084bf7cc4e4654928b326a864c6c3",
-            strip_prefix = "abseil-py-pypi-v0.8.1",
-        )
-
     # Protobuf
     if not native.existing_rule("com_google_protobuf"):
         http_archive(
