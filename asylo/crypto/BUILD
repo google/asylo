@@ -381,6 +381,7 @@ cc_test(
     srcs = ["x509_certificate_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":asn1",
         ":bignum_util",
         ":certificate_cc_proto",
         ":certificate_interface",

@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <iterator>
+#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -305,6 +306,31 @@ TEST(Asn1Test, AbslHashValueForObjectIdBehavesCorrectly) {
 
   EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly(oids));
 }
+
+TEST(Asn1Test, ObjectIdOutputShortName) {
+  ObjectId oid;
+  ASYLO_ASSERT_OK_AND_ASSIGN(oid, ObjectId::CreateFromShortName("CN"));
+
+  std::ostringstream out;
+  out << oid;
+  EXPECT_THAT(out.str(), Eq("CN"));
+}
+
+TEST(Asn1Test, ObjectIdOutputOid) {
+  ObjectId oid;
+  ASYLO_ASSERT_OK_AND_ASSIGN(oid, ObjectId::CreateFromOidString("1.2.3.4"));
+
+  std::ostringstream out;
+  out << oid;
+  EXPECT_THAT(out.str(), Eq("1.2.3.4"));
+}
+
+TEST(Asn1Test, ObjectIdOutputUnknown) {
+  std::ostringstream out;
+  out << ObjectId{};
+  EXPECT_THAT(out.str(), Eq("UNKNOWN_OID"));
+}
+
 
 TEST(Asn1Test, CreateSequenceFromStatusOrsCreatesCorrectValueIfAllInputsAreOk) {
   Asn1Value asn1;

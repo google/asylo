@@ -603,6 +603,18 @@ Status AddExtensions(absl::Span<const X509Extension> extensions, X509 *x509) {
 
 }  // namespace
 
+bool operator==(const X509NameEntry &lhs, const X509NameEntry &rhs) {
+  return lhs.field == rhs.field && lhs.value == rhs.value;
+}
+
+bool operator!=(const X509NameEntry &lhs, const X509NameEntry &rhs) {
+  return !(lhs == rhs);
+}
+
+std::ostream &operator<<(std::ostream &out, const X509NameEntry &entry) {
+  return out << entry.field << "=" << entry.value;
+}
+
 StatusOr<std::unique_ptr<X509Certificate>> X509CertificateBuilder::SignAndBuild(
     const SigningKey &issuer_key) const {
   if (serial_number == nullptr) {

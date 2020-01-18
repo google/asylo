@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -62,6 +63,10 @@ struct X509NameEntry {
   ObjectId field;
   std::string value;
 };
+
+bool operator==(const X509NameEntry &lhs, const X509NameEntry &rhs);
+bool operator!=(const X509NameEntry &lhs, const X509NameEntry &rhs);
+std::ostream &operator<<(std::ostream &out, const X509NameEntry &entry);
 
 // Represents an X.509 Name structure.
 using X509Name = std::vector<X509NameEntry>;

@@ -111,6 +111,8 @@ class ObjectId {
 bool operator==(const ObjectId &lhs, const ObjectId &rhs);
 bool operator!=(const ObjectId &lhs, const ObjectId &rhs);
 
+std::ostream &operator<<(std::ostream &out, const ObjectId &oid);
+
 // AbslHashValue() overload for ObjectId.
 template <typename H>
 H AbslHashValue(H hash, const ObjectId &oid) {

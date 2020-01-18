@@ -24,6 +24,7 @@
 #include <cctype>
 #include <cstdint>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -39,6 +40,7 @@
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
+#include "asylo/crypto/asn1.h"
 #include "asylo/crypto/bignum_util.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/certificate_interface.h"
@@ -48,6 +50,7 @@
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/string_matchers.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace {
@@ -55,6 +58,8 @@ namespace {
 using ::testing::ElementsAreArray;
 using ::testing::Eq;
 using ::testing::IsEmpty;
+using ::testing::Ne;
+using ::testing::Not;
 using ::testing::Optional;
 using ::testing::SizeIs;
 using ::testing::StrEq;
@@ -979,6 +984,72 @@ TEST_F(X509CertificateTest, SignAndBuildFailsWithMissingFields) {
   builder.subject_public_key_der.reset();
   EXPECT_THAT(builder.SignAndBuild(*signing_key),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST_F(X509CertificateTest, X509NameEntryEqualityComparisonSucceeds) {
+  X509NameEntry first;
+  ASYLO_ASSERT_OK_AND_ASSIGN(first.field, ObjectId::CreateFromShortName("OU"));
+  first.value = "value";
+
+  X509NameEntry second = first;
+  EXPECT_THAT(first, Eq(second));
+  EXPECT_THAT(first, Not(Ne(second)));
+}
+
+TEST_F(X509CertificateTest, X509NameEntryEqualityComparisonFailsOnField) {
+  X509NameEntry first;
+  ASYLO_ASSERT_OK_AND_ASSIGN(first.field, ObjectId::CreateFromShortName("CN"));
+
+  X509NameEntry second;
+  ASYLO_ASSERT_OK_AND_ASSIGN(first.field, ObjectId::CreateFromShortName("OU"));
+
+  first.value = "foo";
+  second.value = first.value;
+
+  EXPECT_THAT(first, Ne(second));
+  EXPECT_THAT(first, Not(Eq(second)));
+}
+
+TEST_F(X509CertificateTest, X509NameEntryEqualityComparisonFailsOnValue) {
+  X509NameEntry first;
+  ASYLO_ASSERT_OK_AND_ASSIGN(first.field, ObjectId::CreateFromShortName("CN"));
+  first.value = "something";
+
+  X509NameEntry second = first;
+  second.value = "something else";
+
+  EXPECT_THAT(first, Ne(second));
+  EXPECT_THAT(first, Not(Eq(second)));
+}
+
+TEST_F(X509CertificateTest, X509NameEntryOutputShortName) {
+  X509NameEntry entry;
+  ASYLO_ASSERT_OK_AND_ASSIGN(entry.field, ObjectId::CreateFromShortName("CN"));
+  entry.value = "GoogleDotCom";
+
+  std::ostringstream out;
+  out << entry;
+  EXPECT_THAT(out.str(), Eq("CN=GoogleDotCom"));
+}
+
+TEST_F(X509CertificateTest, X509NameEntryOutputOid) {
+  X509NameEntry entry;
+  ASYLO_ASSERT_OK_AND_ASSIGN(entry.field,
+                             ObjectId::CreateFromOidString("1.2.3.4"));
+  entry.value = "A B C D";
+
+  std::ostringstream out;
+  out << entry;
+  EXPECT_THAT(out.str(), Eq("1.2.3.4=A B C D"));
+}
+
+TEST_F(X509CertificateTest, X509NameEntryOutputUnknown) {
+  X509NameEntry entry;
+  entry.value = "should not happen";
+
+  std::ostringstream out;
+  out << entry;
+  EXPECT_THAT(out.str(), Eq("UNKNOWN_OID=should not happen"));
 }
 
 }  // namespace

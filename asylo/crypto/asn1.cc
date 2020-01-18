@@ -320,6 +320,20 @@ bool operator!=(const ObjectId &lhs, const ObjectId &rhs) {
   return !(lhs == rhs);
 }
 
+std::ostream &operator<<(std::ostream &out, const ObjectId &oid) {
+  auto short_name_result = oid.GetShortName();
+  if (short_name_result.ok()) {
+    return out << short_name_result.ValueOrDie();
+  }
+
+  auto oid_string_result = oid.GetOidString();
+  if (oid_string_result.ok() && !oid_string_result.ValueOrDie().empty()) {
+    return out << oid_string_result.ValueOrDie();
+  }
+
+  return out << "UNKNOWN_OID";
+}
+
 Asn1Value::Asn1Value() : value_(CHECK_NOTNULL(ASN1_TYPE_new())) {}
 
 Asn1Value::Asn1Value(const Asn1Value &other)
