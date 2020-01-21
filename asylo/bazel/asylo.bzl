@@ -978,7 +978,6 @@ _enclave_build_transition_test = _placeholder
 def enclave_build_test(
         name,
         enclaves = [],
-        tap = False,
         tags = [],
         name_by_backend = {},
         backends = backend_tools.should_be_all_backends):
