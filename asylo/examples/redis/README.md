@@ -86,7 +86,7 @@ sgx_deps()
 
 This bazel rule imports Asylo and Redis. To build Redis with Bazel, Asylo
 provides the BUILD file for Redis 5.0.7, located at
-`@com_google_asylo/asylo/distrib/redis.BUILD`.
+`@com_google_asylo//asylo/distrib/redis.BUILD`.
 
 #### Add .bazelrc
 
