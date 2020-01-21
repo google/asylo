@@ -25,9 +25,12 @@
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/attestation/sgx/internal/attestation_key_certificate_impl.h"
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
+#include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/identity/sgx/sgx_infrastructural_enclave_manager.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -73,9 +76,14 @@ StatusOr<Certificate> GenerateAndCertifyAttestationKey(
           .ValueOrDie()
           .release();
 
+  // Use a well-formed Targetinfo (all reserved fields are cleared and all
+  // required bits are set).
+  Targetinfo targetinfo;
+  SetTargetinfoFromSelfIdentity(&targetinfo);
+  targetinfo.attributes = SecsAttributeSet::GetMustBeSetBits();
+  targetinfo.miscselect = 0;
   TargetInfoProto pce_target_info;
-  pce_target_info.set_value(
-      ConvertTrivialObjectToBinaryString(TrivialRandomObject<Targetinfo>()));
+  pce_target_info.set_value(ConvertTrivialObjectToBinaryString(targetinfo));
 
   ReportProto report;
   std::string pce_sign_report_payload;
