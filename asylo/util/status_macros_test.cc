@@ -42,6 +42,17 @@ TEST(ReturnIfError, ReturnsOnErrorStatus) {
   EXPECT_THAT(func(), StatusIs(error::GoogleError::UNKNOWN, "EXPECTED"));
 }
 
+TEST(ReturnIfError, ReturnsOnErrorStatusOr) {
+  auto func = []() -> Status {
+    ASYLO_RETURN_IF_ERROR(Status::OkStatus());
+    ASYLO_RETURN_IF_ERROR(
+        StatusOr<int>(Status(error::GoogleError::UNKNOWN, "EXPECTED")));
+    return Status(error::GoogleError::UNKNOWN, "ERROR");
+  };
+
+  EXPECT_THAT(func(), StatusIs(error::GoogleError::UNKNOWN, "EXPECTED"));
+}
+
 TEST(ReturnIfError, ReturnsOnErrorFromLambda) {
   auto func = []() -> Status {
     ASYLO_RETURN_IF_ERROR([] { return Status::OkStatus(); }());

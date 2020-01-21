@@ -19,11 +19,47 @@
 #ifndef ASYLO_UTIL_STATUS_MACROS_H_
 #define ASYLO_UTIL_STATUS_MACROS_H_
 
+#include <type_traits>
+#include <utility>
+
 #include "absl/base/optimization.h"
+
+namespace asylo {
+namespace internal {
+
+// This template is chosen if the input object has a function called "status".
+template <typename T>
+inline constexpr bool HasStatus(decltype(std::declval<T>().status()) *) {
+  return true;
+}
+
+// Default template, chosen when no prior templates match.
+template <typename T>
+inline constexpr bool HasStatus(...) {
+  return false;
+}
+
+// `StatusOr`-like overload which returns a wrapped `Status`-like value.
+template <typename T,
+          typename std::enable_if<HasStatus<T>(nullptr), int>::type = 0>
+inline auto ToStatus(T&& status_or) -> decltype(status_or.status()) {
+  return status_or.status();
+}
+
+// Identity function for all `Status`-like objects.
+template <typename T,
+          typename std::enable_if<!HasStatus<T>(nullptr), int>::type = 0>
+inline T ToStatus(T&& status_like) {
+  return status_like;
+}
+
+}  // namespace internal
+}  // namespace asylo
 
 /// Evaluates an expression that produces an `Status`-like object with
 /// a `.ok()` method. If this method returns false, the object is
-/// returned from the current function.
+/// returned from the current function. If the expression evaluates to a
+/// `StatusOr` object, then it is converted to a `Status` on return.
 ///
 /// Example:
 /// ```
@@ -33,12 +69,14 @@
 ///     return ::asylo::Status::OkStatus();
 ///   }
 /// ```
-#define ASYLO_RETURN_IF_ERROR(expr)                        \
-do {                                                       \
-  const auto _asylo_status_to_verify = (expr);             \
-  if (ABSL_PREDICT_FALSE(!_asylo_status_to_verify.ok())) { \
-    return _asylo_status_to_verify;                        \
-  }                                                        \
+#define ASYLO_RETURN_IF_ERROR(expr)                                         \
+do {                                                                        \
+  auto _asylo_status_to_verify = (expr);                                    \
+  if (ABSL_PREDICT_FALSE(!_asylo_status_to_verify.ok())) {                  \
+    return ::asylo::internal::ToStatus(                                     \
+        std::forward<decltype(_asylo_status_to_verify)>(                    \
+            _asylo_status_to_verify));                                      \
+  }                                                                         \
 } while (false)
 
 /// Evaluates an expression `rexpr` that returns a `StatusOr`-like
