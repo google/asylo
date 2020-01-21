@@ -116,7 +116,8 @@ void enclave_security_connector_check_peer(
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Failed to get enclave auth context from TSI peer");
   }
-  GRPC_CLOSURE_SCHED(on_peer_checked, error);
+
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
 /* -- Enclave security connector implementation. -- */
