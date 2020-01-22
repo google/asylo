@@ -18,6 +18,8 @@
 
 #include "asylo/util/proto_enum_util.h"
 
+#include <vector>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/util/proto_enum_util_test.pb.h"
@@ -25,7 +27,17 @@
 namespace asylo {
 namespace {
 
+using ::testing::ElementsAreArray;
+using ::testing::Eq;
+using ::testing::Ne;
 using ::testing::StrEq;
+
+constexpr TestProtoEnum kAllValues[] = {
+    TEST_PROTO_ENUM_UNKNOWN,
+    TEST_PROTO_ENUM_VALUE_A,
+    TEST_PROTO_ENUM_VALUE_B,
+    TEST_PROTO_ENUM_VALUE_C,
+};
 
 TEST(ProtoEnumUtilTest, EnumeratorValuesMapToValueName) {
   EXPECT_THAT(ProtoEnumValueName(TestProtoEnum::TEST_PROTO_ENUM_VALUE_A),
@@ -43,6 +55,24 @@ TEST(ProtoEnumUtilTest, NonEnumeratorValuesMapToDecimalRepresentation) {
   EXPECT_THAT(ProtoEnumValueName(static_cast<TestProtoEnum>(12)), StrEq("12"));
   EXPECT_THAT(ProtoEnumValueName(static_cast<TestProtoEnum>(10000)),
               StrEq("10000"));
+}
+
+TEST(ProtoEnumUtilTest, IterateEnum) {
+  std::vector<TestProtoEnum> values;
+  for (TestProtoEnum e : ProtoEnumRange<TestProtoEnum>()) {
+    values.push_back(e);
+  }
+  EXPECT_THAT(values, ElementsAreArray(kAllValues));
+}
+
+TEST(ProtoEnumUtilTest, IteratorEquality) {
+  EXPECT_THAT(ProtoEnumRange<TestProtoEnum>().begin(),
+              Eq(ProtoEnumRange<TestProtoEnum>().begin()));
+}
+
+TEST(ProtoEnumUtilTest, IteratorInequality) {
+  EXPECT_THAT(ProtoEnumRange<TestProtoEnum>().begin(),
+              Ne(ProtoEnumRange<TestProtoEnum>().end()));
 }
 
 }  // namespace

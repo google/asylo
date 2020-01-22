@@ -19,6 +19,7 @@
 #ifndef ASYLO_UTIL_PROTO_ENUM_UTIL_H_
 #define ASYLO_UTIL_PROTO_ENUM_UTIL_H_
 
+#include <iterator>
 #include <string>
 
 #include <google/protobuf/descriptor.h>
@@ -42,6 +43,57 @@ std::string ProtoEnumValueName(ProtoEnumT enum_value) {
 
   return value_descriptor->name();
 }
+
+// ProtoEnumRange is a type which provides the necessary functions to use
+// range-based for loops over all possible values in a protobuf enumeration.
+// Values are walked using the google::protobuf::EnumDescriptor, which enumerates all
+// values in the same order they were defined in the .proto file.
+//
+// In C++, any class with begin() and end() functions satisifies the
+// requirements of a range expression within a range-based for loop.
+//
+// Sample use:
+//   for (EnumType e : ProtoEnumRange<EnumType>()) {
+//      LOG(INFO) << e;
+//   }
+template <typename ProtoEnumT>
+class ProtoEnumRange {
+ public:
+  class Iterator : public std::iterator<std::forward_iterator_tag, ProtoEnumT> {
+   public:
+    Iterator(const Iterator &) = default;
+    Iterator& operator=(const Iterator &) = default;
+
+    Iterator &operator++() {
+      ++index_;
+      return *this;
+    }
+
+    bool operator==(const Iterator &other) const {
+      return index_ == other.index_;
+    }
+
+    bool operator!=(const Iterator &other) const { return !(*this == other); }
+
+    ProtoEnumT operator*() const {
+      auto enum_descriptor = google::protobuf::GetEnumDescriptor<ProtoEnumT>();
+      auto value_descriptor = enum_descriptor->value(index_);
+      return static_cast<ProtoEnumT>(value_descriptor->number());
+    }
+
+   private:
+    friend class ProtoEnumRange;
+    explicit Iterator(int index) : index_(index) {}
+    int index_;
+  };
+
+  Iterator begin() { return Iterator(0); }
+
+  Iterator end() {
+    auto enum_descriptor = google::protobuf::GetEnumDescriptor<ProtoEnumT>();
+    return Iterator(enum_descriptor->value_count());
+  }
+};
 
 }  // namespace asylo
 
