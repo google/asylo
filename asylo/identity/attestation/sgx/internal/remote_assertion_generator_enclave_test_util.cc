@@ -105,9 +105,27 @@ StatusOr<Certificate> GenerateAndCertifyAttestationKey(
   return attestation_key_certificate;
 }
 
-// Appends a PCK Certificate, the Asylo Fake SGX Processor CA Certificate, and
-// the Asylo Fake SGX Root CA certificate to |certificate_chain|.
-void SetFakePckCertificateChain(CertificateChain *certificate_chain) {
+}  // namespace
+
+StatusOr<CertificateChain> GenerateAttestationKeyAndFakeCertificateChain(
+    EnclaveClient *assertion_generator_enclave_client) {
+  // Don't create an IntelArchitecturalEnclaveInterface because only AGE APIs
+  // are called.
+  auto manager = absl::make_unique<SgxInfrastructuralEnclaveManager>(
+      /*intel_ae_interface=*/nullptr, assertion_generator_enclave_client);
+  return GenerateAttestationKeyAndFakeCertificateChain(manager.get());
+}
+
+StatusOr<CertificateChain> GenerateAttestationKeyAndFakeCertificateChain(
+    SgxInfrastructuralEnclaveManager *manager) {
+  CertificateChain certificate_chain;
+  ASYLO_ASSIGN_OR_RETURN(*certificate_chain.add_certificates(),
+                         GenerateAndCertifyAttestationKey(manager));
+  AppendFakePckCertificateChain(&certificate_chain);
+  return certificate_chain;
+}
+
+void AppendFakePckCertificateChain(CertificateChain *certificate_chain) {
   Certificate *fake_pck_cert = certificate_chain->add_certificates();
   fake_pck_cert->set_format(Certificate::X509_PEM);
   fake_pck_cert->set_data(kFakeSgxPckCertificatePem);
@@ -125,29 +143,9 @@ void SetFakePckCertificateChain(CertificateChain *certificate_chain) {
                                   kFakeSgxRootCa.certificate_pem.size());
 }
 
-}  // namespace
-
-StatusOr<CertificateChain> GenerateAttestationKeyAndFakeCertificateChain(
-    EnclaveClient *assertion_generator_enclave_client) {
-  // Don't create an IntelArchitecturalEnclaveInterface because only AGE APIs
-  // are called.
-  auto manager = absl::make_unique<SgxInfrastructuralEnclaveManager>(
-      /*intel_ae_interface=*/nullptr, assertion_generator_enclave_client);
-  return GenerateAttestationKeyAndFakeCertificateChain(manager.get());
-}
-
-StatusOr<CertificateChain> GenerateAttestationKeyAndFakeCertificateChain(
-    SgxInfrastructuralEnclaveManager *manager) {
-  CertificateChain certificate_chain;
-  ASYLO_ASSIGN_OR_RETURN(*certificate_chain.add_certificates(),
-                         GenerateAndCertifyAttestationKey(manager));
-  SetFakePckCertificateChain(&certificate_chain);
-  return certificate_chain;
-}
-
 CertificateChain GetFakePckCertificateChain() {
   CertificateChain certificate_chain;
-  SetFakePckCertificateChain(&certificate_chain);
+  AppendFakePckCertificateChain(&certificate_chain);
   return certificate_chain;
 }
 

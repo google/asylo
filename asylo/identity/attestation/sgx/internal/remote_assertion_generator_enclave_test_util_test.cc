@@ -33,6 +33,7 @@
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave_util.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/mock_sgx_infrastructural_enclave_manager.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -55,6 +56,14 @@ TEST(RemoteAssertionGeneratorEnclaveTestUtilTest,
 
   ASYLO_ASSERT_OK(VerifyCertificateChain(
       certificate_chain, VerificationConfig(/*all_fields=*/true)));
+}
+
+TEST(RemoteAssertionGeneratorEnclaveTestUtilTest,
+     GetFakePckCertificateChainMatchesAppendFakePckCertificateChain) {
+  CertificateChain get_chain = GetFakePckCertificateChain();
+  CertificateChain set_chain;
+  AppendFakePckCertificateChain(&set_chain);
+  EXPECT_THAT(get_chain, EqualsProto(set_chain));
 }
 
 // The method that takes an EnclaveClient* wraps the method that takes

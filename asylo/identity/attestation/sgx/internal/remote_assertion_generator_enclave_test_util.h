@@ -39,6 +39,11 @@ StatusOr<CertificateChain> GenerateAttestationKeyAndFakeCertificateChain(
 StatusOr<CertificateChain> GenerateAttestationKeyAndFakeCertificateChain(
     SgxInfrastructuralEnclaveManager *manager);
 
+// Appends a PCK Certificate for kFakePckPem, the Asylo Fake SGX Processor CA
+// Certificate, and the Asylo Fake SGX Root CA certificate to
+// |certificate_chain|.
+void AppendFakePckCertificateChain(CertificateChain *certificate_chain);
+
 // Returns a fake certificate chain containing the following certificates:
 //   * PCK Certificate for kFakePckPem
 //   * Asylo Fake SGX Processor CA Certificate

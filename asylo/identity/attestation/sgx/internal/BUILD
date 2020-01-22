@@ -777,6 +777,7 @@ cc_test(
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity/sgx:hardware_types",
         "//asylo/identity/sgx:mock_sgx_infrastructural_enclave_manager",
+        "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
