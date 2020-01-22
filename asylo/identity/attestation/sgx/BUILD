@@ -43,7 +43,7 @@ proto_library(
         "//asylo:enclave_proto",
         "//asylo/crypto:certificate_proto",
         "//asylo/identity:identity_proto",
-        "//asylo/identity/sgx:sgx_identity_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_proto",
     ],
 )
 
@@ -113,7 +113,7 @@ cc_library(
         "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
         "//asylo/identity:identity_cc_proto",
-        "//asylo/identity/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
         "//asylo/platform/core:untrusted_core",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/test/util:enclave_assertion_authority_configs",
@@ -153,8 +153,8 @@ enclave_test(
         "//asylo/identity:init",
         "//asylo/identity/attestation:enclave_assertion_generator",
         "//asylo/identity/attestation/sgx/internal:remote_assertion_generator_enclave_cc_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
         "//asylo/identity/sgx:code_identity_constants",
-        "//asylo/identity/sgx:sgx_identity_cc_proto",
         "//asylo/identity/sgx:sgx_identity_util",
         "//asylo/identity/sgx:sgx_remote_assertion_generator_client",
         "//asylo/identity/sgx:sgx_remote_assertion_generator_impl",

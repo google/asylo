@@ -23,10 +23,10 @@
 
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/platform/sgx/code_identity.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sealing/sealed_secret.pb.h"
 #include "asylo/identity/sealing/secret_sealer.h"
-#include "asylo/identity/sgx/code_identity.pb.h"
-#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 

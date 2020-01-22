@@ -27,9 +27,9 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/util/message_differencer.h>
 #include "asylo/util/logging.h"
+#include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
-#include "asylo/identity/sgx/machine_configuration.pb.h"
 
 namespace asylo {
 namespace sgx {

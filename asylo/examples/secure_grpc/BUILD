@@ -58,7 +58,7 @@ proto_library(
     srcs = ["grpc_server_config.proto"],
     deps = [
         "//asylo:enclave_proto",
-        "//asylo/identity/sgx:sgx_identity_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_proto",
     ],
 )
 
@@ -84,7 +84,7 @@ cc_proto_library(
 )
 
 _grpc_server_sgx_deps = [
-    "//asylo/identity/sgx:sgx_identity_cc_proto",
+    "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
     "//asylo/identity/sgx:sgx_identity_expectation_matcher",
     "//asylo/identity/sgx:sgx_identity_util",
 ]
@@ -173,7 +173,7 @@ cc_library(
         "//asylo/examples/grpc_server:grpc_server_config_cc_proto",
         "//asylo/identity:enclave_assertion_authority_config_cc_proto",
         "//asylo/identity:enclave_assertion_authority_configs",
-        "//asylo/identity/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
@@ -191,7 +191,7 @@ enclave_loader(
     deps = [
         ":grpc_server_util",
         "//asylo:enclave_client",
-        "//asylo/identity/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/flags:flag",
@@ -269,7 +269,7 @@ enclave_test(
         ":grpc_server_util",
         ":translator_server_impl",
         "//asylo:enclave_client",
-        "//asylo/identity/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:path",

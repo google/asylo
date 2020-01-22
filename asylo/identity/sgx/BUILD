@@ -64,15 +64,15 @@ cc_proto_library(
 proto_library(
     name = "code_identity_proto",
     srcs = ["code_identity.proto"],
+    deprecation = "Use //asylo/identity/platform/sgx:code_identity_proto",
     visibility = ["//visibility:public"],
-    deps = [
-        "//asylo/crypto:sha256_hash_proto",
-        "//asylo/identity/platform/sgx:attributes_proto",
-    ],
+    exports = ["//asylo/identity/platform/sgx:code_identity_proto"],
+    deps = ["//asylo/identity/platform/sgx:code_identity_proto"],
 )
 
 cc_proto_library(
     name = "code_identity_cc_proto",
+    deprecation = "Use //asylo/identity/platform/sgx:code_identity_cc_proto",
     visibility = ["//visibility:public"],
     deps = [":code_identity_proto"],
 )
@@ -80,11 +80,15 @@ cc_proto_library(
 proto_library(
     name = "machine_configuration_proto",
     srcs = ["machine_configuration.proto"],
+    deprecation = "Use //asylo/identity/platform/sgx:machine_configuration_proto",
     visibility = ["//visibility:public"],
+    exports = ["//asylo/identity/platform/sgx:machine_configuration_proto"],
+    deps = ["//asylo/identity/platform/sgx:machine_configuration_proto"],
 )
 
 cc_proto_library(
     name = "machine_configuration_cc_proto",
+    deprecation = "Use //asylo/identity/platform/sgx:machine_configuration_cc_proto",
     visibility = ["//visibility:public"],
     deps = [":machine_configuration_proto"],
 )
@@ -92,15 +96,15 @@ cc_proto_library(
 proto_library(
     name = "sgx_identity_proto",
     srcs = ["sgx_identity.proto"],
+    deprecation = "Use //asylo/identity/platform/sgx:sgx_identity_proto",
     visibility = ["//visibility:public"],
-    deps = [
-        ":code_identity_proto",
-        ":machine_configuration_proto",
-    ],
+    exports = ["//asylo/identity/platform/sgx:sgx_identity_proto"],
+    deps = ["//asylo/identity/platform/sgx:sgx_identity_proto"],
 )
 
 cc_proto_library(
     name = "sgx_identity_cc_proto",
+    deprecation = "Use //asylo/identity/platform/sgx:sgx_identity_cc_proto",
     visibility = ["//visibility:public"],
     deps = [":sgx_identity_proto"],
 )

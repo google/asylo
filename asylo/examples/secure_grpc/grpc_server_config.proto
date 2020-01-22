@@ -19,7 +19,7 @@ syntax = "proto2";
 package examples.secure_grpc;
 
 import "asylo/enclave.proto";
-import "asylo/identity/sgx/sgx_identity.proto";
+import "asylo/identity/platform/sgx/sgx_identity.proto";
 
 extend asylo.EnclaveConfig {
   // An SGX identity expectation to enforce as the ACL in the Translator

@@ -21,7 +21,7 @@ package asylo.sgx;
 import "asylo/crypto/algorithms.proto";
 import "asylo/crypto/certificate.proto";
 import "asylo/crypto/keys.proto";
-import "asylo/identity/sgx/sgx_identity.proto";
+import "asylo/identity/platform/sgx/sgx_identity.proto";
 
 // Contains the additional information necessary for generating a remote
 // assertion. This proto is serialized into the |additional_information| field

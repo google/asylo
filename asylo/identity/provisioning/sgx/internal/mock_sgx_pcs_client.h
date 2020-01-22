@@ -20,9 +20,9 @@
 #define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_MOCK_SGX_PCS_CLIENT_H_
 
 #include <gmock/gmock.h>
+#include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.h"
-#include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {

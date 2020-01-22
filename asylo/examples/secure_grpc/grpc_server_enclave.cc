@@ -30,7 +30,7 @@
 #include "asylo/grpc/auth/enclave_server_credentials.h"
 #include "asylo/grpc/auth/sgx_local_credentials_options.h"
 #include "asylo/identity/identity_acl.pb.h"
-#include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/status.h"

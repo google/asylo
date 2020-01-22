@@ -24,7 +24,7 @@
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
 #include "asylo/identity/attestation/sgx/sgx_remote_assertion_generator_test_enclave.pb.h"
-#include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/platform/core/enclave_client.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"

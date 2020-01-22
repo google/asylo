@@ -35,7 +35,7 @@
 #include "asylo/enclave_manager.h"
 #include "asylo/examples/secure_grpc/grpc_client_util.h"
 #include "asylo/examples/secure_grpc/grpc_server_util.h"
-#include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/path.h"
 #include "asylo/util/status.h"

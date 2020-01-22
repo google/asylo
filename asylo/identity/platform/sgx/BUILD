@@ -39,6 +39,30 @@ cc_proto_library(
 )
 
 proto_library(
+    name = "code_identity_proto",
+    srcs = ["code_identity.proto"],
+    deps = [
+        ":attributes_proto",
+        "//asylo/crypto:sha256_hash_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "code_identity_cc_proto",
+    deps = [":code_identity_proto"],
+)
+
+proto_library(
+    name = "machine_configuration_proto",
+    srcs = ["machine_configuration.proto"],
+)
+
+cc_proto_library(
+    name = "machine_configuration_cc_proto",
+    deps = [":machine_configuration_proto"],
+)
+
+proto_library(
     name = "miscselect_proto",
     srcs = ["miscselect.proto"],
 )
@@ -46,6 +70,20 @@ proto_library(
 cc_proto_library(
     name = "miscselect_cc_proto",
     deps = [":miscselect_proto"],
+)
+
+proto_library(
+    name = "sgx_identity_proto",
+    srcs = ["sgx_identity.proto"],
+    deps = [
+        ":code_identity_proto",
+        ":machine_configuration_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "sgx_identity_cc_proto",
+    deps = [":sgx_identity_proto"],
 )
 
 cc_library(

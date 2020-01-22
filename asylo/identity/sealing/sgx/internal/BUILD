@@ -37,9 +37,9 @@ proto_library(
     name = "local_secret_sealer_test_data_proto",
     srcs = ["local_secret_sealer_test_data.proto"],
     deps = [
+        "//asylo/identity/platform/sgx:code_identity_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_proto",
         "//asylo/identity/sealing:sealed_secret_proto",
-        "//asylo/identity/sgx:code_identity_proto",
-        "//asylo/identity/sgx:sgx_identity_proto",
     ],
 )
 
@@ -64,12 +64,12 @@ cc_library(
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:identity_acl_cc_proto",
         "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/platform/sgx:code_identity_cc_proto",
+        "//asylo/identity/platform/sgx:machine_configuration_cc_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
         "//asylo/identity/sealing:sealed_secret_cc_proto",
-        "//asylo/identity/sgx:code_identity_cc_proto",
         "//asylo/identity/sgx:hardware_interface",
         "//asylo/identity/sgx:hardware_types",
-        "//asylo/identity/sgx:machine_configuration_cc_proto",
-        "//asylo/identity/sgx:sgx_identity_cc_proto",
         "//asylo/identity/sgx:sgx_identity_util_internal",
         "//asylo/platform/common:singleton",
         "//asylo/util:cleansing_types",
@@ -88,8 +88,8 @@ cc_binary(
     deps = [
         ":local_secret_sealer_test_data_cc_proto",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity/platform/sgx:code_identity_cc_proto",
         "//asylo/identity/sealing/sgx:sgx_local_secret_sealer",
-        "//asylo/identity/sgx:code_identity_cc_proto",
         "//asylo/identity/sgx:fake_enclave",
         "//asylo/identity/sgx:hardware_types",
         "//asylo/identity/sgx:sgx_identity_util",

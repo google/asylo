@@ -21,7 +21,7 @@
 
 #include <string>
 
-#include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 

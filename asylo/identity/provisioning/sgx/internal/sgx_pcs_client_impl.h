@@ -25,10 +25,10 @@
 
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/asymmetric_encryption_key.h"
+#include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.pb.h"
-#include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/util/http_fetcher.h"
 
 namespace asylo {

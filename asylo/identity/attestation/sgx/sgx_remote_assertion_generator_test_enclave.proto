@@ -20,7 +20,7 @@ package asylo.sgx;
 
 import "asylo/enclave.proto";
 import "asylo/identity/identity.proto";
-import "asylo/identity/sgx/sgx_identity.proto";
+import "asylo/identity/platform/sgx/sgx_identity.proto";
 
 extend EnclaveConfig {
   optional SgxRemoteAssertionGeneratorTestEnclaveConfig

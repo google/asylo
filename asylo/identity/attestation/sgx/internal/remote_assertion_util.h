@@ -27,7 +27,7 @@
 #include "asylo/crypto/signing_key.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
-#include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
