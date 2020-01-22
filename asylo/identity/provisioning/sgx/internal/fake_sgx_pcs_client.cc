@@ -21,7 +21,10 @@
 #include <endian.h>
 
 #include <algorithm>
+#include <cstdint>
+#include <cstring>
 #include <limits>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -33,6 +36,7 @@
 #include <google/protobuf/util/message_differencer.h>
 #include "absl/base/attributes.h"
 #include "absl/base/macros.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/random/distributions.h"
 #include "absl/random/random.h"
@@ -44,10 +48,17 @@
 #include "absl/strings/substitute.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "absl/types/optional.h"
 #include "absl/types/span.h"
+#include "asylo/crypto/asn1.h"
+#include "asylo/crypto/bignum_util.h"
+#include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/certificate_interface.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
-#include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/bytes.h"
+#include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/crypto/x509_certificate.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
@@ -57,7 +68,11 @@
 #include "asylo/identity/provisioning/sgx/internal/tcb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/machine_configuration.pb.h"
+#include "asylo/identity/sgx/pck_certificate_util.h"
+#include "asylo/identity/sgx/pck_certificates.pb.h"
 #include "asylo/util/cleansing_types.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/time_conversions.h"
@@ -83,7 +98,7 @@ struct FakeFmspcLayout {
 
   // Random bytes. This field must be at least two bytes to ensure that the
   // probability of a collision in 10 random FMSPCs for a given
-  // PlatformProperties is < 0.1%
+  // PlatformProperties is < 0.1%.
   UnsafeBytes<2> random_id;
 } ABSL_ATTRIBUTE_PACKED;
 
@@ -91,6 +106,23 @@ static_assert(sizeof(FakeFmspcLayout) == kFmspcSize,
               "Invalid size for FakeFmspcLayout");
 static_assert(1 << FakeFmspcLayout::kCompressedSgxCaTypeBits > SgxCaType_MAX,
               "FakeFmspcLayout::ca is too small to hold all SgxCaType values");
+
+// The PPID layout used by FakeSgxPcsClient. Used to determine the FMSPC
+// corresponding to a given PPID.
+struct FakePpidLayout {
+  // The FMSPC of this PPID's platform.
+  FakeFmspcLayout fmspc;
+
+  // Reserved for future use.
+  UnsafeBytes<2> reserved;
+
+  // Random bytes.
+  //
+  UnsafeBytes<8> random_id;
+} ABSL_ATTRIBUTE_PACKED;
+
+static_assert(sizeof(FakePpidLayout) == kPpidSize,
+              "Invalid size for FakePpidLayout");
 
 // Returns an error if |fmspc| is not valid according to ValidateFmspc() or does
 // not match FakeFmspcLayout.
@@ -100,10 +132,23 @@ Status FmspcIsValidAndMatchesLayout(const Fmspc &fmspc) {
       reinterpret_cast<const FakeFmspcLayout *>(fmspc.value().data());
   if (!SgxCaType_IsValid(layout->ca) ||
       layout->ca == SgxCaType::SGX_CA_TYPE_UNKNOWN) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Invalid FMSPC: bad SgxCaType");
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrCat("Invalid FMSPC: bad SgxCaType: ",
+                     ProtoEnumValueName(static_cast<SgxCaType>(layout->ca))));
   }
   return Status::OkStatus();
+}
+
+// Returns an error if |ppid| is not valid according to ValidatePpid() or does
+// not match FakePpidLayout.
+Status PpidIsValidAndMatchesLayout(const Ppid &ppid) {
+  ASYLO_RETURN_IF_ERROR(ValidatePpid(ppid));
+  const FakePpidLayout *layout =
+      reinterpret_cast<const FakePpidLayout *>(ppid.value().data());
+  Fmspc fmspc;
+  fmspc.set_value(ConvertTrivialObjectToBinaryString(layout->fmspc));
+  return FmspcIsValidAndMatchesLayout(fmspc);
 }
 
 // Returns a non-OK status if:
@@ -144,7 +189,7 @@ void Randomize(absl::Span<uint8_t> buffer) {
 
 // Creates a PEM-encoded X.509 certificate chain from |pem_certs|.
 CertificateChain CreateCertificateChainFromPemCerts(
-    const std::vector<absl::string_view> &pem_certs) {
+    absl::Span<const absl::string_view> pem_certs) {
   CertificateChain chain;
   for (absl::string_view pem : pem_certs) {
     Certificate *cert = chain.add_certificates();
@@ -152,6 +197,14 @@ CertificateChain CreateCertificateChainFromPemCerts(
     cert->set_data(pem.data(), pem.size());
   }
   return chain;
+}
+
+// Creates a CPU SVN representing the same information as |tcb| using an
+// internal fake conversion. The |tcb| must be a valid Tcb message.
+CpuSvn CpuSvnFromTcb(const Tcb &tcb) {
+  CpuSvn cpu_svn;
+  cpu_svn.set_value(tcb.components());
+  return cpu_svn;
 }
 
 // Converts a google::protobuf::Timestamp to an ISO 8601 timestamp string.
@@ -188,9 +241,8 @@ StatusOr<std::string> TcbInfoToJson(const TcbInfo &tcb_info) {
       absl::BytesToHexString(impl.fmspc().value()));
   tcb_info_fields->insert({"fmspc", tcb_info_element});
   uint16_t pce_id_little_endian = htole16(impl.pce_id().value());
-  tcb_info_element.set_string_value(absl::BytesToHexString(
-      absl::string_view(reinterpret_cast<const char *>(&pce_id_little_endian),
-                        sizeof(pce_id_little_endian))));
+  tcb_info_element.set_string_value(
+      ConvertTrivialObjectToHexString(pce_id_little_endian));
   tcb_info_fields->insert({"pceId", tcb_info_element});
   if (impl.version() == 2) {
     tcb_info_element.set_number_value(impl.tcb_type());
@@ -250,11 +302,21 @@ StatusOr<std::string> TcbInfoToJson(const TcbInfo &tcb_info) {
 }  // namespace
 
 FakeSgxPcsClient::FakeSgxPcsClient()
+    : FakeSgxPcsClient(
+          std::move(std::move(EcdsaP256Sha256VerifyingKey::CreateFromPem(
+                                  kFakePckPublicPem))
+                        .ValueOrDie()
+                        ->SerializeToDer())
+              .ValueOrDie()) {}
+
+FakeSgxPcsClient::FakeSgxPcsClient(absl::string_view pck_der)
     : tcb_info_issuer_chain_(CreateCertificateChainFromPemCerts(
           {kFakeSgxTcbSigner.certificate_pem, kFakeSgxRootCa.certificate_pem})),
       tcb_info_signing_key_(std::move(EcdsaP256Sha256SigningKey::CreateFromPem(
                                           kFakeSgxTcbSigner.signing_key_pem))
                                 .ValueOrDie()),
+      pck_public_key_der_(reinterpret_cast<const char *>(pck_der.data()),
+                          pck_der.size()),
       tcb_infos_(FmspcToTcbInfoMap()) {}
 
 StatusOr<bool> FakeSgxPcsClient::AddFmspc(Fmspc fmspc, TcbInfo tcb_info) {
@@ -287,8 +349,46 @@ StatusOr<GetPckCertificateResult> FakeSgxPcsClient::GetPckCertificate(
 
 StatusOr<GetPckCertificatesResult> FakeSgxPcsClient::GetPckCertificates(
     const Ppid &ppid, const PceId &pce_id) {
-  return Status(error::GoogleError::UNIMPLEMENTED,
-                "FakeSgxPcsClient::GetPckCertificates() is not implemented");
+  ASYLO_RETURN_IF_ERROR(PpidIsValidAndMatchesLayout(ppid));
+  ASYLO_RETURN_IF_ERROR(ValidatePceId(pce_id));
+
+  const FakePpidLayout *ppid_layout =
+      reinterpret_cast<const FakePpidLayout *>(ppid.value().data());
+  const CaInfo *ca_info;
+  ASYLO_ASSIGN_OR_RETURN(
+      ca_info, GetCaInfo(static_cast<SgxCaType>(ppid_layout->fmspc.ca)));
+
+  Fmspc fmspc;
+  fmspc.set_value(&ppid_layout->fmspc, kFmspcSize);
+  auto readable_view = tcb_infos_.ReaderLock();
+  auto tcb_info_it = readable_view->find(fmspc);
+  if (tcb_info_it == readable_view->end()) {
+    return Status(
+        error::GoogleError::NOT_FOUND,
+        absl::StrFormat(
+            "Failed to create PCK certificates for platform with PPID 0x%s: "
+            "unknown FMSPC 0x%s",
+            absl::BytesToHexString(ppid.value()),
+            absl::BytesToHexString(fmspc.value())));
+  }
+
+  GetPckCertificatesResult result;
+  SgxExtensions extension_data;
+  extension_data.ppid = ppid;
+  extension_data.fmspc = fmspc;
+  extension_data.pce_id = pce_id;
+  extension_data.sgx_type = SgxType::STANDARD;
+
+  for (const auto &tcb_level : tcb_info_it->second.impl().tcb_levels()) {
+    extension_data.tcb = tcb_level.tcb();
+    extension_data.cpu_svn = CpuSvnFromTcb(tcb_level.tcb());
+    ASYLO_ASSIGN_OR_RETURN(
+        *result.pck_certs.add_certs(),
+        CreateFakePckCertificateInfo(*ca_info, extension_data));
+  }
+
+  result.issuer_cert_chain = ca_info->issuer_chain;
+  return result;
 }
 
 StatusOr<GetCrlResult> FakeSgxPcsClient::GetCrl(SgxCaType sgx_ca_type) {
@@ -347,9 +447,117 @@ StatusOr<Fmspc> FakeSgxPcsClient::CreateFmspcWithProperties(
   Randomize(absl::MakeSpan(layout.random_id));
 
   Fmspc fmspc;
-  fmspc.set_value(&layout, sizeof(layout));
+  fmspc.set_value(ConvertTrivialObjectToBinaryString(layout));
   return fmspc;
 }
+
+StatusOr<Ppid> FakeSgxPcsClient::CreatePpidForFmspc(const Fmspc &fmspc) {
+  ASYLO_RETURN_IF_ERROR(FmspcIsValidAndMatchesLayout(fmspc));
+
+  FakePpidLayout layout = {};
+  memcpy(&layout.fmspc, fmspc.value().data(), kFmspcSize);
+
+  Randomize(absl::MakeSpan(layout.random_id));
+
+  Ppid ppid;
+  ppid.set_value(ConvertTrivialObjectToBinaryString(layout));
+  return ppid;
+}
+
+StatusOr<const FakeSgxPcsClient::CaInfo *> FakeSgxPcsClient::GetCaInfo(
+    SgxCaType ca_type) {
+  static const CaInfo *kPlatformCaInfo = new CaInfo(
+      {kFakeSgxPlatformCa.certificate_pem, kFakeSgxRootCa.certificate_pem},
+      kFakeSgxPlatformCa.signing_key_pem);
+  static const CaInfo *kProcessorCaInfo = new CaInfo(
+      {kFakeSgxProcessorCa.certificate_pem, kFakeSgxRootCa.certificate_pem},
+      kFakeSgxProcessorCa.signing_key_pem);
+
+  switch (ca_type) {
+    case SgxCaType::PLATFORM:
+      return kPlatformCaInfo;
+    case SgxCaType::PROCESSOR:
+      return kProcessorCaInfo;
+    default:
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    absl::StrCat("Unsupported SGX CA type: ",
+                                 ProtoEnumValueName(ca_type)));
+  }
+}
+
+StatusOr<PckCertificates::PckCertificateInfo>
+FakeSgxPcsClient::CreateFakePckCertificateInfo(
+    const CaInfo &ca_info, const SgxExtensions &extension_data) const {
+  PckCertificates::PckCertificateInfo cert_info;
+  *cert_info.mutable_tcb_level() = extension_data.tcb;
+  *cert_info.mutable_tcbm()->mutable_cpu_svn() = extension_data.cpu_svn;
+  *cert_info.mutable_tcbm()->mutable_pce_svn() = extension_data.tcb.pce_svn();
+  ASYLO_ASSIGN_OR_RETURN(*cert_info.mutable_cert(),
+                         CreateFakePckCertificate(ca_info, extension_data));
+  return cert_info;
+}
+
+StatusOr<Certificate> FakeSgxPcsClient::CreateFakePckCertificate(
+    const CaInfo &ca_info, const SgxExtensions &extension_data) const {
+  static constexpr int kSerialNumberByteSize = 20;
+  static const X509Name *kSubject = new X509Name(
+      {{ObjectId::CreateFromShortName("CN").ValueOrDie(),
+        "Asylo Fake SGX PCK Certificate For Testing Only"},
+       {ObjectId::CreateFromShortName("O").ValueOrDie(),
+        "Asylo Fake SGX PKI For Testing Only"},
+       {ObjectId::CreateFromShortName("L").ValueOrDie(), "Kirkland"},
+       {ObjectId::CreateFromShortName("ST").ValueOrDie(), "WA"},
+       {ObjectId::CreateFromShortName("C").ValueOrDie(), "US"}});
+
+  X509CertificateBuilder builder;
+
+  // Use a random serial number.
+  uint8_t serial_number_bytes[kSerialNumberByteSize];
+  Randomize(absl::MakeSpan(serial_number_bytes));
+  ASYLO_ASSIGN_OR_RETURN(builder.serial_number,
+                         BignumFromBigEndianBytes(serial_number_bytes));
+
+  ASYLO_ASSIGN_OR_RETURN(builder.issuer, ca_info.certificate->GetSubjectName());
+
+  // PCK certificates should be valid for approximately seven years.
+  absl::Time now = absl::Now();
+  builder.validity = {now, now + absl::Hours(24 * 365 * 7)};
+  builder.subject = *kSubject;
+
+  builder.subject_public_key_der = pck_public_key_der_;
+
+  ASYLO_ASSIGN_OR_RETURN(builder.authority_key_identifier,
+                         ca_info.certificate->GetSubjectKeyIdentifier());
+  builder.subject_key_identifier_method =
+      SubjectKeyIdMethod::kSubjectPublicKeySha1;
+  builder.key_usage = {/*certificate_signing=*/false,
+                       /*crl_signing=*/false,
+                       /*digital_signature=*/true};
+  builder.basic_constraints = {/*is_ca=*/false, /*pathlen=*/absl::nullopt};
+
+  X509Extension sgx_extensions;
+  sgx_extensions.oid = GetSgxExtensionsOid();
+  sgx_extensions.is_critical = false;  // SGX extensions are non-critical.
+  ASYLO_ASSIGN_OR_RETURN(sgx_extensions.value,
+                         WriteSgxExtensions(extension_data));
+  builder.other_extensions.push_back(std::move(sgx_extensions));
+
+  std::unique_ptr<X509Certificate> certificate;
+  ASYLO_ASSIGN_OR_RETURN(certificate,
+                         builder.SignAndBuild(*ca_info.signing_key));
+  return certificate->ToCertificateProto(Certificate::X509_PEM);
+}
+
+FakeSgxPcsClient::CaInfo::CaInfo(
+    absl::Span<const absl::string_view> issuer_chain_pem,
+    absl::string_view signing_key_pem)
+    : issuer_chain(CreateCertificateChainFromPemCerts(issuer_chain_pem)),
+      certificate(
+          std::move(X509Certificate::Create(issuer_chain.certificates(0)))
+              .ValueOrDie()),
+      signing_key(
+          std::move(EcdsaP256Sha256SigningKey::CreateFromPem(signing_key_pem))
+              .ValueOrDie()) {}
 
 }  // namespace sgx
 }  // namespace asylo

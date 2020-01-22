@@ -20,18 +20,23 @@
 #define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_FAKE_SGX_PCS_CLIENT_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/hash/hash.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/signing_key.h"
+#include "asylo/crypto/x509_certificate.h"
 #include "asylo/identity/provisioning/sgx/internal/container_util.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
+#include "asylo/identity/sgx/pck_certificate_util.h"
 #include "asylo/util/mutex_guarded.h"
 #include "asylo/util/statusor.h"
 
@@ -54,7 +59,7 @@ namespace sgx {
 // different keys and CA certificates for the SGX PKI. The structure of the
 // hierarchy of the fake PKI matches the hierarchy of real SGX PKI.
 //
-// FakeSgxPcsClient relies on an internal fake layout for FMSPCs.
+// FakeSgxPcsClient relies on an internal fake layout for FMSPCs and PPIDs.
 class FakeSgxPcsClient : public SgxPcsClient {
  public:
   // A fake SGX platform type. The information in this struct is embedded in
@@ -67,8 +72,13 @@ class FakeSgxPcsClient : public SgxPcsClient {
     PceId pce_id;
   };
 
-  // Constructs a new FakeSgxPcsClient using the fake PKI in fake_sgx_pki.h.
+  // Constructs a new FakeSgxPcsClient using the fake PKI and PCK in
+  // fake_sgx_pki.h.
   FakeSgxPcsClient();
+
+  // Constructs a new FakeSgxPcsClient using the fake PKI in fake_sgx_pki.h and
+  // |pck_der| as the public PCK in DER form.
+  explicit FakeSgxPcsClient(absl::string_view pck_der);
 
   // Adds |fmspc| to the set of known FMSPCs and associates it with |tcb_info|,
   // which must have a |version| of 2.
@@ -93,7 +103,24 @@ class FakeSgxPcsClient : public SgxPcsClient {
       const Ppid &ppid, const CpuSvn &cpu_svn, const PceSvn &pce_svn,
       const PceId &pce_id) override;
 
-  // From SgxPcsClient. Currently unimplemented.
+  // From SgxPcsClient. Returns a set of PCK certificates for |ppid| and
+  // |pce_id| based on the configured TCB info for |ppid|'s platform.
+  // Specifically, GetPckCertificates() returns one PCK certificate for each TCB
+  // level in the TCB info configured for |ppid|'s platform.
+  //
+  // The returned certificates follow the SGX PCK certificate specification at
+  // https://download.01.org/intel-sgx/dcap-1.0/docs/SGX_PCK_Certificate_CRL_Spec-1.0.pdf.
+  //
+  // The PCK certificates are re-generated after every call, so two back-to-back
+  // calls with the same arguments may return certificates with different
+  // signatures.
+  //
+  // GetPckCertificates() returns an error if:
+  //
+  //   * |ppid| or |pce_id| are invalid.
+  //   * |ppid| does not conform to the internal layout.
+  //   * The FMSPC for |ppid| is not in the set of known FMSPCs.
+  //   * |ppid| is for an unsupported SgxCaType.
   StatusOr<GetPckCertificatesResult> GetPckCertificates(
       const Ppid &ppid, const PceId &pce_id) override;
 
@@ -109,7 +136,7 @@ class FakeSgxPcsClient : public SgxPcsClient {
   //
   // GetTcbInfo() returns an error if:
   //
-  //   * |fmspc| is invalid.
+  //   * |fmspc| is invalid or does not conform to the internal layout.
   //   * |fmspc| is not in the set of known FMSPCs.
   //
   StatusOr<GetTcbInfoResult> GetTcbInfo(const Fmspc &fmspc) override;
@@ -120,12 +147,54 @@ class FakeSgxPcsClient : public SgxPcsClient {
   static StatusOr<Fmspc> CreateFmspcWithProperties(
       const PlatformProperties &properties);
 
+  // Returns a new random PPID that a FakeSgxPcsClient will associate with
+  // |fmspc|.
+  static StatusOr<Ppid> CreatePpidForFmspc(const Fmspc &fmspc);
+
  private:
+  // Contains information about a CA in the fake SGX PKI.
+  struct CaInfo {
+    // The certificate chain beginning with the CA's certificate and ending in
+    // the fake SGX root CA certificate. All certificates must be in PEM format.
+    CertificateChain issuer_chain;
+
+    // The CA's certificate interface.
+    std::unique_ptr<const X509Certificate> certificate;
+
+    // The CA's signing key.
+    std::unique_ptr<const SigningKey> signing_key;
+
+    CaInfo() = default;
+
+    // Constructs a CaInfo for the CA given by the chain of PEM-encoded
+    // certificates in |issuer_chain_pem| and the PEM-encoded signing key in
+    // |signing_key_pem|.
+    CaInfo(absl::Span<const absl::string_view> issuer_chain_pem,
+           absl::string_view signing_key_pem);
+  };
+
   using FmspcToTcbInfoMap =
       absl::flat_hash_map<Fmspc, TcbInfo, absl::Hash<Fmspc>, MessageEqual>;
 
+  // Returns the CA info for the given |ca_type|, or an INVALID_ARGUMENT error
+  // if |ca_type| is not supported. Never returns nullptr.
+  static StatusOr<const CaInfo *> GetCaInfo(SgxCaType ca_type);
+
+  // Creates a PckCertificateInfo message for the given |ca_info| and with the
+  // given |extension_data|. All the |extension_data| must be valid and
+  // consistent, and it all must match the internal provisioning type layouts.
+  StatusOr<PckCertificates::PckCertificateInfo> CreateFakePckCertificateInfo(
+      const CaInfo &ca_info, const SgxExtensions &extension_data) const;
+
+  // Creates a fake PCK certificate in PEM format for the given |ca_info| and
+  // with the given |extension_data|. All the |extension_data| must be valid and
+  // consistent, and it all must match the internal provisioning type layouts.
+  StatusOr<Certificate> CreateFakePckCertificate(
+      const CaInfo &ca_info, const SgxExtensions &extension_data) const;
+
   const CertificateChain tcb_info_issuer_chain_;
   const std::unique_ptr<const SigningKey> tcb_info_signing_key_;
+  const std::string pck_public_key_der_;
   MutexGuarded<FmspcToTcbInfoMap> tcb_infos_;
 };
 
