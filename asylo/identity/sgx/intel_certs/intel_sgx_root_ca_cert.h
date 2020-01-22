@@ -19,6 +19,8 @@
 #ifndef ASYLO_IDENTITY_SGX_INTEL_CERTS_INTEL_SGX_ROOT_CA_CERT_H_
 #define ASYLO_IDENTITY_SGX_INTEL_CERTS_INTEL_SGX_ROOT_CA_CERT_H_
 
+#include "asylo/crypto/certificate.pb.h"
+
 namespace asylo {
 
 // Constant representing the Intel SGX root CA certificate. This certificate is
@@ -26,6 +28,10 @@ namespace asylo {
 // the Intel SGX PCK Processor CA, and the root certificate for the Intel SGX
 // TCB Signing Certificate.
 extern const char *const kIntelSgxRootCaCertificate;
+
+// Returns the Intel SGX root CA certificate in a form compatible with the Asylo
+// `Certificate` proto message.
+Certificate MakeIntelSgxRootCaCertificateProto();
 
 }  // namespace asylo
 

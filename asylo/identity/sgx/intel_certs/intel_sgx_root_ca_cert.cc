@@ -38,4 +38,11 @@ KoZIzj0EAwIDSAAwRQIgQQs/08rycdPauCFk8UPQXCMAlsloBe7NwaQGTcdpa0EC
 IQCUt8SGvxKmjpcM/z0WP9Dvo8h2k5du1iWDdBkAn+0iiA==
 -----END CERTIFICATE-----)";
 
+Certificate MakeIntelSgxRootCaCertificateProto() {
+  Certificate certificate;
+  certificate.set_data(kIntelSgxRootCaCertificate);
+  certificate.set_format(Certificate::X509_PEM);
+  return certificate;
+}
+
 }  // namespace asylo
