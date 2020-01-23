@@ -25,7 +25,6 @@
 #include "absl/synchronization/mutex.h"
 #include "asylo/platform/core/trusted_mutex.h"
 #include "asylo/platform/core/trusted_spin_lock.h"
-#include "asylo/platform/core/untrusted_mutex.h"
 #include "asylo/util/thread.h"
 
 namespace asylo {
@@ -128,8 +127,7 @@ TYPED_TEST_P(OneArgLockGuardTest, OneArgOneLockRecursive) {
 REGISTER_TYPED_TEST_SUITE_P(OneArgLockGuardTest, OneArgOneLockRecursive,
                             OneArgOneLockNonrecursive);
 
-typedef testing::Types<TrustedMutex, UntrustedMutex, TrustedSpinLock>
-    OneArgLockTypes;
+typedef testing::Types<TrustedMutex, TrustedSpinLock> OneArgLockTypes;
 INSTANTIATE_TYPED_TEST_SUITE_P(LockGuardAllLocksTest, OneArgLockGuardTest,
                                OneArgLockTypes);
 

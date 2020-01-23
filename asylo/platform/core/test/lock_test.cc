@@ -22,7 +22,6 @@
 #include <gtest/gtest.h>
 #include "asylo/platform/core/trusted_mutex.h"
 #include "asylo/platform/core/trusted_spin_lock.h"
-#include "asylo/platform/core/untrusted_mutex.h"
 
 namespace asylo {
 namespace {
@@ -37,8 +36,7 @@ class LockTest : public ::testing::Test {
   LockType non_recursive_;
 };
 
-typedef ::testing::Types<UntrustedMutex, TrustedSpinLock, TrustedMutex>
-    Implementations;
+typedef ::testing::Types<TrustedSpinLock, TrustedMutex> Implementations;
 
 TYPED_TEST_SUITE(LockTest, Implementations);
 

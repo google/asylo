@@ -754,7 +754,6 @@ cc_enclave_test(
         ":thread",
         "//asylo/platform/core:trusted_mutex",
         "//asylo/platform/core:trusted_spin_lock",
-        "//asylo/platform/core:untrusted_mutex",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/synchronization",
         "@com_google_googletest//:gtest",

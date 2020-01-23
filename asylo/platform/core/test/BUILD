@@ -185,7 +185,6 @@ cc_enclave_test(
     deps = [
         "//asylo/platform/core:trusted_mutex",
         "//asylo/platform/core:trusted_spin_lock",
-        "//asylo/platform/core:untrusted_mutex",
         "@com_google_googletest//:gtest",
     ],
 )
