@@ -34,6 +34,17 @@ namespace {
 
 using ::testing::Eq;
 
+TEST(ProvisioningPlatformTest, ConfigurationIdWithoutValueFieldIsInvalid) {
+  EXPECT_THAT(ValidateConfigurationId(ConfigurationId()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(ProvisioningPlatformTest, ValidConfigurationIdIsValid) {
+  ConfigurationId id;
+  id.set_value(1000);
+  ASYLO_EXPECT_OK(ValidateConfigurationId(id));
+}
+
 TEST(PlatformProvisioningTest, PpidWithoutValueFieldIsInvalid) {
   EXPECT_THAT(ValidatePpid(Ppid()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));

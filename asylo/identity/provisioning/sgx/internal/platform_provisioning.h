@@ -36,6 +36,10 @@ extern const uint32_t kPceSvnMaxValue;
 // The maximum value of a PceId's |value| field.
 extern const uint32_t kPceIdMaxValue;
 
+// Validates a ConfigurationId message. Return an OK status if and only if the
+// message is valid.
+Status ValidateConfigurationId(const ConfigurationId &id);
+
 // Validates a Ppid message. Returns an OK status if and only if the message is
 // valid.
 Status ValidatePpid(const Ppid &ppid);

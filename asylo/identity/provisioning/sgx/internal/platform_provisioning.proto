@@ -33,6 +33,14 @@ package asylo.sgx;
 // https://download.01.org/intel-sgx/dcap-1.0.1/docs/SGX_PCK_Certificate_CRL_Spec-1.0.pdf
 // https://download.01.org/intel-sgx/dcap-1.0.1/docs/Intel_SGX_ECDSA_QuoteGenReference_DCAP_API_Linux_1.0.1.pdf
 
+// A unique identifier for the security-relevant configuration of an SGX
+// platform. The mapping between ConfigurationId and the state of each security-
+// relevant configuration component is not known.
+message ConfigurationId {
+  // The value of the configuration ID. Required.
+  optional uint32 value = 1;
+}
+
 // A Platform Provisioning ID (PPID) of an SGX CPU. The PPID is a unique
 // identifier of a CPU that is valid for the lifetime of the CPU.
 message Ppid {

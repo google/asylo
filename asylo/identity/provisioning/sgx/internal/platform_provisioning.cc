@@ -33,6 +33,15 @@ const uint32_t kPceSvnMaxValue = std::numeric_limits<uint16_t>::max();
 
 const uint32_t kPceIdMaxValue = std::numeric_limits<uint16_t>::max();
 
+Status ValidateConfigurationId(const ConfigurationId &id) {
+  if (!id.has_value()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "ConfigurationId does not have a \"value\" field");
+  }
+
+  return Status::OkStatus();
+}
+
 Status ValidatePpid(const Ppid &ppid) {
   if (!ppid.has_value()) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
