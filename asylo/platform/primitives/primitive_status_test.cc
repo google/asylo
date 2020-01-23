@@ -30,23 +30,57 @@ namespace primitives {
 namespace {
 
 using ::testing::Eq;
+using ::testing::StrEq;
 
-TEST(PrimitiveStatusTest, PrimitiveStatusFromLengthAndSize) {
+std::string MakeTestString(size_t size) {
   std::string buffer;
-  for (int i = 0; i < 256; i++) {
+  for (int i = 0; i < size; i++) {
     buffer.push_back('a' + i % 26);
   }
+  return buffer;
+}
+
+TEST(PrimitiveStatusTest, PrimitiveStatusFromLengthAndSize) {
+  const std::string kBuffer = MakeTestString(256);
 
   // Construct a PrimitiveStatus from a size and length, and ensure that null
   // termination is handled correctly.
-  for (int i = 0; i < buffer.size(); i++) {
-    for (int j = i; j < buffer.size(); j++) {
-      const char *data = buffer.data() + i;
+  for (int i = 0; i < kBuffer.size(); i++) {
+    for (int j = i; j < kBuffer.size(); j++) {
+      const char *data = kBuffer.data() + i;
       size_t length = j - i;
       PrimitiveStatus status{0, data, length};
-      EXPECT_THAT(status.error_message(), Eq(buffer.substr(i, length)));
+      EXPECT_THAT(status.error_message(), Eq(kBuffer.substr(i, length)));
     }
   }
+}
+
+TEST(PrimitiveStatusTest, MessageTooLarge) {
+  // PrimitiveStatus can only fit kMessageMax-1 characters, because it must
+  // account for the nul terminator.
+  const std::string kMessage = MakeTestString(PrimitiveStatus::kMessageMax);
+  PrimitiveStatus status{0, kMessage};
+  EXPECT_THAT(status.error_message(),
+              Eq(kMessage.substr(0, PrimitiveStatus::kMessageMax - 1)));
+}
+
+TEST(PrimitiveStatusTest, CopyConstruction) {
+  const std::string kMessage = "Lorem ipsum";
+  PrimitiveStatus original{0, kMessage};
+  PrimitiveStatus copy{original};
+
+  EXPECT_THAT(original.error_code(), Eq(copy.error_code()));
+  EXPECT_THAT(original.error_message(), StrEq(copy.error_message()));
+}
+
+TEST(PrimitiveStatusTest, Asignment) {
+  const std::string kMessage = "This is a test message";
+  PrimitiveStatus original{0, kMessage};
+  PrimitiveStatus copy{-1};
+
+  copy = original;
+  EXPECT_THAT(original.error_code(), Eq(copy.error_code()));
+  EXPECT_THAT(original.error_message(), StrEq(copy.error_message()));
 }
 
 }  // namespace

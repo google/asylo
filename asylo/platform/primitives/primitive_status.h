@@ -112,6 +112,7 @@ class PrimitiveStatus {
     error_code_ = other.error_code_;
     size_t size = std::min(strlen(other.message_), kMessageMax - 1);
     memcpy(message_, other.message_, size);
+    message_[size] = '\0';
     return *this;
   }
 
