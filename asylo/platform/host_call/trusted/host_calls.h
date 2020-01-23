@@ -191,20 +191,21 @@ int32_t *enc_untrusted_create_wait_queue();
 
 // Destroys a wait queue, and releases all corresponding resources. All threads
 // currently waiting will remain asleep indefinitely.
-void enc_untrusted_destroy_wait_queue(int32_t *queue);
+void enc_untrusted_destroy_wait_queue(int32_t *const queue);
 
 // Enqueues the calling thread in the given queue, and wakes it up after
 // `timeout_microsec` microseconds if it hasn't been woken earlier.
-void enc_untrusted_thread_wait(int32_t *queue, uint64_t timeout_microsec = 0);
+void enc_untrusted_thread_wait(int32_t *const queue,
+                               uint64_t timeout_microsec = 0);
 
 // Wake one or more threads currently waiting on the wait queue.
-void enc_untrusted_notify(int32_t *queue, int32_t num_threads = 1);
+void enc_untrusted_notify(int32_t *const queue, int32_t num_threads = 1);
 
 // Disable waiting on the given wait queue.
-void enc_untrusted_disable_waiting(int32_t *queue);
+void enc_untrusted_disable_waiting(int32_t *const queue);
 
 // Enable waiting on the given wait queue.
-void enc_untrusted_enable_waiting(int32_t *queue);
+void enc_untrusted_enable_waiting(int32_t *const queue);
 
 #ifdef __cplusplus
 }  // extern "C"

@@ -248,13 +248,9 @@ cc_library(
     hdrs = ["trusted_mutex.h"],
     copts = ASYLO_DEFAULT_COPTS,
     tags = ASYLO_ALL_BACKEND_TAGS,
-    deps = select(
-        {"@com_google_asylo//asylo": [
-            ":trusted_spin_lock",
-            ":untrusted_mutex",
-            "//asylo/platform/primitives:trusted_backend",
-            "//asylo/platform/primitives:trusted_primitives",
-        ]},
-        no_match_error = "Must be built with the Asylo toolchain.",
-    ),
+    deps = [
+        ":atomic",
+        ":trusted_spin_lock",
+        "//asylo/platform/host_call",
+    ],
 )

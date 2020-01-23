@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2018 Asylo authors
+ * Copyright 2020 Asylo authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,10 +19,7 @@
 #ifndef ASYLO_PLATFORM_CORE_TRUSTED_MUTEX_H_
 #define ASYLO_PLATFORM_CORE_TRUSTED_MUTEX_H_
 
-#include <cstdint>
-
 #include "asylo/platform/core/trusted_spin_lock.h"
-#include "asylo/platform/core/untrusted_mutex.h"
 
 namespace asylo {
 
@@ -62,8 +59,16 @@ class TrustedMutex {
   void Unlock();
 
  private:
-  UntrustedMutex untrusted_mutex_;
+  // The source of truth for locking.
   TrustedSpinLock trusted_spin_lock_;
+  // A pointer to an untrusted wait queue maintained by the OS. Likely
+  // implemented via the futex syscall, with the pointer to the 4 byte
+  // futex word.
+  int32_t *const wait_queue_;
+  // By keeping track of the number of threads asleep on the wait
+  // queue, we can avoid an expensive wake operation in some common
+  // cases.
+  volatile uint32_t number_threads_asleep_;
 };
 
 }  // namespace asylo

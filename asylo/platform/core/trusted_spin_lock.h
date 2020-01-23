@@ -75,6 +75,15 @@ class alignas(kCacheLineSize) TrustedSpinLock {
   // must be unlocked a corresponding number of times before being released.
   void Unlock();
 
+  // IMPORTANT: Only safe to call from a thread which currently holds
+  // the TrustedSpinLock. Used to determine if next unlock or previous
+  // lock operation actually changed the state of the lock (from
+  // Unlocked to Locked or vice versa). Useful for building efficient
+  // recursive locks which use TrustedSpinLock as their source of
+  // truth. Will return true if locked and not recursive, false if
+  // unlocked and not recursive.
+  bool LockDepthIsOne();
+
  private:
   // A synchronization value in untrusted memory, aligned to a cache line.
   volatile uint32_t spin_lock_;

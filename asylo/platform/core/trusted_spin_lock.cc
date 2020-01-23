@@ -91,4 +91,13 @@ void TrustedSpinLock::Unlock() {
   }
 }
 
+bool TrustedSpinLock::LockDepthIsOne() {
+  ValidateSpinLock(spin_lock_);
+  if (is_recursive_) {
+    return recursive_lock_count_ == 1;
+  } else {
+    return spin_lock_ == TrustedSpinLock::kLocked;
+  }
+}
+
 }  // namespace asylo
