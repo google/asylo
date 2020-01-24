@@ -15,11 +15,12 @@
 #
 
 load("//asylo/bazel:asylo.bzl", "cc_unsigned_enclave", "debug_sign_enclave", "enclave_loader")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
-licenses(["notice"])  # Apache v2.0
+licenses(["notice"])
 
 package(
     default_visibility = ["//visibility:public"],
@@ -60,16 +61,22 @@ debug_sign_enclave(
 enclave_loader(
     name = "quickstart",
     srcs = ["demo_driver.cc"],
+    backends = sgx.backend_labels,  # Has SGX loader dependencies
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":demo_enclave.so"},
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":demo_cc_proto",
-        "//asylo:enclave_cc_proto",
-        "//asylo:enclave_client",
-        "//asylo/platform/primitives/sgx:loader_cc_proto",
-        "//asylo/util:logging",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
-    ],
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_client",
+        "//asylo/util:logging",
+    ] + select(
+        {
+            "@linux_sgx//:sgx_hw": ["//asylo/platform/primitives/sgx:loader_cc_proto"],
+            "@linux_sgx//:sgx_sim": ["//asylo/platform/primitives/sgx:loader_cc_proto"],
+        },
+        no_match_error = "quickstart is only configured to use the SGX backends",
+    ),
 )
