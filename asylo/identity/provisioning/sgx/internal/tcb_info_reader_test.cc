@@ -20,18 +20,20 @@
 
 #include <string>
 #include <tuple>
+#include <utility>
 
 #include <google/protobuf/text_format.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "asylo/test/util/status_matchers.h"
+#include "asylo/util/status.h"
 
 namespace asylo {
 namespace sgx {
 namespace {
 
-using ::testing::Eq;
 using ::testing::TestWithParam;
 using ::testing::Values;
 
@@ -125,12 +127,32 @@ constexpr char kExtendedPckCertificates[] =
   }
     )proto";
 
-class TcbInfoReaderTest
+TEST(TcbInfoReaderTest, CreateFailsOnInvalidTcbInfo) {
+  EXPECT_THAT(TcbInfoReader::Create(TcbInfo()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbInfoReaderTest, GetConsistencyWithFailsOnInvalidPckCertificates) {
+  TcbInfo tcb_info;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kBaseTcbInfo, &tcb_info));
+  TcbInfoReader reader;
+  ASYLO_ASSERT_OK_AND_ASSIGN(reader,
+                             TcbInfoReader::Create(std::move(tcb_info)));
+
+  PckCertificates pck_certificates;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kBasePckCertificates,
+                                                  &pck_certificates));
+  pck_certificates.mutable_certs(0)->clear_cert();
+  EXPECT_THAT(reader.GetConsistencyWith(pck_certificates),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+class TcbInfoReaderGetConsistencyWithTest
     : public TestWithParam<
           std::tuple<const char *, const char *, ProvisioningConsistency>> {};
 
-TEST_P(TcbInfoReaderTest,
-       TcbInfoReaderIdentifiesConsistencyRelationshipsCorrectly) {
+TEST_P(TcbInfoReaderGetConsistencyWithTest,
+       IdentifiesConsistencyRelationshipsCorrectly) {
   std::string tcb_info_textproto;
   std::string pck_certificates_textproto;
   ProvisioningConsistency expected_consistency;
@@ -140,17 +162,19 @@ TEST_P(TcbInfoReaderTest,
   TcbInfo tcb_info;
   ASSERT_TRUE(
       google::protobuf::TextFormat::ParseFromString(tcb_info_textproto, &tcb_info));
-  TcbInfoReader reader(tcb_info);
+  TcbInfoReader reader;
+  ASYLO_ASSERT_OK_AND_ASSIGN(reader,
+                             TcbInfoReader::Create(std::move(tcb_info)));
 
   PckCertificates pck_certificates;
   ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(pck_certificates_textproto,
                                                   &pck_certificates));
   EXPECT_THAT(reader.GetConsistencyWith(pck_certificates),
-              Eq(expected_consistency));
+              IsOkAndHolds(expected_consistency));
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    AllPossibleConsistencies, TcbInfoReaderTest,
+    AllPossibleConsistencies, TcbInfoReaderGetConsistencyWithTest,
     Values(std::make_tuple(kBaseTcbInfo, kBasePckCertificates,
                            ProvisioningConsistency::kConsistent),
            std::make_tuple(kBaseTcbInfo, kExtendedPckCertificates,

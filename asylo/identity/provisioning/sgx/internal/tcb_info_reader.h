@@ -26,6 +26,7 @@
 #include "asylo/identity/provisioning/sgx/internal/container_util.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/identity/sgx/pck_certificates.pb.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace sgx {
@@ -55,21 +56,25 @@ enum class ProvisioningConsistency {
 // A class that provides provisioning information based on TCB info.
 class TcbInfoReader {
  public:
-  // Constructs a new TcbInfoReader based on |tcb_info|, which must be valid
-  // according to ValidateTcbInfo().
-  explicit TcbInfoReader(const TcbInfo &tcb_info);
+  TcbInfoReader() = default;
+
+  // Creates a new TcbInfoReader based on |tcb_info|. Returns an error if
+  // |tcb_info| is not valid according to ValidateTcbInfo().
+  static StatusOr<TcbInfoReader> Create(TcbInfo tcb_info);
 
   // Returns the consistency relationship between the contained TCB info and
   // |pck_certificates|. See the comments on ProvisioningConsistency for more
   // information on the different possible return values.
   //
-  // The |pck_certificates| must be valid according to
-  // ValidatePckCertificates(). If they are not, then the output will not be
-  // accurate.
-  ProvisioningConsistency GetConsistencyWith(
+  // Returns an error if |pck_ceritifactes| is not valid according to
+  // ValidatePckCertificates().
+  StatusOr<ProvisioningConsistency> GetConsistencyWith(
       const PckCertificates &pck_certificates) const;
 
  private:
+  explicit TcbInfoReader(
+      absl::flat_hash_set<Tcb, absl::Hash<Tcb>, MessageEqual> tcb_levels);
+
   // The TCB levels from the TCB info.
   absl::flat_hash_set<Tcb, absl::Hash<Tcb>, MessageEqual> tcb_levels_;
 };

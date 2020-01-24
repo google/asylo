@@ -25,18 +25,27 @@
 #include "absl/hash/hash.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/identity/provisioning/sgx/internal/container_util.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
+#include "asylo/identity/sgx/pck_certificate_util.h"
+#include "asylo/util/status_macros.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace sgx {
 
-TcbInfoReader::TcbInfoReader(const TcbInfo &tcb_info) {
-  for (const TcbLevel &tcb_level : tcb_info.impl().tcb_levels()) {
-    tcb_levels_.insert(tcb_level.tcb());
+StatusOr<TcbInfoReader> TcbInfoReader::Create(TcbInfo tcb_info) {
+  ASYLO_RETURN_IF_ERROR(ValidateTcbInfo(tcb_info));
+  absl::flat_hash_set<Tcb, absl::Hash<Tcb>, MessageEqual> tcb_levels;
+  for (TcbLevel &tcb_level : *tcb_info.mutable_impl()->mutable_tcb_levels()) {
+    tcb_levels.insert(std::move(*tcb_level.mutable_tcb()));
   }
+  return TcbInfoReader(std::move(tcb_levels));
 }
 
-ProvisioningConsistency TcbInfoReader::GetConsistencyWith(
+StatusOr<ProvisioningConsistency> TcbInfoReader::GetConsistencyWith(
     const PckCertificates &pck_certificates) const {
+  ASYLO_RETURN_IF_ERROR(ValidatePckCertificates(pck_certificates));
   bool tcb_info_missing_level = !std::all_of(
       pck_certificates.certs().begin(), pck_certificates.certs().end(),
       [this](const PckCertificates::PckCertificateInfo &cert_info) {
@@ -69,6 +78,10 @@ ProvisioningConsistency TcbInfoReader::GetConsistencyWith(
     }
   }
 }
+
+TcbInfoReader::TcbInfoReader(
+    absl::flat_hash_set<Tcb, absl::Hash<Tcb>, MessageEqual> tcb_levels)
+    : tcb_levels_(std::move(tcb_levels)) {}
 
 }  // namespace sgx
 }  // namespace asylo

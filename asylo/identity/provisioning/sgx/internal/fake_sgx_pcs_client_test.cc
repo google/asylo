@@ -456,8 +456,10 @@ TEST_P(FakeSgxPcsClientTest,
     ASYLO_ASSERT_OK(ValidatePckCertificates(result.pck_certs));
     ASYLO_ASSERT_OK(ValidateCertificateChain(result.issuer_cert_chain));
 
-    EXPECT_THAT(TcbInfoReader(tcb_info).GetConsistencyWith(result.pck_certs),
-                Eq(ProvisioningConsistency::kConsistent));
+    TcbInfoReader reader;
+    ASYLO_ASSERT_OK_AND_ASSIGN(reader, TcbInfoReader::Create(tcb_info));
+    EXPECT_THAT(reader.GetConsistencyWith(result.pck_certs),
+                IsOkAndHolds(ProvisioningConsistency::kConsistent));
     for (const auto &cert_info : result.pck_certs.certs()) {
       VerifyPckCertificate(cert_info.cert(),
                            ca_type == SgxCaType::PLATFORM
