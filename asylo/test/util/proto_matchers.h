@@ -22,10 +22,12 @@
 #include <google/protobuf/util/message_differencer.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/strings/string_view.h"
 
 namespace asylo {
 
 namespace internal {
+
 template <typename MessageT>
 class ProtoMatcher {
  public:
@@ -34,9 +36,11 @@ class ProtoMatcher {
                    message_comparator)
       : message_(message), message_comparator_(std::move(message_comparator)) {}
 
-  void DescribeTo(std::ostream *os) const { *os << "matches"; }
+  void DescribeTo(std::ostream *os) const { Describe(os, "matches"); }
 
-  void DescribeNegationTo(std::ostream *os) const { *os << "does not match"; }
+  void DescribeNegationTo(std::ostream *os) const {
+    Describe(os, "does not match");
+  }
 
   bool MatchAndExplain(const MessageT &message,
                        ::testing::MatchResultListener *listener) const {
@@ -48,6 +52,11 @@ class ProtoMatcher {
   }
 
  private:
+  void Describe(std::ostream *os, absl::string_view explanation) const {
+    *os << explanation << " " << message_.GetDescriptor()->full_name() << " ";
+    ::testing::internal::UniversalPrint(message_, os);
+  }
+
   const MessageT &message_;
   std::function<bool(const MessageT &, const MessageT &)> message_comparator_;
 };
