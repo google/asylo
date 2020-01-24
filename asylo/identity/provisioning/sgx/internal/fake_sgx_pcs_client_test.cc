@@ -51,12 +51,12 @@
 #include "asylo/util/logging.h"
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
-#include "asylo/identity/provisioning/sgx/internal/provisioning_consistency_checker.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb_info_from_json.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb_info_reader.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/pck_certificate_util.h"
 #include "asylo/identity/sgx/pck_certificates.pb.h"
@@ -456,8 +456,7 @@ TEST_P(FakeSgxPcsClientTest,
     ASYLO_ASSERT_OK(ValidatePckCertificates(result.pck_certs));
     ASYLO_ASSERT_OK(ValidateCertificateChain(result.issuer_cert_chain));
 
-    EXPECT_THAT(ProvisioningConsistencyChecker(tcb_info).GetConsistencyWith(
-                    result.pck_certs),
+    EXPECT_THAT(TcbInfoReader(tcb_info).GetConsistencyWith(result.pck_certs),
                 Eq(ProvisioningConsistency::kConsistent));
     for (const auto &cert_info : result.pck_certs.certs()) {
       VerifyPckCertificate(cert_info.cert(),

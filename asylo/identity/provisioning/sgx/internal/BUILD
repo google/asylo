@@ -158,12 +158,12 @@ cc_test(
         ":fake_sgx_pcs_client",
         ":fake_sgx_pki",
         ":platform_provisioning_cc_proto",
-        ":provisioning_consistency_checker",
         ":sgx_pcs_client",
         ":sgx_pcs_client_cc_proto",
         ":tcb",
         ":tcb_cc_proto",
         ":tcb_info_from_json",
+        ":tcb_info_reader",
         "//asylo/crypto:asn1",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:certificate_interface",
@@ -269,36 +269,6 @@ cc_test_and_cc_enclave_test(
         "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_google_googletest//:gtest",
-    ],
-)
-
-cc_library(
-    name = "provisioning_consistency_checker",
-    srcs = ["provisioning_consistency_checker.cc"],
-    hdrs = ["provisioning_consistency_checker.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
-    deps = [
-        ":container_util",
-        ":tcb_cc_proto",
-        "//asylo/identity/sgx:pck_certificates_cc_proto",
-        "@com_google_absl//absl/container:flat_hash_set",
-        "@com_google_absl//absl/hash",
-        "@com_google_absl//absl/strings",
-    ],
-)
-
-cc_test_and_cc_enclave_test(
-    name = "provisioning_consistency_checker_test",
-    srcs = ["provisioning_consistency_checker_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":provisioning_consistency_checker",
-        "//asylo/test/util:test_main",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:span",
-        "@com_google_googletest//:gtest",
-        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -508,6 +478,36 @@ cc_test_and_cc_enclave_test(
         "@com_google_absl//absl/types:span",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:cc_wkt_protos",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_library(
+    name = "tcb_info_reader",
+    srcs = ["tcb_info_reader.cc"],
+    hdrs = ["tcb_info_reader.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":container_util",
+        ":tcb_cc_proto",
+        "//asylo/identity/sgx:pck_certificates_cc_proto",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/hash",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_test_and_cc_enclave_test(
+    name = "tcb_info_reader_test",
+    srcs = ["tcb_info_reader_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":tcb_info_reader",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
     ],
 )

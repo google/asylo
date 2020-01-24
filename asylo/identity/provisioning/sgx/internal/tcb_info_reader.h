@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PROVISIONING_CONSISTENCY_CHECKER_H_
-#define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PROVISIONING_CONSISTENCY_CHECKER_H_
+#ifndef ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_TCB_INFO_READER_H_
+#define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_TCB_INFO_READER_H_
 
 #include <string>
 
@@ -53,11 +53,11 @@ enum class ProvisioningConsistency {
 };
 
 // A class that provides provisioning information based on TCB info.
-class ProvisioningConsistencyChecker {
+class TcbInfoReader {
  public:
-  // Constructs a new ProvisioningConsistencyChecker based on |tcb_info|, which
-  // must be valid according to ValidateTcbInfo().
-  explicit ProvisioningConsistencyChecker(const TcbInfo &tcb_info);
+  // Constructs a new TcbInfoReader based on |tcb_info|, which must be valid
+  // according to ValidateTcbInfo().
+  explicit TcbInfoReader(const TcbInfo &tcb_info);
 
   // Returns the consistency relationship between the contained TCB info and
   // |pck_certificates|. See the comments on ProvisioningConsistency for more
@@ -77,4 +77,4 @@ class ProvisioningConsistencyChecker {
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PROVISIONING_CONSISTENCY_CHECKER_H_
+#endif  // ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_TCB_INFO_READER_H_

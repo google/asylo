@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/provisioning/sgx/internal/provisioning_consistency_checker.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb_info_reader.h"
 
 #include <string>
 #include <tuple>
@@ -125,13 +125,12 @@ constexpr char kExtendedPckCertificates[] =
   }
     )proto";
 
-class ProvisioningConsistencyCheckerTest
+class TcbInfoReaderTest
     : public TestWithParam<
           std::tuple<const char *, const char *, ProvisioningConsistency>> {};
 
-TEST_P(
-    ProvisioningConsistencyCheckerTest,
-    ProvisioningConsistencyCheckerIdentifiesConsistencyRelationshipsCorrectly) {
+TEST_P(TcbInfoReaderTest,
+       TcbInfoReaderIdentifiesConsistencyRelationshipsCorrectly) {
   std::string tcb_info_textproto;
   std::string pck_certificates_textproto;
   ProvisioningConsistency expected_consistency;
@@ -141,7 +140,7 @@ TEST_P(
   TcbInfo tcb_info;
   ASSERT_TRUE(
       google::protobuf::TextFormat::ParseFromString(tcb_info_textproto, &tcb_info));
-  ProvisioningConsistencyChecker reader(tcb_info);
+  TcbInfoReader reader(tcb_info);
 
   PckCertificates pck_certificates;
   ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(pck_certificates_textproto,
@@ -151,7 +150,7 @@ TEST_P(
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    AllPossibleConsistencies, ProvisioningConsistencyCheckerTest,
+    AllPossibleConsistencies, TcbInfoReaderTest,
     Values(std::make_tuple(kBaseTcbInfo, kBasePckCertificates,
                            ProvisioningConsistency::kConsistent),
            std::make_tuple(kBaseTcbInfo, kExtendedPckCertificates,

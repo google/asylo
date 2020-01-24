@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/provisioning/sgx/internal/provisioning_consistency_checker.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb_info_reader.h"
 
 #include <functional>
 #include <utility>
@@ -29,14 +29,13 @@
 namespace asylo {
 namespace sgx {
 
-ProvisioningConsistencyChecker::ProvisioningConsistencyChecker(
-    const TcbInfo &tcb_info) {
+TcbInfoReader::TcbInfoReader(const TcbInfo &tcb_info) {
   for (const TcbLevel &tcb_level : tcb_info.impl().tcb_levels()) {
     tcb_levels_.insert(tcb_level.tcb());
   }
 }
 
-ProvisioningConsistency ProvisioningConsistencyChecker::GetConsistencyWith(
+ProvisioningConsistency TcbInfoReader::GetConsistencyWith(
     const PckCertificates &pck_certificates) const {
   bool tcb_info_missing_level = !std::all_of(
       pck_certificates.certs().begin(), pck_certificates.certs().end(),
