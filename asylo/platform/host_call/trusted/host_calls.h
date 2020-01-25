@@ -133,6 +133,7 @@ int enc_untrusted_utime(const char *filename, const struct utimbuf *times);
 int enc_untrusted_getrusage(int who, struct rusage *usage);
 int enc_untrusted_uname(struct utsname *buf);
 void enc_untrusted_syslog(int priority, const char *message, int len);
+int enc_untrusted_ioctl1(int fd, uint64_t request);
 
 // Calls to library functions delegated to the host are defined below.
 int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp);

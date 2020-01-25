@@ -1566,4 +1566,9 @@ int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
   return result;
 }
 
+int enc_untrusted_ioctl1(int fd, uint64_t request) {
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_ioctl, fd,
+                                             request);
+}
+
 }  // extern "C"

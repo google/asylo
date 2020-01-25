@@ -67,7 +67,11 @@ int IOContextSecure::Ioctl(int request, void *argp) {
           host_fd_, ioctl_param->data, ioctl_param->length);
     }
     default:
-      errno = ENOSYS;
+      if (argp != nullptr) {
+        errno = ENOSYS;
+        return -1;
+      }
+      return enc_untrusted_ioctl1(host_fd_, request);
   }
 
   return -1;
