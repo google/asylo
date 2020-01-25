@@ -80,6 +80,17 @@ cc_library(
     ],
 )
 
+# A shared trusted runtime component that generates many bytes of randomness
+# with RDRAND.
+cc_library(
+    name = "random_bytes",
+    srcs = ["random_bytes.cc"],
+    hdrs = ["random_bytes.h"],
+    copts = ["-mrdrnd"],
+    visibility = ["//asylo:implementation"],
+    deps = [":trusted_runtime"],
+)
+
 # Primitive API headers for untrusted code.
 cc_library(
     name = "untrusted_primitives",

@@ -27,7 +27,7 @@ namespace asylo {
 // IOContext implementation that returns random data on reads.
 class RandomIOContext : public io::IOManager::IOContext {
  public:
-  RandomIOContext(bool is_urandom) : is_urandom_(is_urandom) {}
+  RandomIOContext(bool is_urandom, int fd) : is_urandom_(is_urandom), fd_(fd) {}
   const bool &IsURandom() const { return is_urandom_; }
 
  protected:
@@ -41,6 +41,7 @@ class RandomIOContext : public io::IOManager::IOContext {
 
  private:
   bool is_urandom_;
+  int fd_;
 };
 
 // VirtualPathHandler implementation that represents random devices.

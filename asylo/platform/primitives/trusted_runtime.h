@@ -42,6 +42,8 @@ extern "C" {
 // Exit the current process.
 void enc_exit(int rc);
 
+// Writes `count`-many random bytes into `buf` with a hardware source of
+// randomness.
 ssize_t enc_hardware_random(uint8_t *buf, size_t count);
 
 // Registers a signal handler on the host.

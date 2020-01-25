@@ -16,6 +16,7 @@
  *
  */
 
+#include <cpuid.h>
 #include <immintrin.h>
 #include <stdlib.h>
 #include <string.h>
@@ -55,10 +56,28 @@ static void CalculateAlignment(const void *buf, size_t size, size_t align_size,
   *partial_bytes = size - *unaligned_bytes - (*aligned_count * align_size);
 }
 
+static bool cpuid_rdrand() {
+  unsigned int eax, ebx, ecx, edx;
+  __cpuid(0, eax, ebx, ecx, edx);
+  // Bit 30 of ECX is set => machine supports RDRAND.
+  return !!(ecx & (1 << 30));
+}
+
 }  // namespace
 
-// Fills given buffer with random values generated with the rdrand instruction.
+namespace asylo {
+
+bool rdrand_supported() {
+  static bool supported = cpuid_rdrand();
+  return supported;
+}
+
+}  // namespace asylo
+
 extern "C" ssize_t enc_hardware_random(uint8_t *buf, size_t count) {
+  if (!asylo::rdrand_supported()) {
+    return count;
+  }
   size_t unaligned_bytes;
   size_t aligned_count;
   size_t partial_bytes;

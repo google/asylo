@@ -60,6 +60,7 @@ _TRUSTED_SGX_BACKEND_DEPS = [
     "//asylo/platform/posix/signal:signal_manager",
     "//asylo/platform/posix/threading:thread_manager",
     "//asylo/platform/primitives",
+    "//asylo/platform/primitives:random_bytes",
     "//asylo/platform/primitives/util:trusted_runtime_helper",
     "//asylo/util:error_codes",
     "//asylo/util:status",
@@ -68,12 +69,10 @@ _TRUSTED_SGX_BACKEND_DEPS = [
 ]
 
 _TRUSTED_SGX_HW_SRCS = [
-    "hardware_random_sgx_hw.cc",
     "register_signal_sgx_hw.cc",
 ]
 
 _TRUSTED_SGX_SIM_SRCS = [
-    "hardware_random_sgx_sim.cc",
     "register_signal_sgx_sim.cc",
 ]
 
@@ -96,15 +95,7 @@ cc_library(
         "trusted_sgx.h",
         "untrusted_cache_malloc.h",
     ],
-    copts = select(
-        {
-            "@linux_sgx//:sgx_hw": [
-                "-mrdrnd",  # All SGX chips also support RDRAND
-            ],
-            "@linux_sgx//:sgx_sim": [],
-        },
-        "Must be built for SGX hardware or simulation backend",
-    ) + ASYLO_DEFAULT_COPTS + ["-faligned-new"],
+    copts = ["-faligned-new"],
     tags = [
         "asylo-sgx",
         "manual",
