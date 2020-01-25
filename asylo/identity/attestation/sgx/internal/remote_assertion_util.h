@@ -22,8 +22,10 @@
 #include <string>
 #include <vector>
 
-#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/certificate_interface.h"
+#include "asylo/crypto/certificate_util.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
@@ -49,15 +51,15 @@ Status MakeRemoteAssertion(const std::string &user_data,
 //   * |assertion| provides a certificate chain for |assertion|.verifying_key()
 //     for each root certificate in |additional_root_certificates|.
 //   * Asserts that there is an Intel certificate chain using
-//     |intel_root_verifying_key_der| and checks that the chain asserts an
-//     identity matching |age_identity_expectation|. The Intel root certificate
-//     should not be included in |additional_root_certificates|.
+//     |intel_root| and checks that the chain asserts an identity matching
+//     |age_identity_expectation|. The Intel root certificate should not be
+//     included in |additional_root_certificates|.
 //
 // On success, extracts the peer's verified SgxIdentity to |identity|.
 Status VerifyRemoteAssertion(
     const std::string &user_data, const RemoteAssertion &assertion,
-    absl::string_view intel_root_verifying_key_der,
-    const std::vector<Certificate> &additional_root_certificates,
+    const CertificateInterface &intel_root,
+    CertificateInterfaceSpan additional_root_certificates,
     const IdentityAclPredicate &age_identity_expectation,
     SgxIdentity *identity);
 

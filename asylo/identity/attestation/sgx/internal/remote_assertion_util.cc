@@ -27,6 +27,7 @@
 
 #include <google/protobuf/util/message_differencer.h>
 #include "absl/container/flat_hash_set.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -34,6 +35,7 @@
 #include "absl/types/span.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/certificate_interface.h"
 #include "asylo/crypto/certificate_util.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
@@ -82,8 +84,8 @@ StatusOr<std::unique_ptr<VerifyingKey>> CreateVerifyingKey(
 StatusOr<CertificateInterfaceVector>
 VerifyCertificateChainsAndExtractIntelCertificateChain(
     const google::protobuf::RepeatedPtrField<CertificateChain> &certificate_chains,
-    absl::string_view intel_root_verifying_key_der,
-    std::vector<Certificate> additional_root_certificates,
+    const CertificateInterface &intel_root,
+    CertificateInterfaceSpan additional_root_certificates,
     absl::string_view verifying_key_der) {
   CertificateInterfaceVector intel_cert_chain;
   CertificateFactoryMap factory_map;
@@ -113,10 +115,8 @@ VerifyCertificateChainsAndExtractIntelCertificateChain(
           "Failed to verify certificate chain with root cert ",
           certificate_chain.certificates().rbegin()->ShortDebugString()));
     }
-    std::string root_subject_key;
-    ASYLO_ASSIGN_OR_RETURN(root_subject_key,
-                           certificate_vector.rbegin()->get()->SubjectKeyDer());
-    if (root_subject_key == intel_root_verifying_key_der) {
+
+    if (*certificate_vector.back() == intel_root) {
       intel_cert_chain = std::move(certificate_vector);
     } else {
       verified_root_certificates.emplace_back(
@@ -131,23 +131,21 @@ VerifyCertificateChainsAndExtractIntelCertificateChain(
 
   // For each of the required root certificates, verify that there is a valid
   // certificate chain with that root certificate.
-  for (const Certificate &required_root_certificate_proto :
+  for (const std::unique_ptr<CertificateInterface> &required_root_certificate :
        additional_root_certificates) {
-    std::unique_ptr<CertificateInterface> required_root_certificate;
-    ASYLO_ASSIGN_OR_RETURN(required_root_certificate,
-                           CreateCertificateInterface(
-                               factory_map, required_root_certificate_proto));
     if (!std::any_of(verified_root_certificates.begin(),
                      verified_root_certificates.end(),
                      [&required_root_certificate](
                          const std::unique_ptr<CertificateInterface> &other) {
                        return *required_root_certificate == *other;
                      })) {
-      return Status(
-          error::GoogleError::INVALID_ARGUMENT,
-          absl::StrCat("Remote attestation missing certificate chain "
-                       "for root certificate: ",
-                       required_root_certificate_proto.ShortDebugString()));
+      std::string subject_key;
+      ASYLO_ASSIGN_OR_RETURN(subject_key,
+                             required_root_certificate->SubjectKeyDer());
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    absl::StrCat("Remote attestation missing certificate chain "
+                                 "for root certificate with subject key: ",
+                                 absl::BytesToHexString(subject_key)));
     }
   }
 
@@ -258,8 +256,8 @@ Status MakeRemoteAssertion(const std::string &user_data,
 
 Status VerifyRemoteAssertion(
     const std::string &user_data, const RemoteAssertion &assertion,
-    absl::string_view intel_root_verifying_key_der,
-    const std::vector<Certificate> &additional_root_certificates,
+    const CertificateInterface &intel_root,
+    CertificateInterfaceSpan additional_root_certificates,
     const IdentityAclPredicate &age_identity_expectation,
     SgxIdentity *identity) {
   // Verify that the user data matches the user data in the payload.
@@ -298,11 +296,10 @@ Status VerifyRemoteAssertion(
       verifying_key->Verify(assertion.payload(), assertion.signature()));
 
   CertificateInterfaceVector intel_cert_chain;
-  ASYLO_ASSIGN_OR_RETURN(
-      intel_cert_chain,
-      VerifyCertificateChainsAndExtractIntelCertificateChain(
-          assertion.certificate_chains(), intel_root_verifying_key_der,
-          additional_root_certificates, verifying_key_der));
+  ASYLO_ASSIGN_OR_RETURN(intel_cert_chain,
+                         VerifyCertificateChainsAndExtractIntelCertificateChain(
+                             assertion.certificate_chains(), intel_root,
+                             additional_root_certificates, verifying_key_der));
   if (intel_cert_chain.size() < kIntelCertChainMinimumLength) {
     return Status(
         error::GoogleError::INVALID_ARGUMENT,

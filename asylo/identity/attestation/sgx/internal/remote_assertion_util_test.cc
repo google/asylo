@@ -34,6 +34,7 @@
 #include "absl/time/clock.h"
 #include "asylo/crypto/asn1.h"
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/certificate_interface.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/fake_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
@@ -58,10 +59,10 @@ namespace {
 
 struct RemoteAssertionInputs {
   std::vector<CertificateChain> certificate_chains;
-  std::vector<Certificate> required_roots;
+  CertificateInterfaceVector required_roots;
   SgxIdentity self_identity;
   std::unique_ptr<SigningKey> attestation_signing_key;
-  std::string intel_root_key_der;
+  std::unique_ptr<CertificateInterface> intel_root;
   IdentityAclPredicate age_expectation;
 };
 
@@ -128,11 +129,10 @@ constexpr char kUserData[] = "User Data";
 
 constexpr char kCpuSvn[] = "fedcba9876543210";
 
-StatusOr<Certificate> CreateX509Certificate(const VerifyingKey &subject_key,
-                                            const std::string &subject_name,
-                                            const SigningKey &issuer_key,
-                                            const std::string &issuer_name,
-                                            bool is_ca, bool pck_cert = false) {
+StatusOr<std::unique_ptr<CertificateInterface>> CreateX509Certificate(
+    const VerifyingKey &subject_key, const std::string &subject_name,
+    const SigningKey &issuer_key, const std::string &issuer_name, bool is_ca,
+    bool pck_cert) {
   X509CertificateBuilder builder;
 
   bssl::UniquePtr<BIGNUM> serial_number(BN_new());
@@ -182,9 +182,19 @@ StatusOr<Certificate> CreateX509Certificate(const VerifyingKey &subject_key,
   }
 
   std::unique_ptr<X509Certificate> x509_certificate;
-  ASYLO_ASSIGN_OR_RETURN(x509_certificate, builder.SignAndBuild(issuer_key));
+  return builder.SignAndBuild(issuer_key);
+}
 
-  return x509_certificate->ToCertificateProto(Certificate::X509_PEM);
+StatusOr<Certificate> CreateX509CertProto(const VerifyingKey &subject_key,
+                                          const std::string &subject_name,
+                                          const SigningKey &issuer_key,
+                                          const std::string &issuer_name,
+                                          bool is_ca, bool pck_cert = false) {
+  std::unique_ptr<CertificateInterface> x509_cert;
+  ASYLO_ASSIGN_OR_RETURN(
+      x509_cert, CreateX509Certificate(subject_key, subject_name, issuer_key,
+                                       issuer_name, is_ca, pck_cert));
+  return x509_cert->ToCertificateProto(Certificate::X509_PEM);
 }
 
 Certificate Cert(Certificate::CertificateFormat format,
@@ -205,7 +215,7 @@ SgxIdentity GetSelfRemoteIdentity() {
 }
 
 Status GenerateIntelChain(bool include_pck_cert, CertificateChain *intel_chain,
-                          std::string *intel_root_key_der) {
+                          std::unique_ptr<CertificateInterface> *intel_root) {
   intel_chain->clear_certificates();
 
   *intel_chain->add_certificates() =
@@ -221,9 +231,9 @@ Status GenerateIntelChain(bool include_pck_cert, CertificateChain *intel_chain,
                          EcdsaP256Sha256SigningKey::Create());
   ASYLO_ASSIGN_OR_RETURN(
       *intel_chain->add_certificates(),
-      CreateX509Certificate(*pck_verifying_key, "PCK cert",
-                            *intermediate_signing_key, "Intel processor cert",
-                            /*is_ca=*/false, include_pck_cert));
+      CreateX509CertProto(*pck_verifying_key, "PCK cert",
+                          *intermediate_signing_key, "Intel processor cert",
+                          /*is_ca=*/false, include_pck_cert));
 
   std::unique_ptr<VerifyingKey> intermediate_verifying_key;
   ASYLO_ASSIGN_OR_RETURN(intermediate_verifying_key,
@@ -233,21 +243,24 @@ Status GenerateIntelChain(bool include_pck_cert, CertificateChain *intel_chain,
                          EcdsaP256Sha256SigningKey::Create());
   ASYLO_ASSIGN_OR_RETURN(
       *intel_chain->add_certificates(),
-      CreateX509Certificate(*intermediate_verifying_key, "Intel processor cert",
-                            *intel_root_signing_key, "Intel root CA",
-                            /*is_ca=*/true));
+      CreateX509CertProto(*intermediate_verifying_key, "Intel processor cert",
+                          *intel_root_signing_key, "Intel root CA",
+                          /*is_ca=*/true));
 
   std::unique_ptr<VerifyingKey> intel_root_verifying_key;
   ASYLO_ASSIGN_OR_RETURN(intel_root_verifying_key,
                          intel_root_signing_key->GetVerifyingKey());
+
   ASYLO_ASSIGN_OR_RETURN(
-      *intel_chain->add_certificates(),
+      *intel_root,
       CreateX509Certificate(*intel_root_verifying_key, "Intel root CA",
                             *intel_root_signing_key, "Intel root CA",
-                            /*is_ca=*/true));
+                            /*is_ca=*/true, /*pck_cert=*/false));
 
-  ASYLO_ASSIGN_OR_RETURN(*intel_root_key_der,
-                         intel_root_verifying_key->SerializeToDer());
+  ASYLO_ASSIGN_OR_RETURN(
+      *intel_chain->add_certificates(),
+      intel_root->get()->ToCertificateProto(Certificate::X509_PEM));
+
   return Status::OkStatus();
 }
 
@@ -255,7 +268,7 @@ StatusOr<RemoteAssertionInputs> GenerateRemoteAssertionInputs() {
   RemoteAssertionInputs inputs;
   CertificateChain intel_chain;
   ASYLO_RETURN_IF_ERROR(GenerateIntelChain(
-      /*include_pck_cert=*/true, &intel_chain, &inputs.intel_root_key_der));
+      /*include_pck_cert=*/true, &intel_chain, &inputs.intel_root));
 
   CertificateChain required_chain;
 
@@ -271,23 +284,28 @@ StatusOr<RemoteAssertionInputs> GenerateRemoteAssertionInputs() {
                          EcdsaP256Sha256SigningKey::Create());
   ASYLO_ASSIGN_OR_RETURN(
       *required_chain.add_certificates(),
-      CreateX509Certificate(*attestation_verifying_key, "Other user cert",
-                            *required_root_signing_key, "Required root CA",
-                            /*is_ca=*/false));
+      CreateX509CertProto(*attestation_verifying_key, "Other user cert",
+                          *required_root_signing_key, "Required root CA",
+                          /*is_ca=*/false));
 
   std::unique_ptr<VerifyingKey> required_root_verifying_key;
   ASYLO_ASSIGN_OR_RETURN(required_root_verifying_key,
                          required_root_signing_key->GetVerifyingKey());
+
+  std::unique_ptr<CertificateInterface> required_root;
   ASYLO_ASSIGN_OR_RETURN(
-      *required_chain.add_certificates(),
+      required_root,
       CreateX509Certificate(*required_root_verifying_key, "Required root CA",
                             *required_root_signing_key, "Required root CA",
-                            /*is_ca=*/true));
+                            /*is_ca=*/true, /*pck_cert=*/false));
+  ASYLO_ASSIGN_OR_RETURN(
+      *required_chain.add_certificates(),
+      required_root->ToCertificateProto(Certificate::X509_DER));
 
   inputs.certificate_chains.push_back(intel_chain);
   inputs.certificate_chains.push_back(required_chain);
 
-  inputs.required_roots.push_back(*required_chain.certificates().rbegin());
+  inputs.required_roots.push_back(std::move(required_root));
 
   inputs.self_identity = GetSelfRemoteIdentity();
 
@@ -352,49 +370,9 @@ TEST(RemoteAssertionUtilTest, MakeAndVerifyRemoteAssertionSucceeds) {
 
   SgxIdentity actual_identity;
   ASYLO_ASSERT_OK(VerifyRemoteAssertion(
-      kUserData, assertion, inputs.intel_root_key_der, inputs.required_roots,
+      kUserData, assertion, *inputs.intel_root, inputs.required_roots,
       inputs.age_expectation, &actual_identity));
   EXPECT_THAT(actual_identity, EqualsProto(inputs.self_identity));
-}
-
-TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionDerRootEncodingsSuccess) {
-  RemoteAssertionInputs inputs;
-  ASYLO_ASSERT_OK_AND_ASSIGN(inputs, GenerateRemoteAssertionInputs());
-
-  RemoteAssertion assertion;
-  ASYLO_ASSERT_OK(MakeRemoteAssertion(kUserData, inputs.self_identity,
-                                      *inputs.attestation_signing_key,
-                                      inputs.certificate_chains, &assertion));
-
-  std::unique_ptr<X509Certificate> required_root;
-  ASYLO_ASSERT_OK_AND_ASSIGN(required_root,
-                             X509Certificate::Create(inputs.required_roots[0]));
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      inputs.required_roots[0],
-      required_root->ToCertificateProto(Certificate::X509_DER));
-
-  SgxIdentity actual_identity;
-  ASYLO_EXPECT_OK(VerifyRemoteAssertion(
-      kUserData, assertion, inputs.intel_root_key_der, inputs.required_roots,
-      inputs.age_expectation, &actual_identity));
-}
-
-TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionOtherPemEncodingSuccess) {
-  RemoteAssertionInputs inputs;
-  ASYLO_ASSERT_OK_AND_ASSIGN(inputs, GenerateRemoteAssertionInputs());
-
-  RemoteAssertion assertion;
-  ASYLO_ASSERT_OK(MakeRemoteAssertion(kUserData, inputs.self_identity,
-                                      *inputs.attestation_signing_key,
-                                      inputs.certificate_chains, &assertion));
-
-  inputs.required_roots[0].set_data(
-      absl::StrCat(inputs.required_roots[0].data(), "\n\n"));
-
-  SgxIdentity actual_identity;
-  ASYLO_EXPECT_OK(VerifyRemoteAssertion(
-      kUserData, assertion, inputs.intel_root_key_der, inputs.required_roots,
-      inputs.age_expectation, &actual_identity));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMissingRequiredChain) {
@@ -409,11 +387,10 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMissingRequiredChain) {
                                       inputs.certificate_chains, &assertion));
 
   SgxIdentity actual_identity;
-  EXPECT_THAT(
-      VerifyRemoteAssertion(kUserData, assertion, inputs.intel_root_key_der,
-                            inputs.required_roots, inputs.age_expectation,
-                            &actual_identity),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
+                                    inputs.required_roots,
+                                    inputs.age_expectation, &actual_identity),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST(RemoteAssertionUtilTest,
@@ -430,11 +407,10 @@ TEST(RemoteAssertionUtilTest,
                                       inputs.certificate_chains, &assertion));
 
   SgxIdentity actual_identity;
-  EXPECT_THAT(
-      VerifyRemoteAssertion(kUserData, assertion, inputs.intel_root_key_der,
-                            inputs.required_roots, inputs.age_expectation,
-                            &actual_identity),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
+                                    inputs.required_roots,
+                                    inputs.age_expectation, &actual_identity),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMissingIntelChain) {
@@ -449,11 +425,10 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMissingIntelChain) {
                                       inputs.certificate_chains, &assertion));
 
   SgxIdentity actual_identity;
-  EXPECT_THAT(
-      VerifyRemoteAssertion(kUserData, assertion, inputs.intel_root_key_der,
-                            inputs.required_roots, inputs.age_expectation,
-                            &actual_identity),
-      StatusIs(error::GoogleError::UNAUTHENTICATED));
+  EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
+                                    inputs.required_roots,
+                                    inputs.age_expectation, &actual_identity),
+              StatusIs(error::GoogleError::UNAUTHENTICATED));
 }
 
 TEST(RemoteAssertionUtilTest,
@@ -473,11 +448,10 @@ TEST(RemoteAssertionUtilTest,
                                       inputs.certificate_chains, &assertion));
 
   SgxIdentity actual_identity;
-  EXPECT_THAT(
-      VerifyRemoteAssertion(kUserData, assertion, inputs.intel_root_key_der,
-                            inputs.required_roots, inputs.age_expectation,
-                            &actual_identity),
-      StatusIs(error::GoogleError::UNAUTHENTICATED));
+  EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
+                                    inputs.required_roots,
+                                    inputs.age_expectation, &actual_identity),
+              StatusIs(error::GoogleError::UNAUTHENTICATED));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionIntelChainMissingAgeCert) {
@@ -493,9 +467,9 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionIntelChainMissingAgeCert) {
                              inputs.attestation_signing_key->GetVerifyingKey());
   ASYLO_ASSERT_OK_AND_ASSIGN(
       *inputs.certificate_chains[0].mutable_certificates(0),
-      CreateX509Certificate(*attestation_verifying_key,
-                            /*subject_name=*/"AK Cert", *pck_signing_key,
-                            /*issuer_name=*/"PCK Cert", /*is_ca=*/false));
+      CreateX509CertProto(*attestation_verifying_key,
+                          /*subject_name=*/"AK Cert", *pck_signing_key,
+                          /*issuer_name=*/"PCK Cert", /*is_ca=*/false));
 
   RemoteAssertion assertion;
   ASYLO_ASSERT_OK(MakeRemoteAssertion(kUserData, inputs.self_identity,
@@ -503,11 +477,10 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionIntelChainMissingAgeCert) {
                                       inputs.certificate_chains, &assertion));
 
   SgxIdentity actual_identity;
-  EXPECT_THAT(
-      VerifyRemoteAssertion(kUserData, assertion, inputs.intel_root_key_der,
-                            inputs.required_roots, inputs.age_expectation,
-                            &actual_identity),
-      StatusIs(error::GoogleError::UNAUTHENTICATED));
+  EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
+                                    inputs.required_roots,
+                                    inputs.age_expectation, &actual_identity),
+              StatusIs(error::GoogleError::UNAUTHENTICATED));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionIntelChainMissingPckCert) {
@@ -517,7 +490,7 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionIntelChainMissingPckCert) {
   // Reset the Intel chain to have the intermediate cert assert the PCK.
   ASSERT_NO_FATAL_FAILURE(GenerateIntelChain(/*include_pck_cert=*/false,
                                              &inputs.certificate_chains[0],
-                                             &inputs.intel_root_key_der));
+                                             &inputs.intel_root));
 
   RemoteAssertion assertion;
   ASYLO_ASSERT_OK(MakeRemoteAssertion(kUserData, inputs.self_identity,
@@ -525,11 +498,10 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionIntelChainMissingPckCert) {
                                       inputs.certificate_chains, &assertion));
 
   SgxIdentity actual_identity;
-  EXPECT_THAT(
-      VerifyRemoteAssertion(kUserData, assertion, inputs.intel_root_key_der,
-                            inputs.required_roots, inputs.age_expectation,
-                            &actual_identity),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
+                                    inputs.required_roots,
+                                    inputs.age_expectation, &actual_identity),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionInvalidSignature) {
@@ -543,11 +515,10 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionInvalidSignature) {
   assertion.set_signature("a");
 
   SgxIdentity actual_identity;
-  EXPECT_THAT(
-      VerifyRemoteAssertion(kUserData, assertion, inputs.intel_root_key_der,
-                            inputs.required_roots, inputs.age_expectation,
-                            &actual_identity),
-      StatusIs(error::GoogleError::INTERNAL));
+  EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
+                                    inputs.required_roots,
+                                    inputs.age_expectation, &actual_identity),
+              StatusIs(error::GoogleError::INTERNAL));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMismatchedUserData) {
@@ -560,11 +531,10 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMismatchedUserData) {
                                       inputs.certificate_chains, &assertion));
 
   SgxIdentity actual_identity;
-  EXPECT_THAT(
-      VerifyRemoteAssertion("Different user data", assertion,
-                            inputs.intel_root_key_der, inputs.required_roots,
-                            inputs.age_expectation, &actual_identity),
-      StatusIs(error::GoogleError::UNAUTHENTICATED));
+  EXPECT_THAT(VerifyRemoteAssertion("Different user data", assertion,
+                                    *inputs.intel_root, inputs.required_roots,
+                                    inputs.age_expectation, &actual_identity),
+              StatusIs(error::GoogleError::UNAUTHENTICATED));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMismatchedSignatureScheme) {
@@ -579,11 +549,10 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMismatchedSignatureScheme) {
       UNKNOWN_SIGNATURE_SCHEME);
 
   SgxIdentity actual_identity;
-  EXPECT_THAT(
-      VerifyRemoteAssertion(kUserData, assertion, inputs.intel_root_key_der,
-                            inputs.required_roots, inputs.age_expectation,
-                            &actual_identity),
-      StatusIs(error::GoogleError::UNAUTHENTICATED));
+  EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
+                                    inputs.required_roots,
+                                    inputs.age_expectation, &actual_identity),
+              StatusIs(error::GoogleError::UNAUTHENTICATED));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionUnknownSignatureScheme) {
@@ -597,11 +566,10 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionUnknownSignatureScheme) {
                                       &assertion));
 
   SgxIdentity actual_identity;
-  EXPECT_THAT(
-      VerifyRemoteAssertion(kUserData, assertion, inputs.intel_root_key_der,
-                            inputs.required_roots, inputs.age_expectation,
-                            &actual_identity),
-      StatusIs(error::GoogleError::UNIMPLEMENTED));
+  EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
+                                    inputs.required_roots,
+                                    inputs.age_expectation, &actual_identity),
+              StatusIs(error::GoogleError::UNIMPLEMENTED));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionInvalidCertificateChain) {
@@ -615,11 +583,10 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionInvalidCertificateChain) {
                                       inputs.certificate_chains, &assertion));
 
   SgxIdentity actual_identity;
-  EXPECT_THAT(
-      VerifyRemoteAssertion(kUserData, assertion, inputs.intel_root_key_der,
-                            inputs.required_roots, inputs.age_expectation,
-                            &actual_identity),
-      StatusIs(error::GoogleError::INTERNAL));
+  EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
+                                    inputs.required_roots,
+                                    inputs.age_expectation, &actual_identity),
+              StatusIs(error::GoogleError::INTERNAL));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionInvalidAgeIdentity) {
@@ -647,11 +614,10 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionInvalidAgeIdentity) {
                              SerializeSgxIdentity(age_modified_sgx_identity));
 
   SgxIdentity actual_identity;
-  EXPECT_THAT(
-      VerifyRemoteAssertion(kUserData, assertion, inputs.intel_root_key_der,
-                            inputs.required_roots, inputs.age_expectation,
-                            &actual_identity),
-      StatusIs(error::GoogleError::UNAUTHENTICATED));
+  EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
+                                    inputs.required_roots,
+                                    inputs.age_expectation, &actual_identity),
+              StatusIs(error::GoogleError::UNAUTHENTICATED));
 }
 
 }  // namespace
