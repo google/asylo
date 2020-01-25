@@ -27,10 +27,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/types/span.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
+#include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave_test_util.h"
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_remote_assertion_generator_test_enclave.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_remote_assertion_generator_test_enclave_wrapper.h"
@@ -56,18 +58,14 @@ ABSL_FLAG(std::string, generator_test_enclave_path, "",
 namespace asylo {
 namespace {
 
+using ::testing::Eq;
+using ::testing::Ge;
+
 constexpr char kAgeName[] = "AGE";
 
 constexpr char kBadCertData[] = "bAD cErT";
 constexpr char kBadConfig[] = "baD cOnFig";
 constexpr char kBadAdditionalInfo[] = "baD inFO";
-
-constexpr char kRootCertificate1[] = R"pb(
-  format: X509_DER data: "CA 1"
-)pb";
-constexpr char kRootCertificate2[] = R"pb(
-  format: X509_DER data: "CA 2"
-)pb";
 
 constexpr char kUserData[] = "User data";
 
@@ -123,14 +121,6 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
         ->MutableExtension(sgx::remote_assertion_generator_enclave_config)
         ->set_remote_assertion_generator_server_address(*server_address_);
 
-    // Load in potential certificates.
-    Certificate root_certificate_1;
-    google::protobuf::TextFormat::ParseFromString(kRootCertificate1, &root_certificate_1);
-    Certificate root_certificate_2;
-    google::protobuf::TextFormat::ParseFromString(kRootCertificate2, &root_certificate_2);
-    root_ca_certificates_ =
-        new std::vector<Certificate>({root_certificate_1, root_certificate_2});
-
     // Create an EnclaveLoadConfig object.
     EnclaveLoadConfig load_config;
     load_config.set_name(kAgeName);
@@ -151,34 +141,31 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     assertion_generator_enclave_client_ = enclave_manager_->GetClient(kAgeName);
 
     // Call AGE::GenerateKeyAndCsr().
+    CertificateChain certificate_chain;
+    ASYLO_ASSIGN_OR_RETURN(certificate_chain,
+                           sgx::GenerateAttestationKeyAndFakeCertificateChain(
+                               assertion_generator_enclave_client_));
+
+    // Call AGE::UpdateCerts().
     EnclaveInput enclave_input;
     EnclaveOutput enclave_output;
-    *enclave_input
-         .MutableExtension(sgx::remote_assertion_generator_enclave_input)
-         ->mutable_generate_key_and_csr_input() =
-        sgx::GenerateKeyAndCsrInput::default_instance();
+    sgx::UpdateCertsInput *update_certs_input =
+        enclave_input
+            .MutableExtension(sgx::remote_assertion_generator_enclave_input)
+            ->mutable_update_certs_input();
+    *update_certs_input->add_certificate_chains() = certificate_chain;
     ASYLO_RETURN_IF_ERROR(assertion_generator_enclave_client_->EnterAndRun(
         enclave_input, &enclave_output));
 
-    // Call AGE::UpdateCerts().
-    enclave_input.Clear();
-    CertificateChain chain_1;
-    *chain_1.add_certificates() = root_certificate_1;
-    CertificateChain chain_2;
-    *chain_1.add_certificates() = root_certificate_2;
-    *enclave_input
-         .MutableExtension(sgx::remote_assertion_generator_enclave_input)
-         ->mutable_update_certs_input()
-         ->add_certificate_chains() = chain_1;
-    *enclave_input
-         .MutableExtension(sgx::remote_assertion_generator_enclave_input)
-         ->mutable_update_certs_input()
-         ->add_certificate_chains() = chain_2;
-    ASYLO_RETURN_IF_ERROR(assertion_generator_enclave_client_->EnterAndRun(
-        enclave_input, &enclave_output));
+    // Save the last two certificates as potential root certificates. The AGE
+    // only produces assertions for |root_ca_certificates_|[0].
+    root_ca_certificates_ = new std::vector<Certificate>(
+        {certificate_chain.certificates().rbegin(),
+         certificate_chain.certificates().rbegin() + 2});
 
     // Call AGE::StartServer().
     enclave_input.Clear();
+    enclave_output.Clear();
     *enclave_input
          .MutableExtension(sgx::remote_assertion_generator_enclave_input)
          ->mutable_start_server_request_input() =
@@ -204,13 +191,13 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
 
   // Creates an assertion request for the SGX AGE remote assertion generator.
   StatusOr<AssertionRequest> MakeAssertionRequest(
-      std::vector<Certificate> *certificates = root_ca_certificates_) {
+      absl::Span<const Certificate> certificates = *root_ca_certificates_) {
     AssertionRequest assertion_request;
     SetSgxAgeRemoteAssertionDescription(
         assertion_request.mutable_description());
 
     sgx::RemoteAssertionRequestAdditionalInfo additional_info;
-    for (const auto &certificate : *certificates) {
+    for (const auto &certificate : certificates) {
       *additional_info.add_root_ca_certificates() = certificate;
     }
 
@@ -373,10 +360,9 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, CanGenerateSuccessCertSubset) {
 
   // Create an assertion request with only one of the two CAs contained within
   // the generator.
-  std::vector<Certificate> certificates = {root_ca_certificates_[0]};
   AssertionRequest assertion_request;
   ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request,
-                             MakeAssertionRequest(&certificates));
+                             MakeAssertionRequest({root_ca_certificates_[0]}));
 
   EXPECT_THAT(test_enclave_wrapper_->CanGenerate(assertion_request),
               IsOkAndHolds(true));
@@ -385,10 +371,8 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, CanGenerateSuccessCertSubset) {
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, CanGenerateFailureNoCerts) {
   ASYLO_EXPECT_OK(test_enclave_wrapper_->Initialize(config_));
 
-  std::vector<Certificate> certificates;
   AssertionRequest assertion_request;
-  ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request,
-                             MakeAssertionRequest(&certificates));
+  ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request, MakeAssertionRequest({}));
 
   EXPECT_THAT(test_enclave_wrapper_->CanGenerate(assertion_request),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
@@ -409,7 +393,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest,
   // Create a valid AssertionRequest.
   AssertionRequest assertion_request;
   ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request,
-                             MakeAssertionRequest(&certificates));
+                             MakeAssertionRequest(certificates));
 
   EXPECT_THAT(test_enclave_wrapper_->CanGenerate(assertion_request),
               IsOkAndHolds(false));
@@ -432,7 +416,8 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, GenerateSuccess) {
   ASYLO_EXPECT_OK(test_enclave_wrapper_->Initialize(config_));
 
   AssertionRequest assertion_request;
-  ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request, MakeAssertionRequest());
+  ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request,
+                             MakeAssertionRequest({root_ca_certificates_[0]}));
 
   SgxIdentity enclave_identity;
   ASYLO_ASSERT_OK_AND_ASSIGN(enclave_identity,
@@ -452,6 +437,15 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, GenerateSuccess) {
 
     sgx::RemoteAssertion remote_assertion;
     ASSERT_TRUE(remote_assertion.ParseFromString(assertion.assertion()));
+
+    ASSERT_THAT(remote_assertion.certificate_chains().size(), Eq(1));
+    CertificateChain certificate_chain = remote_assertion.certificate_chains(0);
+
+    ASSERT_THAT(certificate_chain.certificates().size(), Ge(1));
+
+    const Certificate &root_cert = *certificate_chain.certificates().rbegin();
+    EXPECT_THAT(root_cert, EqualsProto((*root_ca_certificates_)[0]));
+
     sgx::RemoteAssertionPayload payload;
     ASSERT_TRUE(payload.ParseFromString(remote_assertion.payload()));
 

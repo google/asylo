@@ -38,6 +38,7 @@
 #include "asylo/identity/attestation/sgx/internal/remote_assertion.pb.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_constants.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
+#include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave_test_util.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave_util.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_test_util_enclave.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
@@ -62,6 +63,8 @@ namespace sgx {
 namespace {
 
 using ::testing::Eq;
+using ::testing::Ge;
+using ::testing::HasSubstr;
 using ::testing::IsEmpty;
 using ::testing::SizeIs;
 
@@ -69,7 +72,6 @@ constexpr char kRemoteAssertionGeneratorTestUtilEnclaveName[] =
     "remote assertion generator test util enclave";
 constexpr char kAssertionGeneratorEnclaveName[] =
     "remote assertion generator enclave";
-constexpr char kCertificate[] = "Certificate";
 constexpr char kTestName[] = "RemoteAssertionGeneratorEnclaveTest";
 constexpr int kNumThreads = 5;
 constexpr char kRsaPublicKey3072DerHex[] =
@@ -238,12 +240,6 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
                 Eq(SignatureScheme::ECDSA_P256_SHA256));
     if (assertion_has_certificate_chains) {
       EXPECT_THAT(assertion.certificate_chains(), SizeIs(1));
-      EXPECT_THAT(assertion.certificate_chains().at(0).certificates(),
-                  SizeIs(1));
-      const Certificate &certificate =
-          assertion.certificate_chains().at(0).certificates(0);
-      EXPECT_THAT(certificate.format(), Eq(Certificate::X509_DER));
-      EXPECT_EQ(certificate.data(), kCertificate);
     } else {
       EXPECT_THAT(assertion.certificate_chains(), IsEmpty());
     }
@@ -256,15 +252,10 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
     }
 
     EnclaveInput test_util_enclave_input;
-    Certificate *certificate =
-        test_util_enclave_input
-            .MutableExtension(
-                remote_assertion_generator_test_util_enclave_input)
-            ->mutable_get_sealed_secret_input()
-            ->add_certificate_chains()
-            ->add_certificates();
-    certificate->set_format(Certificate::X509_DER);
-    certificate->set_data(kCertificate);
+    *test_util_enclave_input
+         .MutableExtension(remote_assertion_generator_test_util_enclave_input)
+         ->mutable_get_sealed_secret_input()
+         ->add_certificate_chains() = GetFakePckCertificateChain();
 
     EnclaveOutput test_util_enclave_output;
     ASYLO_RETURN_IF_ERROR(
@@ -694,6 +685,49 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, GenerateKeyAndCsrSuccess) {
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest,
+       UpdateCertsWithInvalidCertificateChainFails) {
+  ASYLO_ASSERT_OK(
+      InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
+  ASYLO_ASSERT_OK(StartTestUtilEnclave(
+      remote_assertion_generator_test_util_enclave_config_));
+
+  EnclaveInput enclave_input;
+  EnclaveOutput enclave_output;
+
+  UpdateCertsInput *update_certs_input =
+      enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+          ->mutable_update_certs_input();
+
+  ASYLO_ASSERT_OK_AND_ASSIGN(*update_certs_input->add_certificate_chains(),
+                             GenerateAttestationKeyAndFakeCertificateChain(
+                                 remote_assertion_generator_enclave_client_));
+
+  CertificateChain *certificate_chain =
+      update_certs_input->mutable_certificate_chains(0);
+
+  // Case 1: Swap the PCK certificate and intermediate CA certificate to create
+  // an invalid chain.
+  ASSERT_THAT(certificate_chain->certificates().size(), Ge(3));
+  certificate_chain->mutable_certificates()->SwapElements(1, 2);
+  EXPECT_THAT(remote_assertion_generator_enclave_client_->EnterAndRun(
+                  enclave_input, &enclave_output),
+              StatusIs(error::GoogleError::INTERNAL,
+                       HasSubstr("Cannot update certificates")));
+
+  // Restore the certificate chain.
+  certificate_chain->mutable_certificates()->SwapElements(1, 2);
+
+  // Case 2: Remove the attestation key certificate to create a valid
+  // certificate chain for wrong public key.
+  certificate_chain->mutable_certificates()->erase(
+      certificate_chain->certificates().cbegin());
+  EXPECT_THAT(remote_assertion_generator_enclave_client_->EnterAndRun(
+                  enclave_input, &enclave_output),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       HasSubstr("Cannot update certificates")));
+}
+
+TEST_F(RemoteAssertionGeneratorEnclaveTest,
        UpdateCertsForServerRunningWithoutKeySuccess) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
@@ -702,16 +736,15 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
   ASYLO_ASSERT_OK(
       StartSgxRemoteAssertionGeneratorServer(StartServerOption::NONE));
 
-  ASYLO_ASSERT_OK(GenerateAttestationKeyForRemoteAssertionGeneratorEnclave());
   EnclaveInput enclave_input;
   EnclaveOutput enclave_output;
-  Certificate *certificate =
-      enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-          ->mutable_update_certs_input()
-          ->add_certificate_chains()
-          ->add_certificates();
-  certificate->set_format(Certificate::X509_DER);
-  certificate->set_data(kCertificate);
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+           ->mutable_update_certs_input()
+           ->add_certificate_chains(),
+      GenerateAttestationKeyAndFakeCertificateChain(
+          remote_assertion_generator_enclave_client_));
+
   ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
       enclave_input, &enclave_output));
   CheckServerRunningAndProducesValidRemoteAssertion(
@@ -729,16 +762,15 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
   ASSERT_NO_FATAL_FAILURE(CheckServerRunningAndProducesValidRemoteAssertion(
       /*assertion_has_certificate_chains=*/false));
 
-  ASYLO_ASSERT_OK(GenerateAttestationKeyForRemoteAssertionGeneratorEnclave());
   EnclaveInput enclave_input;
   EnclaveOutput enclave_output;
-  Certificate *certificate =
-      enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-          ->mutable_update_certs_input()
-          ->add_certificate_chains()
-          ->add_certificates();
-  certificate->set_format(Certificate::X509_DER);
-  certificate->set_data(kCertificate);
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+           ->mutable_update_certs_input()
+           ->add_certificate_chains(),
+      GenerateAttestationKeyAndFakeCertificateChain(
+          remote_assertion_generator_enclave_client_));
+
   ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
       enclave_input, &enclave_output));
   CheckServerRunningAndProducesValidRemoteAssertion(
@@ -752,17 +784,17 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
   ASYLO_ASSERT_OK(StartTestUtilEnclave(
       remote_assertion_generator_test_util_enclave_config_));
 
-  ASYLO_ASSERT_OK(GenerateAttestationKeyForRemoteAssertionGeneratorEnclave());
   EnclaveInput enclave_input;
   EnclaveOutput enclave_output;
-  UpdateCertsInput *update_certs_input =
-      enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-          ->mutable_update_certs_input();
-  Certificate *certificate =
-      update_certs_input->add_certificate_chains()->add_certificates();
-  certificate->set_format(Certificate::X509_DER);
-  certificate->set_data(kCertificate);
-  update_certs_input->set_output_sealed_secret(true);
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+           ->mutable_update_certs_input()
+           ->add_certificate_chains(),
+      GenerateAttestationKeyAndFakeCertificateChain(
+          remote_assertion_generator_enclave_client_));
+  enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+      ->mutable_update_certs_input()
+      ->set_output_sealed_secret(true);
   ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
       enclave_input, &enclave_output));
 

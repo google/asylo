@@ -574,6 +574,7 @@ sgx_cc_unsigned_enclave(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":certificate_util",
         ":remote_assertion_generator_enclave_cc_proto",
         ":remote_assertion_generator_enclave_util",
         "//asylo:enclave_cc_proto",
@@ -632,6 +633,7 @@ sgx_enclave_test(
         ":remote_assertion_cc_proto",
         ":remote_assertion_generator_constants",
         ":remote_assertion_generator_enclave_cc_proto",
+        ":remote_assertion_generator_enclave_test_util",
         ":remote_assertion_generator_enclave_util",
         ":remote_assertion_generator_test_util_enclave_cc_proto",
         "//asylo:enclave_cc_proto",
@@ -745,7 +747,6 @@ cc_library(
     ],
     deps = [
         ":attestation_key_certificate_impl",
-        "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
@@ -780,5 +781,17 @@ cc_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "certificate_util",
+    srcs = ["certificate_util.cc"],
+    hdrs = ["certificate_util.h"],
+    deps = [
+        ":attestation_key_certificate_impl",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:certificate_util",
+        "//asylo/crypto:x509_certificate",
     ],
 )

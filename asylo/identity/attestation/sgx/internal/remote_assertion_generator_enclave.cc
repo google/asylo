@@ -18,13 +18,16 @@
 
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.h"
 
+#include <memory>
 #include <utility>
 
 #include "absl/memory/memory.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
+#include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
+#include "asylo/identity/attestation/sgx/internal/certificate_util.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave_util.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
@@ -40,7 +43,8 @@ namespace sgx {
 
 RemoteAssertionGeneratorEnclave::RemoteAssertionGeneratorEnclave()
     : attestation_key_certs_pair_(AttestationKeyCertsPair()),
-      server_service_pair_(ServerServicePair()) {}
+      server_service_pair_(ServerServicePair()),
+      verification_config_(/*all_fields=*/true) {}
 
 Status RemoteAssertionGeneratorEnclave::Initialize(
     const EnclaveConfig &config) {
@@ -211,6 +215,21 @@ Status RemoteAssertionGeneratorEnclave::UpdateCerts(
     return Status(error::GoogleError::FAILED_PRECONDITION,
                   "Cannot update certificates: no attestation key available");
   }
+
+  std::unique_ptr<VerifyingKey> attestation_public_key;
+  ASYLO_ASSIGN_OR_RETURN(
+      attestation_public_key,
+      attestation_key_certs_pair_locked->attestation_key->GetVerifyingKey());
+
+  // Verify that all certificate chains are valid and that they certify the
+  // current attestation key before saving them.
+  Status status = CheckCertificateChainsForAttestationPublicKey(
+      *attestation_public_key, input.certificate_chains(),
+      *GetSgxCertificateFactories(), verification_config_);
+  if (!status.ok()) {
+    return status.WithPrependedContext("Cannot update certificates");
+  }
+
   if (input.output_sealed_secret()) {
     SealedSecretHeader header =
         GetRemoteAssertionGeneratorEnclaveSecretHeader();
