@@ -23,7 +23,9 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
+#include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/container_util.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/identity/sgx/pck_certificates.pb.h"
 #include "asylo/util/statusor.h"
@@ -62,6 +64,13 @@ class TcbInfoReader {
   // |tcb_info| is not valid according to ValidateTcbInfo().
   static StatusOr<TcbInfoReader> Create(TcbInfo tcb_info);
 
+  // Returns the TCB info that this TcbInfoReader represents.
+  const TcbInfo &GetTcbInfo() const;
+
+  // Returns the Configuration ID corresponding to |cpu_svn| under the
+  // configured TCB info.
+  StatusOr<ConfigurationId> GetConfigurationId(const CpuSvn &cpu_svn) const;
+
   // Returns the consistency relationship between the contained TCB info and
   // |pck_certificates|. See the comments on ProvisioningConsistency for more
   // information on the different possible return values.
@@ -72,8 +81,12 @@ class TcbInfoReader {
       const PckCertificates &pck_certificates) const;
 
  private:
-  explicit TcbInfoReader(
+  TcbInfoReader(
+      TcbInfo tcb_info,
       absl::flat_hash_set<Tcb, absl::Hash<Tcb>, MessageEqual> tcb_levels);
+
+  // The TCB info that this TcbInfoReader was created with.
+  TcbInfo tcb_info_;
 
   // The TCB levels from the TCB info.
   absl::flat_hash_set<Tcb, absl::Hash<Tcb>, MessageEqual> tcb_levels_;

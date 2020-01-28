@@ -27,6 +27,10 @@
 #include <gtest/gtest.h>
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
+#include "asylo/identity/platform/sgx/machine_configuration.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
+#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 
@@ -132,12 +136,48 @@ TEST(TcbInfoReaderTest, CreateFailsOnInvalidTcbInfo) {
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
+TEST(TcbInfoReaderTest, GetTcbInfoReturnsInputTcbInfo) {
+  TcbInfo tcb_info;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kBaseTcbInfo, &tcb_info));
+  TcbInfoReader reader;
+  ASYLO_ASSERT_OK_AND_ASSIGN(reader, TcbInfoReader::Create(tcb_info));
+  EXPECT_THAT(reader.GetTcbInfo(), EqualsProto(tcb_info));
+}
+
+TEST(TcbInfoReaderTest, GetConfigurationIdFailsOnInvalidCpuSvn) {
+  TcbInfo tcb_info;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kBaseTcbInfo, &tcb_info));
+  TcbInfoReader reader;
+  ASYLO_ASSERT_OK_AND_ASSIGN(reader, TcbInfoReader::Create(tcb_info));
+
+  EXPECT_THAT(reader.GetConfigurationId(CpuSvn()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbInfoReaderTest, GetConfigurationIdReadsCorrectConfigurationId) {
+  TcbInfo tcb_info;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kBaseTcbInfo, &tcb_info));
+  TcbInfoReader reader;
+  ASYLO_ASSERT_OK_AND_ASSIGN(reader, TcbInfoReader::Create(tcb_info));
+
+  CpuSvn cpu_svn;
+  cpu_svn.set_value(std::string(kCpusvnSize, 0));
+  ConfigurationId expected_config_id;
+  expected_config_id.set_value(0);
+  EXPECT_THAT(reader.GetConfigurationId(cpu_svn),
+              IsOkAndHolds(EqualsProto(expected_config_id)));
+
+  (*cpu_svn.mutable_value())[6] = 12;
+  expected_config_id.set_value(12);
+  EXPECT_THAT(reader.GetConfigurationId(cpu_svn),
+              IsOkAndHolds(EqualsProto(expected_config_id)));
+}
+
 TEST(TcbInfoReaderTest, GetConsistencyWithFailsOnInvalidPckCertificates) {
   TcbInfo tcb_info;
   ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kBaseTcbInfo, &tcb_info));
   TcbInfoReader reader;
-  ASYLO_ASSERT_OK_AND_ASSIGN(reader,
-                             TcbInfoReader::Create(std::move(tcb_info)));
+  ASYLO_ASSERT_OK_AND_ASSIGN(reader, TcbInfoReader::Create(tcb_info));
 
   PckCertificates pck_certificates;
   ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kBasePckCertificates,
@@ -163,8 +203,7 @@ TEST_P(TcbInfoReaderGetConsistencyWithTest,
   ASSERT_TRUE(
       google::protobuf::TextFormat::ParseFromString(tcb_info_textproto, &tcb_info));
   TcbInfoReader reader;
-  ASYLO_ASSERT_OK_AND_ASSIGN(reader,
-                             TcbInfoReader::Create(std::move(tcb_info)));
+  ASYLO_ASSERT_OK_AND_ASSIGN(reader, TcbInfoReader::Create(tcb_info));
 
   PckCertificates pck_certificates;
   ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(pck_certificates_textproto,

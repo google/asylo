@@ -24,23 +24,53 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
 #include "absl/strings/str_cat.h"
+#include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/container_util.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/identity/sgx/pck_certificate_util.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace sgx {
+namespace {
+
+// The index of the Configuration ID byte in a CPU SVN for TCB type 0.
+constexpr int kConfigIdByteIndexForTcbType0 = 6;
+
+}  // namespace
 
 StatusOr<TcbInfoReader> TcbInfoReader::Create(TcbInfo tcb_info) {
   ASYLO_RETURN_IF_ERROR(ValidateTcbInfo(tcb_info));
   absl::flat_hash_set<Tcb, absl::Hash<Tcb>, MessageEqual> tcb_levels;
-  for (TcbLevel &tcb_level : *tcb_info.mutable_impl()->mutable_tcb_levels()) {
-    tcb_levels.insert(std::move(*tcb_level.mutable_tcb()));
+  for (const TcbLevel &tcb_level : tcb_info.impl().tcb_levels()) {
+    tcb_levels.insert(tcb_level.tcb());
   }
-  return TcbInfoReader(std::move(tcb_levels));
+  return TcbInfoReader(std::move(tcb_info), std::move(tcb_levels));
+}
+
+const TcbInfo &TcbInfoReader::GetTcbInfo() const { return tcb_info_; }
+
+StatusOr<ConfigurationId> TcbInfoReader::GetConfigurationId(
+    const CpuSvn &cpu_svn) const {
+  ASYLO_RETURN_IF_ERROR(ValidateCpuSvn(cpu_svn));
+  ConfigurationId config_id;
+  switch (tcb_info_.impl().has_tcb_type() ? tcb_info_.impl().tcb_type()
+                                          : TcbType::TCB_TYPE_0) {
+    case TcbType::TCB_TYPE_0:
+      config_id.set_value(cpu_svn.value()[kConfigIdByteIndexForTcbType0]);
+      break;
+    default:
+      return Status(
+          error::GoogleError::INVALID_ARGUMENT,
+          absl::StrCat("Unknown TCB type: ",
+                       ProtoEnumValueName(tcb_info_.impl().tcb_type())));
+  }
+  return config_id;
 }
 
 StatusOr<ProvisioningConsistency> TcbInfoReader::GetConsistencyWith(
@@ -80,8 +110,9 @@ StatusOr<ProvisioningConsistency> TcbInfoReader::GetConsistencyWith(
 }
 
 TcbInfoReader::TcbInfoReader(
+    TcbInfo tcb_info,
     absl::flat_hash_set<Tcb, absl::Hash<Tcb>, MessageEqual> tcb_levels)
-    : tcb_levels_(std::move(tcb_levels)) {}
+    : tcb_info_(std::move(tcb_info)), tcb_levels_(std::move(tcb_levels)) {}
 
 }  // namespace sgx
 }  // namespace asylo
