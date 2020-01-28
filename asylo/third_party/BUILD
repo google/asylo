@@ -14,4 +14,6 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
+licenses(["notice"])
+
+exports_files(["curl.BUILD"])
