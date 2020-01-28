@@ -2,7 +2,7 @@
 #   Redis (http://redis.io) is an open source, advanced key-value store.
 #   This is a bazel BUILD file for Redis 5.0.5.
 
-load("//third_party/bazel_rules/rules_cc/cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 package(
     default_visibility = ["//visibility:public"],
@@ -230,6 +230,7 @@ cc_library(
         "crc64.c",
         "bitops.c",
         "sentinel.c",
+	"siphash.c",
         "notify.c",
         "setproctitle.c",
         "blocked.c",
@@ -253,18 +254,35 @@ cc_library(
     ]] + ["release.h"],
     copts = [
         "-std=c99",
-        # "llroundl" is used in "src/hyperloglog.c", but the arguments are all
-        # doubles, therefore we use llround instead for it since it's sufficent
-        # and we don't currently support "llroundl".
-        "-Dllroundl=llround",
-    ] + ZCALLOC_COPT,
+    ] + select({
+        "@com_google_asylo//asylo": [
+	    # "llroundl" is used in "src/hyperloglog.c", but the arguments are
+	    # all doubles, therefore we use llround instead for it since it's
+	    # sufficent and Asylo don't currently support "llroundl".
+            "-Dllroundl=llround",
+        ],
+	"//conditions:default": [
+	    # These flags are needed for bazel to compile Redis client without
+	    # Asylo toolchain.
+	    "-DSYNC_FILE_RANGE_WAIT_BEFORE=1",
+	    "-DSYNC_FILE_RANGE_WRITE=2",
+	    "-D_GNU_SOURCE",
+	],
+    }) + ZCALLOC_COPT,
+    linkopts = select({
+        "@com_google_asylo//asylo": [],
+	"//conditions:default": ["-ldl"],
+    }),
     includes = [
         "deps/hiredis",
         "deps/linenoise",
         "deps/lua/src",
         "src",
     ],
-    textual_hdrs = ["src/ae_select.c"],
+    textual_hdrs = [
+        "src/ae_select.c",
+	"src/ae_epoll.c",
+    ],
     deps = [
         ":hiredis_lib",
         ":linenoise_lib",
@@ -336,8 +354,16 @@ cc_library(
         "src/help.h",
         "src/redis-cli.c",
     ],
-    copts = ZCALLOC_COPT,
-    deps = [":redis_lib"],
+    copts = ["-std=c99"] + ZCALLOC_COPT,
+    deps = [
+        ":redis_lib",
+	":hiredis_lib",
+    ],
+)
+
+cc_binary(
+    name = "redis_cli_bin",
+    deps = [":redis_cli"],
 )
 
 cc_library(

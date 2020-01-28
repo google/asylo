@@ -16,6 +16,13 @@
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx", "sgx_enclave_configuration")
+load(
+    "//asylo/bazel:asylo.bzl",
+    "cc_enclave_binary",
+    "enclave_test",
+)
+load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
 
 licenses(["notice"])
 
@@ -32,5 +39,53 @@ cc_library(
         "//asylo/identity:enclave_assertion_authority_config_cc_proto",
         "//asylo/identity/sgx:sgx_local_assertion_authority_config_cc_proto",
         "//asylo/util:logging",
+    ],
+)
+
+# The SGX configuration to run Redis Server inside an enclave.
+sgx_enclave_configuration(
+    name = "redis_enclave_configuration",
+    heap_max_size = "0x1000000",
+    stack_max_size = "0x400000",
+)
+
+# The whole application wrapper target that runs Redis server inside an enclave.
+cc_enclave_binary(
+    name = "asylo_redis",
+    application_enclave_config = ":redis_enclave_config",
+    enclave_build_config = "redis_enclave_configuration",
+    deps = ["@com_github_antirez_redis//:redis_main"],
+)
+
+copy_from_host(
+    output = "redis_client_host_bin",
+    target = "@com_github_antirez_redis//:redis_cli_bin",
+)
+
+enclave_test(
+    name = "redis_test",
+    srcs = ["redis_test.cc"],
+    data = [
+        ":asylo_redis_host_loader",
+        ":redis_client_host_bin",
+    ],
+    tags = ["exclusive"],
+    test_args = [
+        "--server_path=$(location :asylo_redis_host_loader)",
+        "--client_path=$(location :redis_client_host_bin)",
+    ],
+    deps = [
+        "//asylo/test/util:exec_tester",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_flags",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@bazel_tools//tools/cpp/runfiles",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_googletest//:gtest",
     ],
 )

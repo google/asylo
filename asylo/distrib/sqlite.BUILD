@@ -3,7 +3,7 @@
 # zero-configuration, transactional SQL database engine.
 #
 
-load("//third_party/bazel_rules/rules_cc/cc:defs.bzl", "cc_library")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 
 licenses(["unencumbered"])  # Public Domain
 

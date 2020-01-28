@@ -113,6 +113,16 @@ def asylo_testonly_deps():
             strip_prefix = "googletest-8b4817e3df3746a20502a84580f661ac448821be",
         )
 
+    # Redis example dependency, only needed if running Redis test with Asylo.
+    if not native.existing_rule("com_github_antirez_redis"):
+        http_archive(
+            name = "com_github_antirez_redis",
+            build_file = "@com_google_asylo//asylo/distrib:redis.BUILD",
+            urls = ["https://github.com/antirez/redis/archive/5.0.7.tar.gz"],
+            sha256 = "2761422599f8969559e66797cd7f606c16e907bf82d962345a7d366c5d1278df",
+            strip_prefix = "redis-5.0.7",
+        )
+
 def _instantiate_crosstool_impl(repository_ctx):
     """Instantiates the Asylo crosstool template with the installation path.
 
