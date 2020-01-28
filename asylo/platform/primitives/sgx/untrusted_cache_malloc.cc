@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "asylo/platform/core/trusted_spin_lock.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/util/lock_guard.h"
@@ -50,7 +51,14 @@ using primitives::TrustedPrimitives;
 bool UntrustedCacheMalloc::is_destroyed_ = false;
 
 UntrustedCacheMalloc *UntrustedCacheMalloc::Instance() {
-  static auto *instance = new UntrustedCacheMalloc();
+  static TrustedSpinLock lock(/*is_recursive=*/false);
+  static UntrustedCacheMalloc *instance = nullptr;
+  if (instance == nullptr) {
+    LockGuard guard(&lock);
+    if (instance == nullptr) {
+      instance = new UntrustedCacheMalloc();
+    }
+  }
   return instance;
 }
 
