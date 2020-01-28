@@ -470,6 +470,46 @@ cc_test(
     ],
 )
 
+cc_library(
+    name = "proto_parse_util",
+    hdrs = ["proto_parse_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":status",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+proto_library(
+    name = "proto_parse_util_test_proto",
+    testonly = 1,
+    srcs = ["proto_parse_util_test.proto"],
+)
+
+cc_proto_library(
+    name = "proto_parse_util_test_cc_proto",
+    testonly = 1,
+    deps = ["proto_parse_util_test_proto"],
+)
+
+cc_test(
+    name = "proto_parse_util_test",
+    srcs = ["proto_parse_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "proto_parse_util_enclave_test",
+    deps = [
+        ":proto_parse_util",
+        ":proto_parse_util_test_cc_proto",
+        ":status",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # A library to help with the google.protobuf.Value representation of JSON.
 cc_library(
     name = "proto_struct_util",
