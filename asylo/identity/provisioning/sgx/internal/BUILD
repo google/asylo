@@ -396,6 +396,7 @@ cc_library(
         "//asylo/crypto/util:byte_container_view",
         "//asylo/identity/sgx:hardware_types",
         "//asylo/util:hex_util",
+        "//asylo/util:proto_enum_util",
         "//asylo/util:status",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_map",

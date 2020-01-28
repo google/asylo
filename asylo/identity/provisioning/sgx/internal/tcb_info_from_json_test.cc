@@ -182,7 +182,7 @@ std::pair<google::protobuf::Value, TcbInfo> CreateValidTcbInfoV2Pair() {
       next_update: { seconds: 1584735620 nanos: 0 }
       fmspc { value: "\x01\x23\x45\x67\x89\xab" }
       pce_id { value: 0 }
-      tcb_type: 0
+      tcb_type: TCB_TYPE_0
       tcb_evaluation_data_number: 2
       tcb_levels {
         tcb {
@@ -280,14 +280,14 @@ TEST(TcbFromJsonTest, OutOfBoundsSgxTcbComponentSvnFailsToParse) {
   json.mutable_struct_value()
       ->mutable_fields()
       ->at("sgxtcbcomp15svn")
-      .set_number_value(-7.);
+      .set_number_value(-7.0);
   EXPECT_THAT(TcbFromJson(JsonToString(json)),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   json.mutable_struct_value()
       ->mutable_fields()
       ->at("sgxtcbcomp15svn")
-      .set_number_value(1000.);
+      .set_number_value(1000.0);
   EXPECT_THAT(TcbFromJson(JsonToString(json)),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
@@ -340,7 +340,7 @@ TEST(TcbFromJsonTest, CorrectTcbJsonParsesSuccessfully) {
 TEST(TcbFromJsonTest, ExtraFieldsCausesLogWarning) {
   google::protobuf::Value json = CreateValidTcbJson();
   google::protobuf::Value value;
-  value.set_number_value(0.);
+  value.set_number_value(0.0);
   json.mutable_struct_value()->mutable_fields()->insert({"extra", value});
 
   Tcb tcb;
@@ -385,7 +385,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithOutOfRangeVersionFailsToParse) {
     pair.first.mutable_struct_value()
         ->mutable_fields()
         ->at("version")
-        .set_number_value(10000000000.);
+        .set_number_value(10000000000.0);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
                 StatusIs(error::GoogleError::OUT_OF_RANGE));
   }
@@ -396,7 +396,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithUnknownVersionFailsToParse) {
     pair.first.mutable_struct_value()
         ->mutable_fields()
         ->at("version")
-        .set_number_value(73.);
+        .set_number_value(73.0);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
                 StatusIs(error::GoogleError::INVALID_ARGUMENT));
   }
@@ -605,9 +605,20 @@ TEST(TcbInfoFromJsonTest, TcbInfoV2JsonWithOutOfRangeTcbTypeFieldFailsToParse) {
     pair.first.mutable_struct_value()
         ->mutable_fields()
         ->at("tcbType")
-        .set_number_value(10000000000.);
+        .set_number_value(10000000000.0);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
                 StatusIs(error::GoogleError::OUT_OF_RANGE));
+  }
+}
+
+TEST(TcbInfoFromJsonTest, TcbInfoV2JsonWithUnknownTcbTypeFieldFailsToParse) {
+  for (auto &pair : CreateValidTcbInfoPairsOfVersions({2})) {
+    pair.first.mutable_struct_value()
+        ->mutable_fields()
+        ->at("tcbType")
+        .set_number_value(3.0);
+    EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
   }
 }
 
@@ -639,7 +650,7 @@ TEST(TcbInfoFromJsonTest,
     pair.first.mutable_struct_value()
         ->mutable_fields()
         ->at("tcbEvaluationDataNumber")
-        .set_number_value(10000000000.);
+        .set_number_value(10000000000.0);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
                 StatusIs(error::GoogleError::OUT_OF_RANGE));
   }
@@ -746,7 +757,7 @@ TEST(TcbInfoFromJsonTest,
         .mutable_struct_value()
         ->mutable_fields()
         ->at("sgxtcbcomp15svn")
-        .set_number_value(-7.);
+        .set_number_value(-7.0);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
                 StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
@@ -761,7 +772,7 @@ TEST(TcbInfoFromJsonTest,
         .mutable_struct_value()
         ->mutable_fields()
         ->at("sgxtcbcomp15svn")
-        .set_number_value(1000.);
+        .set_number_value(1000.0);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
                 StatusIs(error::GoogleError::INVALID_ARGUMENT));
   }
@@ -1109,7 +1120,7 @@ TEST(TcbInfoFromJsonTest,
 TEST(TcbInfoFromJsonTest, TcbInfoJsonWithExtraFieldsCausesLogWarning) {
   for (auto &pair : CreateValidTcbInfoPairsOfVersions({1, 2})) {
     google::protobuf::Value value;
-    value.set_number_value(0.);
+    value.set_number_value(0.0);
     pair.first.mutable_struct_value()->mutable_fields()->insert(
         {"veryExtra", value});
 
@@ -1126,7 +1137,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithExtraFieldsCausesLogWarning) {
 TEST(TcbInfoFromJsonTest, TcbLevelJsonWithExtraFieldsCausesLogWarning) {
   for (auto &pair : CreateValidTcbInfoPairsOfVersions({1, 2})) {
     google::protobuf::Value value;
-    value.set_number_value(0.);
+    value.set_number_value(0.0);
     pair.first.mutable_struct_value()
         ->mutable_fields()
         ->at("tcbLevels")
@@ -1149,7 +1160,7 @@ TEST(TcbInfoFromJsonTest, TcbLevelJsonWithExtraFieldsCausesLogWarning) {
 TEST(TcbInfoFromJsonTest, TcbJsonWithExtraFieldsCausesLogWarning) {
   for (auto &pair : CreateValidTcbInfoPairsOfVersions({1, 2})) {
     google::protobuf::Value value;
-    value.set_number_value(0.);
+    value.set_number_value(0.0);
     pair.first.mutable_struct_value()
         ->mutable_fields()
         ->at("tcbLevels")

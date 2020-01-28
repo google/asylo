@@ -330,7 +330,7 @@ class FakeSgxPcsClientTest : public TestWithParam<absl::optional<std::string>> {
     tcb_level->mutable_tcb()->mutable_pce_svn()->set_value(7);
     tcb_level->mutable_status()->set_known_status(TcbStatus::UP_TO_DATE);
     if (version == 2) {
-      impl->set_tcb_type(0);
+      impl->set_tcb_type(TcbType::TCB_TYPE_0);
       impl->set_tcb_evaluation_data_number(2);
       *tcb_level->mutable_tcb_date() =
           google::protobuf::util::TimeUtil::TimeTToTimestamp(1000);

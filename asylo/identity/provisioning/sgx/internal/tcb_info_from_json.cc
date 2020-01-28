@@ -437,7 +437,14 @@ StatusOr<TcbInfo> TcbInfoFromJsonV1and2(
                            JsonObjectGetField(tcb_info_object, "tcbType"));
     int32_t tcb_type;
     ASYLO_ASSIGN_OR_RETURN(tcb_type, Int32FromJson(*tcb_type_json, "TCB type"));
-    tcb_info_impl->set_tcb_type(tcb_type);
+    switch (tcb_type) {
+      case 0:
+        tcb_info_impl->set_tcb_type(TcbType::TCB_TYPE_0);
+        break;
+      default:
+        return Status(error::GoogleError::INVALID_ARGUMENT,
+                      absl::StrCat("Unknown TCB type value: ", tcb_type));
+    }
 
     const google::protobuf::Value *tcb_evaluation_data_number_json;
     ASYLO_ASSIGN_OR_RETURN(

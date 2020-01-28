@@ -9,6 +9,12 @@ import "asylo/identity/provisioning/sgx/internal/platform_provisioning.proto";
 // This file defines the messages representing information about an SGX
 // platform's Trusted Computing Base (TCB).
 
+// A number indicating the layout of TCB and CPU SVN values.
+enum TcbType {
+  TCB_TYPE_UNKNOWN = 0;
+  TCB_TYPE_0 = 1;
+}
+
 // SGX Trusted Computing Base (TCB).
 message Tcb {
   // The components of the TCB. Must be exactly 16 bytes. Required.
@@ -101,7 +107,7 @@ message TcbInfoImpl {
 
   // TCB type indicating how TCB levels should be compared. Required if
   // |version| >= 2, otherwise must not be present.
-  optional int32 tcb_type = 7;
+  optional TcbType tcb_type = 7;
 
   // Monotonic counter indicating how many times TCB info has been updated for
   // this FMSPC. Required if |version| >= 2, otherwise must not be present.

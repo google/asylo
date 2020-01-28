@@ -88,7 +88,7 @@ TcbInfo CreateValidTcbInfoV2() {
   TcbInfo tcb_info = CreateValidTcbInfoV1();
   TcbInfoImpl *impl = tcb_info.mutable_impl();
   impl->set_version(2);
-  impl->set_tcb_type(0);
+  impl->set_tcb_type(TcbType::TCB_TYPE_0);
   impl->set_tcb_evaluation_data_number(17);
 
   TcbLevel *tcb_level = impl->mutable_tcb_levels(0);
@@ -228,7 +228,7 @@ TEST(TcbTest, TcbInfoImplWithoutPceIdFieldIsInvalid) {
 
 TEST(TcbTest, TcbInfoImplV1WithTcbTypeFieldIsInvalid) {
   TcbInfo tcb_info = CreateValidTcbInfoV1();
-  tcb_info.mutable_impl()->set_tcb_type(0);
+  tcb_info.mutable_impl()->set_tcb_type(TcbType::TCB_TYPE_0);
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
@@ -236,6 +236,13 @@ TEST(TcbTest, TcbInfoImplV1WithTcbTypeFieldIsInvalid) {
 TEST(TcbTest, TcbInfoImplV2WithoutTcbTypeFieldIsInvalid) {
   TcbInfo tcb_info = CreateValidTcbInfoV2();
   tcb_info.mutable_impl()->clear_tcb_type();
+  EXPECT_THAT(ValidateTcbInfo(tcb_info),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbTest, TcbInfoImplV2WithInvalidTcbTypeFieldIsInvalid) {
+  TcbInfo tcb_info = CreateValidTcbInfoV2();
+  tcb_info.mutable_impl()->set_tcb_type(TcbType::TCB_TYPE_UNKNOWN);
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
@@ -396,7 +403,8 @@ TEST(TcbTest,
 }
 
 TEST(TcbTest, CompareTcbsFailsWithUnknownTcbType) {
-  EXPECT_THAT(CompareTcbs(3, CreateValidTcb(), CreateValidTcb()),
+  EXPECT_THAT(CompareTcbs(TcbType::TCB_TYPE_UNKNOWN, CreateValidTcb(),
+                          CreateValidTcb()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -441,7 +449,7 @@ TEST(TcbTest, CompareTcbsComparesArgumentsCorrectly) {
     absl::string_view components = std::get<0>(test_cases[i]);
     lhs.set_components(components.data(), components.size());
     lhs.mutable_pce_svn()->set_value(std::get<1>(test_cases[i]));
-    EXPECT_THAT(CompareTcbs(/*tcb_type=*/0, lhs, rhs),
+    EXPECT_THAT(CompareTcbs(TcbType::TCB_TYPE_0, lhs, rhs),
                 IsOkAndHolds(std::get<2>(test_cases[i])));
   }
 }

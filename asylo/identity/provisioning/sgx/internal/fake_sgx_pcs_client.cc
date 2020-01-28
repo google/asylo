@@ -245,7 +245,15 @@ StatusOr<std::string> TcbInfoToJson(const TcbInfo &tcb_info) {
       ConvertTrivialObjectToHexString(pce_id_little_endian));
   tcb_info_fields->insert({"pceId", tcb_info_element});
   if (impl.version() == 2) {
-    tcb_info_element.set_number_value(impl.tcb_type());
+    switch (impl.tcb_type()) {
+      case TcbType::TCB_TYPE_0:
+        tcb_info_element.set_number_value(0);
+        break;
+      default:
+        return Status(error::GoogleError::INVALID_ARGUMENT,
+                      absl::StrCat("Unknown TCB type: ",
+                                   ProtoEnumValueName(impl.tcb_type())));
+    }
     tcb_info_fields->insert({"tcbType", tcb_info_element});
     tcb_info_element.set_number_value(impl.tcb_evaluation_data_number());
     tcb_info_fields->insert({"tcbEvaluationDataNumber", tcb_info_element});

@@ -83,7 +83,7 @@ Status ValidateRawTcb(const RawTcb &raw_tcb);
 //   * The |issue_date| is before the |next_update|.
 //   * Any contained TcbLevels with the same |tcb| also have the same |status|.
 //   * The |tcb_type| and |tcb_evaluation_data_number| fields are set if and
-//     only if the |version| is 2.
+//     only if the |version| is 2, in which case the |tcb_type| must be valid.
 //
 // Each TcbLevel is valid if and only if:
 //
@@ -123,7 +123,7 @@ Status ValidateTcbInfo(const TcbInfo &tcb_info);
 // actually equal to |rhs|, then it is strictly less or greater. If |lhs| is
 // neither less than or equal to nor greater than or equal to |rhs|, then |lhs|
 // and |rhs| are incomparable.
-StatusOr<PartialOrder> CompareTcbs(int tcb_type, const Tcb &lhs,
+StatusOr<PartialOrder> CompareTcbs(TcbType tcb_type, const Tcb &lhs,
                                    const Tcb &rhs);
 
 // Parses a hex-encoded string |raw_tcb_hex| into the RawTcb protobuf.

@@ -34,6 +34,7 @@
 #include "asylo/identity/provisioning/sgx/internal/container_util.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
 #include "asylo/util/hex_util.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -293,6 +294,13 @@ Status ValidateTcbInfoImplV1andV2(const TcbInfoImpl &tcb_info_impl) {
         return WrongTcbInfoVersionError("TcbInfoImpl", tcb_info_impl.version(),
                                         "does not have a \"tcb_type\" field");
       }
+      if (!TcbType_IsValid(tcb_info_impl.tcb_type()) ||
+          tcb_info_impl.tcb_type() == TcbType::TCB_TYPE_UNKNOWN) {
+        return Status(
+            error::GoogleError::INVALID_ARGUMENT,
+            absl::StrCat("Unknown TCB type: ",
+                         ProtoEnumValueName(tcb_info_impl.tcb_type())));
+      }
       if (!tcb_info_impl.has_tcb_evaluation_data_number()) {
         return WrongTcbInfoVersionError(
             "TcbInfoImpl", tcb_info_impl.version(),
@@ -397,13 +405,13 @@ Status ValidateTcbInfo(const TcbInfo &tcb_info) {
   return ValidateTcbInfoImpl(tcb_info.impl());
 }
 
-StatusOr<PartialOrder> CompareTcbs(int tcb_type, const Tcb &lhs,
+StatusOr<PartialOrder> CompareTcbs(TcbType tcb_type, const Tcb &lhs,
                                    const Tcb &rhs) {
   ByteContainerView lhs_bytes(lhs.components());
   ByteContainerView rhs_bytes(rhs.components());
   PartialOrder current;
   switch (tcb_type) {
-    case 0:
+    case TcbType::TCB_TYPE_0:
       current = PartialOrder::kEqual;
       for (int i = 0; i < kTcbComponentsSize; ++i) {
         current =
@@ -415,8 +423,9 @@ StatusOr<PartialOrder> CompareTcbs(int tcb_type, const Tcb &lhs,
       return OrderCombine(
           current, CompareTotal(lhs.pce_svn().value(), rhs.pce_svn().value()));
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    absl::StrCat("Unknown TCB type: ", tcb_type));
+      return Status(
+          error::GoogleError::INVALID_ARGUMENT,
+          absl::StrCat("Unknown TCB type: ", ProtoEnumValueName(tcb_type)));
   }
 }
 
