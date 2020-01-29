@@ -52,7 +52,8 @@ public class DemoDriver {
     FileEnclaveConfig fileEnclaveConfig =
         FileEnclaveConfig.newBuilder().setEnclavePath(enclavePath).build();
 
-    // Specify SGX enclave using file config.
+    // Specify that the enclave uses SGX, and configure the SGX loader with the
+    // path to the enclave binary.
     SgxLoadConfig sgxLoadConfig =
         SgxLoadConfig.newBuilder().setDebug(true).setFileEnclaveConfig(fileEnclaveConfig).build();
 
@@ -66,16 +67,8 @@ public class DemoDriver {
     EnclaveManager.getInstance().loadEnclave(enclaveLoadConfig);
 
     // Part 2: Secure execution
-    String plainText = null;
-    try (Scanner scanner = new Scanner(System.in, UTF_8.name())) {
-      System.out.println("Please enter a message to encrypt: ");
-      plainText = scanner.nextLine();
-    }
-
-    if (plainText == null || plainText.length() == 0) {
-      System.out.println("No input provided.");
-      System.exit(1);
-    }
+    // Get user input.
+    String plainText = getMessage();
 
     // Prepare input for enclave.
     Demo demoInput = Demo.newBuilder().setValue(plainText).setAction(Demo.Action.ENCRYPT).build();
@@ -84,6 +77,7 @@ public class DemoDriver {
             .setExtension(EnclaveDemoExtension.quickstartInput, demoInput)
             .build();
 
+    // Register protobuf extension for output.
     ExtensionRegistry registry = ExtensionRegistry.newInstance();
     registry.add(EnclaveDemoExtension.quickstartOutput);
 
@@ -96,6 +90,21 @@ public class DemoDriver {
     // Part 3: Finalization
     EnclaveFinal finalInput = EnclaveFinal.getDefaultInstance();
     EnclaveManager.getInstance().destroyEnclaveClient(client, finalInput);
+  }
+
+  public static String getMessage() {
+    String plainText = null;
+    try (Scanner scanner = new Scanner(System.in, UTF_8.name())) {
+      System.out.println("Please enter a message to encrypt: ");
+      plainText = scanner.nextLine();
+    }
+
+    if (plainText == null || plainText.length() == 0) {
+      System.out.println("No input provided.");
+      System.exit(1);
+    }
+
+    return plainText;
   }
 
   private DemoDriver() {}

@@ -26,8 +26,8 @@ package com.asylo.client;
  * native memory, therefore, these objects must be explicitly closed.
  *
  * <p>Closing the objects of the inherited classes will denote that they are no longer needed and
- * its native memory can be released. Inherited classes need to deallocate any resource, memory
- * allocated for the native object when {@link #closeNative(long)} is invoked. After closing an
+ * its native memory can be released. Inherited classes need to deallocate any resources, or memory
+ * allocated for the native objects when {@link #closeNative(long)} is invoked. After closing an
  * object, it is unsafe to use that object or call its APIs and it can lead to undefined behavior.
  */
 public abstract class AutoCloseablePointer implements AutoCloseable {

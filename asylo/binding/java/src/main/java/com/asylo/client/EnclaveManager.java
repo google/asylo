@@ -39,21 +39,20 @@ public final class EnclaveManager extends AutoCloseablePointer {
   }
 
   /**
-   * Returns an EnclaveManager singleton object.
+   * Returns the EnclaveManager singleton object.
    *
    * @return {@link EnclaveManager} singleton object.
-   * @throws {@link EnclaveException} if EnclaveManager cannot be created.
+   * @throws EnclaveException if EnclaveManager cannot be created.
    */
   public static EnclaveManager getInstance() {
     return EnclaveManagerHolder.enclaveManager;
   }
 
   /**
-   * Returns an enclave manager instance with the given configuration. It should only be called only
-   * once.
+   * Returns an enclave manager instance which maps to the native EnclaveManager.
    *
    * @return {@link EnclaveManager} object.
-   * @throws {@link EnclaveException} if EnclaveManager cannot be created.
+   * @throws EnclaveException if EnclaveManager cannot be created.
    */
   private static EnclaveManager createEnclaveManager() {
     long pointer = create();
@@ -82,7 +81,7 @@ public final class EnclaveManager extends AutoCloseablePointer {
    * to specify a name which is already bound to an enclave.
    *
    * @param config Loading configuration of the enclave.
-   * @throws {@link EnclaveException} if manager is not able to load enclave properly.
+   * @throws EnclaveException if manager is not able to load enclave properly.
    */
   public void loadEnclave(EnclaveLoadConfig config) {
     Objects.requireNonNull(config);
@@ -97,7 +96,7 @@ public final class EnclaveManager extends AutoCloseablePointer {
    *
    * @param enclaveName Name of the enclave registered with the enclave manager.
    * @return {@link EnclaveClient} loaded before.
-   * @throws {@link EnclaveException} if it cannot return the client.
+   * @throws EnclaveException if it cannot return the client.
    */
   public EnclaveClient getEnclaveClient(String enclaveName) {
     Objects.requireNonNull(enclaveName);
@@ -113,8 +112,8 @@ public final class EnclaveManager extends AutoCloseablePointer {
    *
    * @param enclaveClient Client which needs to be destroyed.
    * @param enclaveFinal Final input to the client.
-   * @throws {@link EnclaveException} if there is any problem in destruction of enclave.
-   * @throws {@link IllegalStateException} if {@link EnclaveClient} is already destroyed.
+   * @throws EnclaveException if there is any problem in destruction of the enclave.
+   * @throws IllegalStateException if enclaveClient is already destroyed.
    */
   public void destroyEnclaveClient(EnclaveClient enclaveClient, EnclaveFinal enclaveFinal) {
     Objects.requireNonNull(enclaveClient);

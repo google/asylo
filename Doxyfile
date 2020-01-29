@@ -795,6 +795,7 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = \
+asylo/binding/java/src/main/java/com/asylo/client \
 asylo/crypto/aead_cryptor.h \
 asylo/crypto/aes_gcm_siv.h \
 asylo/crypto/nonce_generator.h \

@@ -48,7 +48,7 @@ public class EnclaveClient extends AutoCloseablePointer {
    *
    * @param enclaveInput Input to the enclave which will be used in invoking entry point method.
    * @return Output from the enclave.
-   * @throws {@link EnclaveException} if any exception occurs in native execution.
+   * @throws EnclaveException if any exception occurs in native execution.
    */
   public EnclaveOutput enterAndRun(EnclaveInput enclaveInput) {
     Objects.requireNonNull(enclaveInput);
@@ -61,7 +61,7 @@ public class EnclaveClient extends AutoCloseablePointer {
    * @param enclaveInput Input to the enclave which will be used in invoking entry point method.
    * @param registry A user protobuf registry which will be used generate EnclaveOutput.
    * @return Output from the enclave.
-   * @throws {@link EnclaveException} if any exception occurs in native execution.
+   * @throws EnclaveException if any exception occurs in native execution.
    */
   public EnclaveOutput enterAndRun(EnclaveInput enclaveInput, ExtensionRegistry registry) {
     Objects.requireNonNull(enclaveInput);
