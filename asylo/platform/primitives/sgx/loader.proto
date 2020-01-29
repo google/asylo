@@ -20,6 +20,10 @@ package asylo;
 
 import "asylo/enclave.proto";
 
+option java_package = "com.asylo";
+option java_multiple_files = true;
+option java_outer_classname = "EnclaveLoadConfigSgxExtension";
+
 // Configuration for an SGX enclave loader.
 message SgxLoadConfig {
   // True, if the enclave is to be loaded in debug mode.

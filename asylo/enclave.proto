@@ -30,6 +30,9 @@ package asylo;
 import "asylo/identity/enclave_assertion_authority_config.proto";
 import "asylo/util/status.proto";
 
+option java_package = "com.asylo";
+option java_multiple_files = true;
+
 // A configuration message for the EnclaveManager to communicate with the
 // attestation daemon.
 message HostConfig {

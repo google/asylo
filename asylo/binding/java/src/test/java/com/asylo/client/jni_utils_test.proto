@@ -1,0 +1,21 @@
+syntax = "proto2";
+
+package asylo.java.test;
+
+import "asylo/enclave.proto";
+
+option java_package = "com.asylo.test";
+option java_outer_classname = "JniUtilsTestProto";
+
+message Data {
+  required int32 int32_val = 1;
+  required string string_val = 2;
+}
+
+extend .asylo.EnclaveInput {
+  optional Data input_data = 275412277;
+}
+
+extend .asylo.EnclaveOutput {
+  optional Data output_data = 275412277;
+}

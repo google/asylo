@@ -20,6 +20,10 @@ package guide.asylo;
 
 import "asylo/enclave.proto";
 
+option java_package = "com.example";
+option java_multiple_files = true;
+option java_outer_classname = "EnclaveDemoExtension";
+
 // A custom message to pass in and out of our enclave.
 message Demo {
   // This string value is used for both user input and enclave output.

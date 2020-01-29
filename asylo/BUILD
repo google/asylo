@@ -66,6 +66,17 @@ cc_library(
     ],
 )
 
+# Java client library for applications consuming Asylo enclaves.
+java_library(
+    name = "enclave_client_java",
+    visibility = [
+        "//visibility:public",
+    ],
+    exports = [
+        "//asylo/binding/java/src/main/java/com/asylo/client:enclave_client",
+    ],
+)
+
 # Runtime library for Asylo enclaves.
 cc_library(
     name = "enclave_runtime",

@@ -378,6 +378,13 @@ cc_library(
             strip_prefix = "curl-curl-7_68_0",
             build_file = str(Label("//asylo/third_party:curl.BUILD")),
         )
+    if not native.existing_rule("rules_jvm_external"):
+        http_archive(
+            name = "rules_jvm_external",
+            sha256 = "e246373de2353f3d34d35814947aa8b7d0dd1a58c2f7a6c41cfeaff3007c2d14",
+            strip_prefix = "rules_jvm_external-3.1",
+            url = "https://github.com/bazelbuild/rules_jvm_external/archive/3.1.zip",
+        )
 
 def asylo_go_deps():
     """Macro to include Asylo's Go dependencies in a WORKSPACE."""

@@ -51,8 +51,13 @@ load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies",
 go_rules_dependencies()
 go_register_toolchains()
 
-# The following 5 dependencies are for documentation generation.
+# Load Java dependencies
+load("@com_google_asylo//asylo/bazel:java_deps.bzl", "asylo_java_deps")
+asylo_java_deps()
+
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# The following 5 dependencies are for documentation generation.
 http_archive(
     name = "io_bazel_skydoc",
     urls = ["https://github.com/bazelbuild/skydoc/archive/0afcfc62f32c644529fa5cdd8ffeec53a46462d6.tar.gz"],
