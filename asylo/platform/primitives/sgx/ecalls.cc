@@ -107,16 +107,10 @@ int ecall_dispatch_trusted_call(uint64_t selector, void *buffer) {
 
 // Invokes the enclave signal handling entry-point. Returns a non-zero error
 // code on failure.
-int ecall_deliver_signal(const char *input, size_t input_len) {
-  if (!asylo::primitives::TrustedPrimitives::IsOutsideEnclave(input,
-                                                              input_len)) {
-    asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "ecall_deliver_signal: input found to not be in untrusted memory.");
-  }
+int ecall_deliver_signal(int signum, int sigcode) {
   int result = 0;
   try {
-    result =
-        asylo::primitives::DeliverSignal(input, static_cast<size_t>(input_len));
+    result = asylo::primitives::DeliverSignal(signum, sigcode);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
   }

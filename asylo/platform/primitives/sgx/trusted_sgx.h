@@ -42,7 +42,7 @@ int asylo_enclave_call(uint64_t selector, void *buffer);
 pid_t InvokeFork(const char *enclave_name, bool restore_snapshot);
 
 // Sends the signal to registered signal handler through SignalManager.
-int DeliverSignal(const char *input, size_t input_len);
+int DeliverSignal(int klinux_signum, int klinux_sigcode);
 
 int RegisterSignalHandler(int signum,
                           void (*klinux_sigaction)(int, klinux_siginfo_t *,

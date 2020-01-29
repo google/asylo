@@ -105,10 +105,7 @@ int EnclaveSignalDispatcher::EnterEnclaveAndHandleSignal(int signum,
   if (!client) {
     return -1;
   }
-  EnclaveSignal enclave_signal;
-  enclave_signal.set_signum(signum);
-  enclave_signal.set_code(info->si_code);
-  return client->EnterAndHandleSignal(enclave_signal);
+  return client->EnterAndHandleSignal(signum, info->si_code);
 }
 
 }  // namespace primitives

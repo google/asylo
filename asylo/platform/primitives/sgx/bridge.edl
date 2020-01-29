@@ -46,8 +46,7 @@ enclave {
 
     // Intended for use by primitives enclave signal implementation.
     // Invokes signal handling entry point.
-    exception_handler public int ecall_deliver_signal(
-        [user_check] const char *input, uint64_t input_len);
+    exception_handler public int ecall_deliver_signal(int signum, int sigcode);
 
     // Invokes a utility ecall that enters the enclave to take a snapshot.
     // This is a private ecall because it should only be invoked by an

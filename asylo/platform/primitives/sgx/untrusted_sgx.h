@@ -101,7 +101,7 @@ class SgxEnclaveClient : public Client {
   Status EnterAndTransferSecureSnapshotKey(
       const ForkHandshakeConfig &fork_handshake_config);
 
-  int EnterAndHandleSignal(const EnclaveSignal enclave_signal);
+  int EnterAndHandleSignal(int signum, int sigcode);
 
   // Returns true when a TCS is active in simulation mode. Always returns false
   // in hardware mode, since TCS active/inactive state is only set and used in

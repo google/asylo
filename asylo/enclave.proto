@@ -142,20 +142,6 @@ message EnclaveFinal {
   extensions 1000 to max;
 }
 
-// A POSIX signal event that is routed to an enclave signal handler.
-message EnclaveSignal {
-  // Number of the signal.
-  optional int32 signum = 1;
-
-  // Code of the signal describing cause of the signal. Refer to siginfo(3) for
-  // more information.
-  optional int32 code = 2;
-
-  // General registers defined in |uc_mcontext|. Refer to sys/ucontext.h for
-  // more information.
-  repeated uint64 gregs = 3;
-}
-
 // An output message produced by an enclave for an invocation of its `Run`
 // entry-point. This message can be used to send information out of the enclave
 // back to an untrusted caller.

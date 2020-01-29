@@ -314,24 +314,14 @@ Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
   return Status::OkStatus();
 }
 
-int SgxEnclaveClient::EnterAndHandleSignal(const EnclaveSignal signal) {
+int SgxEnclaveClient::EnterAndHandleSignal(int signum, int sigcode) {
   if (is_destroyed_) {
-    return -1;
-  }
-
-  EnclaveSignal enclave_signal(signal);
-  enclave_signal.set_signum(signal.signum());
-
-  std::string serialized_enclave_signal;
-  if (!enclave_signal.SerializeToString(&serialized_enclave_signal)) {
     return -1;
   }
 
   ScopedCurrentClient scoped_client(this);
   int retval = 0;
-  sgx_status_t status =
-      ecall_deliver_signal(id_, &retval, serialized_enclave_signal.data(),
-                           serialized_enclave_signal.size());
+  sgx_status_t status = ecall_deliver_signal(id_, &retval, signum, sigcode);
   if (status != SGX_SUCCESS || retval) {
     return -1;
   }
