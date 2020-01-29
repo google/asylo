@@ -442,7 +442,11 @@ cc_library(
     hdrs = ["proto_enum_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
-    deps = ["@com_google_protobuf//:protobuf"],
+    deps = [
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_protobuf//:protobuf",
+    ],
 )
 
 proto_library(

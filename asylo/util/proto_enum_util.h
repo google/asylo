@@ -24,6 +24,8 @@
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/generated_enum_reflection.h>
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 namespace asylo {
 
@@ -42,6 +44,22 @@ std::string ProtoEnumValueName(ProtoEnumT enum_value) {
   }
 
   return value_descriptor->name();
+}
+
+// Returns a human-readable, comma-delimited list of enum values for |range|.
+// ProtoEnumValueRangeT must support begin and end forward iterators over a
+// protobuf enum type.
+//
+// Individual enum value strings are determined using
+// `ProtoEnumValueNamValueName`.
+template <typename ProtoEnumValueRangeT>
+std::string AllProtoEnumValueNames(const ProtoEnumValueRangeT &range) {
+  using Iterator = decltype(std::begin(range));
+  using EnumType = typename std::iterator_traits<Iterator>::value_type;
+  return absl::StrFormat(
+      "[%s]", absl::StrJoin(range, ", ", [](std::string *out, EnumType value) {
+        out->append(ProtoEnumValueName(value));
+      }));
 }
 
 // ProtoEnumRange is a type which provides the necessary functions to use

@@ -57,6 +57,17 @@ TEST(ProtoEnumUtilTest, NonEnumeratorValuesMapToDecimalRepresentation) {
               StrEq("10000"));
 }
 
+TEST(ProtoEnumUtilTest, EnumeratorRangeFormatting) {
+  constexpr TestProtoEnum kInputs[] = {
+      TEST_PROTO_ENUM_VALUE_A,
+      static_cast<TestProtoEnum>(42),
+      TEST_PROTO_ENUM_VALUE_C,
+  };
+
+  EXPECT_THAT(AllProtoEnumValueNames(kInputs),
+              StrEq("[TEST_PROTO_ENUM_VALUE_A, 42, TEST_PROTO_ENUM_VALUE_C]"));
+}
+
 TEST(ProtoEnumUtilTest, IterateEnum) {
   std::vector<TestProtoEnum> values;
   for (TestProtoEnum e : ProtoEnumRange<TestProtoEnum>()) {
