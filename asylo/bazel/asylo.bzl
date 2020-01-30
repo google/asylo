@@ -51,6 +51,8 @@ load("@rules_cc//cc:defs.bzl", "cc_library", native_cc_test = "cc_test")
 #
 # location: /_docs/reference/api/bazel/asylo_bzl.md
 #
+# order: 40
+#
 # layout: docs
 #
 # type: markdown
