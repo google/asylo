@@ -17,7 +17,7 @@ Copyright 2018 Asylo authors
     *   On Ubuntu 16.04 or Debian buster
 
     ```shell
-    sudo apt-get install -y bison
+    sudo apt-get install -y bison \
         build-essential flex libisl-dev libmpc-dev libmpfr-dev rsync texinfo \
         zlib1g-dev wget
     ```

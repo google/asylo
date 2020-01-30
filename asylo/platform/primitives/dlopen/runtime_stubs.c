@@ -37,6 +37,7 @@ int enclave_open() { return 0; }
 int enclave_read() { return 0; }
 int enclave_stat() { return 0; }
 int enclave_unlink() { return 0; }
+int enclave_syscall() { return 0; }
 int geteuid() { return 0; }
 int pthread_cond_broadcast() { return 0; }
 int pthread_cond_destroy() { return 0; }

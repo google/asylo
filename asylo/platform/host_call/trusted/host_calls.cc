@@ -29,7 +29,6 @@
 
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/host_call/serializer_functions.h"
-#include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 
@@ -38,17 +37,6 @@ using ::asylo::primitives::Extent;
 using ::asylo::primitives::MessageReader;
 using ::asylo::primitives::MessageWriter;
 using ::asylo::primitives::TrustedPrimitives;
-
-template <class... Ts>
-int64_t EnsureInitializedAndDispatchSyscall(int sysno, Ts... args) {
-  if (!enc_is_syscall_dispatcher_set()) {
-    enc_set_dispatch_syscall(asylo::host_call::SystemCallDispatcher);
-  }
-  if (!enc_is_error_handler_set()) {
-    enc_set_error_handler(TrustedPrimitives::BestEffortAbort);
-  }
-  return enc_untrusted_syscall(sysno, args...);
-}
 
 void CheckStatusAndParamCount(const asylo::primitives::PrimitiveStatus &status,
                               const MessageReader &output, const char *name,

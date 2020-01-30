@@ -36,6 +36,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/system_call/sysno.h"
 #include "asylo/platform/system_call/system_call.h"
@@ -43,7 +44,16 @@
 // Ensures that the host call library is initialized, then dispatches the
 // syscall to enc_untrusted_syscall.
 template <class... Ts>
-int64_t EnsureInitializedAndDispatchSyscall(int sysno, Ts... args);
+int64_t EnsureInitializedAndDispatchSyscall(int sysno, Ts... args) {
+  if (!enc_is_syscall_dispatcher_set()) {
+    enc_set_dispatch_syscall(asylo::host_call::SystemCallDispatcher);
+  }
+  if (!enc_is_error_handler_set()) {
+    enc_set_error_handler(
+        asylo::primitives::TrustedPrimitives::BestEffortAbort);
+  }
+  return enc_untrusted_syscall(sysno, args...);
+}
 
 // Verifies the return status of the host call and checks if the expected number
 // of parameters are received on the MessageReader.

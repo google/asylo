@@ -55,7 +55,10 @@ cc_library(
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = select(
         {
-            "@com_google_asylo//asylo": [":posix"],
+            "@com_google_asylo//asylo": [
+                ":posix",
+                "//asylo/platform/posix/syscall:enclave_syscall",
+            ],
         },
         no_match_error = "Must be built in the Asylo toolchain",
     ),
