@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include <google/protobuf/message.h>
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "asylo/daemon/identity/attestation_domain.h"
@@ -32,6 +33,23 @@
 #include "asylo/util/statusor.h"
 
 namespace asylo {
+namespace {
+
+StatusOr<EnclaveAssertionAuthorityConfig> SerializeToAuthorityConfig(
+    const google::protobuf::Message &inner_config,
+    std::function<void(AssertionDescription *)> set_description) {
+  EnclaveAssertionAuthorityConfig authority_config;
+  if (!inner_config.SerializeToString(authority_config.mutable_config())) {
+    return Status(
+        error::GoogleError::INTERNAL,
+        absl::StrCat("Failed to serialize ", inner_config.GetTypeName()));
+  }
+
+  set_description(authority_config.mutable_description());
+  return authority_config;
+}
+
+}  // namespace
 
 EnclaveAssertionAuthorityConfig CreateNullAssertionAuthorityConfig() {
   EnclaveAssertionAuthorityConfig authority_config;
@@ -50,18 +68,10 @@ CreateSgxLocalAssertionAuthorityConfig(std::string attestation_domain) {
                         kAttestationDomainNameSize, attestation_domain.size()));
   }
 
-  EnclaveAssertionAuthorityConfig authority_config;
-  SetSgxLocalAssertionDescription(authority_config.mutable_description());
-
   SgxLocalAssertionAuthorityConfig config;
   *config.mutable_attestation_domain() = std::move(attestation_domain);
 
-  if (!config.SerializeToString(authority_config.mutable_config())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed to serialize SgxLocalAssertionAuthorityConfig");
-  }
-
-  return authority_config;
+  return SerializeToAuthorityConfig(config, SetSgxLocalAssertionDescription);
 }
 
 StatusOr<EnclaveAssertionAuthorityConfig>
@@ -74,9 +84,6 @@ CreateSgxLocalAssertionAuthorityConfig() {
 StatusOr<EnclaveAssertionAuthorityConfig>
 CreateSgxAgeRemoteAssertionAuthorityConfig(
     std::vector<Certificate> certificates, std::string server_address) {
-  EnclaveAssertionAuthorityConfig authority_config;
-  SetSgxAgeRemoteAssertionDescription(authority_config.mutable_description());
-
   if (certificates.empty()) {
     return Status(
         error::GoogleError::INVALID_ARGUMENT,
@@ -90,12 +97,8 @@ CreateSgxAgeRemoteAssertionAuthorityConfig(
 
   config.set_server_address(std::move(server_address));
 
-  if (!config.SerializeToString(authority_config.mutable_config())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed to serialize SgxAgeRemoteAssertionAuthorityConfig");
-  }
-
-  return authority_config;
+  return SerializeToAuthorityConfig(config,
+                                    SetSgxAgeRemoteAssertionDescription);
 }
 
 }  // namespace asylo
