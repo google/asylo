@@ -30,10 +30,21 @@
 
 namespace asylo {
 
+constexpr int kNumberSignals = NSIG;
+
 // SignalManager class is a singleton responsible for maintaining mapping
 // between signum and registered signal handlers.
 class SignalManager {
  public:
+  // The reset status of a signal handler. Whether it shouldn't be reset, should
+  // be reset after a handling a signal, or has already been reset.
+  enum class ResetStatus {
+    NOT_AVAILABLE = 0,
+    NO_RESET = 1,
+    TO_BE_RESET = 2,
+    RESET = 3,
+  };
+
   static SignalManager *GetInstance();
 
   // Locates and calls the handler registered for |signum|.
@@ -63,11 +74,11 @@ class SignalManager {
   // Gets the set of unblocked signals in |set|.
   sigset_t GetUnblockedSet(const sigset_t &set);
 
-  // Add a signal to the reset list.
-  void SetResetOnHandle(int signum);
+  // Sets the reset status of a signal to |status|.
+  void SetResetStatus(int signum, ResetStatus status);
 
-  // Check if a signal needs to reset handler.
-  bool IsResetOnHandle(int signum);
+  // Gets the reset status of a signal.
+  ResetStatus GetResetStatus(int signum);
 
  private:
   SignalManager();  // Private to enforce singleton.
@@ -81,7 +92,7 @@ class SignalManager {
   std::unordered_map<int, std::unique_ptr<struct sigaction>>
       signal_to_sigaction_;
 
-  std::unordered_set<int> signal_to_reset_;
+  std::array<ResetStatus, kNumberSignals> signal_to_reset_;
 
   thread_local static sigset_t signal_mask_;
 };

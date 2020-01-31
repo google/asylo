@@ -76,7 +76,11 @@ int sigaction(int signum, const struct sigaction *act,
     flags = act->sa_flags;
   }
   if (flags & SA_RESETHAND) {
-    signal_manager->SetResetOnHandle(signum);
+    signal_manager->SetResetStatus(
+        signum, asylo::SignalManager::ResetStatus::TO_BE_RESET);
+  } else {
+    signal_manager->SetResetStatus(signum,
+                                   asylo::SignalManager::ResetStatus::NO_RESET);
   }
   return enc_register_signal(signum, mask, flags);
 }

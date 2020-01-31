@@ -42,8 +42,9 @@ thread_local sigset_t SignalManager::signal_mask_ = EmptySigSet();
 
 // Initialize the spin locks to be recursive so that signal handling does not
 // cause deadlock if a signal arrives while the thread is registering a signal.
-SignalManager::SignalManager()
-    : signal_maps_lock_(/*is_recursive=*/true) {}
+SignalManager::SignalManager() : signal_maps_lock_(/*is_recursive=*/true) {
+  signal_to_reset_.fill(ResetStatus::NO_RESET);
+}
 
 SignalManager *SignalManager::GetInstance() {
   static SignalManager *instance = new SignalManager();
@@ -52,11 +53,15 @@ SignalManager *SignalManager::GetInstance() {
 
 void SignalManager::HandleSignal(int signum, siginfo_t *info, void *ucontext) {
   struct sigaction act;
-  if (!GetSigAction(signum, &act)) {
+  // Return if the signal handler is already reset to default.
+  if (GetResetStatus(signum) == ResetStatus::RESET ||
+      !GetSigAction(signum, &act)) {
     return;
   }
-  if (IsResetOnHandle(signum)) {
-    ClearSigAction(signum);
+  // If it's the first time a to-be-reset signal arrives, continue invoking the
+  // handler, but mark the signal as reset.
+  if (GetResetStatus(signum) == ResetStatus::TO_BE_RESET) {
+    SetResetStatus(signum, ResetStatus::RESET);
   }
   sigset_t old_mask = GetSignalMask();
   BlockSignals(act.sa_mask);
@@ -129,14 +134,21 @@ sigset_t SignalManager::GetUnblockedSet(const sigset_t &set) {
   return signals_to_unblock;
 }
 
-void SignalManager::SetResetOnHandle(int signum) {
+void SignalManager::SetResetStatus(int signum,
+                                   SignalManager::ResetStatus status) {
+  if (signum < 0 || signum >= kNumberSignals) {
+    return;
+  }
   LockGuard lock(&signal_maps_lock_);
-  signal_to_reset_.insert(signum);
+  signal_to_reset_[signum] = status;
 }
 
-bool SignalManager::IsResetOnHandle(int signum) {
+SignalManager::ResetStatus SignalManager::GetResetStatus(int signum) {
+  if (signum < 0 || signum >= kNumberSignals) {
+    return ResetStatus::NOT_AVAILABLE;
+  }
   LockGuard lock(&signal_maps_lock_);
-  return signal_to_reset_.find(signum) != signal_to_reset_.end();
+  return signal_to_reset_[signum];
 }
 
 }  // namespace asylo
