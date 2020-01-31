@@ -128,7 +128,8 @@ ALL_BACKEND_LABELS = {
         config_settings = ["@linux_sgx//:sgx_hw"],
         tags = [
             "asylo-sgx-hw",
-            "manual",        ],
+            "manual",  # Hardware testing should be explicitly queried.
+        ],
         name_derivation = "_sgx_hw",
         sign_tool = "@linux_sgx//:sgx_sign_tool",
         debug_private_key = "@linux_sgx//:enclave_test_private.pem",

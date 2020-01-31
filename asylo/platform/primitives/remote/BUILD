@@ -43,6 +43,7 @@ cc_library(
         "//asylo/util:status_macros",
         "//asylo/util/remote:remote_loader_cc_proto",
         "//asylo/util/remote:remote_proxy_config",
+        "@com_google_absl//absl/memory",
     ],
 )
 
