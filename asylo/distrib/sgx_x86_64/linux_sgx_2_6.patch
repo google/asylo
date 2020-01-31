@@ -2820,17 +2820,35 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
      CEnclaveMngr *mngr = CEnclaveMngr::get_instance();
      CEnclaveSim *ce = mngr->get_enclave(epc_lin_addr);
  
-@@ -232,6 +361,11 @@
-         // xbx contains the address of a TCS
-         tcs = reinterpret_cast<tcs_t*>(xbx);
+@@ -235,11 +364,28 @@
+         // Is TCS pointer page-aligned?
+         GP_ON_EENTER(!IS_PAGE_ALIGNED(tcs));
  
++        // Mask all signals while holding/releasing locks to avoid deadlock,
++        // since enclave signal handling also enters the enclave here.
++        sigset_t mask;
++        sigfillset(&mask);
++        sigset_t old_mask;
++        sigprocmask(SIG_SETMASK, &mask, &old_mask);
++
 +        {
 +            std::lock_guard<std::mutex> lock(*thread_to_tcs_lock);
 +            (*thread_to_tcs)[pthread_self()] = tcs;
 +        }
 +
-         // Is TCS pointer page-aligned?
-         GP_ON_EENTER(!IS_PAGE_ALIGNED(tcs));
+         mngr = CEnclaveMngr::get_instance();
+         assert(mngr != NULL);
+ 
+-        // Is it really a TCS?
++        // Don't unmask signals after this point. Since get_enclave() also
++        // acquire locks.
+         ce = mngr->get_enclave(tcs);
++
++        sigprocmask(SIG_SETMASK, &old_mask, nullptr);
++
++        // Is it really a TCS?
+         GP_ON_EENTER(ce == NULL);
+         GP_ON_EENTER(!ce->is_tcs_page(tcs));
  
 diff -Nur sdk/simulation/urtssim/enclave_creator_sim.cpp sdk/simulation/urtssim/enclave_creator_sim.cpp
 --- sdk/simulation/urtssim/enclave_creator_sim.cpp
@@ -3495,8 +3513,8 @@ diff -Nur /dev/null BUILD
 +
 +load(":sgx_sdk.bzl", "asylo_sgx_backend", "enclave_lds", "sgx")
 +load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
-+load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 +load("@rules_proto//proto:defs.bzl", "proto_library")
++load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 +
 +# "notice" licenses present:
 +# BSD (Intel SGX SDK, libunwind, libcxxrt),
