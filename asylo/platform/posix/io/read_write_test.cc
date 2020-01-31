@@ -31,6 +31,7 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/memory.h"
+#include "asylo/secure_storage.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/test_flags.h"
 #include "asylo/util/cleansing_types.h"

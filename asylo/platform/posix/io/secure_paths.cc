@@ -18,8 +18,6 @@
 
 #include "asylo/platform/posix/io/secure_paths.h"
 
-#include <sys/ioctl.h>
-
 #include <cerrno>
 #include <cstdint>
 
@@ -28,6 +26,7 @@
 #include "asylo/platform/posix/io/io_manager.h"
 #include "asylo/platform/storage/secure/aead_handler.h"
 #include "asylo/platform/storage/secure/enclave_storage_secure.h"
+#include "asylo/secure_storage.h"
 
 using asylo::platform::crypto::gcmlib::kKeyLength;
 using asylo::platform::storage::AeadHandler;

@@ -66,6 +66,13 @@ cc_library(
     ],
 )
 
+# Defines the ioctl interface to secure I/O.
+cc_library(
+    name = "secure_storage",
+    hdrs = ["secure_storage.h"],
+    visibility = ["//visibility:public"],
+)
+
 # Java client library for applications consuming Asylo enclaves.
 java_library(
     name = "enclave_client_java",

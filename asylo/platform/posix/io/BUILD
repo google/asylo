@@ -61,6 +61,7 @@ cc_library(
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         ":util",
+        "//asylo:secure_storage",
         "//asylo/platform/common:memory",
         "//asylo/platform/crypto/gcmlib:gcm_cryptor",
         "//asylo/platform/crypto/gcmlib:trusted_gcmlib",
@@ -98,6 +99,7 @@ cc_enclave_test(
     srcs = ["read_write_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo:secure_storage",
         "//asylo/platform/common:memory",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
