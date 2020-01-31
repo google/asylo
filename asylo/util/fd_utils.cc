@@ -84,7 +84,7 @@ StatusOr<size_t> WriteInternal(int fd, absl::string_view data,
                                bool return_on_eagain) {
   size_t bytes_written = 0;
   ssize_t write_result;
-  do {
+  while (bytes_written < data.size()) {
     write_result = write(fd, &data[bytes_written], data.size() - bytes_written);
     if (write_result == -1) {
       if (errno == EAGAIN || errno == EWOULDBLOCK) {
@@ -101,7 +101,7 @@ StatusOr<size_t> WriteInternal(int fd, absl::string_view data,
     }
 
     bytes_written += write_result;
-  } while (write_result != 0);
+  }
 
   return bytes_written;
 }
