@@ -305,10 +305,10 @@ Status EnclaveManager::LoadEnclave(const EnclaveLoadConfig &load_config) {
       return status;
     }
   }
+  std::shared_ptr<primitives::Client> primitive_client;
+  ASYLO_ASSIGN_OR_RETURN(primitive_client,
+                         asylo::primitives::LoadEnclave(load_config));
 
-  // Attempt to load the enclave.
-  auto primitive_client =
-      asylo::primitives::LoadEnclave(load_config).ValueOrDie();
   StatusOr<std::unique_ptr<EnclaveClient>> result =
       GenericEnclaveClient::Create(name, primitive_client);
   if (!result.ok()) {
