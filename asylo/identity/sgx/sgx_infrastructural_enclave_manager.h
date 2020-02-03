@@ -28,10 +28,10 @@
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/identity/attestation/sgx/internal/intel_architectural_enclave_interface.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
+#include "asylo/identity/platform/sgx/machine_configuration.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/sealing/sealed_secret.pb.h"
-#include "asylo/identity/sgx/machine_configuration.pb.h"
-#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 

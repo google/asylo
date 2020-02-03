@@ -171,7 +171,7 @@ cc_test(
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
         "//asylo/crypto:signing_key",
         "//asylo/crypto:x509_certificate",
-        "//asylo/identity/sgx:machine_configuration_cc_proto",
+        "//asylo/identity/platform/sgx:machine_configuration_cc_proto",
         "//asylo/identity/sgx:pck_certificate_util",
         "//asylo/identity/sgx:pck_certificates_cc_proto",
         "//asylo/test/util:proto_matchers",

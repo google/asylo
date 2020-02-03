@@ -35,7 +35,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/platform/sgx/attributes.pb.h"
-#include "asylo/identity/sgx/machine_configuration.pb.h"
+#include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"

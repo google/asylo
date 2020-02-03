@@ -20,8 +20,8 @@
 #define ASYLO_IDENTITY_SGX_SGX_IDENTITY_TEST_UTIL_H_
 
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/sgx/code_identity.pb.h"
-#include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/platform/sgx/code_identity.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
 
 namespace asylo {

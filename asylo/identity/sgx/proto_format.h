@@ -21,7 +21,7 @@
 
 #include <string>
 
-#include "asylo/identity/sgx/code_identity.pb.h"
+#include "asylo/identity/platform/sgx/code_identity.pb.h"
 
 namespace asylo {
 namespace sgx {

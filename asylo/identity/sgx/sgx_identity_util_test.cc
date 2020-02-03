@@ -23,9 +23,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/proto_format.h"
-#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_identity_test_util.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"

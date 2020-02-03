@@ -27,10 +27,10 @@
 #include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/platform/sgx/attributes_util.h"
+#include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/platform/sgx/miscselect.pb.h"
 #include "asylo/identity/platform/sgx/miscselect_util.h"
-#include "asylo/identity/sgx/machine_configuration.pb.h"
-#include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/test/util/status_matchers.h"
 
