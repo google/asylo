@@ -166,11 +166,24 @@ cc_library(
     alwayslink = 1,
 )
 
-# Atomic utility functions.
+# Make sure that the specialized atomic wrappers are only visible to
+# our low level synchronization primitives, and aren't reused incorrectly.
+package_group(
+    name = "synchronization_primitives",
+    packages = [
+        "//asylo/platform/core/trusted_mutex",
+        "//asylo/platform/core/trusted_spin_lock",
+    ],
+)
+
+# Atomic utility functions. Highly specialized for a few specific use
+# cases, not intended to be reused without extensive understanding of
+# memory orderings. Extremely narrow visibility is on purpose.
 cc_library(
     name = "atomic",
     hdrs = ["atomic.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = [":synchronization_primitives"],
 )
 
 # Enclave entry points.

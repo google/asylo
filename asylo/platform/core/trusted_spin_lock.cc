@@ -24,46 +24,48 @@
 #include "asylo/platform/primitives/trusted_primitives.h"
 
 namespace asylo {
-namespace {
-
-// Aborts if the value of the |spin_lock| is invalid.
-void ValidateSpinLock(uint32_t spin_lock) {
-  if (spin_lock > TrustedSpinLock::kLocked) {
-    char buf[1024];
-    snprintf(buf, sizeof(buf),
-             "Invalid spin lock value in TrustedSpinLock operation: %u\n",
-             spin_lock);
-    primitives::TrustedPrimitives::BestEffortAbort(buf);
-  }
-}
-
-}  // namespace
 
 void TrustedSpinLock::Lock() {
-  while (!TryLock()) {
+  while (!TryLock(TrustedSpinLock::kStrong)) {
     enc_pause();
   }
 }
 
 bool TrustedSpinLock::Owned() const { return owner_ == enc_thread_self(); }
 
-bool TrustedSpinLock::TryLock() {
-  ValidateSpinLock(spin_lock_);
-
+bool TrustedSpinLock::TryLock(TrustedSpinLock::TryLockSemantics semantics) {
   if (is_recursive_ && owner_ == enc_thread_self()) {
     recursive_lock_count_++;
     return true;
   }
 
+  // This read of spin_lock_ does not need any atomicity. There are 3
+  // cases to consider: 1) this thread holds the lock, 2) another
+  // thread holds the lock, or 3) no thread holds the lock.
+  //
+  // 1) If we hold the lock, this load will always give the correct
+  // value, since no other thread will store to this location while we
+  // hold the lock.
+  //
+  // 2) If another thread holds the lock, we could get any value from
+  // the read, either kLocked or kUnlocked. It is likely that we'll
+  // read kLocked, which will give us a fast path to return false. If
+  // we incorrectly read kUnlocked, we'll proceed into the correctly
+  // synchronized compare and swap operation, which is slower but
+  // correct.
+  //
+  // 3) If no one holds the lock, we could get any value from the
+  // read. If we correctly read kUnlocked, we'll proceed to try and
+  // acquire the lock. If we incorrectly read kLocked, TryLock will
+  // spuriously fail, which is safe and correct.
   if (spin_lock_ != kUnlocked) {
     return false;
   }
 
-  if (CompareAndSwap(&spin_lock_, kUnlocked, kLocked) == kUnlocked) {
+  if (CompareAndSwap(&spin_lock_, kUnlocked, kLocked,
+                     semantics == TrustedSpinLock::kWeak) == kUnlocked) {
     owner_ = enc_thread_self();
-    if (is_recursive_) {
-      recursive_lock_count_ = 1;
-    }
+    recursive_lock_count_ = 1;
 
     return true;
   }
@@ -71,8 +73,6 @@ bool TrustedSpinLock::TryLock() {
 }
 
 void TrustedSpinLock::Unlock() {
-  ValidateSpinLock(spin_lock_);
-
   // It is a fatal error to attempt to unlock a spin lock the calling thread
   // does not own.
   if (owner_ != enc_thread_self()) {
@@ -81,23 +81,13 @@ void TrustedSpinLock::Unlock() {
     return;
   }
 
-  if (is_recursive_) {
-    recursive_lock_count_--;
-  }
-
-  if (!is_recursive_ || recursive_lock_count_ == 0) {
+  recursive_lock_count_--;
+  if (recursive_lock_count_ == 0) {
     owner_ = kInvalidThread;
     AtomicRelease(&spin_lock_);
   }
 }
 
-bool TrustedSpinLock::LockDepthIsOne() {
-  ValidateSpinLock(spin_lock_);
-  if (is_recursive_) {
-    return recursive_lock_count_ == 1;
-  } else {
-    return spin_lock_ == TrustedSpinLock::kLocked;
-  }
-}
+bool TrustedSpinLock::LockDepthIsOne() { return recursive_lock_count_ == 1; }
 
 }  // namespace asylo

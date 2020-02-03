@@ -25,16 +25,18 @@ namespace asylo {
 
 // Atomically compare the value at `location` to `expected` and, if-and-only-if
 // they match, replace the value at `location` with `desired`. Returns the value
-// stored `location` prior to the attempted exchange.
+// stored `location` prior to the attempted exchange. NOTE: on failure, value is
+// loaded with no memory ordering guarantees. Do not rely on its consistency.
 template <typename T>
-inline T CompareAndSwap(volatile T *location, T expected, T desired) {
+inline T CompareAndSwap(volatile T *location, T expected, T desired,
+                        bool weak) {
   T previous = expected;
   __atomic_compare_exchange_n(location,
                               /*expected=*/&previous,
                               /*desired=*/desired,
-                              /*weak=*/false,
-                              /*success_memorder=*/__ATOMIC_SEQ_CST,
-                              /*failure_memorder=*/__ATOMIC_SEQ_CST);
+                              /*weak=*/weak,
+                              /*success_memorder=*/__ATOMIC_ACQ_REL,
+                              /*failure_memorder=*/__ATOMIC_RELAXED);
   return previous;
 }
 
@@ -42,14 +44,14 @@ inline T CompareAndSwap(volatile T *location, T expected, T desired) {
 // `location` prior to being incremented.
 template <typename T>
 inline T AtomicIncrement(volatile T *location) {
-  return __atomic_fetch_add(location, 1, __ATOMIC_SEQ_CST);
+  return __atomic_fetch_add(location, 1, __ATOMIC_ACQ_REL);
 }
 
 // Atomically decrements the value at `location`, returning the value at
 // `location` prior to being decremented.
 template <typename T>
 inline T AtomicDecrement(volatile T *location) {
-  return __atomic_fetch_sub(location, 1, __ATOMIC_SEQ_CST);
+  return __atomic_fetch_sub(location, 1, __ATOMIC_ACQ_REL);
 }
 
 // Sets the value at location to zero using __ATOMIC_RELEASE memory ordering.

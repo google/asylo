@@ -35,6 +35,14 @@ namespace asylo {
 // to the same cache line size.
 class alignas(kCacheLineSize) TrustedSpinLock {
  public:
+  // Semantics for TryLock: kStrong indicates a strong underlying
+  // atomic operation, which can be slower, but won't spuriously
+  // fail. kWeak indicates weak semantics for the underlying atomic
+  // operation, where TryLock could fail even if the lock is unlocked,
+  // but will succeed or fail faster. kWeak should only be used in a
+  // loop, which will retry until TryLock succeeds.
+  enum TryLockSemantics { kStrong, kWeak };
+
   // A spin lock is a 32-bit value. In this implementation, the value of the
   // spin lock distinguishes between two possible states:
   //
@@ -68,7 +76,7 @@ class alignas(kCacheLineSize) TrustedSpinLock {
 
   // Tries to acquire the lock without blocking. Returns true if the lock was
   // acquired, otherwise false.
-  bool TryLock();
+  bool TryLock(TryLockSemantics semantics = kStrong);
 
   // Releases the lock, which must be held by the calling thread. If the mutex
   // is configured as a recursive lock and was locked multiple times, then it
@@ -93,7 +101,7 @@ class alignas(kCacheLineSize) TrustedSpinLock {
   volatile uint64_t owner_;
 
   // True if this mutex has been configured as a recursive lock.
-  bool is_recursive_;
+  const bool is_recursive_;
 
   // The number of times this lock has been locked recursively.
   uint64_t recursive_lock_count_;
