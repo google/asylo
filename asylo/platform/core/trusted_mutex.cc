@@ -55,7 +55,7 @@ void TrustedMutex::Lock() {
 bool TrustedMutex::Owned() const { return trusted_spin_lock_.Owned(); }
 
 bool TrustedMutex::TryLock() {
-  if (trusted_spin_lock_.TryLock(TrustedSpinLock::kWeak)) {
+  if (trusted_spin_lock_.TryLock()) {
     // Lock is acquired, allow other threads to wait.
     // No need to enable waiting unless lock is changing states from
     // unlocked to locked.

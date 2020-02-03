@@ -26,14 +26,14 @@
 namespace asylo {
 
 void TrustedSpinLock::Lock() {
-  while (!TryLock(TrustedSpinLock::kStrong)) {
+  while (!TryLock()) {
     enc_pause();
   }
 }
 
 bool TrustedSpinLock::Owned() const { return owner_ == enc_thread_self(); }
 
-bool TrustedSpinLock::TryLock(TrustedSpinLock::TryLockSemantics semantics) {
+bool TrustedSpinLock::TryLock() {
   if (is_recursive_ && owner_ == enc_thread_self()) {
     recursive_lock_count_++;
     return true;
@@ -62,8 +62,7 @@ bool TrustedSpinLock::TryLock(TrustedSpinLock::TryLockSemantics semantics) {
     return false;
   }
 
-  if (CompareAndSwap(&spin_lock_, kUnlocked, kLocked,
-                     semantics == TrustedSpinLock::kWeak) == kUnlocked) {
+  if (Exchange(&spin_lock_, kLocked) == kUnlocked) {
     owner_ = enc_thread_self();
     recursive_lock_count_ = 1;
 

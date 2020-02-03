@@ -23,21 +23,11 @@
 
 namespace asylo {
 
-// Atomically compare the value at `location` to `expected` and, if-and-only-if
-// they match, replace the value at `location` with `desired`. Returns the value
-// stored `location` prior to the attempted exchange. NOTE: on failure, value is
-// loaded with no memory ordering guarantees. Do not rely on its consistency.
+// Atomically exchanges value at `location` with `desired`,
+// returning value originally at `location`.
 template <typename T>
-inline T CompareAndSwap(volatile T *location, T expected, T desired,
-                        bool weak) {
-  T previous = expected;
-  __atomic_compare_exchange_n(location,
-                              /*expected=*/&previous,
-                              /*desired=*/desired,
-                              /*weak=*/weak,
-                              /*success_memorder=*/__ATOMIC_ACQ_REL,
-                              /*failure_memorder=*/__ATOMIC_RELAXED);
-  return previous;
+inline T Exchange(volatile T *location, T desired) {
+  return __atomic_exchange_n(location, desired, __ATOMIC_ACQ_REL);
 }
 
 // Atomically increments the value at `location`, returning the value at
