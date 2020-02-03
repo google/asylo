@@ -674,6 +674,69 @@ diff -Nur common/src/linux/xsave_gnu.S common/src/linux/xsave_gnu.S
  .macro DO_XSAVEC
  #if defined(LINUX64)
      .byte   0x48, 0x0f, 0xc7, 0x21
+diff -Nur common/src/se_rwlock.c common/src/se_rwlock.c
+--- common/src/se_rwlock.c
++++ common/src/se_rwlock.c
+@@ -33,37 +33,53 @@
+ #include "se_rwlock.h"
+ #include "internal/util.h"
+ 
+-
++#include <signal.h>
+ #include <stdlib.h>
++
++// Mask all the signals while acquiring/releasing the lock. Because signal
++// handler acquires the lock as well. It could cause deadlock/crash if the lock
++// is being acquired/released when interrupted. Recursive/read lock does not
++// prevent it.
++int mask_signals_and_run(int (*func)(se_prwlock_t), se_prwlock_t lock)
++{
++    sigset_t mask;
++    sigfillset(&mask);
++    sigset_t old_mask;
++    sigprocmask(SIG_SETMASK, &mask, &old_mask);
++    int ret = func(lock);
++    sigprocmask(SIG_SETMASK, &old_mask, NULL);
++    return ret;
++}
++
+ void se_wtlock(se_prwlock_t lock)
+ {
+-    int ret = pthread_rwlock_wrlock(lock);
++    int ret = mask_signals_and_run(pthread_rwlock_wrlock, lock);
+     if(0 != ret)
+         abort();
+ }
+ 
+ void se_wtunlock(se_prwlock_t lock)
+ {
+-    int ret = pthread_rwlock_unlock(lock);
++    int ret = mask_signals_and_run(pthread_rwlock_unlock, lock);
+     if(0 != ret)
+         abort();
+ }
+ 
+ int se_try_rdlock(se_prwlock_t lock)
+ {
+-    return (0 == pthread_rwlock_tryrdlock(lock));
++    return (0 == mask_signals_and_run(pthread_rwlock_tryrdlock, lock));
+ }
+ 
+ void se_rdlock(se_prwlock_t lock)
+ {
+-    int ret = pthread_rwlock_rdlock(lock);
++    int ret = mask_signals_and_run(pthread_rwlock_rdlock, lock);
+     if(0 != ret)
+         abort();
+ }
+ 
+ void se_rdunlock(se_prwlock_t lock)
+ {
+-    int ret = pthread_rwlock_unlock(lock);
++    int ret = mask_signals_and_run(pthread_rwlock_unlock, lock);
+     if(0 != ret)
+         abort();
+ }
 diff -Nur common/src/sgx_read_rand.cpp common/src/sgx_read_rand.cpp
 --- common/src/sgx_read_rand.cpp
 +++ common/src/sgx_read_rand.cpp
