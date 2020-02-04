@@ -46,6 +46,10 @@ void enc_exit(int rc);
 // randomness.
 ssize_t enc_hardware_random(uint8_t *buf, size_t count);
 
+// Returns the number of entropy bits from the randomness source for
+// enc_hardware_random.
+int enc_hardware_random_entropy();
+
 // Registers a signal handler on the host.
 int enc_register_signal(int signum, const sigset_t mask, int flags);
 

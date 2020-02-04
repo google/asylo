@@ -19,7 +19,14 @@
 #ifndef ASYLO_PLATFORM_PRIMITIVES_RANDOM_BYTES_H_
 #define ASYLO_PLATFORM_PRIMITIVES_RANDOM_BYTES_H_
 
-#include <cstddef>
+#include <sys/ioctl.h>
+
+// An ioctl request that should return 0 in an enclave, and -1 otherwise.
+// linux/random.h defines all RNDnumber requests as having group 'R', so give
+// this RNDnumber a group 'E'.
+#ifdef ASYLO_TRANSITIONAL_DEFINE_FOR_IOCTL
+#define RNDINENCLAVE _IOR('E', 0x00, int)
+#endif
 
 namespace asylo {
 

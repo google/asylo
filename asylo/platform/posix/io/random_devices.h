@@ -38,6 +38,7 @@ class RandomIOContext : public io::IOManager::IOContext {
   int FSync() override;
   int FStat(struct stat *stat_buffer) override;
   int Isatty() override;
+  int Ioctl(int request, void *argp) override;
 
  private:
   bool is_urandom_;

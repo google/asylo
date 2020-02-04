@@ -26,6 +26,8 @@
 
 namespace {
 
+static constexpr int kRdRandEntropyBits = 256;
+
 static void rdrand64(void *out) {
   // Spec recommends retrying for transient failures.
   constexpr int kRandRetries = 10;
@@ -73,6 +75,13 @@ bool rdrand_supported() {
 }
 
 }  // namespace asylo
+
+extern "C" int enc_hardware_random_entropy() {
+  if (asylo::rdrand_supported()) {
+    return kRdRandEntropyBits;
+  }
+  return 0;
+}
 
 extern "C" ssize_t enc_hardware_random(uint8_t *buf, size_t count) {
   if (!asylo::rdrand_supported()) {

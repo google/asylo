@@ -29,6 +29,7 @@
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
+#include "asylo/platform/primitives/random_bytes.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/test/util/test_flags.h"
 
@@ -151,14 +152,9 @@ TEST(CwdTest, SplitHandlerResolve) {
   asylo::platform::storage::FdCloser fd_closer(fd);
 
   // Make sure it didn't get the /dev/urandom from the host.
-  // Currently, the enclave /dev/urandom doesn't implement ioctl, while the
-  // Linux /dev/urandom does. It doesn't really matter which ioctl number is
-  // used, since the Linux device still wouldn't return ENOSYS if not known.
-  // If ioctl is ever implemented on the this device, it should implement a
-  // specific ioctl number that we could call here to identify it is our secure
-  // device.
-  EXPECT_EQ(ioctl(fd, 0, 0), -1);
-  EXPECT_EQ(errno, ENOSYS);
+  #ifdef RNDINENCLAVE
+  EXPECT_EQ(ioctl(fd, RNDINENCLAVE), 0);
+  #endif
 }
 
 // Tests matching a VirtualPathHandler when the prefix is present, but backed up
@@ -168,15 +164,9 @@ TEST(CwdTest, SplitBackHandlerResolve) {
   ASSERT_NE(fd, -1);
   asylo::platform::storage::FdCloser fd_closer(fd);
 
-  // Make sure it didn't get the /dev/urandom from the host.
-  // Currently, the enclave /dev/urandom doesn't implement ioctl, while the
-  // Linux /dev/urandom does. It doesn't really matter which ioctl number is
-  // used, since the Linux device still wouldn't return ENOSYS if not known.
-  // If ioctl is ever implemented on the this device, it should implement a
-  // specific ioctl number that we could call here to identify it is our secure
-  // device.
-  EXPECT_EQ(ioctl(fd, 0, 0), -1);
-  EXPECT_EQ(errno, ENOSYS);
+  #ifdef RNDINENCLAVE
+  EXPECT_EQ(ioctl(fd, RNDINENCLAVE), 0);
+  #endif
 
   // Make sure it matched urandom instead of random.
   constexpr unsigned int urandom_major = 1;

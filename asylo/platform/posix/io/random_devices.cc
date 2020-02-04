@@ -20,6 +20,10 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <sys/ioctl.h>  // Only included for the transitional define.
+#if __has_include(<linux/random.h>)
+#include <linux/random.h>
+#endif
 #include <string.h>
 #include <sys/sysmacros.h>
 
@@ -98,6 +102,28 @@ int RandomIOContext::FStat(struct stat *stat_buffer) {
 int RandomIOContext::Isatty() {
   // Returns 0 as our random devices are not terminals.
   return 0;
+}
+
+int RandomIOContext::Ioctl(int request, void *argp) {
+  switch (request) {
+    #ifdef RNDGETENTCNT
+      case RNDGETENTCNT: {
+      int result = enc_hardware_random_entropy();
+      if (result) {
+        return result;
+      }
+      return enc_untrusted_syscall(asylo::system_call::kSYS_ioctl, request,
+                                   argp);
+    }
+    // Nonstandard request to random device fd for cwd_test.
+    case RNDINENCLAVE: {
+      return 0;
+    }
+    #endif
+  default:
+    errno = EINVAL;
+    return -1;
+  }
 }
 
 std::unique_ptr<io::IOManager::IOContext> RandomPathHandler::Open(
