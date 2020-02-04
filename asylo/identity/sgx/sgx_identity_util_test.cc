@@ -35,6 +35,13 @@ namespace asylo {
 TEST(SgxIdentityUtilTest, GetSelfSgxIdentity) {
   sgx::FakeEnclave enclave;
   enclave.SetRandomIdentity();
+
+  // Ensure we are not already inside of an enclave, which could happen if
+  // this is not the first test in the suite to be executed.
+  if (sgx::FakeEnclave::GetCurrentEnclave() != nullptr) {
+    sgx::FakeEnclave::ExitEnclave();
+  }
+
   sgx::FakeEnclave::EnterEnclave(enclave);
   EXPECT_THAT(GetSelfSgxIdentity(), EqualsProto(enclave.GetIdentity()));
   sgx::FakeEnclave::ExitEnclave();
