@@ -141,13 +141,13 @@ class FakeSgxPcsClient : public SgxPcsClient {
   //
   StatusOr<GetTcbInfoResult> GetTcbInfo(const Fmspc &fmspc) override;
 
-  // Returns a new random FMSPC that a FakeSgxPcsClient will associate with
-  // |type|. Callers should be careful to check for collisions with previous
-  // randomly-generated FMSPCs.
+  // Returns a new random FMSPC that a FakeSgxPcsClient can associate with
+  // |properties|. Callers should be careful to check for collisions with
+  // previous randomly-generated FMSPCs.
   static StatusOr<Fmspc> CreateFmspcWithProperties(
       const PlatformProperties &properties);
 
-  // Returns a new random PPID that a FakeSgxPcsClient will associate with
+  // Returns a new random PPID that a FakeSgxPcsClient can associate with
   // |fmspc|.
   static StatusOr<Ppid> CreatePpidForFmspc(const Fmspc &fmspc);
 
