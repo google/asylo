@@ -41,11 +41,36 @@ StatusOr<T> ParseTextProto(absl::string_view text) {
   return proto;
 }
 
-// Parses |text| into a protobuf of type |T| on success. Results in a fatal
-// error if the input is not a valid textproto encoding of |T|.
-template <typename T>
-T ParseTextProtoOrDie(absl::string_view text) {
-  return ParseTextProto<T>(text).ValueOrDie();
+namespace internal {
+
+// Helper type which can perform implicit conversions of textproto to some
+// protobuf message type. If the conversion is not valid, then the program
+// is aborted. This type is intended to be used only with `ParseTextProtoOrDie`.
+class ParseTextProtoOrDieHelper {
+ public:
+  explicit ParseTextProtoOrDieHelper(absl::string_view text) : text_(text) {}
+
+  template <typename T>
+  operator T() const {
+    return ParseTextProto<T>(text_).ValueOrDie();
+  }
+
+ private:
+  absl::string_view text_;
+};
+
+}  // namespace internal
+
+// Parses |text| into a protobuf via `ParseTextProtoOrDieHelper`, which performs
+// the actual conversion. A helper type is used so that callers do not have to
+// explicitly pass a template parameter for the desired output message type.
+// If |text| cannot successfully be parsed, the program is aborted. This
+// function is intended to be used for static protobufs, which are known good
+// at build time. If |text| is not a known, build time constant,
+// `ParseTextProto` should be used instead.
+internal::ParseTextProtoOrDieHelper ParseTextProtoOrDie(
+    absl::string_view text) {
+  return internal::ParseTextProtoOrDieHelper(text);
 }
 
 }  // namespace asylo

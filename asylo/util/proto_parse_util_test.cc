@@ -33,7 +33,8 @@ TEST(ProtoParseUtilTest, ParseEmptyMessage) {
   TestMessage expected;
   EXPECT_THAT(ParseTextProto<TestMessage>(""),
               IsOkAndHolds(EqualsProto(expected)));
-  EXPECT_THAT(ParseTextProtoOrDie<TestMessage>(""), EqualsProto(expected));
+  TestMessage message = ParseTextProtoOrDie("");
+  EXPECT_THAT(message, EqualsProto(expected));
 }
 
 TEST(ProtoParseUtilTest, ParsePartialMessage) {
@@ -45,7 +46,8 @@ TEST(ProtoParseUtilTest, ParsePartialMessage) {
   expected.set_enum_field(TEST_VALUE_FORTY_TWO);
   EXPECT_THAT(ParseTextProto<TestMessage>(kInput),
               IsOkAndHolds(EqualsProto(expected)));
-  EXPECT_THAT(ParseTextProtoOrDie<TestMessage>(kInput), EqualsProto(expected));
+  TestMessage actual = ParseTextProtoOrDie(kInput);
+  EXPECT_THAT(actual, EqualsProto(expected));
 }
 
 TEST(ProtoParseUtilTest, ParseFullMessage) {
@@ -61,14 +63,15 @@ TEST(ProtoParseUtilTest, ParseFullMessage) {
   expected.mutable_message_field()->set_string_field("Lorem ipsum");
   EXPECT_THAT(ParseTextProto<TestMessage>(kInput),
               IsOkAndHolds(EqualsProto(expected)));
-  EXPECT_THAT(ParseTextProtoOrDie<TestMessage>(kInput), EqualsProto(expected));
+  TestMessage actual = ParseTextProtoOrDie(kInput);
+  EXPECT_THAT(actual, EqualsProto(expected));
 }
 
 TEST(ProtoParseUtilTest, ParseInvalidInput) {
   TestMessage expected;
   EXPECT_THAT(ParseTextProto<TestMessage>("garbage"),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
-  EXPECT_DEATH_IF_SUPPORTED(ParseTextProtoOrDie<TestMessage>("junk"), "");
+  EXPECT_DEATH_IF_SUPPORTED(TestMessage m = ParseTextProtoOrDie("junk"), "");
 }
 
 }  // namespace
