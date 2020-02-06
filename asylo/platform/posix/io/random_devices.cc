@@ -115,6 +115,8 @@ int RandomIOContext::Ioctl(int request, void *argp) {
       return enc_untrusted_syscall(asylo::system_call::kSYS_ioctl, request,
                                    argp);
     }
+    #endif
+    #ifdef RNDINENCLAVE
     // Nonstandard request to random device fd for cwd_test.
     case RNDINENCLAVE: {
       return 0;
