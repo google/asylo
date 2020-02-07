@@ -33,6 +33,7 @@
 #include "asylo/crypto/fake_certificate.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/proto_parse_util.h"
 
 namespace asylo {
 namespace {
@@ -75,7 +76,73 @@ constexpr char kPemCert[] =
     "Z0FeT5U=\n"
     "-----END CERTIFICATE-----\n";
 
-// Test data of a Certificate proto parsed from an X.509 PEM-encoded cert
+constexpr char kDerCert[] =
+    "\x30\x82\x04\x81\x30\x82\x04\x27\xa0\x03\x02\x01\x02\x02\x15\x00\x9d\x66"
+    "\xc4\x32\x33\x01\x76\xbe\x8b\x17\x14\x28\xa6\x94\x9b\x26\x31\xa3\x22\x65"
+    "\x30\x0a\x06\x08\x2a\x86\x48\xce\x3d\x04\x03\x02\x30\x71\x31\x23\x30\x21"
+    "\x06\x03\x55\x04\x03\x0c\x1a\x49\x6e\x74\x65\x6c\x20\x53\x47\x58\x20\x50"
+    "\x43\x4b\x20\x50\x72\x6f\x63\x65\x73\x73\x6f\x72\x20\x43\x41\x31\x1a\x30"
+    "\x18\x06\x03\x55\x04\x0a\x0c\x11\x49\x6e\x74\x65\x6c\x20\x43\x6f\x72\x70"
+    "\x6f\x72\x61\x74\x69\x6f\x6e\x31\x14\x30\x12\x06\x03\x55\x04\x07\x0c\x0b"
+    "\x53\x61\x6e\x74\x61\x20\x43\x6c\x61\x72\x61\x31\x0b\x30\x09\x06\x03\x55"
+    "\x04\x08\x0c\x02\x43\x41\x31\x0b\x30\x09\x06\x03\x55\x04\x06\x13\x02\x55"
+    "\x53\x30\x1e\x17\x0d\x31\x39\x30\x34\x30\x33\x32\x31\x31\x36\x33\x31\x5a"
+    "\x17\x0d\x32\x36\x30\x34\x30\x33\x32\x31\x31\x36\x33\x31\x5a\x30\x70\x31"
+    "\x22\x30\x20\x06\x03\x55\x04\x03\x0c\x19\x49\x6e\x74\x65\x6c\x20\x53\x47"
+    "\x58\x20\x50\x43\x4b\x20\x43\x65\x72\x74\x69\x66\x69\x63\x61\x74\x65\x31"
+    "\x1a\x30\x18\x06\x03\x55\x04\x0a\x0c\x11\x49\x6e\x74\x65\x6c\x20\x43\x6f"
+    "\x72\x70\x6f\x72\x61\x74\x69\x6f\x6e\x31\x14\x30\x12\x06\x03\x55\x04\x07"
+    "\x0c\x0b\x53\x61\x6e\x74\x61\x20\x43\x6c\x61\x72\x61\x31\x0b\x30\x09\x06"
+    "\x03\x55\x04\x08\x0c\x02\x43\x41\x31\x0b\x30\x09\x06\x03\x55\x04\x06\x13"
+    "\x02\x55\x53\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08"
+    "\x2a\x86\x48\xce\x3d\x03\x01\x07\x03\x42\x00\x04\x17\xb6\x82\x25\x0c\xc6"
+    "\x47\xb4\x7f\xa1\xe0\xe4\xbb\x28\x85\x86\x49\xd5\x5d\x5e\x26\x2a\x5e\xf6"
+    "\x41\x40\x83\xfb\x4d\x82\x4b\xe6\xb4\x01\x49\xc9\xb4\xac\xf7\xec\x49\x80"
+    "\xc9\xde\x5a\x7c\x9d\xfc\x74\x5b\x30\x3c\x52\xf5\xba\x92\xd8\xef\x2a\xc4"
+    "\x72\x8f\x7d\xde\xa3\x82\x02\x9b\x30\x82\x02\x97\x30\x1f\x06\x03\x55\x1d"
+    "\x23\x04\x18\x30\x16\x80\x14\xd0\xe8\xaa\xda\x75\xd7\xf9\x2e\x49\x17\x98"
+    "\x3c\x7b\x14\x65\xd0\xd5\xf2\x59\x4d\x30\x5f\x06\x03\x55\x1d\x1f\x04\x58"
+    "\x30\x56\x30\x54\xa0\x52\xa0\x50\x86\x4e\x68\x74\x74\x70\x73\x3a\x2f\x2f"
+    "\x61\x70\x69\x2e\x74\x72\x75\x73\x74\x65\x64\x73\x65\x72\x76\x69\x63\x65"
+    "\x73\x2e\x69\x6e\x74\x65\x6c\x2e\x63\x6f\x6d\x2f\x73\x67\x78\x2f\x63\x65"
+    "\x72\x74\x69\x66\x69\x63\x61\x74\x69\x6f\x6e\x2f\x76\x31\x2f\x70\x63\x6b"
+    "\x63\x72\x6c\x3f\x63\x61\x3d\x70\x72\x6f\x63\x65\x73\x73\x6f\x72\x30\x1d"
+    "\x06\x03\x55\x1d\x0e\x04\x16\x04\x14\x14\x14\xe4\x33\xc7\x68\xa0\x7f\x39"
+    "\xb5\x8d\xd8\x1a\x55\x75\x32\xd6\x6c\xd7\x31\x30\x0e\x06\x03\x55\x1d\x0f"
+    "\x01\x01\xff\x04\x04\x03\x02\x06\xc0\x30\x0c\x06\x03\x55\x1d\x13\x01\x01"
+    "\xff\x04\x02\x30\x00\x30\x82\x01\xd4\x06\x09\x2a\x86\x48\x86\xf8\x4d\x01"
+    "\x0d\x01\x04\x82\x01\xc5\x30\x82\x01\xc1\x30\x1e\x06\x0a\x2a\x86\x48\x86"
+    "\xf8\x4d\x01\x0d\x01\x01\x04\x10\x7b\x97\xbe\x77\xc6\x2d\x42\x46\xc6\x03"
+    "\xd0\xf4\xf1\x1b\x31\xbb\x30\x82\x01\x64\x06\x0a\x2a\x86\x48\x86\xf8\x4d"
+    "\x01\x0d\x01\x02\x30\x82\x01\x54\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8\x4d"
+    "\x01\x0d\x01\x02\x01\x02\x01\x05\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8\x4d"
+    "\x01\x0d\x01\x02\x02\x02\x01\x05\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8\x4d"
+    "\x01\x0d\x01\x02\x03\x02\x01\x02\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8\x4d"
+    "\x01\x0d\x01\x02\x04\x02\x01\x04\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8\x4d"
+    "\x01\x0d\x01\x02\x05\x02\x01\x01\x30\x11\x06\x0b\x2a\x86\x48\x86\xf8\x4d"
+    "\x01\x0d\x01\x02\x06\x02\x02\x00\x80\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8"
+    "\x4d\x01\x0d\x01\x02\x07\x02\x01\x00\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8"
+    "\x4d\x01\x0d\x01\x02\x08\x02\x01\x00\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8"
+    "\x4d\x01\x0d\x01\x02\x09\x02\x01\x00\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8"
+    "\x4d\x01\x0d\x01\x02\x0a\x02\x01\x00\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8"
+    "\x4d\x01\x0d\x01\x02\x0b\x02\x01\x00\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8"
+    "\x4d\x01\x0d\x01\x02\x0c\x02\x01\x00\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8"
+    "\x4d\x01\x0d\x01\x02\x0d\x02\x01\x00\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8"
+    "\x4d\x01\x0d\x01\x02\x0e\x02\x01\x00\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8"
+    "\x4d\x01\x0d\x01\x02\x0f\x02\x01\x00\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8"
+    "\x4d\x01\x0d\x01\x02\x10\x02\x01\x00\x30\x10\x06\x0b\x2a\x86\x48\x86\xf8"
+    "\x4d\x01\x0d\x01\x02\x11\x02\x01\x07\x30\x1f\x06\x0b\x2a\x86\x48\x86\xf8"
+    "\x4d\x01\x0d\x01\x02\x12\x04\x10\x05\x05\x02\x04\x01\x80\x00\x00\x00\x00"
+    "\x00\x00\x00\x00\x00\x00\x30\x10\x06\x0a\x2a\x86\x48\x86\xf8\x4d\x01\x0d"
+    "\x01\x03\x04\x02\x00\x00\x30\x14\x06\x0a\x2a\x86\x48\x86\xf8\x4d\x01\x0d"
+    "\x01\x04\x04\x06\x00\x90\x6e\xa1\x00\x00\x30\x0f\x06\x0a\x2a\x86\x48\x86"
+    "\xf8\x4d\x01\x0d\x01\x05\x0a\x01\x00\x30\x0a\x06\x08\x2a\x86\x48\xce\x3d"
+    "\x04\x03\x02\x03\x48\x00\x30\x45\x02\x21\x00\xae\x9a\x2a\x8c\xd3\x16\xcd"
+    "\x91\x2a\x2f\x82\x80\xcf\x66\x53\x0b\xa4\xb3\x86\x95\x06\x4a\x22\x26\x1d"
+    "\x38\x2a\x89\x84\x3e\x2f\x62\x02\x20\x79\xde\xcb\x76\x6d\x42\x51\x50\x4f"
+    "\x11\xf0\x44\x95\xb9\xfd\x40\xc4\xb6\x69\x23\x6c\x12\x52\x00\xb4\x39\x53"
+    "\x67\x41\x5e\x4f\x95";
+
 // string.
 constexpr char kProtoPemCert[] = R"proto(
   format: X509_PEM
@@ -275,6 +342,43 @@ constexpr char kProtoPemCrl[] = R"proto(
         "-----END X509 CRL-----\n"
 )proto";
 
+constexpr char kProtoAttestationKeyCert[] = R"proto(
+  format: SGX_ATTESTATION_KEY_CERTIFICATE
+  data: "\n\263\003\n\260\003\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\000\001\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\'\000\000\000\000\000\000\000\'\000\000\000\000\000\000\000"
+        "\260\365\210%\302mRw\302\n\252\357;4\223\252\374\357p\363iW\263\331"
+        "\007\022\356,\226\263\366R\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\000\275\361\343\231\220Q\014\371B\237\256_\246Kl\323\232g"
+        "\311\231X\240\020;\251\276yH\252\347\336\014\000\000\000\000\000\000"
+        "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\000\000\036,8\234\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\026M"
+        "\304IJ\026L0\257\257\263?K\273\357wPle\261\324\217\344\244w)YJ\206\342"
+        "\257\372\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000ASYLO SIGNREPORT\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+        "\000\000\000\342T=\274\262\307j\023\000\036\n\232\240rRi\022\335\001\n"
+        "\304\001\nc\010\002\020\001\030\002\"[0Y0\023\006\007*\206H\316=\002"
+        "\001\006\010*\206H\316=\003\001\007\003B\000\004\273i\362\351\001\331&"
+        "\331\327\347F\235i\001v\371\004\024\213\226\210~\211\016[\261\262\034`"
+        "\030\310S3\366U\000\312&\231\324p.\311\211\206\314\014\020\240\377\023"
+        "\2567Qz\2569&2\214?\013\202h\0220Assertion Generator Enclave "
+        "Attestation Key v0.1\032+Assertion Generator Enclave Attestation Key"
+        "\022\024PCE Sign Report v0.1\032H\010\001\022D\n \246\246\343\277W\212"
+        "\247\273#k\256L\371\016\262\326\234\347\003\303ST\310`\202o\212\215BM"
+        "\233}\022 \263u\356K\241.ah\211\353\260\255GH\234s\307\227\177\240S"
+        "\304\004v\302\356\230R\361\'\235Q"
+)proto";
+
 using ::testing::Eq;
 using ::testing::Optional;
 using ::testing::SizeIs;
@@ -292,7 +396,7 @@ CertificateSigningRequest CreateValidCertificateSigningRequest() {
 Certificate CreateValidCertificate() {
   Certificate certificate;
   certificate.set_format(Certificate::X509_PEM);
-  certificate.set_data("foobar");
+  certificate.set_data(kPemCert);
   return certificate;
 }
 
@@ -350,12 +454,16 @@ TEST(CertificateUtilTest, ValidateCertificateReturnsErrorIfNoFormat) {
   certificate.clear_format();
   EXPECT_THAT(ValidateCertificate(certificate),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(FullyValidateCertificate(certificate),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST(CertificateUtilTest, ValidateCertificateReturnsErrorIfUnknownFormat) {
   Certificate certificate = CreateValidCertificate();
   certificate.set_format(Certificate::UNKNOWN);
   EXPECT_THAT(ValidateCertificate(certificate),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(FullyValidateCertificate(certificate),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -364,10 +472,55 @@ TEST(CertificateUtilTest, ValidateCertificateReturnsErrorIfNoData) {
   certificate.clear_data();
   EXPECT_THAT(ValidateCertificate(certificate),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(FullyValidateCertificate(certificate),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(CertificateUtilTest, ValidateCertificateSucceedsIfCertificateIsValid) {
-  ASYLO_EXPECT_OK(ValidateCertificate(CreateValidCertificate()));
+TEST(CertificateUtilTest,
+     FullyValidateCertificateReturnsErrorIfPemDataIsInvalid) {
+  EXPECT_THAT(FullyValidateCertificate(ParseTextProtoOrDie(R"pb(
+                format: X509_PEM
+                data: "nope, not valid"
+              )pb")),
+              StatusIs(error::GoogleError::INTERNAL));
+}
+
+TEST(CertificateUtilTest,
+     FullyValidateCertificateReturnsErrorIfDerDataIsInvalid) {
+  EXPECT_THAT(FullyValidateCertificate(ParseTextProtoOrDie(R"pb(
+                format: X509_DER
+                data: "junk data"
+              )pb")),
+              StatusIs(error::GoogleError::INTERNAL));
+}
+
+TEST(CertificateUtilTest,
+     FullyValidateCertificateReturnsErrorIfSgxAttestationKeyCertIsInvalid) {
+  EXPECT_THAT(FullyValidateCertificate(ParseTextProtoOrDie(R"pb(
+                format: SGX_ATTESTATION_KEY_CERTIFICATE
+                data: "totally bogus"
+              )pb")),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(CertificateUtilTest, FullyValidateCertificateSucceedsWithValidPem) {
+  Certificate certificate;
+  certificate.set_format(Certificate::X509_PEM);
+  certificate.set_data(kPemCert);
+  ASYLO_EXPECT_OK(FullyValidateCertificate(certificate));
+}
+
+TEST(CertificateUtilTest, FullyValidateCertificateSucceedsWithValidDer) {
+  Certificate certificate;
+  certificate.set_format(Certificate::X509_DER);
+  certificate.set_data(kDerCert, sizeof(kDerCert) - 1);
+  ASYLO_EXPECT_OK(FullyValidateCertificate(certificate));
+}
+
+TEST(CertificateUtilTest,
+     FullyValidateCertificateSucceedsWithValidAttestionKeyCertificate) {
+  ASYLO_EXPECT_OK(
+      FullyValidateCertificate(ParseTextProtoOrDie(kProtoAttestationKeyCert)));
 }
 
 TEST(CertificateUtilTest,

@@ -25,6 +25,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "asylo/crypto/x509_certificate.h"
+#include "asylo/identity/attestation/sgx/internal/attestation_key_certificate_impl.h"
 #include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status_macros.h"
 
@@ -48,6 +49,24 @@ Status ValidateCertificateSigningRequest(const CertificateSigningRequest &csr) {
   return Status::OkStatus();
 }
 
+Status FullyValidateCertificate(const Certificate &certificate) {
+  ASYLO_RETURN_IF_ERROR(ValidateCertificate(certificate));
+
+  switch (certificate.format()) {
+    case Certificate::X509_DER:
+    case Certificate::X509_PEM:
+      return X509Certificate::Create(certificate).status();
+    case Certificate::SGX_ATTESTATION_KEY_CERTIFICATE:
+      return sgx::AttestationKeyCertificateImpl::Create(certificate).status();
+    case Certificate::UNKNOWN:
+      break;
+  }
+
+  return Status(error::GoogleError::INVALID_ARGUMENT,
+                absl::StrCat("Certificate has an unknown format: ",
+                             ProtoEnumValueName(certificate.format())));
+}
+
 Status ValidateCertificate(const Certificate &certificate) {
   if (!certificate.has_format()) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
@@ -57,6 +76,7 @@ Status ValidateCertificate(const Certificate &certificate) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Certificate missing required \"data\" field");
   }
+
   if (certificate.format() == asylo::Certificate::UNKNOWN) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Certificate has an unknown format");

@@ -61,6 +61,11 @@ Status ValidateCertificateSigningRequest(const CertificateSigningRequest &csr);
 // UNKNOWN.
 Status ValidateCertificate(const Certificate &certificate);
 
+// Validates a Certificate message and the data contained within it. Returns an
+// OK status if and only if the message is valid and the data parses
+// successfully.
+Status FullyValidateCertificate(const Certificate &certificate);
+
 // Validates a CertificateChain message. Returns an OK status if and only if the
 // message is valid.
 //
