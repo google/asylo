@@ -159,6 +159,55 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "fake_pce",
+    testonly = 1,
+    srcs = ["fake_pce.cc"],
+    hdrs = ["fake_pce.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = [
+        "//asylo/identity/attestation/sgx:__pkg__",
+        "//asylo/identity/sgx:__pkg__",
+    ],
+    deps = [
+        ":intel_architectural_enclave_interface",
+        "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/crypto:signing_key",
+        "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity/provisioning/sgx/internal:fake_sgx_pki",
+        "//asylo/identity/sgx:hardware_types",
+        "//asylo/identity/sgx:sgx_identity_util",
+        "//asylo/identity/sgx:sgx_identity_util_internal",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+    ],
+)
+
+cc_test(
+    name = "fake_pce_test",
+    srcs = ["fake_pce_test.cc"],
+    deps = [
+        ":fake_pce",
+        "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/crypto:signing_key",
+        "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity/sgx:hardware_types",
+        "//asylo/identity/sgx:pce_util",
+        "//asylo/test/util:memory_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Implementation of IntelArchitecturalEnclaveInterface using Intel's SGX Data
 # Center Attestation Primitives (DCAP) library.
 cc_library(
