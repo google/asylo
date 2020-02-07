@@ -23,11 +23,15 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/enclave.pb.h"
+#include "asylo/enclave_manager.h"
+#include "asylo/identity/attestation/sgx/internal/attestation_key_certificate_impl.h"
 #include "asylo/identity/attestation/sgx/internal/intel_architectural_enclave_interface.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
+#include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
 #include "asylo/identity/sealing/sealed_secret.pb.h"
 #include "asylo/identity/sgx/pce_util.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -49,6 +53,72 @@ SgxInfrastructuralEnclaveManager::SgxInfrastructuralEnclaveManager(
     EnclaveClient *assertion_generator_enclave)
     : intel_ae_interface_(std::move(intel_ae_interface)),
       assertion_generator_enclave_(assertion_generator_enclave) {}
+
+EnclaveLoadConfig SgxInfrastructuralEnclaveManager::GetAgeEnclaveLoadConfig(
+    std::string enclave_path, bool is_debuggable_enclave,
+    std::string server_address,
+    EnclaveAssertionAuthorityConfig sgx_local_assertion_authority_config,
+    std::string enclave_client_name) {
+  EnclaveLoadConfig load_config;
+  load_config.set_name(std::move(enclave_client_name));
+
+  SgxLoadConfig *sgx_config = load_config.MutableExtension(sgx_load_config);
+  sgx_config->mutable_file_enclave_config()->set_enclave_path(
+      std::move(enclave_path));
+  sgx_config->set_debug(is_debuggable_enclave);
+
+  *load_config.mutable_config()->add_enclave_assertion_authority_configs() =
+      std::move(sgx_local_assertion_authority_config);
+
+  sgx::RemoteAssertionGeneratorEnclaveConfig *age_config =
+      load_config.mutable_config()->MutableExtension(
+          sgx::remote_assertion_generator_enclave_config);
+  age_config->set_remote_assertion_generator_server_address(
+      std::move(server_address));
+
+  return load_config;
+}
+
+StatusOr<EnclaveClient *> SgxInfrastructuralEnclaveManager::GetAgeEnclaveClient(
+    const EnclaveLoadConfig &load_config) {
+  EnclaveManager *enclave_manager;
+  ASYLO_ASSIGN_OR_RETURN(enclave_manager, EnclaveManager::Instance());
+  ASYLO_RETURN_IF_ERROR(enclave_manager->LoadEnclave(load_config));
+  return enclave_manager->GetClient(load_config.name());
+}
+
+StatusOr<Certificate> SgxInfrastructuralEnclaveManager::CertifyAge() {
+  // Get the PCE's target info.
+  sgx::TargetInfoProto pce_target_info;
+  sgx::PceSvn pce_svn;
+  ASYLO_RETURN_IF_ERROR(PceGetTargetInfo(&pce_target_info, &pce_svn));
+
+  // Generate a new AGE key and a REPORT bound to that key.
+  sgx::ReportProto report;
+  std::string pce_sign_report_payload;
+  sgx::TargetedCertificateSigningRequest unused_signing_request;
+  ASYLO_RETURN_IF_ERROR(AgeGenerateKeyAndCsr(pce_target_info, &report,
+                                             &pce_sign_report_payload,
+                                             &unused_signing_request));
+
+  // Fetch the platform's current CPUSVN from the AGE's identity.
+  SgxIdentity age_identity;
+  ASYLO_ASSIGN_OR_RETURN(age_identity, AgeGetSgxIdentity());
+  const sgx::CpuSvn &cpu_svn = age_identity.machine_configuration().cpu_svn();
+
+  // Certify key with the PCK at the current CPUSVN and PCE SVN.
+  Signature pck_signature;
+  ASYLO_ASSIGN_OR_RETURN(pck_signature,
+                         PceSignReport(pce_svn, cpu_svn, report));
+
+  Certificate attestation_key_certificate;
+  ASYLO_ASSIGN_OR_RETURN(attestation_key_certificate,
+                         sgx::CreateAttestationKeyCertificate(
+                             std::move(report), std::move(pck_signature),
+                             std::move(pce_sign_report_payload)));
+
+  return attestation_key_certificate;
+}
 
 Status SgxInfrastructuralEnclaveManager::AgeGenerateKeyAndCsr(
     const sgx::TargetInfoProto &pce_target_info, sgx::ReportProto *report,

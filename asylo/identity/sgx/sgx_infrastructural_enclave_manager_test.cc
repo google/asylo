@@ -31,6 +31,7 @@
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/enclave.pb.h"
+#include "asylo/identity/attestation/sgx/internal/attestation_key_certificate_impl.h"
 #include "asylo/identity/attestation/sgx/internal/mock_intel_architectural_enclave_interface.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
@@ -39,6 +40,7 @@
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/sgx_identity_test_util.h"
+#include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/mock_enclave_client.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
@@ -89,7 +91,7 @@ constexpr char kNoAttestationKeyErrorMessage[] =
 constexpr char kServerAlreadyExistErrorMessage[] =
     "Cannot start remote assertion generator gRPC server: server already "
     "exists";
-constexpr char kUnknownErrorMessage[] = "UNKONWN";
+constexpr char kUnknownErrorMessage[] = "UNKNOWN";
 
 sgx::Targetinfo PceTargetinfo() {
   return TrivialRandomObject<sgx::Targetinfo>();
@@ -513,6 +515,156 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignWithBadReportFails) {
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->PceSignReport(
                   pck_target_pce_svn, pck_target_cpu_svn, report),
               Not(IsOk()));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgeGetTargetInfoFailure) {
+  EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
+      .WillOnce(
+          Return(Status(error::GoogleError::UNKNOWN, kUnknownErrorMessage)));
+
+  EXPECT_THAT(sgx_infrastructural_enclave_manager_->CertifyAge(),
+              StatusIs(error::GoogleError::UNKNOWN));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest,
+       CertifyAgeGenerateKeyAndCsrFailure) {
+  EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
+      .WillOnce(DoAll(SetArgPointee<0>(PceTargetinfo()),
+                      SetArgPointee<1>(PceSvn().value()),
+                      Return(Status::OkStatus())));
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(
+          Return(Status(error::GoogleError::UNKNOWN, kUnknownErrorMessage)));
+
+  EXPECT_THAT(sgx_infrastructural_enclave_manager_->CertifyAge(),
+              StatusIs(error::GoogleError::UNKNOWN));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgeGetSgxIdentityFailure) {
+  EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
+      .WillOnce(DoAll(SetArgPointee<0>(PceTargetinfo()),
+                      SetArgPointee<1>(PceSvn().value()),
+                      Return(Status::OkStatus())));
+  EnclaveOutput expected_enclave_output;
+  sgx::GenerateKeyAndCsrOutput *output =
+      expected_enclave_output
+          .MutableExtension(sgx::remote_assertion_generator_enclave_output)
+          ->mutable_generate_key_and_csr_output();
+  *output->mutable_report() = Report();
+  *output->mutable_pce_sign_report_payload() = kPceSignReportPayload;
+  *output->mutable_targeted_csr() = TargetedCertificateSigningRequest();
+
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(DoAll(SetArgPointee<1>(expected_enclave_output),
+                      Return(Status::OkStatus())))
+      .WillOnce(
+          Return(Status(error::GoogleError::UNKNOWN, kUnknownErrorMessage)));
+
+  EXPECT_THAT(sgx_infrastructural_enclave_manager_->CertifyAge(),
+              StatusIs(error::GoogleError::UNKNOWN));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgePceSignReportFailure) {
+  sgx::PceSvn pck_target_pce_svn = PceSvn();
+  EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
+      .WillOnce(DoAll(SetArgPointee<0>(PceTargetinfo()),
+                      SetArgPointee<1>(pck_target_pce_svn.value()),
+                      Return(Status::OkStatus())));
+
+  EnclaveOutput expected_gen_key_and_csr_output;
+  sgx::GenerateKeyAndCsrOutput *output =
+      expected_gen_key_and_csr_output
+          .MutableExtension(sgx::remote_assertion_generator_enclave_output)
+          ->mutable_generate_key_and_csr_output();
+
+  sgx::ReportProto report = Report();
+  *output->mutable_report() = report;
+  *output->mutable_pce_sign_report_payload() = kPceSignReportPayload;
+  *output->mutable_targeted_csr() = TargetedCertificateSigningRequest();
+
+  SgxIdentity age_identity = sgx::GetRandomValidSgxIdentityWithConstraints(
+      /*mrenclave_constraint=*/{true},
+      /*mrsigner_constraint=*/{true},
+      /*cpu_svn_constraint=*/{true},
+      /*sgx_type_constraint=*/{false});
+  EnclaveOutput expected_get_enclave_identity_output;
+  *expected_get_enclave_identity_output
+       .MutableExtension(sgx::remote_assertion_generator_enclave_output)
+       ->mutable_get_enclave_identity_output()
+       ->mutable_sgx_identity() = age_identity;
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(DoAll(SetArgPointee<1>(expected_gen_key_and_csr_output),
+                      Return(Status::OkStatus())))
+      .WillOnce(DoAll(SetArgPointee<1>(expected_get_enclave_identity_output),
+                      Return(Status::OkStatus())));
+
+  sgx::Report expected_report;
+  SetTrivialObjectFromBinaryString(report.value(), &expected_report);
+  EXPECT_CALL(*mock_intel_ae_,
+              PceSignReport(
+                  TrivialObjectEq(expected_report), pck_target_pce_svn.value(),
+                  UnsafeBytes<sgx::kCpusvnSize>(
+                      age_identity.machine_configuration().cpu_svn().value()),
+                  NotNull()))
+      .WillOnce(
+          Return(Status(error::GoogleError::UNKNOWN, kUnknownErrorMessage)));
+
+  EXPECT_THAT(sgx_infrastructural_enclave_manager_->CertifyAge(),
+              StatusIs(error::GoogleError::UNKNOWN));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgeSuccess) {
+  sgx::PceSvn pck_target_pce_svn = PceSvn();
+  EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
+      .WillOnce(DoAll(SetArgPointee<0>(PceTargetinfo()),
+                      SetArgPointee<1>(pck_target_pce_svn.value()),
+                      Return(Status::OkStatus())));
+
+  EnclaveOutput expected_gen_key_and_csr_output;
+  sgx::GenerateKeyAndCsrOutput *output =
+      expected_gen_key_and_csr_output
+          .MutableExtension(sgx::remote_assertion_generator_enclave_output)
+          ->mutable_generate_key_and_csr_output();
+
+  sgx::ReportProto report = Report();
+  *output->mutable_report() = report;
+  *output->mutable_pce_sign_report_payload() = kPceSignReportPayload;
+  *output->mutable_targeted_csr() = TargetedCertificateSigningRequest();
+
+  SgxIdentity age_identity = sgx::GetRandomValidSgxIdentityWithConstraints(
+      /*mrenclave_constraint=*/{true},
+      /*mrsigner_constraint=*/{true},
+      /*cpu_svn_constraint=*/{true},
+      /*sgx_type_constraint=*/{false});
+  EnclaveOutput expected_get_enclave_identity_output;
+  *expected_get_enclave_identity_output
+       .MutableExtension(sgx::remote_assertion_generator_enclave_output)
+       ->mutable_get_enclave_identity_output()
+       ->mutable_sgx_identity() = age_identity;
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(DoAll(SetArgPointee<1>(expected_gen_key_and_csr_output),
+                      Return(Status::OkStatus())))
+      .WillOnce(DoAll(SetArgPointee<1>(expected_get_enclave_identity_output),
+                      Return(Status::OkStatus())));
+
+  sgx::Report expected_report;
+  SetTrivialObjectFromBinaryString(report.value(), &expected_report);
+  EXPECT_CALL(*mock_intel_ae_,
+              PceSignReport(
+                  TrivialObjectEq(expected_report), pck_target_pce_svn.value(),
+                  UnsafeBytes<sgx::kCpusvnSize>(
+                      age_identity.machine_configuration().cpu_svn().value()),
+                  NotNull()))
+      .WillOnce(
+          DoAll(SetArgPointee<3>(PckSignature()), Return(Status::OkStatus())));
+
+  Certificate expected_certificate;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expected_certificate,
+      CreateAttestationKeyCertificate(report, EcdsaSignature(),
+                                      kPceSignReportPayload));
+  EXPECT_THAT(sgx_infrastructural_enclave_manager_->CertifyAge(),
+              IsOkAndHolds(EqualsProto(expected_certificate)));
 }
 
 }  // namespace

@@ -28,6 +28,7 @@
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/identity/attestation/sgx/internal/intel_architectural_enclave_interface.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
+#include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
@@ -46,6 +47,26 @@ namespace asylo {
 // Note that this class has no relation to asylo::EnclaveManager.
 class SgxInfrastructuralEnclaveManager {
  public:
+  // Default EnclaveClient name for the AGE.
+  static constexpr char kAgeClientName[] = "AssertionGeneratorEnclave";
+
+  // Returns an EnclaveLoadConfig suitable for loading the AGE. |enclave_path|
+  // is the path to the enclave binary. |is_debuggable_enclave| indicates
+  // whether the AGE should be launched in debug mode. |server_address| is the
+  // address on which the AGE's server will run.
+  // |sgx_local_assertion_authority_config| is the authority config for the SGX
+  // local assertion authority.
+  static EnclaveLoadConfig GetAgeEnclaveLoadConfig(
+      std::string enclave_path, bool is_debuggable_enclave,
+      std::string server_address,
+      EnclaveAssertionAuthorityConfig sgx_local_assertion_authority_config,
+      std::string enclave_client_name = kAgeClientName);
+
+  // Loads the AGE according to |load_config| and returns the EnclaveClient for
+  // the AGE.
+  static StatusOr<EnclaveClient *> GetAgeEnclaveClient(
+      const EnclaveLoadConfig &load_config);
+
   // Creates a manager that invokes Intel architectural enclaves via
   // |intel_ae_interface| and invokes the Assertion Generator Enclave via
   // |assertion_generator_enclave|. |assertion_generator_enclave| must be valid
@@ -56,6 +77,15 @@ class SgxInfrastructuralEnclaveManager {
       EnclaveClient *assertion_generator_enclave);
 
   virtual ~SgxInfrastructuralEnclaveManager() = default;
+
+  /////////////////////////////////////////////
+  //           Sequence Operations           //
+  /////////////////////////////////////////////
+
+  // Generates a new AGE attestation key and certifies it with the PCK at the
+  // current CPUSVN and current PCE SVN, returning the resulting attestation key
+  // certificate.
+  StatusOr<Certificate> CertifyAge();
 
   /////////////////////////////////////////////
   //    Assertion Generator Enclave (AGE)    //
