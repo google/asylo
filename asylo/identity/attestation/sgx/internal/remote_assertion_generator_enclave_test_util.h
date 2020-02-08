@@ -19,25 +19,10 @@
 #ifndef ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_GENERATOR_ENCLAVE_TEST_UTIL_H_
 #define ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_GENERATOR_ENCLAVE_TEST_UTIL_H_
 
-#include "asylo/client.h"
 #include "asylo/crypto/certificate.pb.h"
-#include "asylo/identity/sgx/sgx_infrastructural_enclave_manager.h"
-#include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace sgx {
-
-// Uses |assertion_generator_enclave_client| to generate a fresh attestation key
-// in the AGE, and returns a fake certificate chain rooted in Asylo's Fake SGX
-// PKI certifying that key. The end-entity certificate is specific to the
-// generated attestation key. The remainder of the chain is identical to the
-// chain returned by GetFakePckCertificateChain().
-StatusOr<CertificateChain> GenerateAttestationKeyAndFakeCertificateChain(
-    EnclaveClient *assertion_generator_enclave_client);
-
-// Identical to the above function, but uses |manager| to invoke the AGE.
-StatusOr<CertificateChain> GenerateAttestationKeyAndFakeCertificateChain(
-    SgxInfrastructuralEnclaveManager *manager);
 
 // Appends a PCK Certificate for kFakePckPem, the Asylo Fake SGX Processor CA
 // Certificate, and the Asylo Fake SGX Root CA certificate to

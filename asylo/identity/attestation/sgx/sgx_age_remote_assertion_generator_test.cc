@@ -31,6 +31,7 @@
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
+#include "asylo/identity/attestation/sgx/internal/fake_pce.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave_test_util.h"
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
@@ -43,6 +44,7 @@
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
+#include "asylo/identity/sgx/sgx_infrastructural_enclave_manager.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/proto_matchers.h"
@@ -140,11 +142,17 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     ASYLO_RETURN_IF_ERROR(enclave_manager_->LoadEnclave(load_config));
     assertion_generator_enclave_client_ = enclave_manager_->GetClient(kAgeName);
 
-    // Call AGE::GenerateKeyAndCsr().
+    std::unique_ptr<sgx::FakePce> fake_pce;
+    ASYLO_ASSIGN_OR_RETURN(fake_pce,
+                           sgx::FakePce::CreateFromFakePki(/*pce_svn=*/42));
+    SgxInfrastructuralEnclaveManager sgx_infra_enclave_manager(
+        std::move(fake_pce), assertion_generator_enclave_client_);
+
+    // Certify the AGE with the Fake SGX PKI.
     CertificateChain certificate_chain;
-    ASYLO_ASSIGN_OR_RETURN(certificate_chain,
-                           sgx::GenerateAttestationKeyAndFakeCertificateChain(
-                               assertion_generator_enclave_client_));
+    ASYLO_ASSIGN_OR_RETURN(*certificate_chain.add_certificates(),
+                           sgx_infra_enclave_manager.CertifyAge());
+    sgx::AppendFakePckCertificateChain(&certificate_chain);
 
     // Call AGE::UpdateCerts().
     EnclaveInput enclave_input;

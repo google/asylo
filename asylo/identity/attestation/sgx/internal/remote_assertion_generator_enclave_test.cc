@@ -18,6 +18,7 @@
 
 #include <atomic>
 #include <cstdlib>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -35,6 +36,7 @@
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
 #include "asylo/identity/attestation/sgx/internal/attestation_key.pb.h"
+#include "asylo/identity/attestation/sgx/internal/fake_pce.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion.pb.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_constants.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
@@ -46,6 +48,7 @@
 #include "asylo/identity/sealing/sealed_secret.pb.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/sgx_identity_util_internal.h"
+#include "asylo/identity/sgx/sgx_infrastructural_enclave_manager.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/status_matchers.h"
@@ -333,6 +336,22 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
     }
     return remote_assertion_generator_enclave_client_->EnterAndRun(
         enclave_input, &enclave_output);
+  }
+
+  StatusOr<CertificateChain> CreateValidAgeCertificateChain() {
+    std::unique_ptr<sgx::FakePce> fake_pce;
+    ASYLO_ASSIGN_OR_RETURN(fake_pce,
+                           sgx::FakePce::CreateFromFakePki(/*pce_svn=*/7));
+
+    SgxInfrastructuralEnclaveManager sgx_infra_enclave_manager(
+            std::move(fake_pce), remote_assertion_generator_enclave_client_);
+
+    CertificateChain certificate_chain;
+    ASYLO_ASSIGN_OR_RETURN(*certificate_chain.add_certificates(),
+                           sgx_infra_enclave_manager.CertifyAge());
+    sgx::AppendFakePckCertificateChain(&certificate_chain);
+
+    return certificate_chain;
   }
 
   StatusOr<TargetInfoProto> GetTargetInfoProtoFromTestUtilEnclave() {
@@ -693,17 +712,14 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
 
   EnclaveInput enclave_input;
   EnclaveOutput enclave_output;
-
   UpdateCertsInput *update_certs_input =
       enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
           ->mutable_update_certs_input();
 
-  ASYLO_ASSERT_OK_AND_ASSIGN(*update_certs_input->add_certificate_chains(),
-                             GenerateAttestationKeyAndFakeCertificateChain(
-                                 remote_assertion_generator_enclave_client_));
-
   CertificateChain *certificate_chain =
-      update_certs_input->mutable_certificate_chains(0);
+      update_certs_input->add_certificate_chains();
+  ASYLO_ASSERT_OK_AND_ASSIGN(*certificate_chain,
+                             CreateValidAgeCertificateChain());
 
   // Case 1: Swap the PCK certificate and intermediate CA certificate to create
   // an invalid chain.
@@ -742,8 +758,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
       *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
            ->mutable_update_certs_input()
            ->add_certificate_chains(),
-      GenerateAttestationKeyAndFakeCertificateChain(
-          remote_assertion_generator_enclave_client_));
+      CreateValidAgeCertificateChain());
 
   ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
       enclave_input, &enclave_output));
@@ -768,8 +783,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
       *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
            ->mutable_update_certs_input()
            ->add_certificate_chains(),
-      GenerateAttestationKeyAndFakeCertificateChain(
-          remote_assertion_generator_enclave_client_));
+      CreateValidAgeCertificateChain());
 
   ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
       enclave_input, &enclave_output));
@@ -786,15 +800,13 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
 
   EnclaveInput enclave_input;
   EnclaveOutput enclave_output;
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-           ->mutable_update_certs_input()
-           ->add_certificate_chains(),
-      GenerateAttestationKeyAndFakeCertificateChain(
-          remote_assertion_generator_enclave_client_));
-  enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-      ->mutable_update_certs_input()
-      ->set_output_sealed_secret(true);
+  UpdateCertsInput *update_certs_input =
+      enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+          ->mutable_update_certs_input();
+  ASYLO_ASSERT_OK_AND_ASSIGN(*update_certs_input->add_certificate_chains(),
+                             CreateValidAgeCertificateChain());
+  update_certs_input->set_output_sealed_secret(true);
+
   ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
       enclave_input, &enclave_output));
 

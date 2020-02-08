@@ -18,23 +18,10 @@
 
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave_test_util.h"
 
-#include <memory>
-#include <string>
-
 #include "asylo/client.h"
 #include "asylo/crypto/certificate.pb.h"
-#include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
-#include "asylo/crypto/util/trivial_object_util.h"
-#include "asylo/identity/attestation/sgx/internal/attestation_key_certificate_impl.h"
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/identity/sgx/sgx_identity_util.h"
-#include "asylo/identity/sgx/sgx_identity_util_internal.h"
-#include "asylo/identity/sgx/sgx_infrastructural_enclave_manager.h"
-#include "asylo/util/status.h"
-#include "asylo/util/status_macros.h"
-#include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace sgx {
@@ -69,61 +56,7 @@ A0kAMEYCIQChG343CsWOKm1wc4Q8lbGr8L990Z859dYtkDZLWefNPwIhAPoNTVWj
 DuBaDLzJyoz5Vtv4SBA2PZaeqC2RQoVJHBHC
 -----END CERTIFICATE-----)";
 
-StatusOr<Certificate> GenerateAndCertifyAttestationKey(
-    SgxInfrastructuralEnclaveManager *manager) {
-  static EcdsaP256Sha256SigningKey *pck =
-      EcdsaP256Sha256SigningKey::CreateFromPem(kFakePckPem)
-          .ValueOrDie()
-          .release();
-
-  // Use a well-formed Targetinfo (all reserved fields are cleared and all
-  // required bits are set).
-  Targetinfo targetinfo;
-  SetTargetinfoFromSelfIdentity(&targetinfo);
-  targetinfo.attributes = SecsAttributeSet::GetMustBeSetBits();
-  targetinfo.miscselect = 0;
-  TargetInfoProto pce_target_info;
-  pce_target_info.set_value(ConvertTrivialObjectToBinaryString(targetinfo));
-
-  ReportProto report;
-  std::string pce_sign_report_payload;
-  TargetedCertificateSigningRequest signing_request;  // Unused
-  ASYLO_RETURN_IF_ERROR(manager->AgeGenerateKeyAndCsr(
-      pce_target_info, &report, &pce_sign_report_payload, &signing_request));
-
-  // Certify attestation key using the fake PCK.
-  Signature pck_signature;
-  ASYLO_RETURN_IF_ERROR(
-      pck->Sign(ByteContainerView(report.value().data(), report.value().size()),
-                &pck_signature));
-
-  Certificate attestation_key_certificate;
-  ASYLO_ASSIGN_OR_RETURN(attestation_key_certificate,
-                         CreateAttestationKeyCertificate(
-                             std::move(report), std::move(pck_signature),
-                             std::move(pce_sign_report_payload)));
-  return attestation_key_certificate;
-}
-
 }  // namespace
-
-StatusOr<CertificateChain> GenerateAttestationKeyAndFakeCertificateChain(
-    EnclaveClient *assertion_generator_enclave_client) {
-  // Don't create an IntelArchitecturalEnclaveInterface because only AGE APIs
-  // are called.
-  auto manager = absl::make_unique<SgxInfrastructuralEnclaveManager>(
-      /*intel_ae_interface=*/nullptr, assertion_generator_enclave_client);
-  return GenerateAttestationKeyAndFakeCertificateChain(manager.get());
-}
-
-StatusOr<CertificateChain> GenerateAttestationKeyAndFakeCertificateChain(
-    SgxInfrastructuralEnclaveManager *manager) {
-  CertificateChain certificate_chain;
-  ASYLO_ASSIGN_OR_RETURN(*certificate_chain.add_certificates(),
-                         GenerateAndCertifyAttestationKey(manager));
-  AppendFakePckCertificateChain(&certificate_chain);
-  return certificate_chain;
-}
 
 void AppendFakePckCertificateChain(CertificateChain *certificate_chain) {
   Certificate *fake_pck_cert = certificate_chain->add_certificates();
