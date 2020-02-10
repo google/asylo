@@ -48,6 +48,9 @@ Status CheckEnclaveOutputExtension(EnclaveOutput output) {
 
 }  // namespace
 
+const char *SgxInfrastructuralEnclaveManager::kAgeClientName =
+    "AssertionGeneratorEnclave";
+
 SgxInfrastructuralEnclaveManager::SgxInfrastructuralEnclaveManager(
     std::unique_ptr<sgx::IntelArchitecturalEnclaveInterface> intel_ae_interface,
     EnclaveClient *assertion_generator_enclave)

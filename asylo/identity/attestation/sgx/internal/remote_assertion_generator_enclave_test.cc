@@ -73,8 +73,6 @@ using ::testing::SizeIs;
 
 constexpr char kRemoteAssertionGeneratorTestUtilEnclaveName[] =
     "remote assertion generator test util enclave";
-constexpr char kAssertionGeneratorEnclaveName[] =
-    "remote assertion generator enclave";
 constexpr char kTestName[] = "RemoteAssertionGeneratorEnclaveTest";
 constexpr int kNumThreads = 5;
 constexpr char kRsaPublicKey3072DerHex[] =
@@ -114,7 +112,6 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
         remote_assertion_generator_enclave_client_(nullptr) {}
 
   static void SetUpTestSuite() {
-    ASYLO_ASSERT_OK(EnclaveManager::Configure(EnclaveManagerOptions()));
     ASYLO_ASSERT_OK_AND_ASSIGN(enclave_manager_, EnclaveManager::Instance());
   }
 
@@ -124,14 +121,6 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
             .empty());
     ASSERT_FALSE(
         absl::GetFlag(FLAGS_remote_assertion_generator_enclave_path).empty());
-
-    // Both enclaves must have the same local attestation domain in
-    // order for SGX local attestation to work.
-    *remote_assertion_generator_enclave_config_
-         .add_enclave_assertion_authority_configs() =
-        GetSgxLocalAssertionAuthorityTestConfig();
-    remote_assertion_generator_test_util_enclave_config_ =
-        remote_assertion_generator_enclave_config_;
   }
 
   void TearDown() override {
@@ -148,44 +137,34 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
     }
   }
 
-  Status InitializeRemoteAssertionGeneratorEnclave(
-      const EnclaveConfig &config) {
-    // Create an EnclaveLoadConfig object.
-    EnclaveLoadConfig load_config;
-    load_config.set_name(kAssertionGeneratorEnclaveName);
-    *load_config.mutable_config() = config;
-
-    // Create an SgxLoadConfig object.
-    SgxLoadConfig sgx_config;
-    SgxLoadConfig::FileEnclaveConfig file_enclave_config;
-    file_enclave_config.set_enclave_path(
-        absl::GetFlag(FLAGS_remote_assertion_generator_enclave_path));
-    *sgx_config.mutable_file_enclave_config() = file_enclave_config;
-    sgx_config.set_debug(true);
-
-    // Set an SGX message extension to load_config.
-    *load_config.MutableExtension(sgx_load_config) = sgx_config;
-
-    ASYLO_RETURN_IF_ERROR(enclave_manager_->LoadEnclave(load_config));
-    remote_assertion_generator_enclave_client_ =
-        enclave_manager_->GetClient(kAssertionGeneratorEnclaveName);
-    return Status::OkStatus();
+  StatusOr<EnclaveLoadConfig> GetAgeEnclaveLoadConfig() {
+    ASYLO_ASSIGN_OR_RETURN(server_address_, CreateUdsServerAddress());
+    return SgxInfrastructuralEnclaveManager::GetAgeEnclaveLoadConfig(
+        absl::GetFlag(FLAGS_remote_assertion_generator_enclave_path),
+        /*is_debuggable_enclave=*/true, server_address_,
+        GetSgxLocalAssertionAuthorityTestConfig());
   }
 
   Status InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress() {
-    ASYLO_ASSIGN_OR_RETURN(server_address_, CreateUdsServerAddress());
-    remote_assertion_generator_enclave_config_
-        .MutableExtension(remote_assertion_generator_enclave_config)
-        ->set_remote_assertion_generator_server_address(server_address_);
-    return InitializeRemoteAssertionGeneratorEnclave(
-        remote_assertion_generator_enclave_config_);
+    EnclaveLoadConfig load_config;
+    ASYLO_ASSIGN_OR_RETURN(load_config, GetAgeEnclaveLoadConfig());
+    return InitializeRemoteAssertionGeneratorEnclave(load_config);
   }
 
-  Status StartTestUtilEnclave(const EnclaveConfig &config) {
+  Status InitializeRemoteAssertionGeneratorEnclave(
+      const EnclaveLoadConfig &load_config) {
+    ASYLO_RETURN_IF_ERROR(enclave_manager_->LoadEnclave(load_config));
+    remote_assertion_generator_enclave_client_ =
+        enclave_manager_->GetClient(load_config.name());
+    return Status::OkStatus();
+  }
+
+  Status StartTestUtilEnclave() {
     // Create an EnclaveLoadConfig object.
     EnclaveLoadConfig load_config;
     load_config.set_name(kRemoteAssertionGeneratorTestUtilEnclaveName);
-    *load_config.mutable_config() = config;
+    *load_config.mutable_config()->add_enclave_assertion_authority_configs() =
+        GetSgxLocalAssertionAuthorityTestConfig();
 
     // Create an SgxLoadConfig object.
     SgxLoadConfig sgx_config;
@@ -250,8 +229,7 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
 
   StatusOr<SealedSecret> GetSealedSecretFromTestUtilEnclave() {
     if (!remote_assertion_generator_test_util_enclave_client_) {
-      ASYLO_RETURN_IF_ERROR(StartTestUtilEnclave(
-          remote_assertion_generator_test_util_enclave_config_));
+      ASYLO_RETURN_IF_ERROR(StartTestUtilEnclave());
     }
 
     EnclaveInput test_util_enclave_input;
@@ -275,8 +253,7 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
 
   StatusOr<TargetInfoProto> GetTargetInfoProtoFromClientEnclave() {
     if (!remote_assertion_generator_test_util_enclave_client_) {
-      ASYLO_RETURN_IF_ERROR(StartTestUtilEnclave(
-          remote_assertion_generator_test_util_enclave_config_));
+      ASYLO_RETURN_IF_ERROR(StartTestUtilEnclave());
     }
     EnclaveInput client_enclave_input;
     EnclaveOutput client_enclave_output;
@@ -389,12 +366,6 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
     return Status::OkStatus();
   }
 
-  // The config used to initialize the RemoteAssertionGenerator enclave.
-  EnclaveConfig remote_assertion_generator_enclave_config_;
-
-  // The config used to initialize the test util enclave.
-  EnclaveConfig remote_assertion_generator_test_util_enclave_config_;
-
   static EnclaveManager *enclave_manager_;
 
   EnclaveClient *remote_assertion_generator_test_util_enclave_client_;
@@ -406,19 +377,27 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
 EnclaveManager *RemoteAssertionGeneratorEnclaveTest::enclave_manager_ = nullptr;
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest, InvalidConfigFails) {
-  remote_assertion_generator_enclave_config_.ClearExtension(
+  EnclaveLoadConfig load_config;
+  ASYLO_ASSERT_OK_AND_ASSIGN(load_config, GetAgeEnclaveLoadConfig());
+
+  // Missing AGE extension.
+  load_config.mutable_config()->ClearExtension(
       remote_assertion_generator_enclave_config);
-  EXPECT_THAT(InitializeRemoteAssertionGeneratorEnclave(
-                  remote_assertion_generator_enclave_config_),
+
+  EXPECT_THAT(InitializeRemoteAssertionGeneratorEnclave(load_config),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest, ConfigMissingServerAddressFails) {
-  remote_assertion_generator_enclave_config_
-      .MutableExtension(remote_assertion_generator_enclave_config)
+  EnclaveLoadConfig load_config;
+  ASYLO_ASSERT_OK_AND_ASSIGN(load_config, GetAgeEnclaveLoadConfig());
+
+  // Missing server address.
+  load_config.mutable_config()
+      ->MutableExtension(remote_assertion_generator_enclave_config)
       ->clear_remote_assertion_generator_server_address();
-  EXPECT_THAT(InitializeRemoteAssertionGeneratorEnclave(
-                  remote_assertion_generator_enclave_config_),
+
+  EXPECT_THAT(InitializeRemoteAssertionGeneratorEnclave(load_config),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -426,8 +405,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
        StartServerWithoutKeyReturnsFailedPrecondition) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
 
   ASYLO_ASSERT_OK(
       StartSgxRemoteAssertionGeneratorServer(StartServerOption::NONE));
@@ -446,8 +424,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
 TEST_F(RemoteAssertionGeneratorEnclaveTest, StartServerWithSigningKeySuccess) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
 
   ASYLO_ASSERT_OK(
       StartSgxRemoteAssertionGeneratorServer(StartServerOption::WITH_KEY));
@@ -459,8 +436,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
        StartServerWhenGrpcServerIsRunningFails) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
 
   // Start SgxRemoteAssertionGenerator gRPC server.
   ASYLO_ASSERT_OK(
@@ -480,8 +456,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
 TEST_F(RemoteAssertionGeneratorEnclaveTest, StartServerWithSecretSuccess) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
 
   ASYLO_ASSERT_OK(
       StartSgxRemoteAssertionGeneratorServer(StartServerOption::WITH_SECRET));
@@ -493,8 +468,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
        StartServerWithSecretMultiThreadedSuccess) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
 
   std::vector<EnclaveInput> enclave_inputs;
   std::vector<EnclaveOutput> enclave_outputs;
@@ -550,8 +524,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
        TestGeneratePceInfoHardwareReportSuccess) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
 
   EnclaveInput enclave_input;
   EnclaveOutput enclave_output;
@@ -592,8 +565,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
        TestGeneratePceInfoHardwareReportMissingTargetinfoFails) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
 
   EnclaveInput enclave_input;
   EnclaveOutput enclave_output;
@@ -613,8 +585,7 @@ TEST_F(
     TestGeneratePceInfoHardwareReportMissingSerializedPpidEncryptionKeyFails) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
 
   EnclaveInput enclave_input;
   EnclaveOutput enclave_output;
@@ -636,8 +607,7 @@ TEST_F(
 TEST_F(RemoteAssertionGeneratorEnclaveTest, GenerateKeyAndCsrSuccess) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
 
   EnclaveInput enclave_input;
   EnclaveOutput enclave_output;
@@ -707,8 +677,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
        UpdateCertsWithInvalidCertificateChainFails) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
 
   EnclaveInput enclave_input;
   EnclaveOutput enclave_output;
@@ -747,8 +716,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
        UpdateCertsForServerRunningWithoutKeySuccess) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
   ASYLO_ASSERT_OK(
       StartSgxRemoteAssertionGeneratorServer(StartServerOption::NONE));
 
@@ -770,8 +738,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
        UpdateCertsWithServerRunningSuccess) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
   ASYLO_ASSERT_OK(
       StartSgxRemoteAssertionGeneratorServer(StartServerOption::WITH_KEY));
   ASSERT_NO_FATAL_FAILURE(CheckServerRunningAndProducesValidRemoteAssertion(
@@ -795,8 +762,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
        UpdateCertsWithoutServerRunningSuccess) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
 
   EnclaveInput enclave_input;
   EnclaveOutput enclave_output;
@@ -821,8 +787,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
 TEST_F(RemoteAssertionGeneratorEnclaveTest, UpdateCertsNoAttestationKeyFails) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(StartTestUtilEnclave());
   ASYLO_ASSERT_OK(
       StartSgxRemoteAssertionGeneratorServer(StartServerOption::WITH_KEY));
   ASSERT_NO_FATAL_FAILURE(CheckServerRunningAndProducesValidRemoteAssertion(

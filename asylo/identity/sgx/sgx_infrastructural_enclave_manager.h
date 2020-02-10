@@ -48,7 +48,7 @@ namespace asylo {
 class SgxInfrastructuralEnclaveManager {
  public:
   // Default EnclaveClient name for the AGE.
-  static constexpr char kAgeClientName[] = "AssertionGeneratorEnclave";
+  static const char *kAgeClientName;
 
   // Returns an EnclaveLoadConfig suitable for loading the AGE. |enclave_path|
   // is the path to the enclave binary. |is_debuggable_enclave| indicates

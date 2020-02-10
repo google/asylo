@@ -63,8 +63,6 @@ namespace {
 using ::testing::Eq;
 using ::testing::Ge;
 
-constexpr char kAgeName[] = "AGE";
-
 constexpr char kBadCertData[] = "bAD cErT";
 constexpr char kBadConfig[] = "baD cOnFig";
 constexpr char kBadAdditionalInfo[] = "baD inFO";
@@ -86,7 +84,6 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
           assertion_generator_enclave_client_, EnclaveFinal(),
           /*skip_finalize=*/false));
     }
-    delete assertion_generator_enclave_config_;
     delete test_enclave_wrapper_;
   }
 
@@ -114,33 +111,15 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     }
     server_address_ = new std::string(absl::StrCat("unix:", path, ".sock"));
 
-    // Add assertion authority and server address to the AGE config.
-    assertion_generator_enclave_config_ = new EnclaveConfig();
-    *assertion_generator_enclave_config_
-         ->add_enclave_assertion_authority_configs() =
-        GetSgxLocalAssertionAuthorityTestConfig();
-    assertion_generator_enclave_config_
-        ->MutableExtension(sgx::remote_assertion_generator_enclave_config)
-        ->set_remote_assertion_generator_server_address(*server_address_);
-
-    // Create an EnclaveLoadConfig object.
-    EnclaveLoadConfig load_config;
-    load_config.set_name(kAgeName);
-    *load_config.mutable_config() = *assertion_generator_enclave_config_;
-
-    // Create an SgxLoadConfig object.
-    SgxLoadConfig sgx_config;
-    SgxLoadConfig::FileEnclaveConfig file_enclave_config;
-    file_enclave_config.set_enclave_path(
-        absl::GetFlag(FLAGS_assertion_generator_enclave_path));
-    *sgx_config.mutable_file_enclave_config() = file_enclave_config;
-    sgx_config.set_debug(true);
-
-    // Set an SGX message extension to load_config.
-    *load_config.MutableExtension(sgx_load_config) = sgx_config;
+    EnclaveLoadConfig load_config =
+        SgxInfrastructuralEnclaveManager::GetAgeEnclaveLoadConfig(
+            absl::GetFlag(FLAGS_assertion_generator_enclave_path),
+            /*is_debuggable_enclave=*/true, *server_address_,
+            GetSgxLocalAssertionAuthorityTestConfig());
 
     ASYLO_RETURN_IF_ERROR(enclave_manager_->LoadEnclave(load_config));
-    assertion_generator_enclave_client_ = enclave_manager_->GetClient(kAgeName);
+    assertion_generator_enclave_client_ =
+        enclave_manager_->GetClient(load_config.name());
 
     std::unique_ptr<sgx::FakePce> fake_pce;
     ASYLO_ASSIGN_OR_RETURN(fake_pce,
@@ -220,7 +199,6 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
   }
 
   static EnclaveManager *enclave_manager_;
-  static EnclaveConfig *assertion_generator_enclave_config_;
   static EnclaveClient *assertion_generator_enclave_client_;
   static SgxRemoteAssertionGeneratorTestEnclaveWrapper *test_enclave_wrapper_;
 
@@ -231,8 +209,6 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
 };
 
 EnclaveManager *SgxAgeRemoteAssertionGeneratorTest::enclave_manager_;
-EnclaveConfig
-    *SgxAgeRemoteAssertionGeneratorTest::assertion_generator_enclave_config_;
 EnclaveClient
     *SgxAgeRemoteAssertionGeneratorTest::assertion_generator_enclave_client_;
 SgxRemoteAssertionGeneratorTestEnclaveWrapper
