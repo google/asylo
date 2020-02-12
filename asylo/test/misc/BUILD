@@ -514,7 +514,6 @@ enclave_test(
     srcs = ["active_enclave_signal_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": "active_enclave_signal_test.so"},
-    tags = ["noregression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":signal_test_cc_proto",

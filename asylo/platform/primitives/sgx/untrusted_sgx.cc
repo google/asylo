@@ -415,8 +415,6 @@ Status SgxEnclaveClient::EnterAndTransferSecureSnapshotKey(
   return status;
 }
 
-bool SgxEnclaveClient::IsTcsActive() { return (sgx_is_tcs_active(id_) != 0); }
-
 void SgxEnclaveClient::SetProcessId() { sgx_set_process_id(id_); }
 
 void SgxEnclaveClient::SetForkedEnclaveLoader(

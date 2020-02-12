@@ -86,12 +86,6 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
   `g_ecall_table.ecall_table[ordinal].is_exception` to the check condition of
   g_dyn_entry_table check to allow exception handler ecalls to pass even during
   an ocall of the interrupted frame. This deflakes our signal handling.
-* `psw/urts/enclave.h` `psw/urts/enclave.cpp` add a method `get_tcs_info` to
-  `CEnclave` class to expose the tcs info.
-  `sdk/simulation/urtssim/get_state.cpp` added to get the tcs state from tcs
-  info.
-  `psw/urts/linux/urts.cpp` `common/inc/sgx_urts.h` add a method
-  `sgx_is_enclave_active` to get whether the simulation enclave is active.
 * Static stack size increase.
     - Affected files:
       + `sdk/trts/trts_internal.h`
@@ -213,7 +207,13 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
   `__attribute__((optimize(...)))`.
 * Add support for accessing thread local storage (TLS) when registering
   signal handlers in `sdk/simulation/uinst/u_instructions.cpp`.
-
+* Mask signals in SGX simulation mode while entering the enclave in "SE3" to
+  avoid signal handling accessing wrong TLS in
+  `sdk/simulation/uinst/u_instructions.cpp`.
+* Change the order to first set tcs state and then restore TLS in simulation
+  mode while exiting the enclave in "SE3" to avoid rejected entry of signal
+  handler if a signal arrives in the window between restoring TLS and setting
+  tcs state in `sdk/simulation/tinst/t_instructions.cpp`.
 --
 diff -Nur common/inc/internal/elfheader/elf_common.h common/inc/internal/elfheader/elf_common.h
 --- common/inc/internal/elfheader/elf_common.h
@@ -625,12 +625,10 @@ diff -Nur common/inc/sgx_urts.h common/inc/sgx_urts.h
  
  #define _SGX_EX_FEATURES_MASK_ (((uint32_t)-1) >> (MAX_EX_FEATURES_COUNT - 1  - _SGX_LAST_EX_FEATURE_IDX_))
  
-@@ -132,6 +142,12 @@
+@@ -132,6 +142,10 @@
  	const sgx_enclave_id_t enclave_id,
  	sgx_target_info_t* target_info);
  
-+int SGXAPI sgx_is_tcs_active(const sgx_enclave_id_t enclave_id);
-+
 +void SGXAPI sgx_set_process_id(const sgx_enclave_id_t enclave_id);
 +
 +size_t SGXAPI sgx_enclave_size(const sgx_enclave_id_t enclave_id);
@@ -1121,24 +1119,15 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
          }
          put_tcs(trust_thread);
  
-@@ -431,7 +465,15 @@
-     return &m_enclave_info;
+@@ -432,7 +466,6 @@
  }
  
--
-+#ifdef SE_SIM
-+tcs_t *CEnclave::get_tcs_info() {
-+  CTrustThread *trust_thread = get_tcs(ECMD_ECALL);
-+  if (!trust_thread) {
-+    return NULL;
-+  }
-+  return trust_thread->get_tcs();
-+}
-+#endif
  
+-
  CTrustThread * CEnclave::get_tcs(int ecall_cmd)
  {
-@@ -530,9 +572,9 @@
+     CTrustThread *trust_thread = m_thread_pool->acquire_thread(ecall_cmd);
+@@ -530,9 +563,9 @@
      //m_loader.destroy_enclave();
  }
  
@@ -1195,19 +1184,16 @@ diff -Nur psw/urts/enclave.h psw/urts/enclave.h
      void add_thread(CTrustThread * const trust_thread);
      const debug_enclave_info_t* get_debug_info();
      void set_dbg_flag(bool dbg_flag) { m_dbg_flag = dbg_flag; }
-@@ -84,6 +86,11 @@
+@@ -84,6 +86,8 @@
      void set_sealed_key(uint8_t *sealed_key);
      sgx_status_t init_uswitchless(const sgx_uswitchless_config_t* config);
      void destroy_uswitchless(void);
 +    void set_process_id();
 +    pid_t process_id();
-+#ifdef SE_SIM
-+    tcs_t *get_tcs_info();
-+#endif
      sgx_target_info_t get_target_info();
  #ifdef SE_SIM
      void *get_global_data_sim_ptr();
-@@ -118,7 +125,9 @@
+@@ -118,7 +122,9 @@
      uint8_t                 *m_sealed_key;
      struct sl_uswitchless*  m_uswitchless;
      bool                    m_us_has_started;
@@ -1422,26 +1408,6 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
  
      // Only true or false is valid
      if (TRUE != debug &&  FALSE != debug)
-@@ -205,3 +238,19 @@
-         launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
- }
- 
-+extern "C" int is_tcs_sim_active(const tcs_t *tcs);
-+
-+extern "C" int sgx_is_tcs_active(const sgx_enclave_id_t enclave_id)
-+{
-+// In the non-sim case, tcs cannot be active because untrusted code cannot run
-+// when it is active.
-+#ifdef SE_SIM
-+  CEnclave* enclave = CEnclavePool::instance()->get_enclave(enclave_id);
-+  if (enclave)
-+  {
-+    tcs_t *tcs = enclave->get_tcs_info();
-+    return is_tcs_sim_active(tcs);
-+  }
-+#endif
-+  return 0;
-+}
 diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
 --- psw/urts/loader.cpp
 +++ psw/urts/loader.cpp
@@ -2682,6 +2648,34 @@ diff -Nur sdk/simulation/driver_api/driver_api.cpp sdk/simulation/driver_api/dri
  
      ce = reinterpret_cast<CEnclaveSim*>(DoECREATE_SW(&pinfo));
      if (ce == NULL) {
+diff -Nur sdk/simulation/tinst/t_instructions.cpp sdk/simulation/tinst/t_instructions.cpp
+--- sdk/simulation/tinst/t_instructions.cpp
++++ sdk/simulation/tinst/t_instructions.cpp
+@@ -302,14 +302,21 @@
+     tcs_t *tcs = GET_TCS_PTR(xdx);
+     GP_ON(tcs == NULL);
+ 
+-    // restore the used _tls_array
+-    GP_ON(td_mngr_restore_td(tcs) == false);
+-
+     // check thread is in use or not
+     tcs_sim_t *tcs_sim = reinterpret_cast<tcs_sim_t *>(tcs->reserved);
+     GP_ON(tcs_sim->tcs_state != TCS_STATE_ACTIVE);
+     tcs_sim->tcs_state = TCS_STATE_INACTIVE;
+ 
++    // restore the used _tls_array
++    // Restoring the TLS needs to happen after setting tcs state. Because Asylo
++    // signal handling relies on the TLS to decide whether or not to enter the
++    // enclave to handle the signal in simulation mode. If we set state after
++    // restoring the TLS, and a signal arrives in the window between them, it
++    // will enter the enclave to handle the signal since the TLS is restored to
++    // untrusted already, however the entry will be rejected as the tcs state is
++    // still active.
++    GP_ON(td_mngr_restore_td(tcs) == false);
++
+     regs.xax = 0;
+     regs.xbx = dest;
+     regs.xcx = tcs_sim->saved_aep;
 diff -Nur sdk/simulation/uae_service_sim/licensing_sim.cpp sdk/simulation/uae_service_sim/licensing_sim.cpp
 --- sdk/simulation/uae_service_sim/licensing_sim.cpp
 +++ sdk/simulation/uae_service_sim/licensing_sim.cpp
@@ -2883,7 +2877,7 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
      CEnclaveMngr *mngr = CEnclaveMngr::get_instance();
      CEnclaveSim *ce = mngr->get_enclave(epc_lin_addr);
  
-@@ -235,11 +364,28 @@
+@@ -235,11 +364,26 @@
          // Is TCS pointer page-aligned?
          GP_ON_EENTER(!IS_PAGE_ALIGNED(tcs));
  
@@ -2907,12 +2901,18 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
 +        // acquire locks.
          ce = mngr->get_enclave(tcs);
 +
-+        sigprocmask(SIG_SETMASK, &old_mask, nullptr);
-+
 +        // Is it really a TCS?
          GP_ON_EENTER(ce == NULL);
          GP_ON_EENTER(!ce->is_tcs_page(tcs));
  
+@@ -289,6 +433,7 @@
+         regs.xsp = p_ssa_gpr->REG(sp_u);
+         regs.xip = xip;
+ 
++        sigprocmask(SIG_SETMASK, &old_mask, nullptr);
+         load_regs(&regs);
+ 
+         // Returning from this function enters the enclave
 diff -Nur sdk/simulation/urtssim/enclave_creator_sim.cpp sdk/simulation/urtssim/enclave_creator_sim.cpp
 --- sdk/simulation/urtssim/enclave_creator_sim.cpp
 +++ sdk/simulation/urtssim/enclave_creator_sim.cpp
@@ -2936,50 +2936,6 @@ diff -Nur sdk/simulation/urtssim/enclave_creator_sim.cpp sdk/simulation/urtssim/
          return SGX_ERROR_UNEXPECTED;
      }
  }
-diff -Nur sdk/simulation/urtssim/get_state.cpp sdk/simulation/urtssim/get_state.cpp
---- sdk/simulation/urtssim/get_state.cpp
-+++ sdk/simulation/urtssim/get_state.cpp
-@@ -0,0 +1,40 @@
-+/*
-+ * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
-+ *
-+ * Redistribution and use in source and binary forms, with or without
-+ * modification, are permitted provided that the following conditions
-+ * are met:
-+ *
-+ *   * Redistributions of source code must retain the above copyright
-+ *     notice, this list of conditions and the following disclaimer.
-+ *   * Redistributions in binary form must reproduce the above copyright
-+ *     notice, this list of conditions and the following disclaimer in
-+ *     the documentation and/or other materials provided with the
-+ *     distribution.
-+ *   * Neither the name of Intel Corporation nor the names of its
-+ *     contributors may be used to endorse or promote products derived
-+ *     from this software without specific prior written permission.
-+ *
-+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-+ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-+ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-+ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-+ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-+ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-+ *
-+ */
-+
-+#include "td_mngr.h"
-+
-+extern "C" int is_tcs_sim_active(const tcs_t* tcs) {
-+  if (tcs) {
-+    tcs_sim_t* tcs_sim = (tcs_sim_t*)(tcs->reserved);
-+    if (tcs_sim) return (tcs_sim->tcs_state == TCS_STATE_ACTIVE ? 1 : 0);
-+  }
-+  return 0;
-+}
 diff -Nur sdk/switchless/src/sl_siglines.c sdk/switchless/src/sl_siglines.c
 --- sdk/switchless/src/sl_siglines.c
 +++ sdk/switchless/src/sl_siglines.c
@@ -3571,7 +3527,7 @@ diff -Nur sdk/trts/trts_veh.cpp sdk/trts/trts_veh.cpp
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1342 @@
+@@ -0,0 +1,1341 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(":sgx_sdk.bzl", "asylo_sgx_backend", "enclave_lds", "sgx")
@@ -4422,7 +4378,6 @@ diff -Nur /dev/null BUILD
 +        "sdk/simulation/urtssim/cpusvn_util.h",
 +        "sdk/simulation/urtssim/enclave_creator_sim.cpp",
 +        "sdk/simulation/urtssim/enclave_creator_sim.h",
-+        "sdk/simulation/urtssim/get_state.cpp",
 +        "sdk/simulation/urtssim/urts_sim.h",
 +    ],
 +    hdrs = URTS_COMMON_HDRS,

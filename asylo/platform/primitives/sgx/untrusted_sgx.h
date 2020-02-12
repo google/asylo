@@ -103,11 +103,6 @@ class SgxEnclaveClient : public Client {
 
   int EnterAndHandleSignal(int signum, int sigcode);
 
-  // Returns true when a TCS is active in simulation mode. Always returns false
-  // in hardware mode, since TCS active/inactive state is only set and used in
-  // simulation mode.
-  bool IsTcsActive();
-
   // Sets a new expected process ID for an existing SGX enclave.
   void SetProcessId();
 

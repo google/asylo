@@ -106,7 +106,18 @@ void HandleSignalInSim(int signum, siginfo_t *info, void *ucontext) {
   if (!client) {
     return;
   }
-  if (client->IsTcsActive()) {
+  // A thread local variable that is used to decide whether the simulation mode
+  // has thread local inside the enclave or on the host. If the thread locals
+  // are outside the enclave, we enter the enclave to handle the signal,
+  // otherwise invoke the signal handler inside the enclave directly.
+  thread_local int test_thread_local = 0;
+  uintptr_t thread_local_address =
+      reinterpret_cast<uintptr_t>(&test_thread_local);
+  uintptr_t enclave_base =
+      reinterpret_cast<uintptr_t>(client->GetBaseAddress());
+  size_t enclave_size = client->GetEnclaveSize();
+  if (thread_local_address >= enclave_base &&
+      thread_local_address < enclave_base + enclave_size) {
     TranslateToBridgeAndHandleSignal(signum, info, ucontext);
   } else {
     EnterEnclaveAndHandleSignal(signum, info, ucontext);
