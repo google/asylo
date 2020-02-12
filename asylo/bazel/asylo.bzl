@@ -383,7 +383,8 @@ def sign_enclave_with_untrusted_key(
         backends = backend_tools.should_be_all_backends,
         config = None,
         testonly = 0,
-        name_by_backend = {}):
+        name_by_backend = {},
+        visibility = None):
     """Signs an unsigned enclave according the the backend's signing procedure.
 
     Args:
@@ -400,8 +401,9 @@ def sign_enclave_with_untrusted_key(
         testonly: True if the target should only be used in tests.
         name_by_backend: An optional dictionary from backend label to backend-
           specific target label.
+        visibility: Optional target visibility.
     """
-    kwargs = {"unsigned": unsigned, "testonly": testonly}
+    kwargs = {"unsigned": unsigned, "testonly": testonly, "visibility": visibility}
     if config:
         kwargs["config"] = config
     if key:

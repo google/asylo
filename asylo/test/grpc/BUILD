@@ -23,7 +23,7 @@ load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
-licenses(["notice"])  # Apache v2.0
+licenses(["notice"])
 
 # Service definition for testing gRPC in Asylo.
 proto_library(
@@ -198,6 +198,7 @@ debug_sign_enclave(
     backends = sgx.backend_labels,
     config = "//asylo/grpc/util:grpc_enclave_config",
     unsigned = "client_enclave_unsigned.so",
+    visibility = ["//asylo:implementation"],
 )
 
 # Test for gRPC in Asylo.
