@@ -4872,7 +4872,7 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,988 @@
+@@ -0,0 +1,997 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
@@ -5665,10 +5665,11 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        **kwargs
 +    )
 +
-+def _sgx_signed_enclave_impl(ctx):
++def _sgx_signed_enclave_impl_helper(ctx, transition):
 +    """Implementation of incorporating a signature into an enclave binary."""
-+    config = ctx.attr.signing_material[SGXSigstructInfo].config
-+    unsigned = ctx.attr.signing_material[SGXSigstructInfo].unsigned
++    signing_material = ctx.attr.signing_material[0] if transition else ctx.attr.signing_material
++    config = signing_material[SGXSigstructInfo].config
++    unsigned = signing_material[SGXSigstructInfo].unsigned
 +    if SGXEnclaveInfo not in unsigned:
 +        fail("Unsigned enclave referenced in config does not have SGXEnclaveInfo provider")
 +    unsigned_file = unsigned.files.to_list()[0]
@@ -5710,6 +5711,14 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        SGXEnclaveInfo(),
 +    ]
 +
++def _sgx_signed_enclave_impl(ctx):
++    """Implementation of incorporating a signature into an enclave binary."""
++    return _sgx_signed_enclave_impl_helper(ctx, False)
++
++def _sgx_signed_enclave_transition_impl(ctx):
++    """Implementation of incorporating a signature into an enclave binary."""
++    return _sgx_signed_enclave_impl_helper(ctx, True)
++
 +# Skylark rule for the above implementation.
 +def _make_sgx_signing_rule(transition):
 +    attrs = {
@@ -5741,7 +5750,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        ),
 +    }
 +    return rule(
-+        implementation = _sgx_signed_enclave_impl,
++        implementation = _sgx_signed_enclave_transition_impl if transition else _sgx_signed_enclave_impl,
 +        executable = True,
 +        doc = "Creates a signed enclave binary using a signature file.",
 +        attrs = backend_tools.merge_dicts(attrs, _transition_dict if transition else {}),
