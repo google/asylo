@@ -5843,7 +5843,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +
 +def _asylo_sgx_backend_impl(ctx):
 +    return [backend_tools.AsyloBackendInfo(
-+        forward_providers = [backend_tools.EnclaveInfo, SGXEnclaveInfo, CcInfo],
++        forward_providers = [backend_tools.EnclaveInfo, SGXEnclaveInfo, SGXSigstructInfo, SGXEnclaveConfigInfo, CcInfo],
 +        unsigned_enclave_implementation = _sgx_cc_unsigned_enclave_impl,
 +        untrusted_sign_implementation = _sgx_sign_enclave_with_untrusted_key_impl,
 +    )]
