@@ -14,9 +14,18 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:asylo.bzl", "cc_enclave_test", "enclave_test")
+load(
+    "//asylo/bazel:asylo.bzl",
+    "cc_enclave_test",
+    "enclave_test",
+)
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:sgx_rules.bzl", "sgx_cc_unsigned_enclave", "sgx_debug_sign_enclave")
+load(
+    "//asylo/bazel:sgx_rules.bzl",
+    "sgx_cc_unsigned_enclave",
+    "sgx_debug_sign_enclave",
+)
+load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
@@ -267,5 +276,33 @@ enclave_test(
         "//asylo/util:status",
         "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest",
+    ],
+)
+
+transitions.cc_binary(
+    name = "age_main",
+    testonly = 1,
+    srcs = ["age_main.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    linkstatic = 1,
+    deps = [
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_client",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/identity:enclave_assertion_authority_config_cc_proto",
+        "//asylo/identity:enclave_assertion_authority_configs",
+        "//asylo/identity/attestation/sgx/internal:dcap_intel_architectural_enclave_interface",
+        "//asylo/identity/attestation/sgx/internal:fake_pce",
+        "//asylo/identity/attestation/sgx/internal:host_dcap_library_interface",
+        "//asylo/identity/attestation/sgx/internal:intel_architectural_enclave_interface",
+        "//asylo/identity/attestation/sgx/internal:remote_assertion_generator_enclave_test_util",
+        "//asylo/identity/sgx:sgx_infrastructural_enclave_manager",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
+        "//asylo/util:status",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/time",
+        "@com_google_protobuf//:protobuf",
     ],
 )
