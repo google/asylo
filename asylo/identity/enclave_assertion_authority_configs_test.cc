@@ -88,36 +88,5 @@ TEST(EnclaveAssertionAuthorityConfigsTest,
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(EnclaveAssertionAuthorityConfigsTest,
-     CreateSgxAgeRemoteAssertionAuthorityConfigSuccess) {
-  constexpr char kServerAddress[] = "the address";
-
-  AssertionDescription description;
-  SetSgxAgeRemoteAssertionDescription(&description);
-
-  Certificate certificate;
-  certificate.set_data("Cert Data");
-  certificate.set_format(Certificate::X509_DER);
-
-  EnclaveAssertionAuthorityConfig config;
-  ASYLO_ASSERT_OK_AND_ASSIGN(config, CreateSgxAgeRemoteAssertionAuthorityConfig(
-                                         {certificate}, kServerAddress));
-
-  EXPECT_THAT(config.description(), EqualsProto(description));
-
-  SgxAgeRemoteAssertionAuthorityConfig sgx_config;
-  ASSERT_TRUE(sgx_config.ParseFromString(config.config()));
-  EXPECT_THAT(sgx_config.root_ca_certificates(),
-              ElementsAre(EqualsProto(certificate)));
-  EXPECT_THAT(sgx_config.server_address(), StrEq(kServerAddress));
-}
-
-TEST(EnclaveAssertionAuthorityConfigsTest,
-     CreateSgxAgeRemoteAssertionAuthorityConfigNoCertificates) {
-  constexpr char kServerAddress[] = "the address";
-  EXPECT_THAT(CreateSgxAgeRemoteAssertionAuthorityConfig({}, kServerAddress),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
-}
-
 }  // namespace
 }  // namespace asylo

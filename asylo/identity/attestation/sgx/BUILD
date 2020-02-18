@@ -37,13 +37,13 @@ licenses(["notice"])
 proto_library(
     name = "sgx_age_remote_assertion_authority_config_proto",
     srcs = ["sgx_age_remote_assertion_authority_config.proto"],
-    visibility = ["//visibility:public"],
+    visibility = ["//asylo:implementation"],
     deps = ["//asylo/crypto:certificate_proto"],
 )
 
 cc_proto_library(
     name = "sgx_age_remote_assertion_authority_config_cc_proto",
-    visibility = ["//visibility:public"],
+    visibility = ["//asylo:implementation"],
     deps = ["sgx_age_remote_assertion_authority_config_proto"],
 )
 

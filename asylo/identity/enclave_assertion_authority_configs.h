@@ -91,19 +91,6 @@ CreateSgxLocalAssertionAuthorityConfig(std::string attestation_domain);
 StatusOr<EnclaveAssertionAuthorityConfig>
 CreateSgxLocalAssertionAuthorityConfig();
 
-/// Creates a configuration for the SGX AGE remote assertion authority.
-///
-/// This configuration is required when using the
-/// SgxAgeRemoteAssertionGenerator.
-///
-/// \param certificates A vector of X.509-formatted CA certificates that can
-///                     be used to verify whether an assertion is valid.
-/// \param server_address The address of the AGE's service.
-/// \return A config for the SGX AGE remote assertion authority.
-StatusOr<EnclaveAssertionAuthorityConfig>
-CreateSgxAgeRemoteAssertionAuthorityConfig(
-    std::vector<Certificate> certificates, std::string server_address);
-
 }  // namespace asylo
 
 #endif  // ASYLO_IDENTITY_ENCLAVE_ASSERTION_AUTHORITY_CONFIGS_H_

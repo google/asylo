@@ -81,24 +81,4 @@ CreateSgxLocalAssertionAuthorityConfig() {
   return CreateSgxLocalAssertionAuthorityConfig(std::move(attestation_domain));
 }
 
-StatusOr<EnclaveAssertionAuthorityConfig>
-CreateSgxAgeRemoteAssertionAuthorityConfig(
-    std::vector<Certificate> certificates, std::string server_address) {
-  if (certificates.empty()) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        "SGX AGE remote authority config must have at least one certificate");
-  }
-
-  SgxAgeRemoteAssertionAuthorityConfig config;
-  for (auto &certificate : certificates) {
-    *config.add_root_ca_certificates() = std::move(certificate);
-  }
-
-  config.set_server_address(std::move(server_address));
-
-  return SerializeToAuthorityConfig(config,
-                                    SetSgxAgeRemoteAssertionDescription);
-}
-
 }  // namespace asylo
