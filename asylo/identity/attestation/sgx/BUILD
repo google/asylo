@@ -19,11 +19,13 @@ load(
     "cc_enclave_test",
     "enclave_test",
 )
+load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
     "//asylo/bazel:sgx_rules.bzl",
     "sgx_cc_unsigned_enclave",
     "sgx_debug_sign_enclave",
+    "sgx_enclave_test",
 )
 load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
 load("@rules_proto//proto:defs.bzl", "proto_library")
@@ -304,5 +306,36 @@ transitions.cc_binary(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
         "@com_google_protobuf//:protobuf",
+    ],
+)
+
+copy_from_host(
+    output = "age_main_host_bin",
+    target = "age_main",
+)
+
+sgx_enclave_test(
+    name = "age_main_test",
+    srcs = ["age_main_test.cc"],
+    backend_dependent_data = [
+        ":age_main_host_bin",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {
+        "age": "//asylo/identity/attestation/sgx/internal:remote_assertion_generator_enclave.so",
+    },
+    test_args = [
+        "--age_path='{age}'",
+        "--loader_path=$(rootpath :age_main_host_bin)",
+    ],
+    deps = [
+        "//asylo/test/util:exec_tester",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
     ],
 )
