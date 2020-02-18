@@ -178,7 +178,8 @@ class RedisServerTest : public ::testing::Test {
         server_argv);
 
     // Wait for the server to be initialized. Timeout at 30 seconds.
-    for (int i = 0; i < kTimeout * kNanoSecondsPerSecond / kWaitStep; ++i) {
+    for (uint64_t i = 0; i < kTimeout * kNanoSecondsPerSecond / kWaitStep;
+         ++i) {
       if (server_initialized_) {
         break;
       }
@@ -305,7 +306,7 @@ TEST_F(RedisServerTest, Snapshot) {
   CheckExitStatus(exit_status);
 
   // Waits until the snapshot is taken by the server. Timeout at 30 seconds.
-  for (int i = 0; i < kTimeout * kNanoSecondsPerSecond / kWaitStep; ++i) {
+  for (uint64_t i = 0; i < kTimeout * kNanoSecondsPerSecond / kWaitStep; ++i) {
     if (snapshot_taken_) {
       break;
     }

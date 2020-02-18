@@ -44,7 +44,7 @@ bool MemoryEquals(MatchResultListener *listener, const void *expected,
 
   const uint8_t *actual_bytes = static_cast<const uint8_t *>(actual);
   const uint8_t *expected_bytes = static_cast<const uint8_t *>(expected);
-  for (int i = 0; i < expected_size; ++i) {
+  for (size_t i = 0; i < expected_size; ++i) {
     if (actual_bytes[i] != expected_bytes[i]) {
       *listener << absl::StrFormat(
           "which contains byte 0x%x at position %d where byte 0x%x was "
