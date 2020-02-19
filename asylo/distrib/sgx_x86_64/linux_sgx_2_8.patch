@@ -1926,6 +1926,23 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
 +    return 0;
 +}
  #endif
+diff -Nur sdk/debugger_interface/linux/gdb-sgx-plugin/gdb_sgx_plugin.py sdk/debugger_interface/linux/gdb-sgx-plugin/gdb_sgx_plugin.py
+--- sdk/debugger_interface/linux/gdb-sgx-plugin/gdb_sgx_plugin.py
++++ sdk/debugger_interface/linux/gdb-sgx-plugin/gdb_sgx_plugin.py
+@@ -700,10 +700,11 @@
+     ENCLAVES_ADDR.clear()
+ 
+ def newobj_handler(event):
+-    solib_name = os.path.basename(event.new_objfile.filename)
+-    if solib_name == 'libsgx_urts.so' or solib_name == 'libsgx_urts_sim.so' or solib_name == 'libsgx_aesm_service.so':
++    if newobj_handler.once:
+         sgx_debugger_init()
++        newobj_handler.once = False
+     return
++newobj_handler.once = True
+ 
+ if __name__ == "__main__":
+     gdb.events.new_objfile.connect(newobj_handler)
 diff -Nur sdk/edger8r/linux/Ast.ml sdk/edger8r/linux/Ast.ml
 --- sdk/edger8r/linux/Ast.ml
 +++ sdk/edger8r/linux/Ast.ml
@@ -3397,7 +3414,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1258 @@
+@@ -0,0 +1,1277 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(":sgx_sdk.bzl", "asylo_sgx_backend", "enclave_lds", "sgx")
@@ -4545,6 +4562,25 @@ diff -Nur /dev/null BUILD
 +    srcs = ["sdk/tlibc/gen/spinlock.c"],
 +    hdrs = ["common/inc/sgx_spinlock.h"],
 +    deps = [":common_inc"],
++)
++
++cc_binary(
++    name = "libsgx_ptrace.so",
++    srcs = [
++        "sdk/debugger_interface/linux/ptrace_version.c",
++        "sdk/debugger_interface/linux/se_ptrace.c",
++    ],
++    copts = [
++        "-D_GNU_SOURCE",
++        "-Iexternal/linux_sgx/common/inc/internal",
++    ],
++    linkopts = ["-ldl"],
++    linkshared = True,
++    deps = [
++        ":common_inc_internal",
++        ":se_wrapper",
++        ":untrusted_inc_internal",
++    ],
 +)
 +
 +cc_library(
