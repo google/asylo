@@ -43,13 +43,13 @@ def sgx_deps():
     if not native.existing_rule("linux_sgx"):
         http_archive(
             name = "linux_sgx",
-            urls = ["https://github.com/intel/linux-sgx/archive/sgx_2.6.tar.gz"],
-            sha256 = "9d66602c0437d3fa5eb099cbe76815ebd5cca60bc25b4e4af60d2b81bb742d90",
+            urls = ["https://github.com/intel/linux-sgx/archive/sgx_2.8.tar.gz"],
+            sha256 = "85609dc682bfcc2f484fd8265e9497645262a5611a7b1274a5e0c1d1b545d407",
             patches = [
-                "@com_google_asylo//asylo/distrib/sgx_x86_64:linux_sgx_2_6.patch",
+                "@com_google_asylo//asylo/distrib/sgx_x86_64:linux_sgx_2_8.patch",
                 "@com_google_asylo//asylo/distrib/sgx_x86_64:enclave_test_pem.patch",
             ],
-            strip_prefix = "linux-sgx-sgx_2.6",
+            strip_prefix = "linux-sgx-sgx_2.8",
         )
 
     # Intel's SGX Data Center Attestation Primitives with patches to make it

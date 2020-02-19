@@ -46,6 +46,9 @@ SgxErrorSpace::SgxErrorSpace()
   AddTranslationMapEntry(SGX_ERROR_FEATURE_NOT_SUPPORTED,
                          "Feature is not supported on this platform",
                          GoogleError::INVALID_ARGUMENT);
+  AddTranslationMapEntry(SGX_PTHREAD_EXIT,
+                         "Enclave is exited with pthread_exit",
+                         GoogleError::INTERNAL);
   AddTranslationMapEntry(SGX_ERROR_INVALID_FUNCTION, "Invalid ecall or ocall",
                          GoogleError::INTERNAL);
   AddTranslationMapEntry(SGX_ERROR_OUT_OF_TCS, "Out of TCS",
