@@ -62,7 +62,7 @@ You can manually install the toolchain by following these steps:
 
     This will install the toolchain under `"${ASYLO}"/toolchains/default`
 
-See [toolchain/README.md](asylo/distrib/toolchain/README.md) for additional
+See [toolchain/README.md](/asylo/distrib/toolchain/README.md) for additional
 details on installing the toolchain.
 
 ## Intel SGX SDK
