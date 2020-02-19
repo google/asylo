@@ -42,6 +42,7 @@ cc_library(
     ]],
     copts = [
         "-std=c99",
+	"-Wno-unused-function",
         # The definition of macro "__redis_strerror_r" in "hiredis.h" with
         # "GNU_SOURCE" defined has a bug that causes bazel compilation errors
         # when used by "__redisSetErrorFromErrno()" in "net.c".
@@ -132,9 +133,10 @@ cc_library(
         "strbuf.h",
     ]] + ["src/solarisfixes.h"],
     copts = [
-        "-Wno-error=empty-body",
-        "-Wno-error=implicit-function-declaration",
-        "-Wno-error=unused-variable",
+        "-Wno-empty-body",
+        "-Wno-implicit-function-declaration",
+        "-Wno-unused-variable",
+	"-Wno-misleading-indentation",
         # Needed to enable the cjson Lua module.
         "-DENABLE_CJSON_GLOBAL",
     ] + ZCALLOC_COPT,
