@@ -72,10 +72,13 @@ Status SgxAgeRemoteAssertionGenerator::Initialize(const std::string &config) {
                   "Could not parse input config");
   }
 
-  if (authority_config.root_ca_certificates().empty()) {
+  if (!authority_config.has_intel_root_certificate()) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Config contains no root CA certificates");
+                  "Config does not contain the Intel root certificate");
   }
+
+  ASYLO_RETURN_IF_ERROR(
+      ValidateCertificate(authority_config.intel_root_certificate()));
 
   for (const auto &certificate : authority_config.root_ca_certificates()) {
     ASYLO_RETURN_IF_ERROR(ValidateCertificate(certificate));
@@ -87,7 +90,9 @@ Status SgxAgeRemoteAssertionGenerator::Initialize(const std::string &config) {
   }
 
   members_view->root_ca_certificates.reserve(
-      authority_config.root_ca_certificates_size());
+      authority_config.root_ca_certificates_size() + 1);
+  members_view->root_ca_certificates.emplace_back(
+      std::move(*authority_config.mutable_intel_root_certificate()));
   std::move(authority_config.root_ca_certificates().begin(),
             authority_config.root_ca_certificates().end(),
             std::back_inserter(members_view->root_ca_certificates));

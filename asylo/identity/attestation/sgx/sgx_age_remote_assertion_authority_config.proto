@@ -19,12 +19,20 @@ syntax = "proto2";
 package asylo;
 
 import "asylo/crypto/certificate.proto";
+import "asylo/identity/identity_acl.proto";
 
 // Configuration for an SGX AGE remote assertion authority.
 message SgxAgeRemoteAssertionAuthorityConfig {
-  // The root CAs' certificates in X.509 format. Must not be empty.
+  // Root CA certificates, besides the Intel root, that are used by this
+  // authority.
   repeated Certificate root_ca_certificates = 1;
 
-  // The address and port of the remote assertion generator. Required.
+  // The address and port of the Assertion Generator Enclave service. Required.
   optional string server_address = 2;
+
+  // The identity expectation of the Assertion Generator Enclave. Required.
+  optional IdentityAclPredicate age_identity_expectation = 3;
+
+  // The Intel root certificate. Required.
+  optional Certificate intel_root_certificate = 4;
 }

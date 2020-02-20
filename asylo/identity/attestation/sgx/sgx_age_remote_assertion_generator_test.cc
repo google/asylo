@@ -92,7 +92,8 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
 
     SgxAgeRemoteAssertionAuthorityConfig authority_config;
     authority_config.set_server_address(*server_address_);
-    for (auto certificate : *root_ca_certificates_) {
+    *authority_config.mutable_intel_root_certificate() = *intel_root_cert_;
+    for (auto certificate : *additional_root_ca_certificates_) {
       *authority_config.add_root_ca_certificates() = certificate;
     }
 
@@ -144,10 +145,12 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     ASYLO_RETURN_IF_ERROR(assertion_generator_enclave_client_->EnterAndRun(
         enclave_input, &enclave_output));
 
-    // Save the last two certificates as potential root certificates. The AGE
-    // only produces assertions for |root_ca_certificates_|[0].
-    root_ca_certificates_ = new std::vector<Certificate>(
-        {certificate_chain.certificates().rbegin(),
+    intel_root_cert_ =
+        new Certificate(*certificate_chain.certificates().rbegin());
+    // Save the last certificate as potential root certificate. The AGE
+    // only produces assertions for the fake Intel root.
+    additional_root_ca_certificates_ = new std::vector<Certificate>(
+        {certificate_chain.certificates().rbegin() + 1,
          certificate_chain.certificates().rbegin() + 2});
 
     // Call AGE::StartServer().
@@ -178,7 +181,7 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
 
   // Creates an assertion request for the SGX AGE remote assertion generator.
   StatusOr<AssertionRequest> MakeAssertionRequest(
-      absl::Span<const Certificate> certificates = *root_ca_certificates_) {
+      absl::Span<const Certificate> certificates) {
     AssertionRequest assertion_request;
     SetSgxAgeRemoteAssertionDescription(
         assertion_request.mutable_description());
@@ -203,7 +206,8 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
   static SgxRemoteAssertionGeneratorTestEnclaveWrapper *test_enclave_wrapper_;
 
   static std::string *server_address_;
-  static std::vector<Certificate> *root_ca_certificates_;
+  static Certificate *intel_root_cert_;
+  static std::vector<Certificate> *additional_root_ca_certificates_;
 
   std::string config_;
 };
@@ -215,7 +219,8 @@ SgxRemoteAssertionGeneratorTestEnclaveWrapper
     *SgxAgeRemoteAssertionGeneratorTest::test_enclave_wrapper_;
 std::string *SgxAgeRemoteAssertionGeneratorTest::server_address_;
 std::vector<Certificate>
-    *SgxAgeRemoteAssertionGeneratorTest::root_ca_certificates_;
+    *SgxAgeRemoteAssertionGeneratorTest::additional_root_ca_certificates_;
+Certificate *SgxAgeRemoteAssertionGeneratorTest::intel_root_cert_;
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest,
        InitializeFailsWithUnparsableConfig) {
@@ -234,7 +239,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, GeneratorFoundInStaticMap) {
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithNoServerAddress) {
   SgxAgeRemoteAssertionAuthorityConfig authority_config;
-  *authority_config.add_root_ca_certificates() = (*root_ca_certificates_)[0];
+  *authority_config.mutable_intel_root_certificate() = *intel_root_cert_;
 
   std::string config;
   ASSERT_TRUE(authority_config.SerializeToString(&config));
@@ -243,7 +248,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithNoServerAddress) {
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithNoCerts) {
+TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithoutIntelCert) {
   SgxAgeRemoteAssertionAuthorityConfig authority_config;
   authority_config.set_server_address(*server_address_);
 
@@ -254,14 +259,14 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithNoCerts) {
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithBadCerts) {
+TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithBadIntelCert) {
   Certificate certificate;
   certificate.set_format(Certificate::UNKNOWN);
   certificate.set_data(kBadCertData);
 
   SgxAgeRemoteAssertionAuthorityConfig authority_config;
   authority_config.set_server_address(*server_address_);
-  *authority_config.add_root_ca_certificates() = certificate;
+  *authority_config.mutable_intel_root_certificate() = certificate;
 
   std::string config;
   ASSERT_TRUE(authority_config.SerializeToString(&config));
@@ -325,8 +330,8 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, CreateAssertionOfferSuccess) {
   ASSERT_TRUE(additional_info.ParseFromString(
       assertion_offer.additional_information()));
   EXPECT_THAT(additional_info.root_ca_certificates(),
-              ElementsAre(EqualsProto((*root_ca_certificates_)[0]),
-                          EqualsProto((*root_ca_certificates_)[1])));
+              ElementsAre(EqualsProto(*intel_root_cert_),
+                          EqualsProto((*additional_root_ca_certificates_)[0])));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, CanGenerateSuccess) {
@@ -334,7 +339,10 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, CanGenerateSuccess) {
 
   // Create a valid AssertionRequest.
   AssertionRequest assertion_request;
-  ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request, MakeAssertionRequest());
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      assertion_request,
+      MakeAssertionRequest(
+          {*intel_root_cert_, (*additional_root_ca_certificates_)[0]}));
   EXPECT_THAT(test_enclave_wrapper_->CanGenerate(assertion_request),
               IsOkAndHolds(true));
 }
@@ -346,7 +354,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, CanGenerateSuccessCertSubset) {
   // the generator.
   AssertionRequest assertion_request;
   ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request,
-                             MakeAssertionRequest({root_ca_certificates_[0]}));
+                             MakeAssertionRequest({*intel_root_cert_}));
 
   EXPECT_THAT(test_enclave_wrapper_->CanGenerate(assertion_request),
               IsOkAndHolds(true));
@@ -366,7 +374,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest,
        CanGenerateFailureExtraCertInRequest) {
   ASYLO_EXPECT_OK(test_enclave_wrapper_->Initialize(config_));
 
-  std::vector<Certificate> certificates = *root_ca_certificates_;
+  std::vector<Certificate> certificates = *additional_root_ca_certificates_;
 
   // Add another valid cert into the request.
   Certificate certificate;
@@ -388,7 +396,8 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, GenerateFailureBadAssertionRequest) {
 
   // Create an AssertionRequest with bad |additional_info|.
   AssertionRequest assertion_request;
-  ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request, MakeAssertionRequest());
+  ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request,
+                             MakeAssertionRequest({*intel_root_cert_}));
   assertion_request.set_additional_information(kBadAdditionalInfo);
 
   Assertion assertion;
@@ -401,7 +410,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, GenerateSuccess) {
 
   AssertionRequest assertion_request;
   ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request,
-                             MakeAssertionRequest({root_ca_certificates_[0]}));
+                             MakeAssertionRequest({*intel_root_cert_}));
 
   SgxIdentity enclave_identity;
   ASYLO_ASSERT_OK_AND_ASSIGN(enclave_identity,
@@ -428,7 +437,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, GenerateSuccess) {
     ASSERT_THAT(certificate_chain.certificates().size(), Ge(1));
 
     const Certificate &root_cert = *certificate_chain.certificates().rbegin();
-    EXPECT_THAT(root_cert, EqualsProto((*root_ca_certificates_)[0]));
+    EXPECT_THAT(root_cert, EqualsProto(*intel_root_cert_));
 
     sgx::RemoteAssertionPayload payload;
     ASSERT_TRUE(payload.ParseFromString(remote_assertion.payload()));

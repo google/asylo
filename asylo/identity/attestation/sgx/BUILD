@@ -38,7 +38,10 @@ proto_library(
     name = "sgx_age_remote_assertion_authority_config_proto",
     srcs = ["sgx_age_remote_assertion_authority_config.proto"],
     visibility = ["//asylo:implementation"],
-    deps = ["//asylo/crypto:certificate_proto"],
+    deps = [
+        "//asylo/crypto:certificate_proto",
+        "//asylo/identity:identity_acl_proto",
+    ],
 )
 
 cc_proto_library(
