@@ -41,9 +41,30 @@ using ::testing::Gt;
 constexpr int kNumThreads = 100;
 constexpr absl::Duration kLongEnoughForThreadSwitch = absl::Milliseconds(500);
 
+struct TypeWithNoDefaultCtor {
+  TypeWithNoDefaultCtor() = delete;
+  explicit TypeWithNoDefaultCtor(int v) : value(v) {}
+  int value;
+};
+
+struct TypeWithDefaultCtor {
+  TypeWithDefaultCtor() : value(31415) {}
+  int value;
+};
+
 // A matcher that expects an absl::optional<> to have no value.
 MATCHER(Nullopt, negation ? "has a value" : "has no value") {
   return !arg.has_value();
+}
+
+TEST(MutexGuardedTest, CompatibleWithTypesWithoutDefaultCtor) {
+  MutexGuarded<TypeWithNoDefaultCtor> safe(TypeWithNoDefaultCtor(42));
+  EXPECT_THAT(safe.Lock()->value, Eq(42));
+}
+
+TEST(MutexGuardedTest, DefaultCtorSucceeds) {
+  MutexGuarded<TypeWithDefaultCtor> safe;
+  EXPECT_THAT(safe.Lock()->value, Eq(31415));
 }
 
 TEST(MutexGuardedTest, HeldReaderLocksDoNotPreventAcquiringOtherReaderLocks) {

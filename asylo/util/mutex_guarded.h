@@ -160,7 +160,7 @@ class MutexGuarded {
                 "T must be a move-constructible type");
 
  public:
-  MutexGuarded() = delete;
+  MutexGuarded() = default;
 
   // Constucts a MutexGuarded<T> that initially holds |value|.
   explicit MutexGuarded(T value) : value_(std::forward<T>(value)) {}
