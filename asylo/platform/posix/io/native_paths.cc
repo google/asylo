@@ -62,6 +62,19 @@ int IOContextNative::FStatFs(struct statfs *statfs_buffer) {
   return enc_untrusted_fstatfs(host_fd_, statfs_buffer);
 }
 
+ssize_t IOContextNative::FGetXattr(const char *name, void *value, size_t size) {
+  return enc_untrusted_fgetxattr(host_fd_, name, value, size);
+}
+
+int IOContextNative::FSetXattr(const char *name, const void *value, size_t size,
+                               int flags) {
+  return enc_untrusted_fsetxattr(host_fd_, name, value, size, flags);
+}
+
+ssize_t IOContextNative::FListXattr(char *list, size_t size) {
+  return enc_untrusted_flistxattr(host_fd_, list, size);
+}
+
 int IOContextNative::FTruncate(off_t length) {
   return enc_untrusted_ftruncate(host_fd_, length);
 }
@@ -243,6 +256,36 @@ int NativePathHandler::LStat(const char *pathname, struct stat *stat_buffer) {
 int NativePathHandler::StatFs(const char *pathname,
                               struct statfs *statfs_buffer) {
   return enc_untrusted_statfs(pathname, statfs_buffer);
+}
+
+ssize_t NativePathHandler::GetXattr(const char *path, const char *name,
+                                    void *value, size_t size) {
+  return enc_untrusted_getxattr(path, name, value, size);
+}
+
+ssize_t NativePathHandler::LGetXattr(const char *path, const char *name,
+                                     void *value, size_t size) {
+  return enc_untrusted_lgetxattr(path, name, value, size);
+}
+
+int NativePathHandler::SetXattr(const char *path, const char *name,
+                                const void *value, size_t size, int flags) {
+  return enc_untrusted_setxattr(path, name, value, size, flags);
+}
+
+int NativePathHandler::LSetXattr(const char *path, const char *name,
+                                 const void *value, size_t size, int flags) {
+  return enc_untrusted_lsetxattr(path, name, value, size, flags);
+}
+
+ssize_t NativePathHandler::ListXattr(const char *path, char *list,
+                                     size_t size) {
+  return enc_untrusted_listxattr(path, list, size);
+}
+
+ssize_t NativePathHandler::LListXattr(const char *path, char *list,
+                                      size_t size) {
+  return enc_untrusted_llistxattr(path, list, size);
 }
 
 int NativePathHandler::Mkdir(const char *path, mode_t mode) {

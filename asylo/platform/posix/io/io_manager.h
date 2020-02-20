@@ -144,6 +144,22 @@ class IOManager {
       return -1;
     }
 
+    virtual ssize_t FGetXattr(const char *name, void *value, size_t size) {
+      errno = ENOSYS;
+      return -1;
+    }
+
+    virtual int FSetXattr(const char *name, const void *value, size_t size,
+                          int flags) {
+      errno = ENOSYS;
+      return -1;
+    }
+
+    virtual ssize_t FListXattr(char *list, size_t size) {
+      errno = ENOSYS;
+      return -1;
+    }
+
     virtual int SetSockOpt(int level, int option_name, const void *option_value,
                            socklen_t option_len) {
       errno = ENOSYS;
@@ -335,6 +351,40 @@ class IOManager {
     virtual int InotifyAddWatch(std::shared_ptr<IOContext> context,
                                 const char *pathname, uint32_t mask) {
       errno = ENOENT;
+      return -1;
+    }
+
+    virtual ssize_t GetXattr(const char *path, const char *name, void *value,
+                             size_t size) {
+      errno = ENOSYS;
+      return -1;
+    }
+
+    virtual ssize_t LGetXattr(const char *path, const char *name, void *value,
+                              size_t size) {
+      errno = ENOSYS;
+      return -1;
+    }
+
+    virtual int SetXattr(const char *path, const char *name, const void *value,
+                         size_t size, int flags) {
+      errno = ENOSYS;
+      return -1;
+    }
+
+    virtual int LSetXattr(const char *path, const char *name, const void *value,
+                          size_t size, int flags) {
+      errno = ENOSYS;
+      return -1;
+    }
+
+    virtual ssize_t ListXattr(const char *path, char *list, size_t size) {
+      errno = ENOSYS;
+      return -1;
+    }
+
+    virtual ssize_t LListXattr(const char *path, char *list, size_t size) {
+      errno = ENOSYS;
       return -1;
     }
 
@@ -620,6 +670,38 @@ class IOManager {
   // Implements setrlimit(2).
   virtual int SetRLimit(int resource, const struct rlimit *rlim)
       ABSL_LOCKS_EXCLUDED(fd_table_lock_);
+
+  // Implements getxattr(2).
+  virtual ssize_t GetXattr(const char *path, const char *name, void *value,
+                           size_t size);
+
+  // Implements lgetxattr(2).
+  virtual ssize_t LGetXattr(const char *path, const char *name, void *value,
+                            size_t size);
+
+  // Implements fgetxattr(2).
+  virtual ssize_t FGetXattr(int fd, const char *name, void *value, size_t size);
+
+  // Implements setxattr(2).
+  virtual int SetXattr(const char *path, const char *name, const void *value,
+                       size_t size, int flags);
+
+  // Implements lsetxattr(2).
+  virtual int LSetXattr(const char *path, const char *name, const void *value,
+                        size_t size, int flags);
+
+  // Implements fsetxattr(2).
+  virtual int FSetXattr(int fd, const char *name, const void *value,
+                        size_t size, int flags);
+
+  // Implements listxattr(2).
+  virtual ssize_t ListXattr(const char *path, char *list, size_t size);
+
+  // Implements llistxattr(2).
+  virtual ssize_t LListXattr(const char *path, char *list, size_t size);
+
+  // Implements flistxattr(2).
+  virtual ssize_t FListXattr(int fd, char *list, size_t size);
 
   // Implements setsockopt(2).
   virtual int SetSockOpt(int sockfd, int level, int option_name,

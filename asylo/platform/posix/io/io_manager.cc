@@ -760,6 +760,54 @@ int IOManager::StatFs(const char *pathname, struct statfs *statfs_buffer) {
   });
 }
 
+ssize_t IOManager::GetXattr(const char *path, const char *name, void *value,
+                            size_t size) {
+  return CallWithHandler(path, [name, value, size](VirtualPathHandler *handler,
+                                                   const char *canonical_path) {
+    return handler->GetXattr(canonical_path, name, value, size);
+  });
+}
+
+ssize_t IOManager::LGetXattr(const char *path, const char *name, void *value,
+                             size_t size) {
+  return CallWithHandler(path, [name, value, size](VirtualPathHandler *handler,
+                                                   const char *canonical_path) {
+    return handler->LGetXattr(canonical_path, name, value, size);
+  });
+}
+
+int IOManager::SetXattr(const char *path, const char *name, const void *value,
+                        size_t size, int flags) {
+  return CallWithHandler(
+      path, [name, value, size, flags](VirtualPathHandler *handler,
+                                       const char *canonical_path) {
+        return handler->SetXattr(canonical_path, name, value, size, flags);
+      });
+}
+
+int IOManager::LSetXattr(const char *path, const char *name, const void *value,
+                         size_t size, int flags) {
+  return CallWithHandler(
+      path, [name, value, size, flags](VirtualPathHandler *handler,
+                                       const char *canonical_path) {
+        return handler->LSetXattr(canonical_path, name, value, size, flags);
+      });
+}
+
+ssize_t IOManager::ListXattr(const char *path, char *list, size_t size) {
+  return CallWithHandler(path, [list, size](VirtualPathHandler *handler,
+                                            const char *canonical_path) {
+    return handler->ListXattr(canonical_path, list, size);
+  });
+}
+
+ssize_t IOManager::LListXattr(const char *path, char *list, size_t size) {
+  return CallWithHandler(path, [list, size](VirtualPathHandler *handler,
+                                            const char *canonical_path) {
+    return handler->LListXattr(canonical_path, list, size);
+  });
+}
+
 int IOManager::ChMod(const char *pathname, mode_t mode) {
   return CallWithHandler(pathname, [mode](VirtualPathHandler *handler,
                                           const char *canonical_path) {
@@ -819,6 +867,28 @@ int IOManager::FDataSync(int fd) {
 int IOManager::FStat(int fd, struct stat *stat_buffer) {
   return CallWithContext(fd, [stat_buffer](std::shared_ptr<IOContext> context) {
     return context->FStat(stat_buffer);
+  });
+}
+
+ssize_t IOManager::FGetXattr(int fd, const char *name, void *value,
+                             size_t size) {
+  return CallWithContext(
+      fd, [name, value, size](std::shared_ptr<IOContext> context) {
+        return context->FGetXattr(name, value, size);
+      });
+}
+
+int IOManager::FSetXattr(int fd, const char *name, const void *value,
+                         size_t size, int flags) {
+  return CallWithContext(
+      fd, [name, value, size, flags](std::shared_ptr<IOContext> context) {
+        return context->FSetXattr(name, value, size, flags);
+      });
+}
+
+ssize_t IOManager::FListXattr(int fd, char *list, size_t size) {
+  return CallWithContext(fd, [list, size](std::shared_ptr<IOContext> context) {
+    return context->FListXattr(list, size);
   });
 }
 

@@ -997,6 +997,68 @@ PrimitiveStatus TestGetRusage(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestXattr(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
+  const auto file_path = in->next();
+  const auto xattr_name = in->next();
+  const auto xattr_value = in->next();
+
+  out->Push<int>(enc_untrusted_setxattr(
+      file_path.As<char>(), xattr_name.As<char>(), xattr_value.As<char>(),
+      strlen(xattr_value.As<char>()), 0));
+  char name_buf[16];
+  out->Push<ssize_t>(enc_untrusted_listxattr(file_path.As<char>(), name_buf,
+                                             sizeof(name_buf)));
+  char value_buf[16];
+  out->Push<ssize_t>(enc_untrusted_getxattr(file_path.As<char>(), name_buf,
+                                            value_buf, sizeof(value_buf)));
+  out->PushString(name_buf);
+  out->PushString(value_buf);
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestLXattr(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
+  const auto file_path = in->next();
+  const auto xattr_name = in->next();
+  const auto xattr_value = in->next();
+
+  out->Push<int>(enc_untrusted_lsetxattr(
+      file_path.As<char>(), xattr_name.As<char>(), xattr_value.As<char>(),
+      strlen(xattr_value.As<char>()), 0));
+  char name_buf[16];
+  out->Push<ssize_t>(enc_untrusted_llistxattr(file_path.As<char>(), name_buf,
+                                              sizeof(name_buf)));
+  char value_buf[16];
+  out->Push<ssize_t>(enc_untrusted_lgetxattr(file_path.As<char>(), name_buf,
+                                             value_buf, sizeof(value_buf)));
+  out->PushString(name_buf);
+  out->PushString(value_buf);
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestFXattr(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
+  int fd = in->next<int>();
+  const auto xattr_name = in->next();
+  const auto xattr_value = in->next();
+
+  out->Push<int>(enc_untrusted_fsetxattr(fd, xattr_name.As<char>(),
+                                         xattr_value.As<char>(),
+                                         strlen(xattr_value.As<char>()), 0));
+  char name_buf[16];
+  out->Push<ssize_t>(enc_untrusted_flistxattr(fd, name_buf, sizeof(name_buf)));
+  char value_buf[16];
+  out->Push<ssize_t>(
+      enc_untrusted_fgetxattr(fd, name_buf, value_buf, sizeof(value_buf)));
+  out->PushString(name_buf);
+  out->PushString(value_buf);
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -1190,6 +1252,14 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestGetRusage,
       EntryHandler{asylo::host_call::TestGetRusage}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestXattr, EntryHandler{asylo::host_call::TestXattr}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestLXattr,
+      EntryHandler{asylo::host_call::TestLXattr}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestFXattr,
+      EntryHandler{asylo::host_call::TestFXattr}));
 
   return PrimitiveStatus::OkStatus();
 }

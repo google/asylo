@@ -132,6 +132,12 @@ constexpr uint64_t kTestPoll = kFirstSelector + asylo::system_call::kSYS_poll;
 constexpr uint64_t kTestUtime = kFirstSelector + asylo::system_call::kSYS_utime;
 constexpr uint64_t kTestGetRusage =
     kFirstSelector + asylo::system_call::kSYS_getrusage;
+constexpr uint64_t kTestXattr =
+    kFirstSelector + asylo::system_call::kSYS_setxattr;
+constexpr uint64_t kTestLXattr =
+    kFirstSelector + asylo::system_call::kSYS_lsetxattr;
+constexpr uint64_t kTestFXattr =
+    kFirstSelector + asylo::system_call::kSYS_fsetxattr;
 
 // Host calls implemented via other syscalls or as libc library functions.
 constexpr uint64_t kTestIsAtty = kHostLibCSelector;

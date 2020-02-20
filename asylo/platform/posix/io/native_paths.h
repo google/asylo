@@ -40,6 +40,10 @@ class IOContextNative : public IOManager::IOContext {
   int FSync() override;
   int FStat(struct stat *stat_buffer) override;
   int FStatFs(struct statfs *statfs_buffer) override;
+  ssize_t FGetXattr(const char *name, void *value, size_t size) override;
+  int FSetXattr(const char *name, const void *value, size_t size,
+                int flags) override;
+  ssize_t FListXattr(char *list, size_t size) override;
   int Isatty() override;
   int FLock(int operation) override;
   int Close() override;
@@ -87,6 +91,16 @@ class NativePathHandler : public io::IOManager::VirtualPathHandler {
   int Stat(const char *pathname, struct stat *stat_buffer) override;
   int StatFs(const char *pathname, struct statfs *statfs_buffer) override;
   int LStat(const char *pathname, struct stat *stat_buffer) override;
+  ssize_t GetXattr(const char *path, const char *name, void *value,
+                   size_t size) override;
+  ssize_t LGetXattr(const char *path, const char *name, void *value,
+                    size_t size) override;
+  int SetXattr(const char *path, const char *name, const void *value,
+               size_t size, int flags) override;
+  int LSetXattr(const char *path, const char *name, const void *value,
+                size_t size, int flags) override;
+  ssize_t ListXattr(const char *path, char *list, size_t size) override;
+  ssize_t LListXattr(const char *path, char *list, size_t size) override;
   int Mkdir(const char *path, mode_t mode) override;
   int RmDir(const char *pathname) override;
   int Rename(const char *oldpath, const char *newpath) override;

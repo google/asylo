@@ -53,6 +53,7 @@ INCLUDE("sys/time.h")
 INCLUDE("sys/times.h")
 INCLUDE("sys/resource.h")
 INCLUDE("sys/utsname.h")
+INCLUDE("sys/xattr.h")
 INCLUDE("sched.h")
 INCLUDE("utime.h")
 
@@ -128,6 +129,24 @@ SYSCALL_DEFINE4(pread64, unsigned int, fd, \out void * [bound:count], buf,
                 size_t, count, off_t, offset)
 SYSCALL_DEFINE4(pwrite64, unsigned int, fd, \in const void * [bound:count],
                 buf, size_t, count, off_t, offset)
+SYSCALL_DEFINE4(getxattr, const char *, path, const char *, name,
+                \out void * [bound:size], value, size_t, size)
+SYSCALL_DEFINE4(lgetxattr, const char *, path, const char *, name,
+                \out void * [bound:size], value, size_t, size)
+SYSCALL_DEFINE4(fgetxattr, int, fd, const char *, name,
+                \out void * [bound:size], value, size_t, size)
+SYSCALL_DEFINE5(setxattr, const char *, path, const char *, name,
+                \in const void * [bound:size], value, size_t, size, int, flags)
+SYSCALL_DEFINE5(lsetxattr, const char *, path, const char *, name,
+                \in const void * [bound:size], value, size_t, size, int, flags)
+SYSCALL_DEFINE5(fsetxattr, int, fd, const char *, name,
+                \in const void * [bound:size], value, size_t, size, int, flags)
+SYSCALL_DEFINE3(listxattr, const char *, path, \out char * [bound:size], list,
+                size_t, size)
+SYSCALL_DEFINE3(llistxattr, const char *, path, \out char * [bound:size], list,
+                size_t, size)
+SYSCALL_DEFINE3(flistxattr, int, fd, \out char * [bound:size], list,
+                size_t, size)
 
 // Process Management
 // ==================

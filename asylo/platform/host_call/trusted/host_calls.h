@@ -116,6 +116,21 @@ int enc_untrusted_fstatfs(int fd, struct statfs *statbuf);
 int enc_untrusted_lstat(const char *pathname, struct stat *statbuf);
 int enc_untrusted_stat(const char *pathname, struct stat *statbuf);
 int enc_untrusted_statfs(const char *pathname, struct statfs *statbuf);
+ssize_t enc_untrusted_getxattr(const char *path, const char *name, void *value,
+                               size_t size);
+ssize_t enc_untrusted_lgetxattr(const char *path, const char *name, void *value,
+                                size_t size);
+ssize_t enc_untrusted_fgetxattr(int fd, const char *name, void *value,
+                                size_t size);
+int enc_untrusted_setxattr(const char *path, const char *name,
+                           const void *value, size_t size, int flags);
+int enc_untrusted_lsetxattr(const char *path, const char *name,
+                            const void *value, size_t size, int flags);
+int enc_untrusted_fsetxattr(int fd, const char *name, const void *value,
+                            size_t size, int flags);
+ssize_t enc_untrusted_listxattr(const char *path, char *list, size_t size);
+ssize_t enc_untrusted_llistxattr(const char *path, char *list, size_t size);
+ssize_t enc_untrusted_flistxattr(int fd, char *list, size_t size);
 int enc_untrusted_pread64(int fd, void *buf, size_t count, off_t offset);
 int enc_untrusted_pwrite64(int fd, const void *buf, size_t count, off_t offset);
 int enc_untrusted_wait(int *wstatus);

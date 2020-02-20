@@ -543,6 +543,57 @@ int enc_untrusted_statfs(const char *pathname, struct statfs *statbuf) {
   return result;
 }
 
+ssize_t enc_untrusted_getxattr(const char *path, const char *name, void *value,
+                               size_t size) {
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_getxattr,
+                                             path, name, value, size);
+}
+
+ssize_t enc_untrusted_lgetxattr(const char *path, const char *name, void *value,
+                                size_t size) {
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_lgetxattr,
+                                             path, name, value, size);
+}
+
+ssize_t enc_untrusted_fgetxattr(int fd, const char *name, void *value,
+                                size_t size) {
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_fgetxattr,
+                                             fd, name, value, size);
+}
+
+int enc_untrusted_setxattr(const char *path, const char *name,
+                           const void *value, size_t size, int flags) {
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_setxattr,
+                                             path, name, value, size, flags);
+}
+
+int enc_untrusted_lsetxattr(const char *path, const char *name,
+                            const void *value, size_t size, int flags) {
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_lsetxattr,
+                                             path, name, value, size, flags);
+}
+
+int enc_untrusted_fsetxattr(int fd, const char *name, const void *value,
+                            size_t size, int flags) {
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_fsetxattr,
+                                             fd, name, value, size, flags);
+}
+
+ssize_t enc_untrusted_listxattr(const char *path, char *list, size_t size) {
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_listxattr,
+                                             path, list, size);
+}
+
+ssize_t enc_untrusted_llistxattr(const char *path, char *list, size_t size) {
+  return EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_llistxattr, path, list, size);
+}
+
+ssize_t enc_untrusted_flistxattr(int fd, char *list, size_t size) {
+  return EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_flistxattr, fd, list, size);
+}
+
 int64_t enc_untrusted_sysconf(int name) {
   int kLinux_name = TokLinuxSysconfConstant(name);
   if (kLinux_name == -1) {

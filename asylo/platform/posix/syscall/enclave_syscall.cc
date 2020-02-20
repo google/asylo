@@ -251,6 +251,41 @@ int64_t EnclaveSyscallWithDeps(int sysno, uint64_t* args, size_t nargs,
                                   args[2], args[3],
                                   reinterpret_cast<sockaddr*>(args[4]),
                                   reinterpret_cast<socklen_t*>(args[5]));
+    case asylo::system_call::kSYS_getxattr:
+      return io_manager->GetXattr(reinterpret_cast<const char *>(args[0]),
+                                  reinterpret_cast<const char *>(args[1]),
+                                  reinterpret_cast<void *>(args[2]), args[3]);
+    case asylo::system_call::kSYS_lgetxattr:
+      return io_manager->LGetXattr(reinterpret_cast<const char *>(args[0]),
+                                   reinterpret_cast<const char *>(args[1]),
+                                   reinterpret_cast<void *>(args[2]), args[3]);
+    case asylo::system_call::kSYS_fgetxattr:
+      return io_manager->FGetXattr(args[0],
+                                   reinterpret_cast<const char *>(args[1]),
+                                   reinterpret_cast<void *>(args[2]), args[3]);
+    case asylo::system_call::kSYS_setxattr:
+      return io_manager->SetXattr(reinterpret_cast<const char *>(args[0]),
+                                  reinterpret_cast<const char *>(args[1]),
+                                  reinterpret_cast<const void *>(args[2]),
+                                  args[3], args[4]);
+    case asylo::system_call::kSYS_lsetxattr:
+      return io_manager->LSetXattr(reinterpret_cast<const char *>(args[0]),
+                                   reinterpret_cast<const char *>(args[1]),
+                                   reinterpret_cast<const void *>(args[2]),
+                                   args[3], args[4]);
+    case asylo::system_call::kSYS_fsetxattr:
+      return io_manager->FSetXattr(
+          args[0], reinterpret_cast<const char *>(args[1]),
+          reinterpret_cast<const void *>(args[2]), args[3], args[4]);
+    case asylo::system_call::kSYS_listxattr:
+      return io_manager->ListXattr(reinterpret_cast<const char *>(args[0]),
+                                   reinterpret_cast<char *>(args[1]), args[2]);
+    case asylo::system_call::kSYS_llistxattr:
+      return io_manager->LListXattr(reinterpret_cast<const char *>(args[0]),
+                                    reinterpret_cast<char *>(args[1]), args[2]);
+    case asylo::system_call::kSYS_flistxattr:
+      return io_manager->FListXattr(args[0], reinterpret_cast<char *>(args[1]),
+                                    args[2]);
     case asylo::system_call::kSYS_exit:
     case asylo::system_call::kSYS_exit_group:
       enc_exit(args[0]);
