@@ -192,6 +192,63 @@ enclave_test(
 )
 
 cc_library(
+    name = "sgx_age_remote_assertion_verifier",
+    srcs = ["sgx_age_remote_assertion_verifier.cc"],
+    hdrs = ["sgx_age_remote_assertion_verifier.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":sgx_age_remote_assertion_authority_config_cc_proto",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:certificate_interface",
+        "//asylo/crypto:certificate_util",
+        "//asylo/crypto:x509_certificate",
+        "//asylo/identity:identity_acl_cc_proto",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/attestation:enclave_assertion_verifier",
+        "//asylo/identity/attestation/sgx/internal:attestation_key_certificate_impl",
+        "//asylo/identity/attestation/sgx/internal:certificate_util",
+        "//asylo/identity/attestation/sgx/internal:remote_assertion_cc_proto",
+        "//asylo/identity/attestation/sgx/internal:remote_assertion_util",
+        "//asylo/identity/sgx:code_identity_constants",
+        "//asylo/identity/sgx:sgx_identity_util",
+        "//asylo/util:cleanup",
+        "//asylo/util:mutex_guarded",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_test(
+    name = "sgx_age_remote_assertion_verifier_test",
+    srcs = ["sgx_age_remote_assertion_verifier_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":sgx_age_remote_assertion_authority_config_cc_proto",
+        ":sgx_age_remote_assertion_verifier",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/identity:descriptions",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/attestation/sgx/internal:remote_assertion_cc_proto",
+        "//asylo/identity/attestation/sgx/internal:remote_assertion_generator_enclave_test_util",
+        "//asylo/identity/attestation/sgx/internal:remote_assertion_util",
+        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:fake_sgx_pki",
+        "//asylo/identity/sgx:code_identity_constants",
+        "//asylo/identity/sgx:sgx_identity_util",
+        "//asylo/identity/sgx/intel_certs:intel_sgx_root_ca_cert",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:proto_parse_util",
+        "//asylo/util:status_macros",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "sgx_intel_ecdsa_qe_remote_assertion_generator",
     srcs = ["sgx_intel_ecdsa_qe_remote_assertion_generator.cc"],
     hdrs = ["sgx_intel_ecdsa_qe_remote_assertion_generator.h"],
