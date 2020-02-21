@@ -4649,7 +4649,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/encl
 +	else t='$(program_transform_name)'; echo objcopy | sed -e $$t ; fi`
 +
 +# object files needed
-+OBJS = enclave.o mman.o
++OBJS = enclave.o mman.o xattr.o
 +
 +# Object files specific to particular targets.
 +EVALOBJS = ${OBJS}
@@ -5218,6 +5218,65 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/warning.h ./libgloss/enclav
 +                #name " is not implemented and will always fail")
 +
 +#endif /* __WARNING_H__ */
+diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/xattr.c ./libgloss/enclave/xattr.c
+--- ../newlib-2.5.0.20170922/libgloss/enclave/xattr.c
++++ ./libgloss/enclave/xattr.c
+@@ -0,0 +1,55 @@
++#include <sys/xattr.h>
++
++#include "enclave_syscalls.h"
++#include "sysnos.h"
++
++ssize_t getxattr(const char *path, const char *name, void *value, size_t size) {
++  uint64_t args[] = {(uint64_t)path, (uint64_t)name, (uint64_t)value, size};
++  return enclave_syscall(SYS_getxattr, args, 4);
++}
++
++ssize_t lgetxattr(const char *path, const char *name, void *value,
++                  size_t size) {
++  uint64_t args[] = {(uint64_t)path, (uint64_t)name, (uint64_t)value, size};
++  return enclave_syscall(SYS_lgetxattr, args, 4);
++}
++
++ssize_t fgetxattr(int fd, const char *name, void *value, size_t size) {
++  uint64_t args[] = {fd, (uint64_t)name, (uint64_t)value, size};
++  return enclave_syscall(SYS_fgetxattr, args, 4);
++}
++
++int setxattr(const char *path, const char *name, const void *value, size_t size,
++             int flags) {
++  uint64_t args[] = {(uint64_t)path, (uint64_t)name, (uint64_t)value, size,
++    flags};
++  return enclave_syscall(SYS_setxattr, args, 5);
++}
++
++int lsetxattr(const char *path, const char *name, const void *value,
++              size_t size, int flags) {
++  uint64_t args[] = {(uint64_t)path, (uint64_t)name, (uint64_t)value, size,
++    flags};
++  return enclave_syscall(SYS_lsetxattr, args, 5);
++}
++
++int fsetxattr(int fd, const char *name, const void *value, size_t size,
++              int flags) {
++  uint64_t args[] = {fd, (uint64_t)name, (uint64_t)value, size, flags};
++  return enclave_syscall(SYS_fsetxattr, args, 5);
++}
++
++ssize_t listxattr(const char *path, char *list, size_t size) {
++  uint64_t args[] = {(uint64_t)path, (uint64_t)list, size};
++  return enclave_syscall(SYS_listxattr, args, 3);
++}
++
++ssize_t llistxattr(const char *path, char *list, size_t size) {
++  uint64_t args[] = {(uint64_t)path, (uint64_t)list, size};
++  return enclave_syscall(SYS_llistxattr, args, 3);
++}
++
++ssize_t flistxattr(int fd, char *list, size_t size) {
++  uint64_t args[] = {fd, (uint64_t)list, size};
++  return enclave_syscall(SYS_flistxattr, args, 3);
++}
 diff -Naur ../newlib-2.5.0.20170922/newlib/configure.host ./newlib/configure.host
 --- ../newlib-2.5.0.20170922/newlib/configure.host
 +++ ./newlib/configure.host
@@ -11592,6 +11651,42 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/utsname.
 +#define _SYS_UTSNAME_H_
 +
 +#endif  // _SYS_UTSNAME_H_
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/xattr.h ./newlib/libc/sys/enclave/include/sys/xattr.h
+--- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/xattr.h
++++ ./newlib/libc/sys/enclave/include/sys/xattr.h
+@@ -0,0 +1,32 @@
++#ifndef _XATTR_H_
++#define _XATTR_H_
++
++#include <sys/types.h>
++
++#define XATTR_CREATE 1
++#define XATTR_REPLACE 2
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++ssize_t getxattr(const char *path, const char *name, void *value, size_t size);
++ssize_t lgetxattr(const char *path, const char *name, void *value, size_t size);
++ssize_t fgetxattr(int fd, const char *name, void *value, size_t size);
++
++int setxattr(const char *path, const char *name, const void *value, size_t size,
++             int flags);
++int lsetxattr(const char *path, const char *name, const void *value,
++              size_t size, int flags);
++int fsetxattr(int fd, const char *name, const void *value, size_t size,
++              int flags);
++
++ssize_t listxattr(const char *path, char *list, size_t size);
++ssize_t llistxattr(const char *path, char *list, size_t size);
++ssize_t flistxattr(int fd, char *list, size_t size);
++
++#ifdef __cplusplus
++}  // extern "C"
++#endif
++
++#endif  // _XATTR_H_
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/ucontext.h ./newlib/libc/sys/enclave/include/ucontext.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/ucontext.h
 +++ ./newlib/libc/sys/enclave/include/ucontext.h
