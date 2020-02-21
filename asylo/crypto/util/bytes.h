@@ -246,6 +246,14 @@ class Bytes {
     }
   }
 
+  // Determine whether the data held by this object equals the data pointed to
+  // a byte container view. The method performs a side-channel-safe comparison
+  // if the Policy parameter is set to DataSafety::SAFE, otherwise it uses
+  // memcmp for fast comparison.
+  bool Equals(ByteContainerView other) const {
+    return Equals(other.data(), other.size());
+  }
+
   // The resize method is included to provide API compatibility with other
   // byte-container classes such as string and std::vector<uint8_t>.
   // It does not modify the object. Callers writing templated code that

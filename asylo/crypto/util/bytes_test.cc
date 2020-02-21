@@ -84,18 +84,22 @@ TYPED_TEST(TypedBytesTest, EqualsPositive1) {
   TypeParam bytes1(kValue1, kSize);
 
   EXPECT_TRUE(bytes1.Equals(kValue1, kSize));
+  EXPECT_TRUE(bytes1.Equals(kValue1));
 }
 
 TYPED_TEST(TypedBytesTest, EqualsNegative1) {
   TypeParam bytes1(kValue1, kSize);
+  TypeParam bytes2(kValue1, kSize - 2);
 
   EXPECT_FALSE(bytes1.Equals(kValue1, kSize - 2));
+  EXPECT_FALSE(bytes1.Equals(bytes2));
 }
 
 TYPED_TEST(TypedBytesTest, EqualsNegative2) {
   TypeParam bytes1(kValue1, kSize);
 
   EXPECT_FALSE(bytes1.Equals(kValue2, kSize));
+  EXPECT_FALSE(bytes1.Equals(kValue2));
 }
 
 TYPED_TEST(TypedBytesTest, Constructors) {
