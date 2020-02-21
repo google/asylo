@@ -469,6 +469,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/crypto/util:byte_container_reader",
+        "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/crypto/util:bytes",
         "//asylo/identity/sgx:hardware_types",

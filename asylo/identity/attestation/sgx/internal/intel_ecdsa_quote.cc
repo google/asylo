@@ -22,6 +22,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/byte_container_reader.h"
+#include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h"
 
@@ -94,6 +95,30 @@ StatusOr<IntelQeQuote> ParseDcapPackedQuote(ByteContainerView packed_quote) {
   }
 
   return quote;
+}
+
+std::vector<uint8_t> PackDcapQuote(const IntelQeQuote &quote) {
+  const uint16_t kSizeOfQeAuthData = quote.qe_authn_data.size();
+  const uint32_t kSizeOfQeCertData = quote.cert_data.qe_cert_data.size();
+  const uint32_t kSizeOfSignatureData =
+      sizeof(quote.signature) + sizeof(kSizeOfQeAuthData) + kSizeOfQeAuthData +
+      sizeof(quote.cert_data.qe_cert_data_type) + sizeof(kSizeOfQeCertData) +
+      kSizeOfQeCertData;
+
+  std::vector<uint8_t> output;
+  AppendTrivialObject(quote.header, &output);
+  AppendTrivialObject(quote.body, &output);
+  AppendTrivialObject(kSizeOfSignatureData, &output);
+  AppendTrivialObject(quote.signature, &output);
+  AppendTrivialObject(kSizeOfQeAuthData, &output);
+  std::copy(quote.qe_authn_data.begin(), quote.qe_authn_data.end(),
+            std::back_inserter(output));
+  AppendTrivialObject(quote.cert_data.qe_cert_data_type, &output);
+  AppendTrivialObject(kSizeOfQeCertData, &output);
+  std::copy(quote.cert_data.qe_cert_data.begin(),
+            quote.cert_data.qe_cert_data.end(), std::back_inserter(output));
+
+  return output;
 }
 
 }  // namespace sgx

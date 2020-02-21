@@ -37,39 +37,14 @@ namespace {
 namespace constants = ::intel::sgx::qvl::constants;
 
 using ::testing::ContainerEq;
+using ::testing::ElementsAreArray;
 using ::testing::Eq;
 using ::testing::HasSubstr;
 using ::testing::Test;
 
 class IntelEcdsaQuoteTest : public Test {
  protected:
-  // The Intel DCAP api returns a contiguously-allocated quote buffer. This
-  // helper function will pack up a valid quote into such a buffer.
-  std::vector<uint8_t> PackQuote(const IntelQeQuote &quote) {
-    const uint16_t kSizeOfQeAuthData = quote.qe_authn_data.size();
-    const uint32_t kSizeOfQeCertData = quote.cert_data.qe_cert_data.size();
-    const uint32_t kSizeOfSignatureData =
-        sizeof(quote.signature) + sizeof(kSizeOfQeAuthData) +
-        kSizeOfQeAuthData + sizeof(quote.cert_data.qe_cert_data_type) +
-        sizeof(kSizeOfQeCertData) + kSizeOfQeCertData;
-
-    std::vector<uint8_t> output;
-    AppendTrivialObject(quote.header, &output);
-    AppendTrivialObject(quote.body, &output);
-    AppendTrivialObject(kSizeOfSignatureData, &output);
-    AppendTrivialObject(quote.signature, &output);
-    AppendTrivialObject(kSizeOfQeAuthData, &output);
-    std::copy(quote.qe_authn_data.begin(), quote.qe_authn_data.end(),
-              std::back_inserter(output));
-    AppendTrivialObject(quote.cert_data.qe_cert_data_type, &output);
-    AppendTrivialObject(kSizeOfQeCertData, &output);
-    std::copy(quote.cert_data.qe_cert_data.begin(),
-              quote.cert_data.qe_cert_data.end(), std::back_inserter(output));
-
-    return output;
-  }
-
-  IntelQeQuote CreateRandomParsableQuote() {
+  IntelQeQuote CreateRandomValidQuote() {
     IntelQeQuote quote;
 
     RandomFillTrivialObject(&quote.header);
@@ -106,20 +81,21 @@ class IntelEcdsaQuoteTest : public Test {
 };
 
 TEST_F(IntelEcdsaQuoteTest, ParseSuccess) {
-  const IntelQeQuote kExpectedQuote = CreateRandomParsableQuote();
-  ExpectQuoteEquals(ParseDcapPackedQuote(PackQuote(kExpectedQuote)),
+  const IntelQeQuote kExpectedQuote = CreateRandomValidQuote();
+  ExpectQuoteEquals(ParseDcapPackedQuote(PackDcapQuote(kExpectedQuote)),
                     kExpectedQuote);
 }
 
 TEST_F(IntelEcdsaQuoteTest, ParseQuoteSucceedsWithoutOptionalAuthnData) {
-  IntelQeQuote expected_quote = CreateRandomParsableQuote();
+  IntelQeQuote expected_quote = CreateRandomValidQuote();
   expected_quote.qe_authn_data.clear();
-  ExpectQuoteEquals(ParseDcapPackedQuote(PackQuote(expected_quote)),
+  ExpectQuoteEquals(ParseDcapPackedQuote(PackDcapQuote(expected_quote)),
                     expected_quote);
 }
 
 TEST_F(IntelEcdsaQuoteTest, ParseQuoteFailsDueToInputBufferBeingTooLarge) {
-  std::vector<uint8_t> packed_quote = PackQuote(CreateRandomParsableQuote());
+  std::vector<uint8_t> packed_quote =
+      PackDcapQuote(CreateRandomValidQuote());
   packed_quote.push_back('x');
 
   Status status = ParseDcapPackedQuote(packed_quote).status();
@@ -130,7 +106,8 @@ TEST_F(IntelEcdsaQuoteTest, ParseQuoteFailsDueToInputBufferBeingTooLarge) {
 }
 
 TEST_F(IntelEcdsaQuoteTest, ParseQuoteFailsDueToInputBufferBeingTooSmall) {
-  std::vector<uint8_t> packed_quote = PackQuote(CreateRandomParsableQuote());
+  std::vector<uint8_t> packed_quote =
+      PackDcapQuote(CreateRandomValidQuote());
   do {
     packed_quote.pop_back();
     EXPECT_THAT(ParseDcapPackedQuote(packed_quote),
@@ -139,36 +116,45 @@ TEST_F(IntelEcdsaQuoteTest, ParseQuoteFailsDueToInputBufferBeingTooSmall) {
 }
 
 TEST_F(IntelEcdsaQuoteTest, ParseQuoteSucceedsWithAllValidAlgorithms) {
-  IntelQeQuote quote = CreateRandomParsableQuote();
+  IntelQeQuote quote = CreateRandomValidQuote();
   for (auto valid_value : constants::ALLOWED_ATTESTATION_KEY_TYPES) {
     quote.header.algorithm = valid_value;
-    EXPECT_THAT(ParseDcapPackedQuote(PackQuote(quote)), IsOk());
+    EXPECT_THAT(ParseDcapPackedQuote(PackDcapQuote(quote)), IsOk());
   }
 }
 
 TEST_F(IntelEcdsaQuoteTest,
        ParseQuoteFailsDueToInvalidQuoteSignatureAlgorithm) {
-  IntelQeQuote quote = CreateRandomParsableQuote();
+  IntelQeQuote quote = CreateRandomValidQuote();
   quote.header.algorithm = 54321;
-  EXPECT_THAT(ParseDcapPackedQuote(PackQuote(quote)),
+  EXPECT_THAT(ParseDcapPackedQuote(PackDcapQuote(quote)),
               StatusIs(error::GoogleError::INVALID_ARGUMENT,
                        "Invalid signature algorithm: 54321"));
 }
 
 TEST_F(IntelEcdsaQuoteTest, ParseQuoteSucceedsWithAllValidCertDataTypes) {
-  IntelQeQuote quote = CreateRandomParsableQuote();
+  IntelQeQuote quote = CreateRandomValidQuote();
   for (auto valid_value : constants::SUPPORTED_PCK_IDS) {
     quote.cert_data.qe_cert_data_type = valid_value;
-    EXPECT_THAT(ParseDcapPackedQuote(PackQuote(quote)), IsOk());
+    EXPECT_THAT(ParseDcapPackedQuote(PackDcapQuote(quote)), IsOk());
   }
 }
 
 TEST_F(IntelEcdsaQuoteTest, ParseQuoteFailsDueToInvalidCertDataType) {
-  IntelQeQuote quote = CreateRandomParsableQuote();
+  IntelQeQuote quote = CreateRandomValidQuote();
   quote.cert_data.qe_cert_data_type = 1234;
-  EXPECT_THAT(ParseDcapPackedQuote(PackQuote(quote)),
+  EXPECT_THAT(ParseDcapPackedQuote(PackDcapQuote(quote)),
               StatusIs(error::GoogleError::INVALID_ARGUMENT,
                        "Invalid cert data type: 1234"));
+}
+
+TEST_F(IntelEcdsaQuoteTest, RoundTripPackUnpackPack) {
+  auto packed_quote = PackDcapQuote(CreateRandomValidQuote());
+
+  IntelQeQuote parsed_quote;
+  ASYLO_ASSERT_OK_AND_ASSIGN(parsed_quote, ParseDcapPackedQuote(packed_quote));
+
+  EXPECT_THAT(PackDcapQuote(parsed_quote), ElementsAreArray(packed_quote));
 }
 
 }  // namespace

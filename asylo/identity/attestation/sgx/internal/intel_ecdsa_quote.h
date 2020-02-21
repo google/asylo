@@ -118,6 +118,10 @@ struct IntelQeQuote {
 // verifiable quote.
 StatusOr<IntelQeQuote> ParseDcapPackedQuote(ByteContainerView packed_quote);
 
+// Takes a |quote| structure and packs it up into a contiguous byte buffer.
+// This is the inverse of ParseDcapPackedQuote.
+std::vector<uint8_t> PackDcapQuote(const IntelQeQuote &quote);
+
 }  // namespace sgx
 }  // namespace asylo
 
