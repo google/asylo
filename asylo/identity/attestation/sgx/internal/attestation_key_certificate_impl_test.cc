@@ -47,6 +47,8 @@ namespace sgx {
 namespace {
 
 using ::testing::Eq;
+using ::testing::IsFalse;
+using ::testing::Optional;
 
 constexpr char kTestSigningIssuerKeyDerHex[] =
     "3077020101042058074ece9f20068fba38b3dd32febed75e9a3c54c7cd320d4d47ca45c9f2"
@@ -258,7 +260,8 @@ TEST(AttestationKeyCertificateImplTest, EqualsNonAkCertFailure) {
 
   FakeCertificate fake_cert(/*subject_key=*/"Subject key",
                             /*issuer_key=*/"Issuer key", /*is_ca=*/false,
-                            /*pathlength=*/absl::nullopt);
+                            /*pathlength=*/absl::nullopt,
+                            /*subject_name=*/absl::nullopt);
 
   EXPECT_FALSE(*ak_cert_impl == fake_cert);
 }
@@ -298,7 +301,8 @@ TEST(AttestationKeyCertificateImplTest, VerifySignatureFailure) {
   FakeCertificate fake_cert(
       absl::HexStringToBytes(kTestVerifyingSubjectKeyDerHex),
       /*issuer_key=*/"Irrelevant for the test",
-      /*is_ca=*/false, /*pathlength=*/absl::nullopt);
+      /*is_ca=*/false, /*pathlength=*/absl::nullopt,
+      /*subject_name=*/absl::nullopt);
   VerificationConfig config;
   EXPECT_THAT(ak_cert_impl->Verify(fake_cert, config),
               StatusIs(error::GoogleError::INTERNAL));
@@ -409,9 +413,25 @@ TEST(AttestationKeyCertificateImplTest, VerifySuccess) {
   FakeCertificate fake_cert(
       absl::HexStringToBytes(kTestVerifyingIssuerKeyDerHex),
       /*issuer_key=*/"Irrelevant for the test",
-      /*is_ca=*/false, /*pathlength=*/absl::nullopt);
+      /*is_ca=*/false, /*pathlength=*/absl::nullopt,
+      /*subject_name=*/absl::nullopt);
   VerificationConfig config;
   ASYLO_EXPECT_OK(ak_cert_impl->Verify(fake_cert, config));
+}
+
+TEST(AttestationKeyCertificateImplTest, VerifyFixedAccessorValues) {
+  Certificate cert;
+  cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
+  cert.set_data(
+      absl::HexStringToBytes(kTestAttestationKeyCertificateDerKeyHex));
+
+  std::unique_ptr<AttestationKeyCertificateImpl> ak_cert_impl;
+  ASYLO_ASSERT_OK_AND_ASSIGN(ak_cert_impl,
+                             AttestationKeyCertificateImpl::Create(cert));
+  EXPECT_THAT(ak_cert_impl->SubjectName(), Eq(absl::nullopt));
+  EXPECT_THAT(ak_cert_impl->IsCa(), Optional(IsFalse()));
+  EXPECT_THAT(ak_cert_impl->CertPathLength(), Eq(absl::nullopt));
+  EXPECT_THAT(ak_cert_impl->KeyUsage(), Eq(absl::nullopt));
 }
 
 TEST(AttestationKeyCertificateImplTest, SubjectKeyDerCorrectValue) {

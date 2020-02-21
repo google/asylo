@@ -28,4 +28,6 @@ message FakeCertificateProto {
   optional bool is_ca = 3;
 
   optional int64 pathlength = 4;
+
+  optional string subject_name = 5;
 }

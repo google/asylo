@@ -413,8 +413,10 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   // End-entity certificate not matching the expected public key.
   FakeCertificate end_entity_cert(kSubjectKey2, kIssuer1,
                                   /*is_ca=*/absl::nullopt,
-                                  /*pathlength=*/absl::nullopt);
-  FakeCertificate ca_cert(kIssuer1, kIssuer1, /*is_ca=*/true, /*pathlength=*/1);
+                                  /*pathlength=*/absl::nullopt,
+                                  /*subject_name=*/absl::nullopt);
+  FakeCertificate ca_cert(kIssuer1, kIssuer1, /*is_ca=*/true, /*pathlength=*/1,
+                          /*subject_name=*/absl::nullopt);
 
   UpdateCertsInput update_certs_input;
   CertificateChain *certificate_chain =
@@ -445,8 +447,10 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   // cert.
   FakeCertificate end_entity_cert(kSubjectKey1, kIssuer1,
                                   /*is_ca=*/absl::nullopt,
-                                  /*pathlength=*/absl::nullopt);
-  FakeCertificate ca_cert(kIssuer2, kIssuer2, /*is_ca=*/true, /*pathlength=*/1);
+                                  /*pathlength=*/absl::nullopt,
+                                  /*subject_name=*/absl::nullopt);
+  FakeCertificate ca_cert(kIssuer2, kIssuer2, /*is_ca=*/true, /*pathlength=*/1,
+                          /*subject_name=*/absl::nullopt);
 
   UpdateCertsInput update_certs_input;
   CertificateChain *certificate_chain =
@@ -477,8 +481,10 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
 
   FakeCertificate end_entity_cert(kSubjectKey1, kIssuer1,
                                   /*is_ca=*/absl::nullopt,
-                                  /*pathlength=*/absl::nullopt);
-  FakeCertificate ca_cert(kIssuer1, kIssuer1, /*is_ca=*/true, /*pathlength=*/1);
+                                  /*pathlength=*/absl::nullopt,
+                                  /*subject_name=*/absl::nullopt);
+  FakeCertificate ca_cert(kIssuer1, kIssuer1, /*is_ca=*/true, /*pathlength=*/1,
+                          /*subject_name=*/absl::nullopt);
 
   ASYLO_ASSERT_OK_AND_ASSIGN(
       *certificate_chain->add_certificates(),

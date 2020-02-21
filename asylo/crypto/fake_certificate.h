@@ -37,7 +37,8 @@ class FakeCertificate : public CertificateInterface {
  public:
   FakeCertificate(absl::string_view subject_key, absl::string_view issuer_key,
                   absl::optional<bool> is_ca,
-                  absl::optional<int64_t> pathlength);
+                  absl::optional<int64_t> pathlength,
+                  absl::optional<std::string> subject_name);
 
   // Creates a fake certificate. |certificate|.format() can be any value.
   // |certificate|.data() must be a serialized FakeCertificateProto.
@@ -54,6 +55,8 @@ class FakeCertificate : public CertificateInterface {
 
   StatusOr<std::string> SubjectKeyDer() const override;
 
+  absl::optional<std::string> SubjectName() const override;
+
   absl::optional<bool> IsCa() const override;
 
   absl::optional<int64_t> CertPathLength() const override;
@@ -69,6 +72,7 @@ class FakeCertificate : public CertificateInterface {
   std::string issuer_key_;
   absl::optional<bool> is_ca_;
   absl::optional<int64_t> pathlength_;
+  absl::optional<std::string> subject_name_;
 };
 
 }  // namespace asylo

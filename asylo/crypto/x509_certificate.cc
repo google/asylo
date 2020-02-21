@@ -24,6 +24,7 @@
 #include <openssl/conf.h>
 #include <openssl/ec.h>
 #include <openssl/evp.h>
+#include <openssl/mem.h>
 #include <openssl/nid.h>
 #include <openssl/obj.h>
 #include <openssl/pem.h>
@@ -873,6 +874,29 @@ StatusOr<std::string> X509Certificate::SubjectKeyDer() const {
   }
 
   return EvpPkeyToDer(*evp_key);
+}
+
+absl::optional<std::string> X509Certificate::SubjectName() const {
+  bssl::UniquePtr<BIO> subject_name_bio(BIO_new(BIO_s_mem()));
+  if (!X509_NAME_print_ex(subject_name_bio.get(),
+                          X509_get_subject_name(x509_.get()), 0,
+                          XN_FLAG_RFC2253)) {
+    // This should never happen. OpenSSL doesn't even check for errors from this
+    // function in many cases.
+    LOG(ERROR) << BsslLastErrorString();
+    return absl::nullopt;
+  }
+
+  char *subject_name_string = nullptr;
+  int64_t subject_name_length =
+      BIO_get_mem_data(subject_name_bio.get(), &subject_name_string);
+  if (subject_name_length <= 0 || subject_name_string == nullptr) {
+    // This should never happen. The BIO is created above, and we KNOW it's a
+    // mem bio, so getting the pointer should not fail.
+    LOG(ERROR) << BsslLastErrorString();
+    return absl::nullopt;
+  }
+  return std::string(subject_name_string, subject_name_length);
 }
 
 absl::optional<bool> X509Certificate::IsCa() const {

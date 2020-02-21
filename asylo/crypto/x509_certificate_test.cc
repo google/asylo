@@ -450,7 +450,8 @@ TEST_F(X509CertificateTest, EqualsNonX509Failure) {
   FakeCertificate fake_cert(/*subject_key=*/"Subject key",
                             /*issuer_key=*/"Issuer key",
                             /*is_ca=*/absl::nullopt,
-                            /*pathlength=*/absl::nullopt);
+                            /*pathlength=*/absl::nullopt,
+                            /*subject_name=*/absl::nullopt);
 
   EXPECT_FALSE(*x509_cert == fake_cert);
 }
@@ -691,6 +692,18 @@ TEST_F(X509CertificateTest, SubjectKeyDerSucceeds) {
   ASYLO_ASSERT_OK_AND_ASSIGN(
       x509, CreateX509Cert(Certificate::X509_PEM, kTestRootCertPem));
   EXPECT_THAT(x509->SubjectKeyDer(), IsOkAndHolds(root_public_key_));
+}
+
+// Verifies that SubjectName() returns the expected subject name.
+TEST_F(X509CertificateTest, SubjectNameMatches) {
+  std::unique_ptr<CertificateInterface> x509;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      x509, CreateX509Cert(Certificate::X509_PEM, kTestRealCaCertPem));
+
+  EXPECT_THAT(
+      x509->SubjectName(),
+      Optional(StrEq("CN=Test Real Root "
+                     "CA,OU=Asylo,O=Google,L=Kirkland,ST=Washington,C=US")));
 }
 
 // Verifies that IsCa() returns an expected true value.

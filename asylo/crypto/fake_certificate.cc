@@ -31,11 +31,13 @@ namespace asylo {
 FakeCertificate::FakeCertificate(absl::string_view subject_key,
                                  absl::string_view issuer_key,
                                  absl::optional<bool> is_ca,
-                                 absl::optional<int64_t> pathlength)
+                                 absl::optional<int64_t> pathlength,
+                                 absl::optional<std::string> subject_name)
     : subject_key_(subject_key),
       issuer_key_(issuer_key),
       is_ca_(is_ca),
-      pathlength_(pathlength) {}
+      pathlength_(pathlength),
+      subject_name_(subject_name) {}
 
 StatusOr<std::unique_ptr<FakeCertificate>> FakeCertificate::Create(
     const Certificate &certificate) {
@@ -63,8 +65,14 @@ StatusOr<std::unique_ptr<FakeCertificate>> FakeCertificate::Create(
     pathlength = fake_cert.pathlength();
   }
 
-  return absl::make_unique<FakeCertificate>(
-      fake_cert.subject_key(), fake_cert.issuer_key(), is_ca, pathlength);
+  absl::optional<std::string> subject_name = absl::nullopt;
+  if (fake_cert.has_subject_name()) {
+    subject_name = fake_cert.subject_name();
+  }
+
+  return absl::make_unique<FakeCertificate>(fake_cert.subject_key(),
+                                            fake_cert.issuer_key(), is_ca,
+                                            pathlength, subject_name);
 }
 
 bool FakeCertificate::operator==(const CertificateInterface &other) const {
@@ -75,7 +83,9 @@ bool FakeCertificate::operator==(const CertificateInterface &other) const {
   }
   return subject_key_ == other_cert->subject_key_ &&
          issuer_key_ == other_cert->issuer_key_ &&
-         is_ca_ == other_cert->is_ca_ && pathlength_ == other_cert->pathlength_;
+         is_ca_ == other_cert->is_ca_ &&
+         pathlength_ == other_cert->pathlength_ &&
+         subject_name_ == other_cert->subject_name_;
 }
 
 Status FakeCertificate::Verify(const CertificateInterface &issuer_certificate,
@@ -95,6 +105,10 @@ Status FakeCertificate::Verify(const CertificateInterface &issuer_certificate,
 
 StatusOr<std::string> FakeCertificate::SubjectKeyDer() const {
   return subject_key_;
+}
+
+absl::optional<std::string> FakeCertificate::SubjectName() const {
+  return subject_name_;
 }
 
 absl::optional<bool> FakeCertificate::IsCa() const { return is_ca_; }
@@ -117,6 +131,9 @@ StatusOr<Certificate> FakeCertificate::ToCertificateProto(
   }
   if (pathlength_.has_value()) {
     fake_cert.set_pathlength(pathlength_.value());
+  }
+  if (subject_name_.has_value()) {
+    fake_cert.set_subject_name(subject_name_.value());
   }
 
   Certificate cert;

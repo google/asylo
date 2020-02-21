@@ -87,6 +87,18 @@ class CertificateInterface {
   // non-OK Status if there was an error.
   virtual StatusOr<std::string> SubjectKeyDer() const = 0;
 
+  // Returns the subject name for this certificate, if one is available. The
+  // subject is a description of what entity is being certified. The format of
+  // the string representation is dependent upon the concrete class. Given an
+  // abstract CertificateInterface object reference, no assumptions should be
+  // made about the format returned by SubjectName. Returns absl::nullopt if
+  // this certificate does not have a subject name.
+  //
+  // NOTE: SubjectName outputs may change across code revisions. Thus, if
+  // SubjectName is used to compare certificates, the same version of code must
+  // be used to generate all compared strings.
+  virtual absl::optional<std::string> SubjectName() const = 0;
+
   // Returns whether this object is a CA certificate. Returns absl::nullopt if
   // the question is not relevant for this object or is unknown.
   virtual absl::optional<bool> IsCa() const = 0;

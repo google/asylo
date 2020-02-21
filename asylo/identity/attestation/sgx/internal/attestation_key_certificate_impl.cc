@@ -238,6 +238,10 @@ StatusOr<std::string> AttestationKeyCertificateImpl::SubjectKeyDer() const {
   return VerifyingKeyToDer(subject_key_);
 }
 
+absl::optional<std::string> AttestationKeyCertificateImpl::SubjectName() const {
+  return absl::nullopt;
+}
+
 absl::optional<bool> AttestationKeyCertificateImpl::IsCa() const {
   return false;
 }

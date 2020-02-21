@@ -66,6 +66,8 @@ class AttestationKeyCertificateImpl : public CertificateInterface {
 
   StatusOr<std::string> SubjectKeyDer() const override;
 
+  absl::optional<std::string> SubjectName() const override;
+
   absl::optional<bool> IsCa() const override;
 
   absl::optional<int64_t> CertPathLength() const override;
