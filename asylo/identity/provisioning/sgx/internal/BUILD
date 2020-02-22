@@ -263,8 +263,10 @@ cc_test_and_cc_enclave_test(
     deps = [
         ":platform_provisioning",
         ":platform_provisioning_cc_proto",
+        "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity/sgx:hardware_types",
+        "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",

@@ -22,9 +22,11 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 
@@ -232,6 +234,30 @@ TEST(PlatformProvisioningTest, ValidTargetInfoProtoCanBeConvertedToTargetinfo) {
   std::string actual_hex =
       ConvertTrivialObjectToHexString(targetinfo_result.ValueOrDie());
   EXPECT_THAT(actual_hex, Eq(expected_hex));
+}
+
+TEST(PlatformProvisioningTest, CpuSvnFromReportProtoSuccess) {
+  const std::string kCpusvn = "123456abcdef1234";
+
+  Report report;
+  report.body.cpusvn = kCpusvn;
+
+  ReportProto report_proto;
+  report_proto.set_value(ConvertTrivialObjectToBinaryString(report));
+
+  CpuSvn expected_cpu_svn;
+  expected_cpu_svn.set_value(kCpusvn);
+
+  EXPECT_THAT(CpuSvnFromReportProto(report_proto),
+              IsOkAndHolds(EqualsProto(expected_cpu_svn)));
+}
+
+TEST(PlatformProvisioningTest, CpuSvnFromReportProtoFailure) {
+  ReportProto bad_report;
+  bad_report.set_value("abc");
+
+  EXPECT_THAT(CpuSvnFromReportProto(bad_report),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 }  // namespace

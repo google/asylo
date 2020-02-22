@@ -78,6 +78,10 @@ StatusOr<Report> ConvertReportProtoToHardwareReport(
 StatusOr<Targetinfo> ConvertTargetInfoProtoToTargetinfo(
     const TargetInfoProto &target_info_proto);
 
+// Extracts a CpuSvn from the given |report_proto|. Returns an error if the
+// message is invalid.
+StatusOr<CpuSvn> CpuSvnFromReportProto(const ReportProto &report_proto);
+
 }  // namespace sgx
 }  // namespace asylo
 

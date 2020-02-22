@@ -159,5 +159,14 @@ StatusOr<Targetinfo> ConvertTargetInfoProtoToTargetinfo(
   return targetinfo;
 }
 
+StatusOr<CpuSvn> CpuSvnFromReportProto(const ReportProto &report_proto) {
+  Report report;
+  ASYLO_ASSIGN_OR_RETURN(report,
+                         ConvertReportProtoToHardwareReport(report_proto));
+  CpuSvn cpu_svn;
+  cpu_svn.set_value(ConvertTrivialObjectToBinaryString(report.body.cpusvn));
+  return cpu_svn;
+}
+
 }  // namespace sgx
 }  // namespace asylo
