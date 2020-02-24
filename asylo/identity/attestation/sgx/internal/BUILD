@@ -476,7 +476,6 @@ cc_library(
         "//asylo/util:status",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",
-        "@sgx_dcap//:quote_constants",
     ],
 )
 
@@ -492,7 +491,6 @@ cc_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
-        "@sgx_dcap//:quote_constants",
     ],
 )
 

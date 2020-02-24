@@ -28,13 +28,10 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/status_matchers.h"
-#include "QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h"
 
 namespace asylo {
 namespace sgx {
 namespace {
-
-namespace constants = ::intel::sgx::qvl::constants;
 
 using ::testing::ContainerEq;
 using ::testing::ElementsAreArray;
@@ -54,10 +51,6 @@ class IntelEcdsaQuoteTest : public Test {
                         &quote.qe_authn_data);
     AppendTrivialObject(TrivialRandomObject<UnsafeBytes<456>>(),
                         &quote.cert_data.qe_cert_data);
-
-    // These values must be fixed for a quote to be valid.
-    quote.cert_data.qe_cert_data_type = constants::PCK_ID_PCK_CERT_CHAIN;
-    quote.header.algorithm = constants::ECDSA_256_WITH_P256_CURVE;
 
     return quote;
   }
@@ -113,39 +106,6 @@ TEST_F(IntelEcdsaQuoteTest, ParseQuoteFailsDueToInputBufferBeingTooSmall) {
     EXPECT_THAT(ParseDcapPackedQuote(packed_quote),
                 StatusIs(error::GoogleError::INVALID_ARGUMENT));
   } while (!packed_quote.empty());
-}
-
-TEST_F(IntelEcdsaQuoteTest, ParseQuoteSucceedsWithAllValidAlgorithms) {
-  IntelQeQuote quote = CreateRandomValidQuote();
-  for (auto valid_value : constants::ALLOWED_ATTESTATION_KEY_TYPES) {
-    quote.header.algorithm = valid_value;
-    EXPECT_THAT(ParseDcapPackedQuote(PackDcapQuote(quote)), IsOk());
-  }
-}
-
-TEST_F(IntelEcdsaQuoteTest,
-       ParseQuoteFailsDueToInvalidQuoteSignatureAlgorithm) {
-  IntelQeQuote quote = CreateRandomValidQuote();
-  quote.header.algorithm = 54321;
-  EXPECT_THAT(ParseDcapPackedQuote(PackDcapQuote(quote)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
-                       "Invalid signature algorithm: 54321"));
-}
-
-TEST_F(IntelEcdsaQuoteTest, ParseQuoteSucceedsWithAllValidCertDataTypes) {
-  IntelQeQuote quote = CreateRandomValidQuote();
-  for (auto valid_value : constants::SUPPORTED_PCK_IDS) {
-    quote.cert_data.qe_cert_data_type = valid_value;
-    EXPECT_THAT(ParseDcapPackedQuote(PackDcapQuote(quote)), IsOk());
-  }
-}
-
-TEST_F(IntelEcdsaQuoteTest, ParseQuoteFailsDueToInvalidCertDataType) {
-  IntelQeQuote quote = CreateRandomValidQuote();
-  quote.cert_data.qe_cert_data_type = 1234;
-  EXPECT_THAT(ParseDcapPackedQuote(PackDcapQuote(quote)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
-                       "Invalid cert data type: 1234"));
 }
 
 TEST_F(IntelEcdsaQuoteTest, RoundTripPackUnpackPack) {

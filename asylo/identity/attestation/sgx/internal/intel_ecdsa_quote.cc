@@ -24,35 +24,15 @@
 #include "asylo/crypto/util/byte_container_reader.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
-#include "QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h"
 
 namespace asylo {
 namespace sgx {
-namespace {
-
-namespace constants = ::intel::sgx::qvl::constants;
-
-template <typename ContainerT>
-bool Contains(const ContainerT &container,
-              const typename ContainerT::value_type &value) {
-  return std::find(std::begin(container), std::end(container), value) !=
-         std::end(container);
-}
-
-}  // namespace
 
 StatusOr<IntelQeQuote> ParseDcapPackedQuote(ByteContainerView packed_quote) {
   ByteContainerReader reader(packed_quote);
   IntelQeQuote quote;
   ASYLO_RETURN_IF_ERROR(reader.ReadSingle(&quote.header));
   ASYLO_RETURN_IF_ERROR(reader.ReadSingle(&quote.body));
-
-  if (!Contains(constants::ALLOWED_ATTESTATION_KEY_TYPES,
-                quote.header.algorithm)) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrCat("Invalid signature algorithm: ", quote.header.algorithm));
-  }
 
   // |signature_size| is called "Quote Signature Data Len" in the Intel SGX
   // ECDSA QuoteGenReference API doc. It's the length of the "Quote Signature
@@ -74,12 +54,6 @@ StatusOr<IntelQeQuote> ParseDcapPackedQuote(ByteContainerView packed_quote) {
   ASYLO_RETURN_IF_ERROR(
       reader.ReadMultiple(authn_data_size, &quote.qe_authn_data));
   ASYLO_RETURN_IF_ERROR(reader.ReadSingle(&quote.cert_data.qe_cert_data_type));
-  if (!Contains(constants::SUPPORTED_PCK_IDS,
-                quote.cert_data.qe_cert_data_type)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrFormat("Invalid cert data type: %d",
-                                  quote.cert_data.qe_cert_data_type));
-  }
 
   uint32_t cert_data_size = 0;
   ASYLO_RETURN_IF_ERROR(reader.ReadSingle(&cert_data_size));
