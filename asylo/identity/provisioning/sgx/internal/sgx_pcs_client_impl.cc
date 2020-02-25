@@ -170,6 +170,21 @@ StatusOr<GetPckCertificatesResult> ParseGetPckCertificatesResponse(
   return result;
 }
 
+// Returns the string that represents a |sgx_ca_type| according to Intel PCS
+// API documentation. Returns an INVALID_ARGUMENT error if |sgx_ca_type| is
+// SgxCaType_UNKNOWN.
+StatusOr<std::string> CaTypeToStr(SgxCaType sgx_ca_type) {
+  switch (sgx_ca_type) {
+    case SgxCaType::PROCESSOR:
+      return "processor";
+    case SgxCaType::PLATFORM:
+      return "platform";
+    default:
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Input CA type cannot be unknown");
+  }
+}
+
 // Returns the GetPckCrlResult created by parsing |response|. Returns a non-OK
 // Status upon parsing failure.
 StatusOr<GetCrlResult> ParseGetCrlResponse(
@@ -216,21 +231,6 @@ StatusOr<GetTcbInfoResult> ParseGetTcbInfoResponse(
                          GetCertificateChainFromPem(issuer_chain_pem));
   ASYLO_ASSIGN_OR_RETURN(result.tcb_info, SignedTcbInfoFromJson(response.body));
   return result;
-}
-
-// Returns the string that represents a |sgx_ca_type| according to Intel PCS
-// API documentation. Returns an INVALID_ARGUMENT error if |sgx_ca_type| is
-// SgxCaType_UNKNOWN.
-StatusOr<std::string> CaTypeToStr(SgxCaType sgx_ca_type) {
-  switch (sgx_ca_type) {
-    case SgxCaType::PROCESSOR:
-      return "processor";
-    case SgxCaType::PLATFORM:
-      return "platform";
-    default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Input CA type cannot be unknown");
-  }
 }
 
 // Encrypts |ppid| using |enc_key| and returns the hex-encoded result. Return a
