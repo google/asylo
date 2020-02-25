@@ -294,10 +294,10 @@ cc_library(
         ":fork_cc_proto",
         "@com_google_absl//absl/strings",
         "//asylo:enclave_cc_proto",
-        "//asylo/platform/core:status_serializer",
         "//asylo/platform/core:trusted_core",
         "//asylo/platform/host_call",
         "//asylo/platform/posix/threading:thread_manager",
+        "//asylo/platform/primitives/util:status_serializer",
         "//asylo/util:status",
     ] + select(
         {"@com_google_asylo//asylo": [

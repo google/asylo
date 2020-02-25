@@ -145,3 +145,16 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+# Status serializer.
+cc_library(
+    name = "status_serializer",
+    hdrs = [
+        "status_serializer.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/platform/primitives:trusted_primitives",
+        "//asylo/util:status",
+    ],
+)

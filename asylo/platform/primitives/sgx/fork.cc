@@ -18,7 +18,6 @@
 #include "asylo/platform/primitives/sgx/fork.h"
 
 #include "asylo/enclave.pb.h"
-#include "asylo/platform/core/status_serializer.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
 #include "asylo/platform/primitives/sgx/fork.pb.h"
@@ -26,6 +25,7 @@
 #include "asylo/platform/primitives/sgx/untrusted_cache_malloc.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
+#include "asylo/platform/primitives/util/status_serializer.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
