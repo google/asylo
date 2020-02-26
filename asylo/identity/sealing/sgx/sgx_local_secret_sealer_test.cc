@@ -28,6 +28,7 @@
 #include <google/protobuf/text_format.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -54,6 +55,8 @@
 #include "asylo/util/path.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
+
+ABSL_FLAG(std::string, test_data_path, "", "Path to secret sealer test data");
 
 namespace asylo {
 namespace {
@@ -759,8 +762,7 @@ TEST_F(SgxLocalSecretSealerTest,
 // Verifies that sealed secrets contained in local-secret-sealer-generated
 // golden data can be unsealed correctly.
 TEST_F(SgxLocalSecretSealerTest, BackwardCompatibility) {
-  std::string data_path =
-      "asylo/identity/sealing/sgx/testdata/local_secret_sealer_test_data";
+  const std::string data_path = absl::GetFlag(FLAGS_test_data_path);
 
   int fd = open(data_path.c_str(), O_RDONLY);
   ASSERT_GT(fd, 0);
