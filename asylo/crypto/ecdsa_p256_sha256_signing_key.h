@@ -29,9 +29,18 @@
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/crypto/util/bytes.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
+
+using EccP256Coordinate = UnsafeBytes<32>;
+
+// Big-endian x and y coordinates of a point on the P256 curve.
+struct EccP256CurvePoint {
+  EccP256Coordinate x;
+  EccP256Coordinate y;
+};
 
 // An implementation of the VerifyingKey interface that uses ECDSA-P256 keys for
 // signature verification and SHA256 for message hashing.
@@ -54,6 +63,10 @@ class EcdsaP256Sha256VerifyingKey : public VerifyingKey {
   // Creates a new EcdsaP56VerifyingKey from the given |public_key|.
   static StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>> Create(
       bssl::UniquePtr<EC_KEY> public_key);
+
+  // Creates a new EcdsaP56VerifyingKey from the given |public_key|.
+  static StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>> Create(
+      const EccP256CurvePoint &public_key);
 
   // From VerifyingKey.
 
@@ -119,6 +132,8 @@ class EcdsaP256Sha256SigningKey : public SigningKey {
   Status Sign(ByteContainerView message, Signature *signature) const override;
 
   Status SignX509(X509 *x509) const override;
+
+  StatusOr<EccP256CurvePoint> GetPublicKeyPoint() const;
 
  private:
   EcdsaP256Sha256SigningKey(bssl::UniquePtr<EC_KEY> private_key,

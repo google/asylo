@@ -18,9 +18,12 @@
 
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 
+#include <openssl/base.h>
 #include <openssl/bio.h>
+#include <openssl/bn.h>
 #include <openssl/bytestring.h>
 #include <openssl/crypto.h>
+#include <openssl/ec.h>
 #include <openssl/ec_key.h>
 #include <openssl/ecdsa.h>
 #include <openssl/evp.h>
@@ -97,6 +100,14 @@ Status CheckKeyProtoValues(const AsymmetricSigningKeyProto &key_proto,
   return Status::OkStatus();
 }
 
+StatusOr<EccP256Coordinate> ToCoordinate(const BIGNUM &bignum) {
+  EccP256Coordinate coordinate;
+  if (BN_bn2bin_padded(coordinate.data(), coordinate.size(), &bignum) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return coordinate;
+}
+
 }  // namespace
 
 // EcdsaP256Sha256VerifyingKey
@@ -164,6 +175,32 @@ EcdsaP256Sha256VerifyingKey::Create(bssl::UniquePtr<EC_KEY> public_key) {
 
   return absl::WrapUnique<EcdsaP256Sha256VerifyingKey>(
       new EcdsaP256Sha256VerifyingKey(std::move(public_key)));
+}
+
+StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>>
+EcdsaP256Sha256VerifyingKey::Create(const EccP256CurvePoint &public_key) {
+  bssl::UniquePtr<BIGNUM> bignum_x;
+  ASYLO_ASSIGN_OR_RETURN(bignum_x, BignumFromBigEndianBytes(public_key.x));
+
+  bssl::UniquePtr<BIGNUM> bignum_y;
+  ASYLO_ASSIGN_OR_RETURN(bignum_y, BignumFromBigEndianBytes(public_key.y));
+
+  bssl::UniquePtr<EC_KEY> key(EC_KEY_new_by_curve_name(NID_X9_62_prime256v1));
+  CHECK(key != nullptr);
+
+  const EC_GROUP *group = EC_KEY_get0_group(key.get());
+  bssl::UniquePtr<EC_POINT> point(EC_POINT_new(group));
+  if (EC_POINT_set_affine_coordinates_GFp(group, point.get(), bignum_x.get(),
+                                          bignum_y.get(),
+                                          /*ctx=*/nullptr) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  if (EC_KEY_set_public_key(key.get(), point.get()) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  return Create(std::move(key));
 }
 
 bool EcdsaP256Sha256VerifyingKey::operator==(const VerifyingKey &other) const {
@@ -493,6 +530,25 @@ Status EcdsaP256Sha256SigningKey::SignX509(X509 *x509) const {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
   return Status::OkStatus();
+}
+
+StatusOr<EccP256CurvePoint> EcdsaP256Sha256SigningKey::GetPublicKeyPoint()
+    const {
+  EccP256CurvePoint public_key;
+  const EC_POINT *point = EC_KEY_get0_public_key(private_key_.get());
+  const EC_GROUP *group = EC_KEY_get0_group(private_key_.get());
+
+  bssl::UniquePtr<BIGNUM> bignum_x(BN_new());
+  bssl::UniquePtr<BIGNUM> bignum_y(BN_new());
+
+  if (EC_POINT_get_affine_coordinates_GFp(
+          group, point, bignum_x.get(), bignum_y.get(), /*ctx=*/nullptr) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  ASYLO_ASSIGN_OR_RETURN(public_key.x, ToCoordinate(*bignum_x));
+  ASYLO_ASSIGN_OR_RETURN(public_key.y, ToCoordinate(*bignum_y));
+  return public_key;
 }
 
 EcdsaP256Sha256SigningKey::EcdsaP256Sha256SigningKey(

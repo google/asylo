@@ -766,5 +766,21 @@ TEST_F(EcdsaP256Sha256SigningKeyTest,
               Not(IsOk()));
 }
 
+// Verify that we can export and import the public key coordinate.
+TEST_F(EcdsaP256Sha256SigningKeyTest, ExportAndImportRawPublicKey) {
+  // First export and import key point
+  EccP256CurvePoint public_key_point;
+  ASYLO_ASSERT_OK_AND_ASSIGN(public_key_point,
+                             signing_key_->GetPublicKeyPoint());
+
+  std::unique_ptr<VerifyingKey> verifier;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      verifier, EcdsaP256Sha256VerifyingKey::Create(public_key_point));
+
+  // Second, ensure the verifying key can check signatures properly.
+  std::vector<uint8_t> signature;
+  ASYLO_EXPECT_OK(signing_key_->Sign("sign this stuff", &signature));
+  ASYLO_EXPECT_OK(verifier->Verify("sign this stuff", signature));
+}
 }  // namespace
 }  // namespace asylo
