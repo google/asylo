@@ -89,10 +89,9 @@ TYPED_TEST(TypedBytesTest, EqualsPositive1) {
 
 TYPED_TEST(TypedBytesTest, EqualsNegative1) {
   TypeParam bytes1(kValue1, kSize);
-  TypeParam bytes2(kValue1, kSize - 2);
 
   EXPECT_FALSE(bytes1.Equals(kValue1, kSize - 2));
-  EXPECT_FALSE(bytes1.Equals(bytes2));
+  EXPECT_FALSE(bytes1.Equals(ByteContainerView(kValue1, kSize-2)));
 }
 
 TYPED_TEST(TypedBytesTest, EqualsNegative2) {
