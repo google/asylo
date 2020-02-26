@@ -42,7 +42,7 @@ using ::testing::Test;
 class IntelEcdsaQuoteTest : public Test {
  protected:
   IntelQeQuote CreateRandomValidQuote() {
-    IntelQeQuote quote;
+    IntelQeQuote quote = {};
 
     RandomFillTrivialObject(&quote.header);
     RandomFillTrivialObject(&quote.body);
