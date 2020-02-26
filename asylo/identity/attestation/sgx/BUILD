@@ -382,7 +382,7 @@ sgx_enclave_test(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
-        "age": "//asylo/identity/attestation/sgx/internal:remote_assertion_generator_enclave.so",
+        "age": "//asylo/identity/attestation/sgx/internal:remote_assertion_generator_enclave_no_flc.so",
     },
     test_args = [
         "--age_path='{age}'",
