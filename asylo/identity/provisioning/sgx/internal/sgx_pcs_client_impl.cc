@@ -235,10 +235,14 @@ StatusOr<GetTcbInfoResult> ParseGetTcbInfoResponse(
 
 // Encrypts |ppid| using |enc_key| and returns the hex-encoded result. Return a
 // non-OK Status if the encryption fails.
-StatusOr<std::string> EncryptPpid(const AsymmetricEncryptionKey &enc_key,
+StatusOr<std::string> EncryptPpid(const AsymmetricEncryptionKey *enc_key,
                                   const Ppid &ppid) {
+  if (enc_key == nullptr) {
+    return Status(error::GoogleError::FAILED_PRECONDITION,
+                  "No PPID encryption key provided");
+  }
   std::vector<uint8_t> ppid_encrypted;
-  ASYLO_RETURN_IF_ERROR(enc_key.Encrypt(ppid.value(), &ppid_encrypted));
+  ASYLO_RETURN_IF_ERROR(enc_key->Encrypt(ppid.value(), &ppid_encrypted));
   return absl::BytesToHexString(absl::string_view(
       reinterpret_cast<char *>(ppid_encrypted.data()), ppid_encrypted.size()));
 }
@@ -250,21 +254,23 @@ SgxPcsClientImpl::SgxPcsClientImpl(
     std::unique_ptr<AsymmetricEncryptionKey> ppid_enc_key,
     absl::string_view api_key)
     : fetcher_(std::move(CHECK_NOTNULL(fetcher))),
-      ppid_enc_key_(std::move(CHECK_NOTNULL(ppid_enc_key))),
+      ppid_enc_key_(std::move(ppid_enc_key)),
       api_key_(api_key) {}
 
 StatusOr<std::unique_ptr<SgxPcsClient>> SgxPcsClientImpl::Create(
     std::unique_ptr<HttpFetcher> fetcher,
     std::unique_ptr<AsymmetricEncryptionKey> ppid_enc_key,
     absl::string_view api_key) {
-  AsymmetricEncryptionScheme enc_scheme = ppid_enc_key->GetEncryptionScheme();
-  if (enc_scheme != AsymmetricEncryptionScheme::RSA3072_OAEP) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrFormat(
-            "ppid_enc_key has an invalid encryption scheme: %s (%d). Expected "
-            "RSA3072_OAEP.",
-            ProtoEnumValueName(enc_scheme), enc_scheme));
+  if (ppid_enc_key != nullptr) {
+    AsymmetricEncryptionScheme enc_scheme = ppid_enc_key->GetEncryptionScheme();
+    if (enc_scheme != AsymmetricEncryptionScheme::RSA3072_OAEP) {
+      return Status(
+          error::GoogleError::INVALID_ARGUMENT,
+          absl::StrFormat(
+              "ppid_enc_key has an invalid encryption scheme: %s (%d). "
+              "Expected RSA3072_OAEP.",
+              ProtoEnumValueName(enc_scheme), enc_scheme));
+    }
   }
   // Using `new` to access a non-public constructor.
   return absl::WrapUnique(new SgxPcsClientImpl(
@@ -279,7 +285,8 @@ StatusOr<GetPckCertificateResult> SgxPcsClientImpl::GetPckCertificate(
   ASYLO_RETURN_IF_ERROR(ValidatePceSvn(pce_svn));
   ASYLO_RETURN_IF_ERROR(ValidatePceId(pce_id));
   std::string encrypted_ppid;
-  ASYLO_ASSIGN_OR_RETURN(encrypted_ppid, EncryptPpid(*ppid_enc_key_, ppid));
+  ASYLO_ASSIGN_OR_RETURN(encrypted_ppid,
+                         EncryptPpid(ppid_enc_key_.get(), ppid));
   std::string pce_svn_hex = Uint16ToLittleEndianHexString(pce_svn.value());
   std::string pce_id_hex = Uint16ToLittleEndianHexString(pce_id.value());
   const FieldValueList arguments = {
@@ -302,7 +309,8 @@ StatusOr<GetPckCertificatesResult> SgxPcsClientImpl::GetPckCertificates(
   ASYLO_RETURN_IF_ERROR(ValidatePpid(ppid));
   ASYLO_RETURN_IF_ERROR(ValidatePceId(pce_id));
   std::string encrypted_ppid;
-  ASYLO_ASSIGN_OR_RETURN(encrypted_ppid, EncryptPpid(*ppid_enc_key_, ppid));
+  ASYLO_ASSIGN_OR_RETURN(encrypted_ppid,
+                         EncryptPpid(ppid_enc_key_.get(), ppid));
   const FieldValueList arguments = {
       {"encrypted_ppid", encrypted_ppid},
       {"pceid", Uint16ToLittleEndianHexString(pce_id.value())},

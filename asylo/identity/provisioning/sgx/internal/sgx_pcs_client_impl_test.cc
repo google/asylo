@@ -19,6 +19,7 @@
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client_impl.h"
 
 #include <algorithm>
+#include <memory>
 #include <vector>
 
 #include <google/protobuf/text_format.h>
@@ -839,13 +840,29 @@ class MockAsymmetricEncryptionKey : public AsymmetricEncryptionKey {
               (const, override));
 };
 
-TEST(SgxPcsClientCreationTest, CreateClient_Fails) {
+TEST(SgxPcsClientNoFixtureTest, CreateClient_Fails) {
   auto key = absl::make_unique<MockAsymmetricEncryptionKey>();
   EXPECT_CALL(*key, GetEncryptionScheme())
       .WillOnce(Return(AsymmetricEncryptionScheme::RSA2048_OAEP));
   ASSERT_THAT(SgxPcsClientImpl::Create(absl::make_unique<MockHttpFetcher>(),
                                        std::move(key), kApiKey),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(SgxPcsClientNoFixtureTest, PpidMethodsFailIfNoEncryptionKey) {
+  std::unique_ptr<SgxPcsClient> client;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      client, SgxPcsClientImpl::Create(absl::make_unique<MockHttpFetcher>(),
+                                       nullptr, kApiKey));
+
+  const Ppid ppid = GetValidPpid();
+  const CpuSvn cpu_svn = GetValidCpuSvn();
+  const PceSvn pce_svn = GetValidPceSvn();
+  const PceId pce_id = GetValidPceId();
+  EXPECT_THAT(client->GetPckCertificate(ppid, cpu_svn, pce_svn, pce_id),
+              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+  EXPECT_THAT(client->GetPckCertificates(ppid, pce_id),
+              StatusIs(error::GoogleError::FAILED_PRECONDITION));
 }
 
 class SgxPcsClientTest : public testing::Test {
