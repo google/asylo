@@ -40,8 +40,8 @@ FakePce::FakePce(std::unique_ptr<SigningKey> pck, uint16_t pce_svn)
 StatusOr<std::unique_ptr<FakePce>> FakePce::CreateFromFakePki(
     uint16_t pce_svn) {
   std::unique_ptr<EcdsaP256Sha256SigningKey> pck;
-  ASYLO_ASSIGN_OR_RETURN(pck,
-                         EcdsaP256Sha256SigningKey::CreateFromPem(kFakePckPem));
+  ASYLO_ASSIGN_OR_RETURN(pck, EcdsaP256Sha256SigningKey::CreateFromPem(
+                                  kFakeSgxPck.signing_key_pem));
   return absl::make_unique<FakePce>(std::move(pck), pce_svn);
 }
 

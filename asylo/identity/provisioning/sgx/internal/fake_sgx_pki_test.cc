@@ -33,6 +33,7 @@
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/x509_certificate.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -86,7 +87,8 @@ TEST_P(FakeSgxPkiTest, CertsIsForVerifyingKeyOfGivenSigningKey) {
 
 INSTANTIATE_TEST_SUITE_P(AllCertsAndSigningKeys, FakeSgxPkiTest,
                          Values(&kFakeSgxRootCa, &kFakeSgxPlatformCa,
-                                &kFakeSgxProcessorCa, &kFakeSgxTcbSigner));
+                                &kFakeSgxProcessorCa, &kFakeSgxTcbSigner,
+                                &kFakeSgxPck));
 
 // A test fixture for a chain of CertificateAndPrivateKeys.
 class FakeSgxPkiChainsTest
@@ -128,7 +130,8 @@ INSTANTIATE_TEST_SUITE_P(AllChains, FakeSgxPkiChainsTest,
 TEST(FakeSgxPkiKeyTest, FakePckPairIsValid) {
   std::unique_ptr<SigningKey> signing_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      signing_key, EcdsaP256Sha256SigningKey::CreateFromPem(kFakePckPem));
+      signing_key,
+      EcdsaP256Sha256SigningKey::CreateFromPem(kFakeSgxPck.signing_key_pem));
 
   std::unique_ptr<VerifyingKey> expected_verifying_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
@@ -140,6 +143,25 @@ TEST(FakeSgxPkiKeyTest, FakePckPairIsValid) {
                              signing_key->GetVerifyingKey());
 
   EXPECT_TRUE(*actual_verifying_key == *expected_verifying_key);
+}
+
+TEST(FakeSgxPckCertChainTest, CertificateChainIsValid) {
+  CertificateInterfaceVector certificate_chain;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      certificate_chain,
+      CreateCertificateChain({{Certificate::X509_PEM, X509Certificate::Create}},
+                             GetFakePckCertificateChain()));
+
+  ASYLO_ASSERT_OK(VerifyCertificateChain(
+      certificate_chain, VerificationConfig(/*all_fields=*/true)));
+}
+
+TEST(FakeSgxPckCertChainTest,
+     GetFakePckCertificateChainMatchesAppendFakePckCertificateChain) {
+  CertificateChain get_chain = GetFakePckCertificateChain();
+  CertificateChain set_chain;
+  AppendFakePckCertificateChain(&set_chain);
+  EXPECT_THAT(get_chain, EqualsProto(set_chain));
 }
 
 }  // namespace

@@ -199,7 +199,10 @@ cc_library(
     hdrs = ["fake_sgx_pki.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
-    deps = ["@com_google_absl//absl/strings"],
+    deps = [
+        "//asylo/crypto:certificate_cc_proto",
+        "@com_google_absl//absl/strings",
+    ],
 )
 
 # Tests that the fake Intel PKI is verifiable.
@@ -215,9 +218,9 @@ cc_test_and_cc_enclave_test(
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
         "//asylo/crypto:signing_key",
         "//asylo/crypto:x509_certificate",
+        "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
-        "//asylo/util:logging",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
         "@com_google_absl//absl/types:span",

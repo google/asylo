@@ -119,18 +119,70 @@ d+phllN1wGDxk+9yBX0dK1pQDpCZRPYCKw==
 -----END EC PRIVATE KEY-----)pem",
 };
 
-const absl::string_view kFakePckPem =
+const CertificateAndPrivateKey kFakeSgxPck = {
+    R"pem(-----BEGIN CERTIFICATE-----
+MIIEZzCCBAygAwIBAgIUWN4rW902Ui2mbVyD8vvmhqCpgK8wCgYIKoZIzj0EAwIw
+gZIxNTAzBgNVBAMMLEFzeWxvIEZha2UgU0dYIFByb2Nlc3NvciBDQSBGb3IgVGVz
+dGluZyBPbmx5MSwwKgYDVQQKDCNBc3lsbyBGYWtlIFNHWCBQS0kgRm9yIFRlc3Rp
+bmcgT25seTERMA8GA1UEBwwIS2lya2xhbmQxCzAJBgNVBAgMAldBMQswCQYDVQQG
+EwJVUzAeFw0xOTEyMjYyMjQ5MTJaFw0yNjEyMjQyMjQ5MTJaMIGVMTgwNgYDVQQD
+DC9Bc3lsbyBGYWtlIFNHWCBQQ0sgQ2VydGlmaWNhdGUgRm9yIFRlc3RpbmcgT25s
+eTEsMCoGA1UECgwjQXN5bG8gRmFrZSBTR1ggUEtJIEZvciBUZXN0aW5nIE9ubHkx
+ETAPBgNVBAcMCEtpcmtsYW5kMQswCQYDVQQIDAJXQTELMAkGA1UEBhMCVVMwWTAT
+BgcqhkjOPQIBBggqhkjOPQMBBwNCAATYz8RMPUVX0QXNkEHX56YEUm4HV6Hb9fJj
+dl02tPyWrsVDRnoQ12agb6V1Af3h3oU+RFY4zBj6mkH5JDxedQVEo4ICOTCCAjUw
+HwYDVR0jBBgwFoAUZytMSonoEt/UT+6AhAVLDV+LuikwHQYDVR0OBBYEFAGA3E8C
+dQhTVocAnhq3znP97aKgMA4GA1UdDwEB/wQEAwIHgDAMBgNVHRMBAf8EAjAAMIIB
+0wYJKoZIhvhNAQ0BBIIBxDCCAcAwHgYKKoZIhvhNAQ0BAQQQAQAAAFNWAACVoKrc
+owVKjDCCAWMGCiqGSIb4TQENAQIwggFTMBAGCyqGSIb4TQENAQIBAgFBMBAGCyqG
+SIb4TQENAQICAgEgMBAGCyqGSIb4TQENAQIDAgFmMBAGCyqGSIb4TQENAQIEAgFh
+MBAGCyqGSIb4TQENAQIFAgFrMBAGCyqGSIb4TQENAQIGAgFlMBAGCyqGSIb4TQEN
+AQIHAgEgMBAGCyqGSIb4TQENAQIIAgFUMBAGCyqGSIb4TQENAQIJAgFDMBAGCyqG
+SIb4TQENAQIKAgFCMBAGCyqGSIb4TQENAQILAgEgMBAGCyqGSIb4TQENAQIMAgFs
+MBAGCyqGSIb4TQENAQINAgFlMBAGCyqGSIb4TQENAQIOAgF2MBAGCyqGSIb4TQEN
+AQIPAgFlMBAGCyqGSIb4TQENAQIQAgFsMBAGCyqGSIb4TQENAQIRAgECMB8GCyqG
+SIb4TQENAQISBBBBIGZha2UgVENCIGxldmVsMBAGCiqGSIb4TQENAQMEAgAAMBQG
+CiqGSIb4TQENAQQEBgEAAABTVjAPBgoqhkiG+E0BDQEFCgEAMAoGCCqGSM49BAMC
+A0kAMEYCIQChG343CsWOKm1wc4Q8lbGr8L990Z859dYtkDZLWefNPwIhAPoNTVWj
+DuBaDLzJyoz5Vtv4SBA2PZaeqC2RQoVJHBHC
+-----END CERTIFICATE-----)pem",
     R"pem(-----BEGIN EC PRIVATE KEY-----
 MHcCAQEEIF0Z0yrz9NNVFQU1754rHRJs+Qt04mr3vEgNok8uyU8QoAoGCCqGSM49
 AwEHoUQDQgAE2M/ETD1FV9EFzZBB1+emBFJuB1eh2/XyY3ZdNrT8lq7FQ0Z6ENdm
 oG+ldQH94d6FPkRWOMwY+ppB+SQ8XnUFRA==
------END EC PRIVATE KEY-----)pem";
+-----END EC PRIVATE KEY-----)pem",
+};
 
 const absl::string_view kFakePckPublicPem =
     R"pem(-----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2M/ETD1FV9EFzZBB1+emBFJuB1eh
 2/XyY3ZdNrT8lq7FQ0Z6ENdmoG+ldQH94d6FPkRWOMwY+ppB+SQ8XnUFRA==
 -----END PUBLIC KEY-----)pem";
+
+void AppendFakePckCertificateChain(CertificateChain *certificate_chain) {
+  Certificate *fake_pck_cert = certificate_chain->add_certificates();
+  fake_pck_cert->set_format(Certificate::X509_PEM);
+  fake_pck_cert->set_data(kFakeSgxPck.certificate_pem.data(),
+                          kFakeSgxPck.certificate_pem.size());
+
+  Certificate *fake_pck_processor_ca_cert =
+      certificate_chain->add_certificates();
+  fake_pck_processor_ca_cert->set_format(Certificate::X509_PEM);
+  fake_pck_processor_ca_cert->set_data(
+      kFakeSgxProcessorCa.certificate_pem.data(),
+      kFakeSgxProcessorCa.certificate_pem.size());
+
+  Certificate *fake_sgx_root_ca_cert = certificate_chain->add_certificates();
+  fake_sgx_root_ca_cert->set_format(Certificate::X509_PEM);
+  fake_sgx_root_ca_cert->set_data(kFakeSgxRootCa.certificate_pem.data(),
+                                  kFakeSgxRootCa.certificate_pem.size());
+}
+
+CertificateChain GetFakePckCertificateChain() {
+  CertificateChain certificate_chain;
+  AppendFakePckCertificateChain(&certificate_chain);
+  return certificate_chain;
+}
 
 }  // namespace sgx
 }  // namespace asylo

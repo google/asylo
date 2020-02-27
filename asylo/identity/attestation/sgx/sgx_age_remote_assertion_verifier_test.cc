@@ -26,7 +26,6 @@
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion.pb.h"
-#include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave_test_util.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_util.h"
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/descriptions.h"

@@ -20,6 +20,7 @@
 #define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_FAKE_SGX_PKI_H_
 
 #include "absl/strings/string_view.h"
+#include "asylo/crypto/certificate.pb.h"
 
 namespace asylo {
 namespace sgx {
@@ -47,12 +48,23 @@ extern const CertificateAndPrivateKey kFakeSgxProcessorCa;
 // The fake SGX TCB Signing certificate and private key.
 extern const CertificateAndPrivateKey kFakeSgxTcbSigner;
 
-// A PEM-encoded ECDSA-P256 private key that can be used as the PCK for fake
-// SGX platforms in tests.
-extern const absl::string_view kFakePckPem;
+// A PEM-encoded ECDSA-P256 certificate and private key that can be used as the
+// PCK for fake SGX platforms in tests.
+extern const CertificateAndPrivateKey kFakeSgxPck;
 
-// The PEM-encoded ECDSA-P256 public key corresponding to kFakePckPem.
+// The PEM-encoded ECDSA-P256 public key corresponding to |kFakeSgxPcks|.
 extern const absl::string_view kFakePckPublicPem;
+
+// Appends a PCK Certificate for kFakeSgxPck, the Asylo Fake SGX Processor CA
+// Certificate, and the Asylo Fake SGX Root CA certificate to
+// |certificate_chain|.
+void AppendFakePckCertificateChain(CertificateChain *certificate_chain);
+
+// Returns a fake certificate chain containing the following certificates:
+//   * PCK Certificate for kFakeSgxPck
+//   * Asylo Fake SGX Processor CA Certificate
+//   * Asylo Fake SGX Root CA Certificate
+CertificateChain GetFakePckCertificateChain();
 
 }  // namespace sgx
 }  // namespace asylo
