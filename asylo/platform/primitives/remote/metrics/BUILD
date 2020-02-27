@@ -25,7 +25,7 @@ licenses(["notice"])  # Apache v2.0
 proto_library(
     name = "proc_system_proto",
     srcs = ["proc_system.proto"],
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:private"],
 )
 
 cc_proto_library(
@@ -80,7 +80,7 @@ cc_test(
     size = "small",
     srcs = ["proc_system_parser_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:private"],
     deps = [
         ":proc_system_parser",
         "//asylo/platform/primitives/remote/metrics/mocks:mock_proc_system_parser",
@@ -96,7 +96,7 @@ cc_test(
     name = "proc_system_service_test",
     srcs = ["proc_system_service_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:private"],
     deps = [
         ":proc_system_service",
         "//asylo/platform/primitives/remote/metrics/mocks:mock_proc_system_parser",

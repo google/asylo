@@ -26,7 +26,7 @@ cc_library(
     srcs = ["proc_system_service_client.cc"],
     hdrs = ["proc_system_service_client.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:private"],
     deps = [
         "//asylo/platform/primitives/remote/metrics:proc_system_cc_proto",
         "//asylo/platform/primitives/remote/metrics:proc_system_grpc_proto",
@@ -41,7 +41,7 @@ cc_test(
     size = "small",
     srcs = ["proc_system_service_client_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:private"],
     deps = [
         ":proc_system_service_client_cc",
         "//asylo/platform/primitives/remote/metrics:proc_system_cc_proto",
@@ -94,7 +94,7 @@ cc_test(
     size = "small",
     srcs = ["opencensus_client_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:private"],
     deps = [
         ":opencensus_client",
         ":opencensus_client_config",
