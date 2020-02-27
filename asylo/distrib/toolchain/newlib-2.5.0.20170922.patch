@@ -11271,7 +11271,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/ioctl.h 
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h ./newlib/libc/sys/enclave/include/sys/mman.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h
 +++ ./newlib/libc/sys/enclave/include/sys/mman.h
-@@ -0,0 +1,67 @@
+@@ -0,0 +1,72 @@
 +/*
 + *
 + * Copyright 2018 Asylo authors
@@ -11320,6 +11320,11 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h .
 +#define MAP_NONBLOCK   0x10000 /* Do not block on IO.  */
 +#define MAP_STACK      0x20000 /* Allocation is for a stack.  */
 +#define MAP_HUGETLB    0x40000 /* Create huge page mapping.  */
++
++// Advice to 'madvise'.
++#ifdef _DEFAULT_SOURCE
++# define MADV_NOHUGEPAGE  15
++#endif
 +
 +void *mmap(void *addr, size_t length, int prot, int flags, int fd,
 +           off_t offset);
