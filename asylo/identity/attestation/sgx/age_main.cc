@@ -16,6 +16,8 @@
  *
  */
 
+#include <ios>
+#include <iostream>
 #include <memory>
 #include <string>
 
@@ -23,10 +25,13 @@
 #include <google/protobuf/text_format.h>
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "asylo/client.h"
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/keys.pb.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/identity/attestation/sgx/internal/dcap_intel_architectural_enclave_interface.h"
 #include "asylo/identity/attestation/sgx/internal/fake_pce.h"
@@ -35,8 +40,10 @@
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/enclave_assertion_authority_configs.h"
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
 #include "asylo/identity/sgx/sgx_infrastructural_enclave_manager.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
+#include "asylo/util/proto_parse_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
@@ -58,17 +65,19 @@ ABSL_FLAG(absl::Duration, server_lifetime, absl::InfiniteDuration(),
           "The amount of time to run the AGE's attestation server before "
           "exiting");
 
-ABSL_FLAG(bool, use_fake_pki, false,
-          "Whether attestations should be rooted in the Asylo Fake PKI");
+ABSL_FLAG(bool, use_fake_pce, false,
+          "Whether to interact with a fake (non-enclave) PCE when certifying "
+          "the AGE and/or printing SGX platform info. When used with "
+          "--start_age, attestations will be rooted in the Asylo Fake PKI.");
 
 // Optional for Option A.
 //
-// This flag is ignored if --use_fake_pki is used.
+// This flag is ignored if --use_fake_pce is used.
 ABSL_FLAG(asylo::CertificateChain, issuer_certificate_chain, {},
           "An X.509 issuer certificate chain for the PCK certificate provided "
           "to AGE");
 
-// Optional for Option A.
+// Optional for Option A and Option B.
 ABSL_FLAG(std::string, intel_enclaves_path, "",
           "Path to the folder containing the libsgx_pce.signed.so binary");
 
@@ -78,6 +87,39 @@ ABSL_FLAG(std::string, age_path, "", "Path to the AGE binary");
 ABSL_FLAG(bool, is_debuggable_enclave, false,
           "Whether to run the AGE in debug mode");
 
+//
+// Option B: Print SGX platform info (encrypted PPID, CPU SVN, PCE SVN, and PCE
+// ID) for provisioning the platform.
+//
+
+// Required for Option B.
+ABSL_FLAG(bool, print_sgx_platform_info, false,
+          "Whether to print SGX platform info (Encrypted PPID, CPU SVN, "
+          "PCE SVN, PCE ID to STDOUT");
+
+// Required for Option B.
+ABSL_FLAG(
+    asylo::AsymmetricEncryptionKeyProto, ppidek,
+    asylo::ParseTextProto<asylo::AsymmetricEncryptionKeyProto>(
+        R"pb(
+          key_type: ENCRYPTION_KEY
+          encoding: ASYMMETRIC_KEY_PEM
+          encryption_scheme: RSA3072_OAEP
+          key: "-----BEGIN PUBLIC KEY-----\n"
+               "MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA05b5Q0MRABxpRJw7/e6P\n"
+               "OM2Vza10CXyH8adlAkyHwVcwpcmmpMz5HWIYHgCmdCdYWcobHfUxDvLV4Xk3OZQ9\n"
+               "PeJQkxLWA+UZOkjwrgw37uBXJ73sFxsPOYYGVCB0hDS+NPpxb6H1TJpSD8S8LXou\n"
+               "F+Ndog7KOQeYqQUaNPuPYJw6HiYwC/PzSUDZ913L0b9XjeUtzphXNfGTwxkugFU3\n"
+               "q41kCNrm3WS0YoONQ6rSe8Jjqpfe7QmS1ohWhs0IIwMnmnh89DYS9bHmHVSriGn/\n"
+               "GE/ch+40pmixgWe2zgpwFLyz4Y12HHPeAKtBykBRU2MEw2MLymLaqpzlAbfAD34L\n"
+               "sL7p+A2ztmT9zZUXnFeO7MSsizYBXkxtHiFJoB3eBDlrNGhE6gZ24I0fosAmBcyR\n"
+               "vqMXyHVGhRA5FlCOAkOYMXBp2DRxgudIJs3BgtPrb+lY5wZ3EB/fSXYwp2hCsBbX\n"
+               "2pJ11X8udUOsg7Afw5AZzqqU0C5abBNy56a1wEWB41MnAgMBAAE=\n"
+               "-----END PUBLIC KEY-----\n"
+        )pb")
+        .ValueOrDie(),
+    "The RSA-3072 PPID encryption key");
+
 namespace {
 
 constexpr uint16_t kFakePceSvn = 7;
@@ -86,17 +128,19 @@ constexpr uint16_t kFakePceSvn = 7;
 
 namespace asylo {
 
-bool AbslParseFlag(absl::string_view text, asylo::CertificateChain *flag,
-                   std::string *error) {
+template <class T>
+bool AbslParseFlag(absl::string_view text, T *flag, std::string *error) {
   if (!google::protobuf::TextFormat::ParseFromString(
           std::string(text.data(), text.size()), flag)) {
-    *error = "Failed to parse asylo::CertificateChain";
+    *error =
+        absl::StrCat("Failed to parse ", flag->GetDescriptor()->full_name());
     return false;
   }
   return true;
 }
 
-std::string AbslUnparseFlag(const asylo::CertificateChain &flag) {
+template <class T>
+std::string AbslUnparseFlag(const T &flag) {
   std::string serialized_flag;
   CHECK(google::protobuf::TextFormat::PrintToString(flag, &serialized_flag));
   return serialized_flag;
@@ -123,6 +167,46 @@ asylo::StatusOr<asylo::EnclaveClient *> GetAgeClient(
       load_config);
 }
 
+asylo::Status GetSgxPlatformInfo(
+    asylo::AsymmetricEncryptionKeyProto ppidek,
+    asylo::SgxInfrastructuralEnclaveManager *manager,
+    std::string *encrypted_ppid, asylo::sgx::CpuSvn *cpu_svn,
+    asylo::sgx::PceSvn *pce_svn, asylo::sgx::PceId *pce_id) {
+  asylo::sgx::TargetInfoProto pce_target_info;
+  ASYLO_RETURN_IF_ERROR(manager->PceGetTargetInfo(&pce_target_info, pce_svn));
+
+  auto report_result =
+      manager->AgeGeneratePceInfoSgxHardwareReport(pce_target_info, ppidek);
+  asylo::sgx::ReportProto report = report_result.ValueOrDie();
+  ASYLO_ASSIGN_OR_RETURN(*cpu_svn, asylo::sgx::CpuSvnFromReportProto(report));
+
+  asylo::SignatureScheme pck_signature_scheme;
+  return manager->PceGetInfo(report, ppidek, pce_svn, pce_id,
+                             &pck_signature_scheme, encrypted_ppid);
+}
+
+asylo::Status PrintSgxPlatformInfo(
+    asylo::AsymmetricEncryptionKeyProto ppidek,
+    asylo::SgxInfrastructuralEnclaveManager *manager) {
+  std::string encrypted_ppid;
+  asylo::sgx::CpuSvn cpu_svn;
+  asylo::sgx::PceSvn pce_svn;
+  asylo::sgx::PceId pce_id;
+
+  ASYLO_RETURN_IF_ERROR(GetSgxPlatformInfo(std::move(ppidek), manager,
+                                           &encrypted_ppid, &cpu_svn, &pce_svn,
+                                           &pce_id));
+
+  std::cout << "Encrypted PPID: 0x" << absl::BytesToHexString(encrypted_ppid)
+            << std::endl;
+  std::cout << "CPU SVN: 0x" << absl::BytesToHexString(cpu_svn.value())
+            << std::endl;
+  std::cout << "PCE SVN: 0x" << std::hex << pce_svn.value() << std::endl;
+  std::cout << "PCE ID: 0x" << std::hex << pce_id.value() << std::endl;
+
+  return asylo::Status::OkStatus();
+}
+
 }  // namespace
 
 int main(int argc, char **argv) {
@@ -140,10 +224,10 @@ int main(int argc, char **argv) {
   std::unique_ptr<asylo::sgx::IntelArchitecturalEnclaveInterface>
       intel_enclaves;
 
-  bool use_fake_pki = absl::GetFlag(FLAGS_use_fake_pki);
+  bool use_fake_pce = absl::GetFlag(FLAGS_use_fake_pce);
 
-  if (use_fake_pki) {
-    LOG(WARNING) << "Using Asylo Fake SGX PKI";
+  if (use_fake_pce) {
+    LOG(WARNING) << "Using fake PCE and Asylo Fake SGX PKI";
 
     auto result = asylo::sgx::FakePce::CreateFromFakePki(kFakePceSvn);
     LOG_IF(QFATAL, !result.ok())
@@ -167,6 +251,12 @@ int main(int argc, char **argv) {
           absl::make_unique<asylo::SgxInfrastructuralEnclaveManager>(
               std::move(intel_enclaves), client_result.ValueOrDie());
 
+  if (absl::GetFlag(FLAGS_start_age) ==
+      absl::GetFlag(FLAGS_print_sgx_platform_info)) {
+    LOG(QFATAL)
+        << "Must choose either --start_age or --print_platform_identifiers";
+  }
+
   if (absl::GetFlag(FLAGS_start_age)) {
     asylo::CertificateChain age_certificate_chain;
 
@@ -178,7 +268,7 @@ int main(int argc, char **argv) {
     *age_certificate_chain.add_certificates() =
         std::move(attestation_key_certificate_result).ValueOrDie();
 
-    if (use_fake_pki) {
+    if (use_fake_pce) {
       asylo::sgx::AppendFakePckCertificateChain(&age_certificate_chain);
     } else if (!absl::GetFlag(FLAGS_issuer_certificate_chain)
                     .certificates()
@@ -200,6 +290,17 @@ int main(int argc, char **argv) {
     LOG_IF(QFATAL, !status.ok()) << "Failed to start AGE server: " << status;
 
     absl::SleepFor(absl::GetFlag(FLAGS_server_lifetime));
+  }
+
+  if (absl::GetFlag(FLAGS_print_sgx_platform_info)) {
+    asylo::AsymmetricEncryptionKeyProto ppidek = absl::GetFlag(FLAGS_ppidek);
+    LOG_IF(QFATAL, ppidek.key().empty())
+        << "Must provide valid PPID encryption key with --ppidek";
+
+    asylo::Status status = PrintSgxPlatformInfo(
+        std::move(ppidek), sgx_infra_enclave_manager.get());
+    LOG_IF(QFATAL, !status.ok())
+        << "Failed to get SGX platform info: " << status;
   }
 
   return 0;

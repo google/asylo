@@ -50,7 +50,7 @@ namespace {
 
 TEST(AgeMainTest, FakeCertificationSuccess) {
   experimental::ExecTester tester(
-      {absl::GetFlag(FLAGS_loader_path), "--start_age", "--use_fake_pki",
+      {absl::GetFlag(FLAGS_loader_path), "--start_age", "--use_fake_pce",
        absl::StrCat("--server_lifetime=",
                     absl::FormatDuration(absl::GetFlag(FLAGS_server_lifetime))),
        absl::StrCat("--is_debuggable_enclave=",
