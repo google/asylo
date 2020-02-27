@@ -11271,7 +11271,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/ioctl.h 
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h ./newlib/libc/sys/enclave/include/sys/mman.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h
 +++ ./newlib/libc/sys/enclave/include/sys/mman.h
-@@ -0,0 +1,66 @@
+@@ -0,0 +1,67 @@
 +/*
 + *
 + * Copyright 2018 Asylo authors
@@ -11299,6 +11299,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h .
 +extern "C" {
 +#endif
 +
++#define PROT_NONE  0x00
 +#define PROT_READ  0x01
 +#define PROT_WRITE 0x02
 +#define PROT_EXEC  0x04
