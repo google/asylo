@@ -3414,7 +3414,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1277 @@
+@@ -0,0 +1,1278 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(":sgx_sdk.bzl", "asylo_sgx_backend", "enclave_lds", "sgx")
@@ -3537,11 +3537,8 @@ diff -Nur /dev/null BUILD
 +        "sdk/compiler-rt/stack_chk.c",
 +        "sdk/tlibc/string/consttime_memequal.c",
 +        "sdk/tlibc/string/memset_s.c",
-+        "//runtime_support:sgx_init_crypto_lib.c",
-+        "//runtime_support:sgx_init_string_lib.c",
 +    ],
-+    hdrs = ["//runtime_support:rts_config.h"],
-+    deps = [":common_inc"],
++    deps = ["//runtime_support"],
 +)
 +
 +# A non-versioned, publicly-consumable target for the UAE service.
@@ -4142,6 +4139,7 @@ diff -Nur /dev/null BUILD
 +        "-Iexternal/linux_sgx/sdk/simulation/tinst",
 +        "-Iexternal/linux_sgx/sdk/simulation/urtssim",
 +        "-Iexternal/linux_sgx/sdk/tseal",
++        "-Wno-unused-function",
 +        "-Wno-deprecated-declarations",
 +    ],
 +    linkopts = [
@@ -4274,7 +4272,10 @@ diff -Nur /dev/null BUILD
 +    includes = [
 +        "common/inc",
 +    ],
-+    visibility = ["@sgx_dcap//:__pkg__"],
++    visibility = [
++        "@linux_sgx//:__subpackages__",
++        "@sgx_dcap//:__pkg__",
++    ],
 +)
 +
 +cc_library(
@@ -5723,6 +5724,26 @@ diff -Nur /dev/null internal.bzl
 +    _ignore = (settings, attrs)
 +    return {_internal_simulation_label: 1 if attrs.simulation else 2}
 +
+diff -Nur /dev/null runtime_support/BUILD
+--- /dev/null
++++ runtime_support/BUILD
+@@ -0,0 +1,16 @@
++# Runtime support for linux_sgx
++
++licenses(["notice"])
++
++exports_files(["LICENSE"])
++
++cc_library(
++    name = "runtime_support",
++    srcs = [
++        "sgx_init_crypto_lib.c",
++        "sgx_init_string_lib.c",
++    ],
++    hdrs = ["rts_config.h"],
++    visibility = ["@linux_sgx//:__pkg__"],
++    deps = ["@linux_sgx//:common_inc"],
++)
 diff -Nur /dev/null debug_key_mrsigner.cc
 --- /dev/null
 +++ debug_key_mrsigner.cc
@@ -6469,20 +6490,6 @@ diff -Nur /dev/null include/sgx_urts.h
 +#include "common/inc/sgx_urts.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_URTS_H_
-diff -Nur /dev/null runtime_support/BUILD
---- /dev/null
-+++ runtime_support/BUILD
-@@ -0,0 +1,10 @@
-+# Runtime support for linux_sgx
-+
-+licenses(["notice"])
-+
-+exports_files([
-+    "LICENSE",
-+    "rts_config.h",
-+    "sgx_init_crypto_lib.c",
-+    "sgx_init_string_lib.c",
-+])
 diff -Nur /dev/null runtime_support/LICENSE
 --- /dev/null
 +++ runtime_support/LICENSE
