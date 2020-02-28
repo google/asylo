@@ -123,8 +123,7 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
         enclave_manager_->GetClient(load_config.name());
 
     std::unique_ptr<sgx::FakePce> fake_pce;
-    ASYLO_ASSIGN_OR_RETURN(fake_pce,
-                           sgx::FakePce::CreateFromFakePki(/*pce_svn=*/42));
+    ASYLO_ASSIGN_OR_RETURN(fake_pce, sgx::FakePce::CreateFromFakePki());
     SgxInfrastructuralEnclaveManager sgx_infra_enclave_manager(
         std::move(fake_pce), assertion_generator_enclave_client_);
 

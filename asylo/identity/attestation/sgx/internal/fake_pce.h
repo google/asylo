@@ -22,6 +22,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "absl/types/span.h"
 #include "asylo/crypto/algorithms.pb.h"
@@ -35,26 +36,30 @@
 namespace asylo {
 namespace sgx {
 
-// Implementation of a fake PCE with a configurable PCK and PCE ID. For
-// simplicity, the PCE accepts any REPORTs as valid. It does not check for
-// the PROVISION_KEY ATTRIBUTE bit.
+// Implementation of a fake PCE with a configurable PCK, PCE SVN, PCE ID, and
+// PPID. For simplicity, the PCE accepts any REPORTs as valid. It does not check
+// for the PROVISION_KEY ATTRIBUTE bit.
 //
-// FakePce only implements select PCE functions from the
-// IntelArchitecturalEnclaveInterface, and does not implement any QE functions.
+// FakePce only implements PCE functions from the
+// IntelArchitecturalEnclaveInterface. It does not implement any QE functions.
 class FakePce : public IntelArchitecturalEnclaveInterface {
  public:
-  FakePce(std::unique_ptr<SigningKey> pck, uint16_t pce_svn);
+  static constexpr uint16_t kPceSvn = 7;
+  static constexpr uint16_t kPceId = 0;
+  static const UnsafeBytes<kPpidSize> kPpid;
 
-  // Creates a FakePce that uses the fake PCK from the Asylo Fake SGX PKI.
-  static StatusOr<std::unique_ptr<FakePce>> CreateFromFakePki(uint16_t pce_svn);
+  FakePce(std::unique_ptr<SigningKey> pck, uint16_t pce_svn, uint16_t pce_id,
+          UnsafeBytes<kPpidSize> ppid);
+
+  // Creates a FakePce that uses the fake PCK from the Asylo Fake SGX PKI,
+  // kPceSvn, and kPceId.
+  static StatusOr<std::unique_ptr<FakePce>> CreateFromFakePki();
 
   Status SetEnclaveDir(const std::string &path) override;
   Status GetPceTargetinfo(Targetinfo *targetinfo, uint16_t *pce_svn) override;
   Status PceSignReport(const Report &report, uint16_t target_pce_svn,
                        UnsafeBytes<kCpusvnSize> target_cpu_svn,
                        std::string *signature) override;
-
-  // Not implemented
   Status GetPceInfo(const Report &report,
                     absl::Span<const uint8_t> ppid_encryption_key,
                     AsymmetricEncryptionScheme ppid_encryption_scheme,
@@ -71,6 +76,8 @@ class FakePce : public IntelArchitecturalEnclaveInterface {
  private:
   std::unique_ptr<SigningKey> pck_;
   uint16_t pce_svn_;
+  uint16_t pce_id_;
+  UnsafeBytes<kPpidSize> ppid_;
 };
 
 }  // namespace sgx

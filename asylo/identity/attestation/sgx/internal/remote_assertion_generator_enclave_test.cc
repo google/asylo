@@ -317,8 +317,7 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
 
   StatusOr<CertificateChain> CreateValidAgeCertificateChain() {
     std::unique_ptr<sgx::FakePce> fake_pce;
-    ASYLO_ASSIGN_OR_RETURN(fake_pce,
-                           sgx::FakePce::CreateFromFakePki(/*pce_svn=*/7));
+    ASYLO_ASSIGN_OR_RETURN(fake_pce, sgx::FakePce::CreateFromFakePki());
 
     SgxInfrastructuralEnclaveManager sgx_infra_enclave_manager(
             std::move(fake_pce), remote_assertion_generator_enclave_client_);

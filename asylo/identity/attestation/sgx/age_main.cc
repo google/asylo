@@ -120,12 +120,6 @@ ABSL_FLAG(
         .ValueOrDie(),
     "The RSA-3072 PPID encryption key");
 
-namespace {
-
-constexpr uint16_t kFakePceSvn = 7;
-
-}  // namespace
-
 namespace asylo {
 
 template <class T>
@@ -229,7 +223,7 @@ int main(int argc, char **argv) {
   if (use_fake_pce) {
     LOG(WARNING) << "Using fake PCE and Asylo Fake SGX PKI";
 
-    auto result = asylo::sgx::FakePce::CreateFromFakePki(kFakePceSvn);
+    auto result = asylo::sgx::FakePce::CreateFromFakePki();
     LOG_IF(QFATAL, !result.ok())
         << "Failed to create FakePce: " << result.status();
     intel_enclaves = std::move(result).ValueOrDie();
