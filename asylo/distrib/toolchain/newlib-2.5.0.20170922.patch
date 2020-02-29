@@ -5618,6 +5618,20 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/li
  #endif /* defined(__CYGWIN__) */
  
  #if __BSD_VISIBLE || __XSI_VISIBLE >= 4 || __POSIX_VISIBLE >= 200809
+@@ -357,6 +357,13 @@
+ #endif
+ #endif
+ 
++#define POLL_IN 1
++#define POLL_OUT 2
++#define POLL_MSG 3
++#define POLL_ERR 4
++#define POLL_PRI 5
++#define POLL_HUP 6
++
+ #ifdef __cplusplus
+ }
+ #endif
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/stat.h ./newlib/libc/include/sys/stat.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/sys/stat.h
 +++ ./newlib/libc/include/sys/stat.h
