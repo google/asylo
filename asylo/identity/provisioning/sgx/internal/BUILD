@@ -355,7 +355,6 @@ cc_library(
     srcs = ["signed_tcb_info_from_json.cc"],
     hdrs = ["signed_tcb_info_from_json.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
     deps = [
         ":sgx_pcs_client_cc_proto",
         "//asylo/util:error_codes",

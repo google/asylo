@@ -47,7 +47,6 @@ cc_grpc_library(
 proto_library(
     name = "client_enclave_proto",
     srcs = ["client_enclave.proto"],
-    visibility = ["//asylo:implementation"],
     deps = [
         "//asylo:enclave_proto",
         "//asylo/identity:identity_acl_proto",

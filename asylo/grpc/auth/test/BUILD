@@ -59,7 +59,6 @@ cc_library(
     testonly = 1,
     hdrs = ["mock_enclave_auth_context.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/grpc/auth:enclave_auth_context",
         "//asylo/identity:identity_acl_cc_proto",

@@ -60,10 +60,7 @@ cc_library(
     srcs = ["remote_proxy_lib.cc"],
     hdrs = ["remote_proxy_lib.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = [
-        "//asylo:implementation",
-        "//asylo/platform/primitives/test:__subpackages__",
-    ],
+    visibility = ["//asylo:implementation"],
     deps = [
         "//asylo:enclave_cc_proto",
         "//asylo/platform/primitives",
