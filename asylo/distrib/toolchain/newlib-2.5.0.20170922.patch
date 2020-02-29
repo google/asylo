@@ -4722,7 +4722,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/encl
 diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/mman.c ./libgloss/enclave/mman.c
 --- ../newlib-2.5.0.20170922/libgloss/enclave/mman.c
 +++ ./libgloss/enclave/mman.c
-@@ -0,0 +1,103 @@
+@@ -0,0 +1,108 @@
 +/*
 + *
 + * Copyright 2018 Asylo authors
@@ -4823,6 +4823,11 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/mman.c ./libgloss/enclave/m
 +// mprotect is weak to allow an optional definition with Intel's trts_mprotect.
 +__attribute__((weak))
 +int mprotect(void *addr, size_t len, int prot) {
++  errno = ENOSYS;
++  return -1;
++}
++
++int madvise(void *addr, size_t len, int advice) {
 +  errno = ENOSYS;
 +  return -1;
 +}
@@ -11291,7 +11296,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/ioctl.h 
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h ./newlib/libc/sys/enclave/include/sys/mman.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h
 +++ ./newlib/libc/sys/enclave/include/sys/mman.h
-@@ -0,0 +1,72 @@
+@@ -0,0 +1,77 @@
 +/*
 + *
 + * Copyright 2018 Asylo authors
@@ -11313,6 +11318,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h .
 +#ifndef _SYS_MMAN_H_
 +#define _SYS_MMAN_H_
 +
++#include <sys/features.h>
 +#include <sys/types.h>
 +
 +#ifdef __cplusplus
@@ -11343,7 +11349,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h .
 +
 +// Advice to 'madvise'.
 +#ifdef _DEFAULT_SOURCE
-+# define MADV_NOHUGEPAGE  15
++#define MADV_NOHUGEPAGE 15
 +#endif
 +
 +void *mmap(void *addr, size_t length, int prot, int flags, int fd,
@@ -11358,6 +11364,10 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h .
 +int mlockall(int flags);
 +int munlockall(void);
 +int mprotect(void *addr, size_t len, int prot);
++
++#ifdef _DEFAULT_SOURCE
++int madvise(void *addr, size_t len, int advice);
++#endif
 +
 +#ifdef __cplusplus
 +}  // extern "C"
