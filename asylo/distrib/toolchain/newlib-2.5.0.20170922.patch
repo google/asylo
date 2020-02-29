@@ -11128,6 +11128,22 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/semaphore.h 
 +#define _SEMAPHORE_H_
 +
 +#endif  // _SEMAPHORE_H_
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/bits/wordsize.h ./newlib/libc/sys/enclave/include/sys/bits/wordsize.h
+--- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/bits/wordsize.h
++++ ./newlib/libc/sys/enclave/include/sys/bits/wordsize.h
+@@ -0,0 +1,12 @@
++#ifndef THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_INCLUDE_SYS_BITS_WORDSIZE_H_
++#define THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_INCLUDE_SYS_BITS_WORDSIZE_H_
++
++/* Determine the wordsize from the preprocessor defines.  */
++
++#if defined __x86_64__ && !defined __ILP32__
++# define __WORDSIZE 64
++#else
++# define __WORDSIZE 32
++#endif
++
++#endif  // THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_INCLUDE_SYS_BITS_WORDSIZE_H_
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/dirent.h ./newlib/libc/sys/enclave/include/sys/dirent.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/dirent.h
 +++ ./newlib/libc/sys/enclave/include/sys/dirent.h
