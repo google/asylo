@@ -5618,7 +5618,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/li
  #endif /* defined(__CYGWIN__) */
  
  #if __BSD_VISIBLE || __XSI_VISIBLE >= 4 || __POSIX_VISIBLE >= 200809
-@@ -357,6 +357,13 @@
+@@ -357,6 +357,19 @@
  #endif
  #endif
  
@@ -5628,6 +5628,12 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/li
 +#define POLL_ERR 4
 +#define POLL_PRI 5
 +#define POLL_HUP 6
++
++/* sigevent definitions */
++#define SIGEV_SIGNAL 0	/* notify via signal */
++#define SIGEV_NONE 1	/* other notification: meaningless */
++#define SIGEV_THREAD 2	/* deliver via thread creation */
++#define SIGEV_THREAD_ID 4	/* deliver to thread */
 +
  #ifdef __cplusplus
  }
