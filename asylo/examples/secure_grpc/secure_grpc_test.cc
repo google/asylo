@@ -37,7 +37,6 @@
 #include "asylo/examples/secure_grpc/grpc_server_util.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/test/util/status_matchers.h"
-#include "asylo/util/path.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
@@ -47,11 +46,16 @@ ABSL_FLAG(std::string, server_enclave_path, "",
 ABSL_FLAG(std::string, client_enclave_path, "",
           "The path to the client enclave to pass to the enclave loader");
 
-ABSL_FLAG(bool, debug_enclave, true, "Whether to debug enclaves");
+ABSL_FLAG(std::string, acl_isvprodid_2_path, "",
+          "Path to acl_isvprodid_2.textproto");
 
-constexpr char kAclIsvProdid2Filename[] = "acl_isvprodid_2.textproto";
-constexpr char kAclIsvProdid3Filename[] = "acl_isvprodid_3.textproto";
-constexpr char kAclNonDebugFilename[] = "acl_non_debug.textproto";
+ABSL_FLAG(std::string, acl_isvprodid_3_path, "",
+          "Path to acl_isvprodid_3.textproto");
+
+ABSL_FLAG(std::string, acl_non_debug_path, "",
+          "Path to acl_non_debug_2.textproto");
+
+ABSL_FLAG(bool, debug_enclave, true, "Whether to debug enclaves");
 
 constexpr char kAuthorizationFailureMessage[] =
     "Peer is unauthorized for GetTranslation: ACL failed to match";
@@ -75,13 +79,13 @@ class GrpcServerTest : public ::testing::Test {
   void SetUp() override {
     ASSERT_NE(absl::GetFlag(FLAGS_server_enclave_path), "");
     ASSERT_NE(absl::GetFlag(FLAGS_client_enclave_path), "");
+    ASSERT_NE(absl::GetFlag(FLAGS_acl_isvprodid_2_path), "");
+    ASSERT_NE(absl::GetFlag(FLAGS_acl_isvprodid_3_path), "");
+    ASSERT_NE(absl::GetFlag(FLAGS_acl_non_debug_path), "");
     server_port_ = 0;
   }
 
-  void StartServer(const std::string &acl_filename) {
-    std::string acl_path =
-       asylo::JoinPath("asylo/examples/secure_grpc/", acl_filename);
-
+  void StartServer(const std::string &acl_path) {
     int fd = open(acl_path.c_str(), O_RDONLY);
     ASSERT_GT(fd, -1) << strerror(errno);
     google::protobuf::io::FileInputStream stream(fd);
@@ -120,7 +124,8 @@ class GrpcServerTest : public ::testing::Test {
 };
 
 TEST_F(GrpcServerTest, AuthorizationSuccess) {
-  ASSERT_NO_FATAL_FAILURE(StartServer(kAclIsvProdid2Filename));
+  ASSERT_NO_FATAL_FAILURE(
+      StartServer(absl::GetFlag(FLAGS_acl_isvprodid_2_path)));
 
   ASYLO_ASSERT_OK(LoadGrpcClientEnclave());
 
@@ -132,7 +137,8 @@ TEST_F(GrpcServerTest, AuthorizationSuccess) {
 }
 
 TEST_F(GrpcServerTest, Isvprodid3AuthorizationFailure) {
-  ASSERT_NO_FATAL_FAILURE(StartServer(kAclIsvProdid3Filename));
+  ASSERT_NO_FATAL_FAILURE(
+      StartServer(absl::GetFlag(FLAGS_acl_isvprodid_3_path)));
 
   ASYLO_ASSERT_OK(LoadGrpcClientEnclave());
   EXPECT_THAT(MakeRpc("asylo"),
@@ -143,7 +149,7 @@ TEST_F(GrpcServerTest, Isvprodid3AuthorizationFailure) {
 }
 
 TEST_F(GrpcServerTest, NonDebugAuthorizationFailure) {
-  ASSERT_NO_FATAL_FAILURE(StartServer(kAclNonDebugFilename));
+  ASSERT_NO_FATAL_FAILURE(StartServer(absl::GetFlag(FLAGS_acl_non_debug_path)));
 
   ASYLO_ASSERT_OK(LoadGrpcClientEnclave());
   EXPECT_THAT(MakeRpc("asylo"),

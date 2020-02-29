@@ -263,6 +263,9 @@ enclave_test(
     test_args = [
         "--server_enclave_path='{server_enclave}'",
         "--client_enclave_path='{client_enclave}'",
+        "--acl_isvprodid_2_path=$(rootpath :acl_isvprodid_2.textproto)",
+        "--acl_isvprodid_3_path=$(rootpath :acl_isvprodid_3.textproto)",
+        "--acl_non_debug_path=$(rootpath :acl_non_debug.textproto)",
     ],
     deps = [
         ":grpc_client_util",
@@ -272,7 +275,6 @@ enclave_test(
         "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
-        "//asylo/util:path",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/base:core_headers",
