@@ -5623,10 +5623,13 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/li
  #endif /* defined(__CYGWIN__) */
  
  #if __BSD_VISIBLE || __XSI_VISIBLE >= 4 || __POSIX_VISIBLE >= 200809
-@@ -357,6 +357,19 @@
+@@ -357,6 +357,22 @@
  #endif
  #endif
  
++/* Some software assumes and directly uses an internal _NSIG macro. */
++#define _NSIG NSIG
++
 +#define POLL_IN 1
 +#define POLL_OUT 2
 +#define POLL_MSG 3
