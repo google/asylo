@@ -16,17 +16,15 @@
  *
  */
 
-#include <libgen.h>
-
-#include <memory>
 #include <string>
+#include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/str_cat.h"
-#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "asylo/test/util/exec_tester.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -48,6 +46,39 @@ namespace asylo {
 namespace sgx {
 namespace {
 
+class SgxPlatformInfoExecTester : public experimental::ExecTester {
+ public:
+  SgxPlatformInfoExecTester(const std::vector<std::string> &args)
+      : ExecTester(args) {}
+
+ protected:
+  bool CheckLine(const std::string &line) override {
+    if (line.find("PCE SVN") != std::string::npos) {
+      pce_svn_found_ = true;
+    }
+    if (line.find("PCE ID") != std::string::npos) {
+      pce_id_found_ = true;
+    }
+    if (line.find("CPU SVN") != std::string::npos) {
+      cpu_svn_found_ = true;
+    }
+    if (line.find("PPID") != std::string::npos) {
+      ppid_found_ = true;
+    }
+    return true;
+  }
+
+  bool FinalCheck(bool accumulated) override {
+    return pce_svn_found_ && pce_id_found_ && cpu_svn_found_ && ppid_found_;
+  }
+
+ private:
+  bool pce_svn_found_ = false;
+  bool pce_id_found_ = false;
+  bool cpu_svn_found_ = false;
+  bool ppid_found_ = false;
+};
+
 TEST(AgeMainTest, FakeCertificationSuccess) {
   experimental::ExecTester tester(
       {absl::GetFlag(FLAGS_loader_path), "--start_age", "--use_fake_pce",
@@ -61,8 +92,25 @@ TEST(AgeMainTest, FakeCertificationSuccess) {
 
   ASSERT_TRUE(tester.Run("", &status));
   EXPECT_TRUE(WIFEXITED(status));
-  EXPECT_EQ(0, WEXITSTATUS(status));
+  EXPECT_EQ(WEXITSTATUS(status), 0);
 
+}
+
+TEST(AgeMainTest, FakePrintPlatformInfoSuccess) {
+  SgxPlatformInfoExecTester tester(
+      {absl::GetFlag(FLAGS_loader_path), "--print_sgx_platform_info",
+       "--use_fake_pce",
+       absl::StrCat("--server_lifetime=",
+                    absl::FormatDuration(absl::GetFlag(FLAGS_server_lifetime))),
+       absl::StrCat("--is_debuggable_enclave=",
+                    absl::GetFlag(FLAGS_is_debuggable_enclave)),
+       absl::StrCat("--age_path=", absl::GetFlag(FLAGS_age_path))});
+
+  int status = -1;
+
+  ASSERT_TRUE(tester.Run("", &status));
+  EXPECT_TRUE(WIFEXITED(status));
+  EXPECT_EQ(WEXITSTATUS(status), 0);
 }
 
 }  // namespace
