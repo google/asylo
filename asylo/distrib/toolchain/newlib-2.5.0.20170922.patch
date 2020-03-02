@@ -11410,7 +11410,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/poll.h .
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 +++ ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,96 @@
 +#ifndef _SYS__PTHREADTYPES_H
 +#define _SYS__PTHREADTYPES_H
 +
@@ -11437,6 +11437,13 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthread
 +typedef uint32_t pthread_key_t;
 +
 +typedef volatile uint32_t pthread_spinlock_t;
++
++struct __pthread_info {
++  struct __pthread_info *self;
++  uint64_t tid;
++  size_t tls_size;
++  pthread_attr_t *attr;
++};
 +
 +typedef struct {
 +  size_t _refcount;
