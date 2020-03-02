@@ -4722,7 +4722,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/encl
 diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/mman.c ./libgloss/enclave/mman.c
 --- ../newlib-2.5.0.20170922/libgloss/enclave/mman.c
 +++ ./libgloss/enclave/mman.c
-@@ -0,0 +1,108 @@
+@@ -0,0 +1,113 @@
 +/*
 + *
 + * Copyright 2018 Asylo authors
@@ -4828,6 +4828,11 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/mman.c ./libgloss/enclave/m
 +}
 +
 +int madvise(void *addr, size_t len, int advice) {
++  errno = ENOSYS;
++  return -1;
++}
++
++int mincore(void *addr, size_t len, unsigned char *vec) {
 +  errno = ENOSYS;
 +  return -1;
 +}
@@ -11315,7 +11320,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/ioctl.h 
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h ./newlib/libc/sys/enclave/include/sys/mman.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h
 +++ ./newlib/libc/sys/enclave/include/sys/mman.h
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,78 @@
 +/*
 + *
 + * Copyright 2018 Asylo authors
@@ -11386,6 +11391,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h .
 +
 +#ifdef _DEFAULT_SOURCE
 +int madvise(void *addr, size_t len, int advice);
++int mincore(void *addr, size_t len, unsigned char *vec);
 +#endif
 +
 +#ifdef __cplusplus
