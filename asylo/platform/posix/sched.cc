@@ -16,6 +16,7 @@
  *
  */
 
+#include <errno.h>
 #include <sched.h>
 #include <string.h>  // memset
 
@@ -73,3 +74,8 @@ int sched_getaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask) {
 }
 
 int sched_yield() { return enc_untrusted_sched_yield(); }
+
+int sched_getcpu(void) {
+  errno = ENOSYS;
+  return -1;
+}

@@ -56,6 +56,8 @@ int sched_getaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask);
 // Implemented as call to host sched_yield().
 int sched_yield(void);
 
+int sched_getcpu(void);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif
