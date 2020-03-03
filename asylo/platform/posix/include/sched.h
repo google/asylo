@@ -53,6 +53,8 @@ typedef CpuSet cpu_set_t;
 // translates that to the enclave's cpu_set_t type (defined above).
 int sched_getaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask);
 
+int sched_setaffinity(pid_t pid, size_t cpusetsize, const cpu_set_t *cpuset);
+
 // Implemented as call to host sched_yield().
 int sched_yield(void);
 

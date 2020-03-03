@@ -73,6 +73,11 @@ int sched_getaffinity(pid_t pid, size_t cpusetsize, cpu_set_t *mask) {
   return enc_untrusted_sched_getaffinity(pid, cpusetsize, mask);
 }
 
+int sched_setaffinity(pid_t pid, size_t cpusetsize, const cpu_set_t *cpuset) {
+  errno = ENOSYS;
+  return -1;
+}
+
 int sched_yield() { return enc_untrusted_sched_yield(); }
 
 int sched_getcpu(void) {
