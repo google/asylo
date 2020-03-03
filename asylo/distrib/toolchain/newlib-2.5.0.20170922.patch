@@ -5528,6 +5528,20 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/regex.h ./newlib/libc/in
  
  /* types */
  typedef off_t regoff_t;
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/stdint.h ./newlib/libc/include/stdint.h
+--- ../newlib-2.5.0.20170922/newlib/libc/include/stdint.h
++++ ./newlib/libc/include/stdint.h
+@@ -9,6 +9,10 @@
+ #ifndef _STDINT_H
+ #define _STDINT_H
+ 
++#ifdef __ASYLO__
++#include <bits/wordsize.h>
++#endif  // __ASYLO__
++
+ #include <machine/_default_types.h>
+ #include <sys/_intsup.h>
+ #include <sys/_stdint.h>
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/stdlib.h ./newlib/libc/include/stdlib.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/stdlib.h
 +++ ./newlib/libc/include/stdlib.h
