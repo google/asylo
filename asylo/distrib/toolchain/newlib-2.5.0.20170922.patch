@@ -4578,6 +4578,17 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave_syscalls.h ./libglo
 +#endif
 +
 +#endif  // THIRD_PARTY_NEWLIB_SRC_LIBGLOSS_ENCLAVE_ENCLAVE_SYSCALLS_H_
+diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/getauxval.c ./libgloss/enclave/getauxval.c
+--- ../newlib-2.5.0.20170922/libgloss/enclave/getauxval.c
++++ ./libgloss/enclave/getauxval.c
+@@ -0,0 +1,7 @@
++#include <sys/auxv.h>
++#include <errno.h>
++
++unsigned long getauxval(unsigned long item) {
++  errno = ENOSYS;
++  return -1;
++}
 diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/enclave/Makefile.in
 --- ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in
 +++ ./libgloss/enclave/Makefile.in
@@ -4649,7 +4660,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/encl
 +	else t='$(program_transform_name)'; echo objcopy | sed -e $$t ; fi`
 +
 +# object files needed
-+OBJS = enclave.o mman.o xattr.o
++OBJS = enclave.o mman.o xattr.o getauxval.o
 +
 +# Object files specific to particular targets.
 +EVALOBJS = ${OBJS}
@@ -11280,6 +11291,24 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/semaphore.h 
 +#define _SEMAPHORE_H_
 +
 +#endif  // _SEMAPHORE_H_
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/auxv.h ./newlib/libc/sys/enclave/include/sys/auxv.h
+--- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/auxv.h
++++ ./newlib/libc/sys/enclave/include/sys/auxv.h
+@@ -0,0 +1,14 @@
++#ifndef _SYS_AUXV_H
++#define _SYS_AUXV_H
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++unsigned long getauxval(unsigned long item);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/dirent.h ./newlib/libc/sys/enclave/include/sys/dirent.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/dirent.h
 +++ ./newlib/libc/sys/enclave/include/sys/dirent.h
