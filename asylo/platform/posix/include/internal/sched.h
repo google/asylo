@@ -48,7 +48,7 @@ void CpuSetAddBit(int cpu, CpuSet *set);
 
 void CpuSetClearBit(int cpu, CpuSet *set);
 
-int CpuSetCheckBit(int cpu, CpuSet *set);
+int CpuSetCheckBit(int cpu, const CpuSet *set);
 
 int CpuSetCountBits(CpuSet *set);
 

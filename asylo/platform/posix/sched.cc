@@ -40,7 +40,7 @@ void CpuSetClearBit(int cpu, CpuSet *set) {
   set->words[WordNum(cpu)] &= ~(one_word << BitNum(cpu));
 }
 
-int CpuSetCheckBit(int cpu, CpuSet *set) {
+int CpuSetCheckBit(int cpu, const CpuSet *set) {
   return ((set->words[WordNum(cpu)] & (one_word << BitNum(cpu))) ? 1 : 0);
 }
 
