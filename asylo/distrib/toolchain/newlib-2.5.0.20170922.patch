@@ -12371,7 +12371,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/Makefile.in ./newlib
 +	$(mkinstalldirs) $(DESTDIR)$(tooldir)/include/netinet; \
 +	for i in $(srcdir)/include/netinet/*.h; do \
 +	  $(INSTALL_DATA) $$i $(DESTDIR)$(tooldir)/include/netinet/`basename $$i`; \
-+	done;
++	done; \
 +  $(mkinstalldirs) $(DESTDIR)$(tooldir)/include/bits; \
 +	for i in $(srcdir)/include/bits/*.h; do \
 +	  $(INSTALL_DATA) $$i $(DESTDIR)$(tooldir)/include/bits/`basename $$i`; \
