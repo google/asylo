@@ -852,8 +852,8 @@ TEST(SgxPcsClientNoFixtureTest, CreateClient_Fails) {
 TEST(SgxPcsClientNoFixtureTest, PpidMethodsFailIfNoEncryptionKey) {
   std::unique_ptr<SgxPcsClient> client;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      client, SgxPcsClientImpl::Create(absl::make_unique<MockHttpFetcher>(),
-                                       nullptr, kApiKey));
+      client, SgxPcsClientImpl::CreateWithoutPpidEncryptionKey(
+                  absl::make_unique<MockHttpFetcher>(), kApiKey));
 
   const Ppid ppid = GetValidPpid();
   const CpuSvn cpu_svn = GetValidCpuSvn();

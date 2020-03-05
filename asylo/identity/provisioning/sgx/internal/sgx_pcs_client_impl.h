@@ -40,14 +40,18 @@ class SgxPcsClientImpl : public SgxPcsClient {
   ~SgxPcsClientImpl() override {}
 
   // |fetcher| is the underlying fetcher client. Must not be nullptr.
-  // |ppid_enc_key| is an RSA3072-OAEP encryption key used for encrypting
-  // Platform Provisioning ID (PPID). If nullptr, then all method calls
-  // involving PPIDs will fail. |api_key| is the hex-encoded API key for access
-  // to Intel PCS GetPckCertificate(s) APIs.
+  // |ppid_enc_key| must be an RSA3072-OAEP encryption key used for encrypting
+  // Platform Provisioning ID (PPID). Must not be nullptr. |api_key| is the
+  // hex-encoded API key for access to Intel PCS GetPckCertificate(s) APIs.
   static StatusOr<std::unique_ptr<SgxPcsClient>> Create(
       std::unique_ptr<HttpFetcher> fetcher,
       std::unique_ptr<AsymmetricEncryptionKey> ppid_enc_key,
       absl::string_view api_key);
+
+  // As above, but does not provide a PPID encryption key. All method calls on
+  // the returned SgxPcsClient involving PPIDs will fail.
+  static StatusOr<std::unique_ptr<SgxPcsClient>> CreateWithoutPpidEncryptionKey(
+      std::unique_ptr<HttpFetcher> fetcher, absl::string_view api_key);
 
   // From SgxPcsClient.
 
