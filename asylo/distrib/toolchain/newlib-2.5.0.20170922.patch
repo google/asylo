@@ -4660,7 +4660,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/encl
 +	else t='$(program_transform_name)'; echo objcopy | sed -e $$t ; fi`
 +
 +# object files needed
-+OBJS = enclave.o mman.o xattr.o getauxval.o
++OBJS = enclave.o mman.o xattr.o getauxval.o syscall.o
 +
 +# Object files specific to particular targets.
 +EVALOBJS = ${OBJS}
@@ -4844,6 +4844,17 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/mman.c ./libgloss/enclave/m
 +}
 +
 +int mincore(void *addr, size_t len, unsigned char *vec) {
++  errno = ENOSYS;
++  return -1;
++}
+diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/syscall.c ./libgloss/enclave/syscall.c
+--- ../newlib-2.5.0.20170922/libgloss/enclave/syscall.c
++++ ./libgloss/enclave/syscall.c
+@@ -0,0 +1,7 @@
++#include <errno.h>
++#include <unistd.h>
++
++long int syscall(long int sys_no, ...) {
 +  errno = ENOSYS;
 +  return -1;
 +}
@@ -5878,6 +5889,19 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/time.h ./newlib/libc/inc
  #ifdef __cplusplus
  }
  #endif
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/unistd.h ./newlib/libc/include/unistd.h
+--- ../newlib-2.5.0.20170922/newlib/libc/include/unistd.h
++++ ./newlib/libc/include/unistd.h
+@@ -1,6 +1,8 @@
+ #ifndef _UNISTD_H_
+ #define _UNISTD_H_
+ 
+-# include <sys/unistd.h>
++#include <sys/unistd.h>
++
++extern long int syscall(long int sys_no, ...);
+ 
+ #endif /* _UNISTD_H_ */
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/locale/lctype.c ./newlib/libc/locale/lctype.c
 --- ../newlib-2.5.0.20170922/newlib/libc/locale/lctype.c
 +++ ./newlib/libc/locale/lctype.c
