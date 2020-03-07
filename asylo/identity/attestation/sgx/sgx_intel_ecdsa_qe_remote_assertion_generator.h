@@ -22,10 +22,13 @@
 #include <memory>
 #include <string>
 
+#include "absl/types/variant.h"
+#include "asylo/crypto/certificate_util.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/attestation/enclave_assertion_generator.h"
 #include "asylo/identity/attestation/sgx/internal/dcap_library_interface.h"
 #include "asylo/identity/attestation/sgx/internal/intel_architectural_enclave_interface.h"
+#include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/util/mutex_guarded.h"
@@ -37,19 +40,27 @@ namespace asylo {
 class SgxIntelEcdsaQeRemoteAssertionGenerator
     : public EnclaveAssertionGenerator {
  public:
-  static const char *const kDefaultConfig;
+  // Empty type used within the certification data variant
+  struct UseDcapDefault {};
+
+  using CertificationData =
+      absl::variant<UseDcapDefault, CertificateInterfaceVector>;
 
   // Constructs a new `SgxIntelEcdsaQeAssertionGenerator` that internally uses
   // the `EnclaveDcapLibraryInterface`, which uses ocalls to invoke all
   // Intel DCAP APIs. Default-constructed objects generate assertions suitable
   // for use with EKEP. `HardwareInterface` is used to invoke SGX-specific
   // hardware routines.
+  //
+  // The generator MUST be initialized via a call to Initialize().
   SgxIntelEcdsaQeRemoteAssertionGenerator();
 
   // Constructs a new `SgxIntelEcdsaQeAssertionGenerator` that uses
   // |intel_enclaves| for invoking the Intel quoting software stack, and
   // generates authenticated data to include in the quote using |aad_generator|.
   // |hardware_interface| is used to invoke SGX-specific hardware routines.
+  //
+  // The generator MUST be initialized via a call to Initialize().
   SgxIntelEcdsaQeRemoteAssertionGenerator(
       std::unique_ptr<AdditionalAuthenticatedDataGenerator> aad_generator,
       std::unique_ptr<asylo::sgx::IntelArchitecturalEnclaveInterface>
@@ -74,7 +85,15 @@ class SgxIntelEcdsaQeRemoteAssertionGenerator
                   Assertion *assertion) const override;
 
  private:
-  MutexGuarded<bool> is_initialized_{false};
+  struct Members {
+    bool is_initialized = false;
+    CertificationData certification_data;
+  };
+
+  StatusOr<CertificationData> ReadCertificationData(
+      const SgxIntelEcdsaQeRemoteAssertionAuthorityConfig &config) const;
+
+  MutexGuarded<Members> members_;
   std::unique_ptr<AdditionalAuthenticatedDataGenerator> aad_generator_;
   std::unique_ptr<asylo::sgx::IntelArchitecturalEnclaveInterface>
       intel_enclaves_;

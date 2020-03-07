@@ -1,0 +1,57 @@
+//
+// Copyright 2020 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo;
+
+import "asylo/crypto/certificate.proto";
+
+// Configuration for an assertion authority based on the Intel ECDSA quoting
+// enclave.
+message SgxIntelEcdsaQeRemoteAssertionAuthorityConfig {
+  message Empty {}
+
+  message GeneratorInfo {
+    oneof certification {
+      // The certificate chain for the current platform. This chain is used to
+      // certify the platform attestation of SGX enclaves. When set, this
+      // certificate chain is included with any generated quotes.
+      CertificateChain pck_certificate_chain = 1;
+
+      // If this option is set, then the default DCAP behavior is used. This
+      // allows for the use of a Platform Quote Provider Library that looks up
+      // the certs for the platform.
+      Empty use_dcap_default = 2;
+    }
+  }
+
+  message VerifierInfo {
+    // Root certificate(s) of any chain used to certify the Intel ECDSA
+    // remote assertion signature. An assertion verifies successfully if and
+    // only if its certificate chain roots up to at least one of the roots
+    // contained in this set of certificates.
+    repeated Certificate root_certificates = 1;
+  }
+
+  // This configuration field is required only for assertion generators. If your
+  // application is only verifying assertions, this field may be omitted.
+  optional GeneratorInfo generator_info = 1;
+
+  // This configuration field is required only for assertion verifiers. If your
+  // application is only generating assertions, this field may be omitted.
+  optional VerifierInfo verifier_info = 2;
+}

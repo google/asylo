@@ -20,8 +20,10 @@
 #define ASYLO_IDENTITY_ENCLAVE_ASSERTION_AUTHORITY_CONFIGS_H_
 
 #include <string>
+#include <vector>
 
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/util/statusor.h"
 
@@ -90,6 +92,41 @@ CreateSgxLocalAssertionAuthorityConfig(std::string attestation_domain);
 /// /return A config for the SGX local assertion authority.
 StatusOr<EnclaveAssertionAuthorityConfig>
 CreateSgxLocalAssertionAuthorityConfig();
+
+namespace experimental {
+
+/// Creates configuration for the SGX Intel ECDSA QE remote assertion authority.
+/// The returned configuration contains the Intel SGX Root CA Certificate for
+/// verifying assertion root of trust. Any generated assertions will include the
+/// certification data that the Intel DCAP library locates using the Platform
+/// Quote Provider Library, as documented in
+/// https://download.01.org/intel-sgx/latest/dcap-latest/linux/docs/Intel_SGX_ECDSA_QuoteLibReference_DCAP_API.pdf
+///
+/// This type of EnclaveAssertionAuthorityConfig is required when using the
+/// SgxIntelEcdsaQeRemoteAssertionVerifier and/or
+/// SgxIntelEcdsaQeRemoteAssertionGenerator.
+///
+/// \return A config for the SGX Intel ECDSA QE remote assertion authority.
+StatusOr<EnclaveAssertionAuthorityConfig>
+CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig();
+
+/// Creates configuration for the SGX Intel ECDSA QE remote assertion authority.
+/// The returned configuration contains the Intel SGX Root CA Certificate for
+/// verifying assertion root of trust. Any generated assertions will include the
+/// given `pck_certificate_chain` as certification data.
+///
+/// This type of EnclaveAssertionAuthorityConfig is required when using the
+/// SgxIntelEcdsaQeRemoteAssertionVerifier and/or
+/// SgxIntelEcdsaQeRemoteAssertionGenerator.
+///
+/// \param pck_certificate_chain The certification chain to include with any
+///                              generated assertions.
+/// \return A config for the SGX Intel ECDSA QE remote assertion authority.
+StatusOr<EnclaveAssertionAuthorityConfig>
+CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
+    std::vector<Certificate> pck_certificate_chain);
+
+}  // namespace experimental
 
 }  // namespace asylo
 
