@@ -5346,7 +5346,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/li
  };
  
  /* Signal Actions, P1003.1b-1993, p. 64 */
-@@ -69,10 +100,62 @@
+@@ -69,10 +100,80 @@
    int          si_signo;    /* Signal number */
    int          si_code;     /* Cause of the signal */
    union sigval si_value;    /* Signal value */
@@ -5404,6 +5404,24 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/li
 +  } _sifields;
 +} siginfo_t __SI_ALIGNMENT;
 +
++# define si_pid		_sifields._kill.si_pid
++# define si_uid		_sifields._kill.si_uid
++# define si_timerid	_sifields._timer.si_tid
++# define si_overrun	_sifields._timer.si_overrun
++# define si_status	_sifields._sigchld.si_status
++# define si_utime	_sifields._sigchld.si_utime
++# define si_stime	_sifields._sigchld.si_stime
++# define si_value	_sifields._rt.si_sigval
++# define si_int		_sifields._rt.si_sigval.sival_int
++# define si_ptr		_sifields._rt.si_sigval.sival_ptr
++# define si_addr	_sifields._sigfault.si_addr
++# define si_addr_lsb	_sifields._sigfault.si_addr_lsb
++# define si_band	_sifields._sigpoll.si_band
++# define si_fd		_sifields._sigpoll.si_fd
++# define si_call_addr 	_sifields._sigsys._call_addr
++# define si_syscall	_sifields._sigsys._syscall
++# define si_arch	_sifields._sigsys._arch
++
  #endif /* defined(_POSIX_REALTIME_SIGNALS) || __POSIX_VISIBLE >= 199309 */
  
 -#if defined(__rtems__)
@@ -5411,7 +5429,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/li
  
  /*  3.3.8 Synchronously Accept a Signal, P1003.1b-1993, p. 76 */
  
-@@ -112,19 +195,19 @@
+@@ -112,19 +213,19 @@
  #define sa_sigaction  _signal_handlers._sigaction
  #endif
  
@@ -5434,7 +5452,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/li
  #endif /* defined(__CYGWIN__) */
  
  #if __BSD_VISIBLE || __XSI_VISIBLE >= 4 || __POSIX_VISIBLE >= 200809
-@@ -357,6 +440,22 @@
+@@ -357,6 +458,22 @@
  #endif
  #endif
  
