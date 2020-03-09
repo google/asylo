@@ -20,5 +20,5 @@ package(default_visibility = ["//visibility:public"])
 
 exports_files([
     "grpc_1_24_3.patch",
-    "sgx_dcap_1_2.patch",
+    "sgx_dcap_1_4.patch",
 ])

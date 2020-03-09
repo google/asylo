@@ -41,9 +41,9 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/common/src/se_map.
 -map_handle_t* map_file(se_file_handle_t file, uint32_t *size)
 +map_handle_t* dcap_internal_map_file(se_file_handle_t file, uint32_t *size)
  {
-     map_handle_t* mh = (map_handle_t *)calloc(1, sizeof(map_handle_t));
-     if (mh == NULL || size == NULL)
-@@ -74,7 +74,7 @@
+     if(size == NULL)
+         return NULL;
+@@ -78,7 +78,7 @@
      return mh;
  }
  
@@ -52,7 +52,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/common/src/se_map.
  {
      UnmapViewOfFile(mh->base_addr);
      CloseHandle(mh->maph);
-@@ -82,7 +82,7 @@
+@@ -86,7 +86,7 @@
  }
  
  #elif defined(__GNUC__)
@@ -61,7 +61,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/common/src/se_map.
  {
      struct stat st;
      memset(&st, 0, sizeof(st));
-@@ -107,7 +107,7 @@
+@@ -111,7 +111,7 @@
      return mh;
  }
  
@@ -109,12 +109,13 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sg
  
  #define SGX_PCE_MK_ERROR(x)          (0x0000F000|(x))
  typedef enum _sgx_pce_error_t
-@@ -56,16 +61,6 @@
+@@ -55,17 +60,6 @@
+     SGX_PCE_INVALID_TCB              = SGX_PCE_MK_ERROR(0x0008),      /* PCE could not sign at the requested TCB */
  } sgx_pce_error_t;
  
- 
+-
 -/* PCE ID for the PCE in this library */
--#define PCE_ID = 0;
+-#define PCE_ID 0
 -
 -/* Crypto_suite */
 -#define PCE_ALG_RSA_OAEP_3072 1
@@ -126,7 +127,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sg
  //TODO: in qe pce common header
  /** Typedef enum _sgx_ql_request_policy */ 
  typedef enum _sgx_ql_request_policy
-@@ -91,6 +86,14 @@
+@@ -91,6 +85,14 @@
  sgx_pce_error_t sgx_set_pce_enclave_load_policy(
                                sgx_ql_request_policy_t policy);
  
@@ -465,8 +466,8 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quote/qe_logic.cpp QuoteGeneration/quote_wrapper/quote/qe_logic.cpp
 --- QuoteGeneration/quote_wrapper/quote/qe_logic.cpp
 +++ QuoteGeneration/quote_wrapper/quote/qe_logic.cpp
-@@ -66,9 +66,11 @@
-     #define SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME "libdcap_quoteprov.so"
+@@ -67,9 +67,11 @@
+     #define SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME_LEGACY "libdcap_quoteprov.so"
      #define TCHAR char
      #define _T(x) (x)
 +    #define PATH_SEPARATOR '/'
@@ -477,7 +478,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  #endif
  #define ECDSA_BLOB_LABEL "ecdsa_data.blob"
  
-@@ -162,6 +164,8 @@
+@@ -163,6 +165,8 @@
      se_mutex_t m_ecdsa_blob_mutex;
  
      sgx_ql_request_policy_t m_load_policy;
@@ -486,7 +487,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
      sgx_enclave_id_t m_eid;
      sgx_misc_attribute_t m_attributes;
      sgx_launch_token_t m_launch_token;
-@@ -170,6 +174,7 @@
+@@ -171,6 +175,7 @@
  
      ql_global_data():
          m_load_policy(SGX_QL_DEFAULT),
@@ -494,7 +495,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
          m_eid(0),
          m_pencryptedppid(NULL)
      {
-@@ -193,7 +198,10 @@
+@@ -194,7 +199,10 @@
      }
  };
  
@@ -506,7 +507,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  
  #ifdef ENABLE_QE3_LOGGING
  /* OCall functions for debug */
-@@ -429,24 +437,38 @@
+@@ -445,24 +453,38 @@
      if(!p_file_name || !p_file_path) {
          return false;
      }
@@ -559,7 +560,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
      }
  
      char* p_last_slash = strrchr(p_file_path, '/' );
-@@ -463,16 +485,18 @@
+@@ -479,16 +501,18 @@
      }
      (void)strncat(p_file_path,p_file_name, strnlen(p_file_name,buf_size));
      #else
@@ -586,7 +587,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  
      TCHAR *p_last_slash = _tcsrchr(p_file_path, _T('\\'));
      if (p_last_slash != NULL)
-@@ -1028,6 +1052,62 @@
+@@ -1074,6 +1098,62 @@
      return(refqt_ret);
  }
  
@@ -699,6 +700,82 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
          {
                  ret_val = SGX_QL_ERROR_UNEXPECTED;
          }
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h
+--- QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h
++++ QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h
+@@ -1,60 +0,0 @@
+-/*
+- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- *
+- *   * Redistributions of source code must retain the above copyright
+- *     notice, this list of conditions and the following disclaimer.
+- *   * Redistributions in binary form must reproduce the above copyright
+- *     notice, this list of conditions and the following disclaimer in
+- *     the documentation and/or other materials provided with the
+- *     distribution.
+- *   * Neither the name of Intel Corporation nor the names of its
+- *     contributors may be used to endorse or promote products derived
+- *     from this software without specific prior written permission.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+- *
+- */
+-
+-#ifndef INTEL_SGX_QVL_QUOTE_CONSTANTS_H_
+-#define INTEL_SGX_QVL_QUOTE_CONSTANTS_H_
+-
+-#include <array>
+-
+-namespace intel { namespace sgx { namespace qvl { namespace constants {
+-
+-const uint16_t QUOTE_VERSION = 3;
+-
+-const uint16_t ECDSA_256_WITH_P256_CURVE = 1;
+-const uint16_t ECDSA_384_WITH_P384_CURVE = 2;
+-constexpr size_t ECDSA_P256_SIGNATURE_BYTE_LEN = 64;
+-constexpr size_t ENCLAVE_REPORT_BYTE_LEN = 384;
+-
+-const uint16_t PCK_ID_PLAIN_PPID = 1;
+-const uint16_t PCK_ID_ENCRYPTED_PPID_2048 = 2;
+-const uint16_t PCK_ID_ENCRYPTED_PPID_3072 = 3;
+-const uint16_t PCK_ID_PCK_CERTIFICATE = 4;
+-const uint16_t PCK_ID_PCK_CERT_CHAIN = 5;
+-
+-const std::array<uint16_t, 5> SUPPORTED_PCK_IDS = {{ PCK_ID_PLAIN_PPID, PCK_ID_ENCRYPTED_PPID_2048,
+-    PCK_ID_ENCRYPTED_PPID_3072, PCK_ID_PCK_CERTIFICATE, PCK_ID_PCK_CERT_CHAIN }};
+-
+-const std::array<uint16_t, 1> ALLOWED_ATTESTATION_KEY_TYPES = {{ ECDSA_256_WITH_P256_CURVE }};
+-const std::array<uint8_t, 16> INTEL_QE_VENDOR_ID = {{ 0x93, 0x9A, 0x72, 0x33, 0xF7, 0x9C, 0x4C, 0xA9, 0x94, 0x0A, 0x0D, 0xB3, 0x95, 0x7F, 0x06, 0x07 }};
+-
+-}}}} // namespace intel { namespace sgx { namespace qvl { namespace constants {
+-
+-#endif
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification.cpp QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification.cpp
+--- QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification.cpp
++++ QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification.cpp
+@@ -80,7 +80,7 @@
+     OpensslGuard& operator=(OpensslGuard&&) = delete;
+ };
+ 
+-static const OpensslGuard opensslGuard;
++static const OpensslGuard *opensslGuard = new OpensslGuard;
+ 
+ const char* sgxAttestationGetVersion()
+ {
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h
 --- QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h
 +++ QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h
@@ -823,79 +900,6 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationL
 +
 +}}}} // namespace intel { namespace sgx { namespace qvl { namespace constants {
 +
-diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h QuoteVerification/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h
---- QuoteVerification/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h
-+++ QuoteVerification/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h
-@@ -1,57 +0,0 @@
--/*
--* Copyright (c) 2017, Intel Corporation
--*
--* Redistribution and use in source and binary forms, with or without modification,
--* are permitted provided that the following conditions are met:
--
--* 1. Redistributions of source code must retain the above copyright notice,
--*    this list of conditions and the following disclaimer.
--* 2. Redistributions in binary form must reproduce the above copyright notice,
--*    this list of conditions and the following disclaimer in the documentation
--*    and/or other materials provided with the distribution.
--* 3. Neither the name of the copyright holder nor the names of its contributors
--*    may be used to endorse or promote products derived from this software
--*    without specific prior written permission.
--*
--* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
--* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
--* THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
--* ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
--* BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
--* OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
--* OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
--* OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
--* WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
--* OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
--* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
--*/
--
--#ifndef INTEL_SGX_QVL_QUOTE_CONSTANTS_H_
--#define INTEL_SGX_QVL_QUOTE_CONSTANTS_H_
--
--#include <array>
--
--namespace intel { namespace sgx { namespace qvl { namespace constants {
--
--const uint16_t QUOTE_VERSION = 3;
--
--const uint16_t ECDSA_256_WITH_P256_CURVE = 1;
--const uint16_t ECDSA_384_WITH_P384_CURVE = 2;
--constexpr size_t ECDSA_P256_SIGNATURE_BYTE_LEN = 64;
--constexpr size_t ENCLAVE_REPORT_BYTE_LEN = 384;
--
--const uint16_t PCK_ID_PLAIN_PPID = 1;
--const uint16_t PCK_ID_ENCRYPTED_PPID_2048 = 2;
--const uint16_t PCK_ID_ENCRYPTED_PPID_3072 = 3;
--const uint16_t PCK_ID_PCK_CERTIFICATE = 4;
--const uint16_t PCK_ID_PCK_CERT_CHAIN = 5;
--
--const std::array<uint16_t, 5> SUPPORTED_PCK_IDS = {{ PCK_ID_PLAIN_PPID, PCK_ID_ENCRYPTED_PPID_2048,
--    PCK_ID_ENCRYPTED_PPID_3072, PCK_ID_PCK_CERTIFICATE, PCK_ID_PCK_CERT_CHAIN }};
--
--const std::array<uint16_t, 1> ALLOWED_ATTESTATION_KEY_TYPES = {{ ECDSA_256_WITH_P256_CURVE }};
--const std::array<uint8_t, 16> INTEL_QE_VENDOR_ID = {{ 0x93, 0x9A, 0x72, 0x33, 0xF7, 0x9C, 0x4C, 0xA9, 0x94, 0x0A, 0x0D, 0xB3, 0x95, 0x7F, 0x06, 0x07 }};
--
--}}}} // namespace intel { namespace sgx { namespace qvl { namespace constants {
--
--#endif
-diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationLibrary/src/QuoteVerification.cpp QuoteVerification/Src/AttestationLibrary/src/QuoteVerification.cpp
---- QuoteVerification/Src/AttestationLibrary/src/QuoteVerification.cpp
-+++ QuoteVerification/Src/AttestationLibrary/src/QuoteVerification.cpp
-@@ -77,7 +77,7 @@
-     OpensslGuard& operator=(OpensslGuard&&) = delete;
- };
- 
--static const OpensslGuard opensslGuard;
-+static const OpensslGuard *opensslGuard = new OpensslGuard;
- 
- const char* sgxAttestationGetVersion()
- {
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
