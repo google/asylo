@@ -29,6 +29,7 @@
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
+#include "asylo/identity/enclave_assertion_authority_config_verifiers.h"
 #include "asylo/identity/sgx/intel_certs/intel_sgx_root_ca_cert.h"
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/util/proto_enum_util.h"
@@ -64,16 +65,9 @@ EnclaveAssertionAuthorityConfig CreateNullAssertionAuthorityConfig() {
 
 StatusOr<EnclaveAssertionAuthorityConfig>
 CreateSgxLocalAssertionAuthorityConfig(std::string attestation_domain) {
-  if (attestation_domain.size() != kAttestationDomainNameSize) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrFormat("Attestation domain must be %d bytes in size "
-                        "but was %d bytes in size",
-                        kAttestationDomainNameSize, attestation_domain.size()));
-  }
-
   SgxLocalAssertionAuthorityConfig config;
   *config.mutable_attestation_domain() = std::move(attestation_domain);
+  ASYLO_RETURN_IF_ERROR(VerifySgxLocalAssertionAuthorityConfig(config));
 
   return SerializeToAuthorityConfig(config, SetSgxLocalAssertionDescription);
 }
@@ -114,6 +108,8 @@ CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
   for (auto &cert : pck_certificate_chain) {
     *config_pck_certs->add_certificates() = std::move(cert);
   }
+  ASYLO_RETURN_IF_ERROR(
+      VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(sgx_config));
 
   return SerializeToAuthorityConfig(
       sgx_config, SetSgxIntelEcdsaQeRemoteAssertionDescription);

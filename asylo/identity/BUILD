@@ -130,6 +130,7 @@ cc_library(
     deps = [
         ":descriptions",
         ":enclave_assertion_authority_config_cc_proto",
+        ":enclave_assertion_authority_config_verifiers",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:x509_certificate",
         "//asylo/daemon/identity:attestation_domain",
@@ -168,6 +169,45 @@ cc_test(
         "//asylo/util:proto_enum_util",
         "//asylo/util:proto_parse_util",
         "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "enclave_assertion_authority_config_verifiers",
+    srcs = ["enclave_assertion_authority_config_verifiers.cc"],
+    hdrs = ["enclave_assertion_authority_config_verifiers.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":enclave_assertion_authority_config_cc_proto",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:certificate_util",
+        "//asylo/daemon/identity:attestation_domain",
+        "//asylo/identity/attestation/sgx:sgx_age_remote_assertion_authority_config_cc_proto",
+        "//asylo/identity/attestation/sgx:sgx_intel_ecdsa_qe_remote_assertion_authority_config_cc_proto",
+        "//asylo/identity/sgx:sgx_local_assertion_authority_config_cc_proto",
+        "//asylo/util:error_codes",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings:str_format",
+    ],
+)
+
+cc_test(
+    name = "enclave_assertion_authority_config_verifiers_test",
+    srcs = ["enclave_assertion_authority_config_verifiers_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":enclave_assertion_authority_config_verifiers",
+        "//asylo/identity/attestation/sgx:sgx_age_remote_assertion_authority_config_cc_proto",
+        "//asylo/identity/attestation/sgx:sgx_intel_ecdsa_qe_remote_assertion_authority_config_cc_proto",
+        "//asylo/identity/sgx:sgx_local_assertion_authority_config_cc_proto",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:error_codes",
+        "//asylo/util:proto_enum_util",
+        "//asylo/util:proto_parse_util",
+        "//asylo/util:status",
         "@com_google_googletest//:gtest",
     ],
 )

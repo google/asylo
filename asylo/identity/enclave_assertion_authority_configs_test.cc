@@ -46,6 +46,19 @@ using ::testing::SizeIs;
 using ::testing::StrEq;
 using ::testing::Test;
 
+// Valid cert, formatted for insertion into a protubuf message.
+#define TEST_PEM_CERT                                                   \
+  "-----BEGIN CERTIFICATE-----\\n"                                      \
+  "MIIBdTCCAR+gAwIBAgIUYct7MCZjztm0hr1mQH6jE8Z/3wUwDQYJKoZIhvcNAQEF\\n" \
+  "BQAwDzENMAsGA1UEAwwEdGVzdDAeFw0yMDAyMTQyMjQzMzZaFw00NzA3MDEyMjQz\\n" \
+  "MzZaMA8xDTALBgNVBAMMBHRlc3QwXDANBgkqhkiG9w0BAQEFAANLADBIAkEAvtwO\\n" \
+  "oP6GtTtlsw5qrbO6O1EiE4+6mLdJjuxOrsHWvx4SHnZ1qgD3UVQyeo0corgJK57g\\n" \
+  "bGGvfPR0X30cn3lWTQIDAQABo1MwUTAdBgNVHQ4EFgQUadIc6sRpRLex0C/WVTHf\\n" \
+  "KhIfAhowHwYDVR0jBBgwFoAUadIc6sRpRLex0C/WVTHfKhIfAhowDwYDVR0TAQH/\\n" \
+  "BAUwAwEB/zANBgkqhkiG9w0BAQUFAANBAA34lGWyozDj6vl0xGqkR7PzU4DyE27K\\n" \
+  "MR+48EpgZn4qUY9anOCUFGkqyBpZ7HX3z/LQW2UU1QhyJr3UYKYul3Q=\\n"         \
+  "-----END CERTIFICATE-----"
+
 TEST(EnclaveAssertionAuthorityConfigsTest,
      CreateNullAssertionAuthorityConfigSuccess) {
   AssertionDescription description;
@@ -120,10 +133,10 @@ TEST(EnclaveAssertionAuthorityConfigsTest,
           pck_certificate_chain: {
             certificates: [{
               format: X509_PEM
-              data: "first cert"
+              data: ")pb" TEST_PEM_CERT R"pb("
             }, {
-              format: X509_DER
-              data: "second cert"
+              format: X509_PEM
+              data: ")pb" TEST_PEM_CERT R"pb("
             }]
           }
         })pb");
@@ -136,8 +149,8 @@ TEST(EnclaveAssertionAuthorityConfigsTest,
   ASSERT_TRUE(sgx_config.SerializeToString(expected_config.mutable_config()));
 
   std::vector<Certificate> certs = {
-      ParseTextProtoOrDie("format: X509_PEM\ndata: 'first cert'"),
-      ParseTextProtoOrDie("format: X509_DER\ndata: 'second cert'")};
+      ParseTextProtoOrDie("format: X509_PEM\ndata: '" TEST_PEM_CERT "'"),
+      ParseTextProtoOrDie("format: X509_PEM\ndata: '" TEST_PEM_CERT "'")};
   EXPECT_THAT(
       experimental::CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(certs),
       IsOkAndHolds(EqualsProto(expected_config)));
