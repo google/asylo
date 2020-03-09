@@ -137,7 +137,7 @@ SignatureScheme PceSignatureSchemeToSignatureScheme(
 }
 
 StatusOr<Signature> CreateSignatureFromPckEcdsaP256Sha256Signature(
-    const std::string &pck_signature) {
+    ByteContainerView pck_signature) {
   if (pck_signature.size() != kEcdsaP256SignatureSize) {
     return Status(
         error::GoogleError::INVALID_ARGUMENT,
@@ -150,8 +150,8 @@ StatusOr<Signature> CreateSignatureFromPckEcdsaP256Sha256Signature(
   signature.set_signature_scheme(SignatureScheme::ECDSA_P256_SHA256);
 
   EcdsaSignature *ecdsa_signature = signature.mutable_ecdsa_signature();
-  ecdsa_signature->set_r(pck_signature.substr(0, 32));
-  ecdsa_signature->set_s(pck_signature.substr(32, kEcdsaP256SignatureSize));
+  ecdsa_signature->set_r(pck_signature.data(), 32);
+  ecdsa_signature->set_s(pck_signature.data() + 32, 32);
 
   return signature;
 }

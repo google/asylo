@@ -798,6 +798,7 @@ cc_library(
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto:rsa_oaep_encryption_key",
         "//asylo/crypto/util:bssl_util",
+        "//asylo/crypto/util:byte_container_view",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:additional_authenticated_data_generator",
         "//asylo/util:proto_enum_util",

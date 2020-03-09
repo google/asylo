@@ -31,6 +31,7 @@
 #include "absl/types/span.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/keys.pb.h"
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/util/statusor.h"
 
@@ -76,7 +77,7 @@ SignatureScheme PceSignatureSchemeToSignatureScheme(
 //
 // where the r and s parameters are in big-endian format.
 StatusOr<Signature> CreateSignatureFromPckEcdsaP256Sha256Signature(
-    const std::string &pck_signature);
+    ByteContainerView pck_signature);
 
 // Parses an RSA-3072 public key from |public_key|. The input |public_key| is
 // expected to be a 388-byte buffer that contains a serialized key in the
