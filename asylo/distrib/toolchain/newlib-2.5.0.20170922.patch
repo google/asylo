@@ -11275,7 +11275,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/poll.h .
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 +++ ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,119 @@
 +#ifndef _SYS__PTHREADTYPES_H
 +#define _SYS__PTHREADTYPES_H
 +
@@ -11296,19 +11296,13 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthread
 +
 +#define PTHREAD_CREATE_JOINABLE 0x00
 +#define PTHREAD_CREATE_DETACHED 0x01
++#define PTHREAD_KEYS_MAX 64
 +
 +typedef struct { uint32_t detach_state; } pthread_attr_t;
 +
 +typedef uint32_t pthread_key_t;
 +
 +typedef volatile uint32_t pthread_spinlock_t;
-+
-+struct __pthread_info {
-+  struct __pthread_info *self;
-+  uint64_t tid;
-+  size_t tls_size;
-+  pthread_attr_t *attr;
-+};
 +
 +typedef struct {
 +  size_t _refcount;
@@ -11370,6 +11364,35 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthread
 +  { PTHREAD_SPINLOCK_INITIALIZER, PTHREAD_T_NULL, 0, PTHREAD_LIST_INITIALIZER }
 +
 +typedef struct { unsigned char _dummy; } pthread_rwlockattr_t;
++
++enum thread_state {
++  __THREAD_QUEUED,
++  __THREAD_RUNNING,
++  __THREAD_DONE,
++  __THREAD_JOINED,
++};
++
++struct __cleanup {
++  void (*function)(void *);
++  void *argument;
++  struct __cleanup *next;
++};
++
++struct __pthread_info {
++  pthread_t thread_id;
++  struct __pthread_info *self;
++  uint64_t tid;
++  size_t tls_size;
++  pthread_attr_t *attr;
++  void **tsd;
++  // Guards thread state.
++  pthread_mutex_t lock;
++  pthread_cond_t state_change_cond;
++  enum thread_state state;
++  bool detached;
++  void *result;
++  struct __cleanup *cleanup;
++};
 +
 +#endif  // _SYS__PTHREADTYPES_H
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/socket.h ./newlib/libc/sys/enclave/include/sys/socket.h

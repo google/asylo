@@ -44,7 +44,9 @@ inline int InterlockedExchange(pthread_spinlock_t *dest,
   return __sync_val_compare_and_swap(dest, old_value, new_value);
 }
 
+#ifndef PTHREAD_KEYS_MAX
 constexpr size_t PTHREAD_KEYS_MAX = 64;
+#endif
 thread_local std::array<const void *,
              PTHREAD_KEYS_MAX> thread_specific = {nullptr};
 
