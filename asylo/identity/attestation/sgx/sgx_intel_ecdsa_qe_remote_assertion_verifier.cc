@@ -33,6 +33,7 @@
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/sha256_hash.h"
+#include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/crypto/x509_certificate.h"
@@ -43,9 +44,13 @@
 #include "asylo/identity/enclave_assertion_authority.h"
 #include "asylo/identity/enclave_assertion_authority_config_verifiers.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/platform/sgx/code_identity.pb.h"
+#include "asylo/identity/platform/sgx/machine_configuration.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/pce_util.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/platform/common/static_map.h"
 #include "asylo/util/error_codes.h"
 #include "asylo/util/status.h"
@@ -169,6 +174,40 @@ Status VerifyPckCertificateChain(const sgx::IntelQeQuote &quote) {
   return Status::OkStatus();
 }
 
+Status ParseEnclaveIdentityFromQuote(const sgx::IntelQeQuote &quote,
+                                     EnclaveIdentity *peer_identity) {
+  SgxIdentity identity;
+
+  identity.mutable_machine_configuration()->mutable_cpu_svn()->set_value(
+      quote.body.cpusvn.data(), quote.body.cpusvn.size());
+  identity.mutable_code_identity()->set_miscselect(quote.body.miscselect);
+
+  identity.mutable_code_identity()->mutable_attributes()->set_flags(
+      quote.body.attributes.flags);
+  identity.mutable_code_identity()->mutable_attributes()->set_xfrm(
+      quote.body.attributes.xfrm);
+
+  identity.mutable_code_identity()->mutable_mrenclave()->set_hash(
+      quote.body.mrenclave.data(), quote.body.mrenclave.size());
+
+  identity.mutable_code_identity()
+      ->mutable_signer_assigned_identity()
+      ->mutable_mrsigner()
+      ->set_hash(quote.body.mrsigner.data(), quote.body.mrsigner.size());
+
+  identity.mutable_code_identity()
+      ->mutable_signer_assigned_identity()
+      ->set_isvprodid(quote.body.isvprodid);
+
+  identity.mutable_code_identity()
+      ->mutable_signer_assigned_identity()
+      ->set_isvsvn(quote.body.isvsvn);
+
+  ASYLO_ASSIGN_OR_RETURN(*peer_identity, SerializeSgxIdentity(identity));
+
+  return Status::OkStatus();
+}
+
 }  // namespace
 
 SgxIntelEcdsaQeRemoteAssertionVerifier::SgxIntelEcdsaQeRemoteAssertionVerifier()
@@ -261,6 +300,7 @@ Status SgxIntelEcdsaQeRemoteAssertionVerifier::Verify(
   ASYLO_RETURN_IF_ERROR(VerifyQuoteMeetsMinimumTcbLevel(quote));
   ASYLO_RETURN_IF_ERROR(VerifyPckSignatureOverQuotingEnclave(quote));
   ASYLO_RETURN_IF_ERROR(VerifyPckCertificateChain(quote));
+  ASYLO_RETURN_IF_ERROR(ParseEnclaveIdentityFromQuote(quote, peer_identity));
 
   return Status::OkStatus();
 }

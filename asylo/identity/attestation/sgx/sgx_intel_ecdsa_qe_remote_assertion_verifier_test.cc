@@ -30,6 +30,7 @@
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/sha256_hash.h"
+#include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"
@@ -40,10 +41,16 @@
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/enclave_assertion_authority.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/platform/sgx/code_identity.pb.h"
+#include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/intel_certs/intel_sgx_root_ca_cert.h"
+#include "asylo/identity/sgx/secs_attributes.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/platform/common/static_map.h"
+#include "asylo/test/util/memory_matchers.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/error_codes.h"
 #include "asylo/util/proto_parse_util.h"
@@ -457,9 +464,45 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest, VerifySuccess) {
   SgxIntelEcdsaQeRemoteAssertionVerifier verifier;
   ASYLO_ASSERT_OK(verifier.Initialize(valid_config_));
 
-  Assertion assertion = CreateAssertion(GenerateValidQuote("important data"));
+  sgx::IntelQeQuote quote = GenerateValidQuote("important data");
+  Assertion assertion = CreateAssertion(quote);
   EnclaveIdentity identity;
   EXPECT_THAT(verifier.Verify("important data", assertion, &identity), IsOk());
+
+  SgxIdentity peer_identity;
+  ASYLO_ASSERT_OK_AND_ASSIGN(peer_identity, ParseSgxIdentity(identity));
+
+  EXPECT_EQ(quote.body.cpusvn.size(),
+            peer_identity.machine_configuration().cpu_svn().value().size());
+  EXPECT_THAT(peer_identity.machine_configuration().cpu_svn().value().data(),
+              MemEq(quote.body.cpusvn.data(), quote.body.cpusvn.size()));
+
+  sgx::SecsAttributeSet peer_attributes(
+      peer_identity.code_identity().attributes());
+  EXPECT_EQ(peer_attributes, quote.body.attributes);
+  EXPECT_EQ(peer_identity.code_identity().miscselect(), quote.body.miscselect);
+
+  EXPECT_EQ(quote.body.mrenclave.size(),
+            peer_identity.code_identity().mrenclave().hash().size());
+  EXPECT_THAT(peer_identity.code_identity().mrenclave().hash().data(),
+              MemEq(quote.body.mrenclave.data(), quote.body.mrenclave.size()));
+
+  EXPECT_EQ(quote.body.mrsigner.size(), peer_identity.code_identity()
+                                            .signer_assigned_identity()
+                                            .mrsigner()
+                                            .hash()
+                                            .size());
+  EXPECT_THAT(peer_identity.code_identity()
+                   .signer_assigned_identity()
+                   .mrsigner()
+                   .hash().data(),
+              MemEq(quote.body.mrsigner.data(), quote.body.mrsigner.size()));
+
+  EXPECT_EQ(
+      peer_identity.code_identity().signer_assigned_identity().isvprodid(),
+      quote.body.isvprodid);
+  EXPECT_EQ(peer_identity.code_identity().signer_assigned_identity().isvsvn(),
+            quote.body.isvsvn);
 }
 
 }  // namespace
