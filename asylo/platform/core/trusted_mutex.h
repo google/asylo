@@ -38,7 +38,7 @@ class TrustedMutex {
   // pthread_mutex.
   explicit TrustedMutex(bool is_recursive);
 
-  ~TrustedMutex() = default;
+  ~TrustedMutex();
 
   // If this lock is not already held, block until the calling thread is able to
   // acquire it. If configured as a recursive lock, an TrustedMutex may be

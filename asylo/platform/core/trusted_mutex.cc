@@ -85,4 +85,6 @@ void TrustedMutex::Unlock() {
   }
 }
 
+TrustedMutex::~TrustedMutex() { enc_untrusted_destroy_wait_queue(wait_queue_); }
+
 }  // namespace asylo
