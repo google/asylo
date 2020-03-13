@@ -158,6 +158,7 @@ cc_library(
         "//asylo/platform/posix/io:io_manager",
         "//asylo/platform/posix/sockets",
         "//asylo/platform/posix/signal:signal_manager",
+        "//asylo/platform/posix/syscall:signal_syscalls",
         "//asylo/platform/posix/threading:thread_manager",
         "//asylo/platform/primitives/util:trusted_memory",
         "//asylo/platform/system",

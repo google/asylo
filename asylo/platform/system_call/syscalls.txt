@@ -163,6 +163,11 @@ SYSCALL_DEFINE4(wait4, pid_t, upid, \out int *, stat_addr, int, options,
 // =======
 
 SYSCALL_DEFINE2(kill, pid_t, pid, int, sig)
+SYSCALL_DEFINE2(tkill, pid_t, pid, int, sig)
+SYSCALL_DEFINE4(rt_sigaction, int, sig, const struct sigaction *, act,
+		            struct sigaction *, oact, size_t, sigsetsize)
+SYSCALL_DEFINE4(rt_sigprocmask, int, how, sigset_t *, nset, sigset_t *, oset,
+                size_t, sigsetsize)
 
 // Networking
 // ==========

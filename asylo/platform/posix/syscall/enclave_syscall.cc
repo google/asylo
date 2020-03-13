@@ -20,7 +20,9 @@
 
 #include <cerrno>
 
+#include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/syscall/enclave_syscall_helper.h"
+#include "asylo/platform/posix/syscall/signal_syscalls.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 
 #define MAX_SYSNO 335
@@ -42,7 +44,6 @@ bool PopulateSysnoTable() {
   direct_sysnos[asylo::system_call::kSYS_setitimer] = true;
   direct_sysnos[asylo::system_call::kSYS_getrusage] = true;
   direct_sysnos[asylo::system_call::kSYS_gettimeofday] = true;
-  direct_sysnos[asylo::system_call::kSYS_kill] = true;
   direct_sysnos[asylo::system_call::kSYS_nanosleep] = true;
   direct_sysnos[asylo::system_call::kSYS_sched_getaffinity] = true;
   direct_sysnos[asylo::system_call::kSYS_sched_yield] = true;
@@ -286,6 +287,16 @@ int64_t EnclaveSyscallWithDeps(int sysno, uint64_t* args, size_t nargs,
     case asylo::system_call::kSYS_flistxattr:
       return io_manager->FListXattr(args[0], reinterpret_cast<char *>(args[1]),
                                     args[2]);
+    case asylo::system_call::kSYS_rt_sigaction:
+      return asylo::RtSigaction(
+          args[0], reinterpret_cast<const struct sigaction *>(args[1]),
+          reinterpret_cast<struct sigaction *>(args[2]), args[3]);
+    case asylo::system_call::kSYS_rt_sigprocmask:
+      return asylo::RtSigprocmask(
+          args[0], reinterpret_cast<const sigset_t *>(args[1]),
+          reinterpret_cast<sigset_t *>(args[2]), args[3]);
+    case asylo::system_call::kSYS_kill:
+          return enc_untrusted_kill(args[0], static_cast<int>(args[1]));
     case asylo::system_call::kSYS_exit:
     case asylo::system_call::kSYS_exit_group:
       enc_exit(args[0]);

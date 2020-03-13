@@ -207,7 +207,6 @@ const EnclaveSyscallTestParams direct_syscall_params[] = {
     {asylo::system_call::kSYS_setitimer, 3, 9, {1, 2, 3}},
     {asylo::system_call::kSYS_getrusage, 2, 10, {1, 2}},
     {asylo::system_call::kSYS_gettimeofday, 2, 11, {1, 2}},
-    {asylo::system_call::kSYS_kill, 2, 12, {1, 2}},
     {asylo::system_call::kSYS_nanosleep, 2, 13, {1, 2}},
     {asylo::system_call::kSYS_sched_getaffinity, 3, 14, {1, 2, 3}},
     {asylo::system_call::kSYS_sched_yield, 0, 15, {}},

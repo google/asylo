@@ -30,6 +30,20 @@ package(
 )
 
 cc_library(
+    name = "signal_syscalls",
+    srcs = ["signal_syscalls.cc"],
+    hdrs = ["signal_syscalls.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    linkstatic = 1,
+    tags = ASYLO_ALL_BACKEND_TAGS,
+    deps = [
+        "//asylo/platform/host_call",
+        "//asylo/platform/posix/signal:signal_manager",
+    ],
+    alwayslink = 1,
+)
+
+cc_library(
     name = "enclave_syscall",
     srcs = [
         "enclave_syscall.cc",
@@ -43,6 +57,7 @@ cc_library(
     linkstatic = 1,
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
+        ":signal_syscalls",
         "//asylo/platform/host_call",
         "//asylo/platform/posix/io:io_manager",
         "//asylo/platform/primitives:trusted_primitives",

@@ -4660,7 +4660,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/encl
 +	else t='$(program_transform_name)'; echo objcopy | sed -e $$t ; fi`
 +
 +# object files needed
-+OBJS = enclave.o mman.o xattr.o getauxval.o syscall.o
++OBJS = enclave.o mman.o signal.o xattr.o getauxval.o syscall.o
 +
 +# Object files specific to particular targets.
 +EVALOBJS = ${OBJS}
@@ -4847,6 +4847,54 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/mman.c ./libgloss/enclave/m
 +  errno = ENOSYS;
 +  return -1;
 +}
+diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/signal.c ./libgloss/enclave/signal.c
+--- ../newlib-2.5.0.20170922/libgloss/enclave/signal.c
++++ ./libgloss/enclave/signal.c
+@@ -0,0 +1,44 @@
++#ifndef _GNU_SOURCE
++#define _GNU_SOURCE
++#endif
++
++#ifndef NEWLIB_SIGNAL_DEFINED
++#define NEWLIB_SIGNAL_DEFINED
++#endif
++
++#include <errno.h>
++#include <signal.h>
++
++#include "enclave_syscalls.h"
++#include "sysnos.h"
++
++int sigaction(int signum, const struct sigaction *act,
++              struct sigaction *oldact) {
++  uint64_t args[] = {signum, (uint64_t)act, (uint64_t)oldact, sizeof(sigset_t)};
++  return enclave_syscall(SYS_rt_sigaction, args, 4);
++}
++
++int sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
++  uint64_t args[] = {how, (uint64_t)set, (uint64_t)oldset, sizeof(sigset_t)};
++  return enclave_syscall(SYS_rt_sigprocmask, args, 4);
++}
++
++int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset) {
++  return sigprocmask(how, set, oldset);
++}
++
++// Registers a signal handler for |signum| with |handler|.
++//
++// This method is a special case of sigaction. It calls sigaction with only
++// sa_handler in |act| field set.
++sighandler_t signal(int signum, sighandler_t handler) {
++  struct sigaction act;
++  act.sa_handler = handler;
++  sigemptyset(&act.sa_mask);
++  struct sigaction oldact;
++  if (sigaction(signum, &act, &oldact)) {
++    // Errno is set by sigaction.
++    return SIG_ERR;
++  }
++  return oldact.sa_handler;
++}
 diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/syscall.c ./libgloss/enclave/syscall.c
 --- ../newlib-2.5.0.20170922/libgloss/enclave/syscall.c
 +++ ./libgloss/enclave/syscall.c
@@ -4968,7 +5016,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/xattr.c ./libgloss/enclave/
 diff -Naur ../newlib-2.5.0.20170922/newlib/configure.host ./newlib/configure.host
 --- ../newlib-2.5.0.20170922/newlib/configure.host
 +++ ./newlib/configure.host
-@@ -851,6 +851,19 @@
+@@ -851,6 +851,20 @@
  	syscall_dir=syscalls	
  	newlib_cflags="${newlib_cflags} -DSMALL_DTOA -DSMALL_MEMORY"
  	;;
@@ -4984,6 +5032,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/configure.host ./newlib/configure.hos
 +	newlib_cflags="${newlib_cflags} -D_NO_POSIX_SPAWN"
 +	newlib_cflags="${newlib_cflags} -DHAVE_FCNTL"
 +	newlib_cflags="${newlib_cflags} -DHAVE_MKDIR"
++  newlib_cflags="${newlib_cflags} -DSIGNAL_PROVIDED"
 +	;;
    xc16x-*)
            syscall_dir=syscalls
