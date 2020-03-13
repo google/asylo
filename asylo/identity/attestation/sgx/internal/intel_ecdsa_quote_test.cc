@@ -26,6 +26,8 @@
 #include <gtest/gtest.h>
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/identity.pb.h"
+#include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -115,6 +117,58 @@ TEST_F(IntelEcdsaQuoteTest, RoundTripPackUnpackPack) {
   ASYLO_ASSERT_OK_AND_ASSIGN(parsed_quote, ParseDcapPackedQuote(packed_quote));
 
   EXPECT_THAT(PackDcapQuote(parsed_quote), ElementsAreArray(packed_quote));
+}
+
+TEST_F(IntelEcdsaQuoteTest, PackedQuoteToAssertionFailsWithBadQuote) {
+  auto packed_quote = PackDcapQuote(CreateRandomValidQuote());
+  packed_quote.push_back('k');
+  EXPECT_THAT(PackedQuoteToAssertion(packed_quote),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST_F(IntelEcdsaQuoteTest, AssertionToPackedQuoteFailsBadIdentity) {
+  auto packed_quote = PackDcapQuote(CreateRandomValidQuote());
+
+  asylo::Assertion assertion;
+  ASYLO_ASSERT_OK_AND_ASSIGN(assertion, PackedQuoteToAssertion(packed_quote));
+  assertion.mutable_description()->set_identity_type(NULL_IDENTITY);
+
+  EXPECT_THAT(AssertionToPackedQuote(assertion),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST_F(IntelEcdsaQuoteTest, AssertionToPackedQuoteFailsBadAuthority) {
+  auto packed_quote = PackDcapQuote(CreateRandomValidQuote());
+
+  asylo::Assertion assertion;
+  ASYLO_ASSERT_OK_AND_ASSIGN(assertion, PackedQuoteToAssertion(packed_quote));
+  assertion.mutable_description()->set_authority_type(
+      kSgxAgeRemoteAssertionAuthority);
+
+  EXPECT_THAT(AssertionToPackedQuote(assertion),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST_F(IntelEcdsaQuoteTest, AssertionToPackedQuoteFailsBadQuote) {
+  auto packed_quote = PackDcapQuote(CreateRandomValidQuote());
+
+  asylo::Assertion assertion;
+  ASYLO_ASSERT_OK_AND_ASSIGN(assertion, PackedQuoteToAssertion(packed_quote));
+  assertion.clear_assertion();
+
+  EXPECT_THAT(AssertionToPackedQuote(assertion),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST_F(IntelEcdsaQuoteTest, RoundTripQuoteAssertion) {
+  auto packed_quote = PackDcapQuote(CreateRandomValidQuote());
+
+  asylo::Assertion assertion;
+  ASYLO_ASSERT_OK_AND_ASSIGN(assertion, PackedQuoteToAssertion(packed_quote));
+
+  std::vector<uint8_t> result;
+  ASYLO_ASSERT_OK_AND_ASSIGN(result, AssertionToPackedQuote(assertion));
+  EXPECT_THAT(result, ElementsAreArray(packed_quote));
 }
 
 }  // namespace

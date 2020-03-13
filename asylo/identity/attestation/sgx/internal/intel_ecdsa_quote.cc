@@ -24,6 +24,8 @@
 #include "asylo/crypto/util/byte_container_reader.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/identity/descriptions.h"
+#include "asylo/identity/identity.pb.h"
 
 namespace asylo {
 namespace sgx {
@@ -93,6 +95,37 @@ std::vector<uint8_t> PackDcapQuote(const IntelQeQuote &quote) {
             quote.cert_data.qe_cert_data.end(), std::back_inserter(output));
 
   return output;
+}
+
+StatusOr<Assertion> PackedQuoteToAssertion(ByteContainerView packed_quote) {
+  ASYLO_RETURN_IF_ERROR(ParseDcapPackedQuote(packed_quote));
+
+  Assertion assertion;
+  SetSgxIntelEcdsaQeRemoteAssertionDescription(assertion.mutable_description());
+  assertion.set_assertion(packed_quote.data(), packed_quote.size());
+
+  return assertion;
+}
+
+StatusOr<std::vector<uint8_t>> AssertionToPackedQuote(
+    const Assertion &assertion) {
+  if (assertion.description().identity_type() != CODE_IDENTITY) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Assertion contained invalid identity type: ",
+                               assertion.description().identity_type()));
+  }
+
+  if (assertion.description().authority_type() !=
+      kSgxIntelEcdsaQeRemoteAssertionAuthority) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Assertion contained invalid authority type: ",
+                               assertion.description().authority_type()));
+  }
+
+  ASYLO_RETURN_IF_ERROR(ParseDcapPackedQuote(assertion.assertion()));
+
+  return std::vector<uint8_t>{assertion.assertion().begin(),
+                              assertion.assertion().end()};
 }
 
 }  // namespace sgx
