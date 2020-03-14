@@ -4861,9 +4861,9 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/signal.c ./libgloss/enclave
 +
 +#include <errno.h>
 +#include <signal.h>
++#include <sys/syscall.h>
 +
 +#include "enclave_syscalls.h"
-+#include "sysnos.h"
 +
 +int sigaction(int signum, const struct sigaction *act,
 +              struct sigaction *oldact) {
@@ -11324,7 +11324,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/poll.h .
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 +++ ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,120 @@
 +#ifndef _SYS__PTHREADTYPES_H
 +#define _SYS__PTHREADTYPES_H
 +
@@ -11359,8 +11359,9 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthread
 +  pthread_spinlock_t _lock;
 +  pthread_t _owner;
 +  __pthread_list_t _queue;
-+  int32_t * _untrusted_wait_queue;
++  int32_t *_untrusted_wait_queue;
 +} pthread_mutex_t;
++
 +#define _ASYLO_PTHREAD_MUTEX_TRANSITIONAL_FLAG 1
 +#define PTHREAD_T_NULL ((pthread_t)(NULL))
 +#define PTHREAD_LIST_INITIALIZER \
@@ -11372,13 +11373,13 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthread
 +#define PTHREAD_MUTEX_NONRECURSIVE_INITIALIZER                   \
 +  {                                                              \
 +    0, PTHREAD_MUTEX_NONRECURSIVE, PTHREAD_SPINLOCK_INITIALIZER, \
-+        PTHREAD_T_NULL, PTHREAD_LIST_INITIALIZER, \
-+        PTHREAD_WAIT_QUEUE_INITIALIZER                 \
++        PTHREAD_T_NULL, PTHREAD_LIST_INITIALIZER,                \
++        PTHREAD_WAIT_QUEUE_INITIALIZER                           \
 +  }
-+#define PTHREAD_MUTEX_RECURSIVE_INITIALIZER                                \
++#define PTHREAD_MUTEX_RECURSIVE_INITIALIZER                                   \
 +  {                                                                           \
 +    0, PTHREAD_MUTEX_RECURSIVE, PTHREAD_SPINLOCK_INITIALIZER, PTHREAD_T_NULL, \
-+        PTHREAD_LIST_INITIALIZER, PTHREAD_WAIT_QUEUE_INITIALIZER                   \
++        PTHREAD_LIST_INITIALIZER, PTHREAD_WAIT_QUEUE_INITIALIZER              \
 +  }
 +#define PTHREAD_MUTEX_INITIALIZER PTHREAD_MUTEX_NONRECURSIVE_INITIALIZER
 +
