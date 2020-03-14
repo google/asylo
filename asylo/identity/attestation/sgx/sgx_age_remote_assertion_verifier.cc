@@ -105,10 +105,10 @@ Status SgxAgeRemoteAssertionVerifier::Initialize(const std::string &config) {
       AuthorityType());
 
   sgx::RemoteAssertionRequestAdditionalInfo additional_info;
-  *additional_info.add_root_ca_certificates() =
-      authority_config.intel_root_certificate();
   additional_info.mutable_root_ca_certificates()->CopyFrom(
       authority_config.root_ca_certificates());
+  *additional_info.add_root_ca_certificates() =
+      authority_config.intel_root_certificate();
 
   if (!additional_info.SerializeToString(
           members_view->assertion_request.mutable_additional_information())) {

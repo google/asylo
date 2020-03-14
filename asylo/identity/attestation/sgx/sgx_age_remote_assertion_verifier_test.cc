@@ -333,17 +333,19 @@ TEST(SgxAgeRemoteAssertionVerifierTest, CreateAssertionRequestSuccess) {
   SgxAgeRemoteAssertionVerifier verifier;
   ASYLO_ASSERT_OK(verifier.Initialize(config.SerializeAsString()));
 
-  AssertionRequest expected_request;
-  SetSgxAgeRemoteAssertionDescription(expected_request.mutable_description());
-  sgx::RemoteAssertionRequestAdditionalInfo additional_info;
-  *additional_info.mutable_root_ca_certificates() =
-      config.root_ca_certificates();
-  ASSERT_TRUE(additional_info.SerializeToString(
-      expected_request.mutable_additional_information()));
+  AssertionDescription sgx_age_remote_description;
+  SetSgxAgeRemoteAssertionDescription(&sgx_age_remote_description);
 
   AssertionRequest request;
   ASYLO_ASSERT_OK(verifier.CreateAssertionRequest(&request));
-  EXPECT_THAT(request, EqualsProto(expected_request));
+  EXPECT_THAT(request.description(), EqualsProto(sgx_age_remote_description));
+
+  sgx::RemoteAssertionRequestAdditionalInfo additional_request_info;
+  ASSERT_TRUE(additional_request_info.ParseFromString(
+      request.additional_information()));
+  EXPECT_THAT(additional_request_info.root_ca_certificates(),
+              testing::UnorderedElementsAre(EqualsProto(GetFakeIntelRoot()),
+                                            EqualsProto(GetAdditionalRoot())));
 }
 
 TEST(SgxAgeRemoteAssertionVerifierTest, CanVerifyUninitialized) {
