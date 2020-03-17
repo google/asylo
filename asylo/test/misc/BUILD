@@ -272,17 +272,6 @@ debug_sign_enclave(
     unsigned = ":block_enclave_entries_test_unsigned.so",
 )
 
-TEST_DEPS_COMMON = [
-    "@com_google_googletest//:gtest",
-    "@com_google_absl//absl/memory",
-    "//asylo:enclave_client",
-    "//asylo/util:logging",
-    "//asylo/test/util:enclave_test",
-    "//asylo/test/util:status_matchers",
-    "//asylo/test/util:test_main",
-    "//asylo/util:status",
-]
-
 # Smoke tests for enclaves; currently identical to hello_world_test.
 enclave_test(
     name = "enclave_smoke_test",
@@ -290,7 +279,16 @@ enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":test_enclave_smoke.so"},
     test_args = ["--enclave_path='{enclave}'"],
-    deps = TEST_DEPS_COMMON,
+    deps = [
+        "//asylo:enclave_client",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
+    ],
 )
 
 sgx.enclave_configuration(
@@ -350,7 +348,16 @@ sgx_enclave_test(
         "noregression",
     ],
     test_args = ["--enclave_path='{enclave}'"],
-    deps = TEST_DEPS_COMMON,
+    deps = [
+        "//asylo:enclave_client",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
+    ],
 )
 
 cc_enclave_test(
@@ -506,7 +513,15 @@ enclave_test(
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":enclave_entry_count_test_cc_proto",
-    ] + TEST_DEPS_COMMON,
+        "//asylo:enclave_client",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
+    ],
 )
 
 enclave_test(
@@ -517,9 +532,17 @@ enclave_test(
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":signal_test_cc_proto",
+        "//asylo:enclave_client",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-    ] + TEST_DEPS_COMMON,
+        "@com_google_googletest//:gtest",
+    ],
 )
 
 enclave_test(
@@ -530,7 +553,15 @@ enclave_test(
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":signal_test_cc_proto",
-    ] + TEST_DEPS_COMMON,
+        "//asylo:enclave_client",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
+    ],
 )
 
 enclave_test(
@@ -539,7 +570,16 @@ enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":error_propagation_enclave.so"},
     test_args = ["--enclave_path='{enclave}'"],
-    deps = TEST_DEPS_COMMON,
+    deps = [
+        "//asylo:enclave_client",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
+    ],
 )
 
 enclave_test(
@@ -549,9 +589,17 @@ enclave_test(
     enclaves = {"enclave": ":logging.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
-        "@com_google_absl//absl/flags:flag",
+        "//asylo:enclave_client",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
-    ] + TEST_DEPS_COMMON,
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
+    ],
 )
 
 enclave_test(
@@ -562,8 +610,16 @@ enclave_test(
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":block_enclave_entries_test_cc_proto",
+        "//asylo:enclave_client",
         "//asylo/platform/storage/utils:fd_closer",
-    ] + TEST_DEPS_COMMON,
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
+    ],
 )
 
 transitions.cc_binary(
@@ -596,10 +652,18 @@ sgx_enclave_test(
         "--enclave_path='{enclave}'",
     ],
     deps = [
+        "//asylo:enclave_client",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:exec_tester",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
         "@bazel_tools//tools/cpp/runfiles",
         "@com_google_absl//absl/flags:flag",
-        "//asylo/test/util:exec_tester",
-    ] + TEST_DEPS_COMMON,
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
+    ],
 )
 
 transitions.cc_binary(
@@ -630,11 +694,19 @@ enclave_test(
     ],
     deps = [
         ":exception",
+        "//asylo:enclave_client",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:exec_tester",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
         "@bazel_tools//tools/cpp/runfiles",
         "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
-        "//asylo/test/util:exec_tester",
-    ] + TEST_DEPS_COMMON,
+        "@com_google_googletest//:gtest",
+    ],
 )
 
 # The name of the ELF section to use for testing in embedded_enclave_test.
@@ -684,7 +756,16 @@ sgx_enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":threaded_finalize.so"},
     test_args = ["--enclave_path='{enclave}'"],
-    deps = TEST_DEPS_COMMON,
+    deps = [
+        "//asylo:enclave_client",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
+    ],
 )
 
 cc_unsigned_enclave(
