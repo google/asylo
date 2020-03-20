@@ -153,7 +153,8 @@ VerifyCertificateChainsAndExtractIntelCertificateChain(
 }
 
 Status VerifyAgeExpectation(const IdentityAclPredicate &age_expectation,
-                            const CertificateInterface *attestation_key_cert) {
+                            const CertificateInterface *attestation_key_cert,
+                            const MachineConfiguration &machine_config) {
   // Verify that the Intel certificate chain asserts the expected AGE identity.
   AttestationKeyCertificateImpl const *ak_cert =
       dynamic_cast<AttestationKeyCertificateImpl const *>(attestation_key_cert);
@@ -162,9 +163,12 @@ Status VerifyAgeExpectation(const IdentityAclPredicate &age_expectation,
                   "Attestation key certificate not provided as part of the "
                   "Intel certificate chain");
   }
+
+  SgxIdentity age_sgx_identity = ak_cert->GetAssertedSgxIdentity();
+  *age_sgx_identity.mutable_machine_configuration() = machine_config;
+
   EnclaveIdentity age_identity;
-  ASYLO_ASSIGN_OR_RETURN(
-      age_identity, SerializeSgxIdentity(ak_cert->GetAssertedSgxIdentity()));
+  ASYLO_ASSIGN_OR_RETURN(age_identity, SerializeSgxIdentity(age_sgx_identity));
   std::string explanation;
   SgxIdentityExpectationMatcher matcher;
   StatusOr<bool> age_match_result = EvaluateIdentityAcl(
@@ -308,15 +312,19 @@ Status VerifyRemoteAssertion(
                         intel_cert_chain.size(), kIntelCertChainMinimumLength));
   }
 
+  MachineConfiguration peer_machine_config;
+  ASYLO_ASSIGN_OR_RETURN(peer_machine_config,
+                         ExtractMachineConfiguration(
+                             intel_cert_chain[kPckCertificateIndex].get()));
+
   ASYLO_RETURN_IF_ERROR(VerifyAgeExpectation(
       age_identity_expectation,
-      intel_cert_chain[kAttestationKeyCertificateIndex].get()));
+      intel_cert_chain[kAttestationKeyCertificateIndex].get(),
+      peer_machine_config));
 
   // Extract the code identity.
   *identity = payload.identity();
-  ASYLO_ASSIGN_OR_RETURN(*identity->mutable_machine_configuration(),
-                         ExtractMachineConfiguration(
-                             intel_cert_chain[kPckCertificateIndex].get()));
+  *identity->mutable_machine_configuration() = std::move(peer_machine_config);
 
   return Status::OkStatus();
 }

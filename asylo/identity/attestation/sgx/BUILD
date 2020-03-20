@@ -246,6 +246,7 @@ cc_test(
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity/attestation/sgx/internal:remote_assertion_cc_proto",
         "//asylo/identity/attestation/sgx/internal:remote_assertion_util",
+        "//asylo/identity/platform/sgx:machine_configuration_cc_proto",
         "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
         "//asylo/identity/provisioning/sgx/internal:fake_sgx_pki",
         "//asylo/identity/sgx:code_identity_constants",

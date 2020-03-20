@@ -129,6 +129,15 @@ constexpr char kUserData[] = "User Data";
 
 constexpr char kCpuSvn[] = "fedcba9876543210";
 
+MachineConfiguration CreateMachineConfiguration() {
+  MachineConfiguration machine_config;
+
+  machine_config.mutable_cpu_svn()->set_value(kCpuSvn);
+  machine_config.set_sgx_type(STANDARD);
+
+  return machine_config;
+}
+
 StatusOr<std::unique_ptr<CertificateInterface>> CreateX509Certificate(
     const VerifyingKey &subject_key, const std::string &subject_name,
     const SigningKey &issuer_key, const std::string &issuer_name, bool is_ca,
@@ -207,10 +216,7 @@ Certificate Cert(Certificate::CertificateFormat format,
 
 SgxIdentity GetSelfRemoteIdentity() {
   SgxIdentity self_identity = GetSelfSgxIdentity();
-  MachineConfiguration *machine_config =
-      self_identity.mutable_machine_configuration();
-  machine_config->mutable_cpu_svn()->set_value(kCpuSvn);
-  machine_config->set_sgx_type(STANDARD);
+  *self_identity.mutable_machine_configuration() = CreateMachineConfiguration();
   return self_identity;
 }
 
@@ -314,12 +320,13 @@ StatusOr<RemoteAssertionInputs> GenerateRemoteAssertionInputs() {
                                            &age_identity)) {
     return Status(error::GoogleError::INTERNAL, "Failed to parse AGE identity");
   }
+  *age_identity.mutable_machine_configuration() = CreateMachineConfiguration();
 
   SgxIdentityExpectation age_sgx_expectation;
   ASYLO_ASSIGN_OR_RETURN(
       age_sgx_expectation,
       CreateSgxIdentityExpectation(age_identity,
-                                   SgxIdentityMatchSpecOptions::STRICT_LOCAL));
+                                   SgxIdentityMatchSpecOptions::STRICT_REMOTE));
 
   ASYLO_ASSIGN_OR_RETURN(*inputs.age_expectation.mutable_expectation(),
                          SerializeSgxIdentityExpectation(age_sgx_expectation));

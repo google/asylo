@@ -30,6 +30,7 @@
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
@@ -70,7 +71,6 @@ constexpr char kAttestationKeyCertificateDerHex[] =
     "9e6630a39b0406d81b63f8faa5db12203e81f00dc10d5480437c3f78ea21ea8f9c13168be6"
     "db18d5c248b0350eb473e1";
 
-// The identity for |kAttestationKeyCertificateDerHex|.
 constexpr char kAttestationKeyCertificateIdentity[] = R"pb(
   code_identity {
     mrenclave {
@@ -87,9 +87,8 @@ constexpr char kAttestationKeyCertificateIdentity[] = R"pb(
     attributes { flags: 51 xfrm: 163 }
   }
   machine_configuration {
-    cpu_svn {
-      value: "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
-    }
+    cpu_svn { value: "A fake TCB level" }
+    sgx_type: STANDARD
   }
 )pb";
 
@@ -180,7 +179,7 @@ StatusOr<SgxAgeRemoteAssertionAuthorityConfig> CreateValidConfig() {
   ASYLO_ASSIGN_OR_RETURN(
       age_sgx_expectation,
       CreateSgxIdentityExpectation(age_identity,
-                                   SgxIdentityMatchSpecOptions::STRICT_LOCAL));
+                                   SgxIdentityMatchSpecOptions::DEFAULT));
 
   ASYLO_ASSIGN_OR_RETURN(
       *config.mutable_age_identity_expectation()->mutable_expectation(),
