@@ -875,7 +875,7 @@ diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_encla
  {
      se_mutex_lock(&s_device_mutex);
  
-@@ -376,7 +379,15 @@
+@@ -389,7 +392,15 @@
          hdevice_temp = s_hdevice;
      }
      
@@ -892,7 +892,7 @@ diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_encla
      if (enclave_base == MAP_FAILED) {
          SE_TRACE(SE_TRACE_WARNING, "\ncreate enclave: mmap failed, errno = %d\n", errno);
          if (enclave_error != NULL)
-@@ -771,15 +782,7 @@
+@@ -784,15 +795,7 @@
  
          enclave_css_t* enclave_css = (enclave_css_t*)enclave_init_sgx->sigstruct;
          if (0 == enclave_css->header.hw_version) {
@@ -909,7 +909,7 @@ diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_encla
              if (status != SGX_SUCCESS) {
                  if (enclave_error != NULL)
                      *enclave_error = error_aesm2api(status);
-@@ -829,6 +832,13 @@
+@@ -842,6 +845,13 @@
      }
  
      se_mutex_lock(&s_enclave_mutex);
@@ -1929,7 +1929,7 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
 diff -Nur sdk/debugger_interface/linux/gdb-sgx-plugin/gdb_sgx_plugin.py sdk/debugger_interface/linux/gdb-sgx-plugin/gdb_sgx_plugin.py
 --- sdk/debugger_interface/linux/gdb-sgx-plugin/gdb_sgx_plugin.py
 +++ sdk/debugger_interface/linux/gdb-sgx-plugin/gdb_sgx_plugin.py
-@@ -700,10 +700,11 @@
+@@ -702,10 +702,11 @@
      ENCLAVES_ADDR.clear()
  
  def newobj_handler(event):
@@ -2900,33 +2900,7 @@ diff -Nur sdk/trts/init_enclave.cpp sdk/trts/init_enclave.cpp
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
  uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
  uint32_t g_cpu_core_num __attribute__((section(RELRO_SECTION_NAME))) = 0;
-@@ -185,6 +186,16 @@
-     if (heap_init(get_heap_base(), get_heap_size(), get_heap_min_size(), EDMM_supported) != SGX_SUCCESS)
-         return -1;
- 
-+    // The enclave heap needs to be cleared before being used. This code was
-+    // moved to before get_xfeature_state because in SIM get_xfeature_state
-+    // calls malloc.
-+    #ifndef SE_SIM
-+    if (!EDMM_supported)
-+    #endif
-+    {
-+       memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);
-+    }
-+
-     // xsave
-     uint64_t xfrm = get_xfeature_state();
- 
-@@ -219,7 +230,7 @@
-             return -1;
-     }
- 
--    
-+
-     if(SGX_SUCCESS != sgx_read_rand((unsigned char*)&__stack_chk_guard,
-                                      sizeof(__stack_chk_guard)))
-     {
-@@ -243,17 +254,17 @@
+@@ -247,17 +248,17 @@
      void *enclave_base = get_enclave_base();
      if(ENCLAVE_INIT_NOT_STARTED != lock_enclave())
      {
@@ -2949,14 +2923,6 @@ diff -Nur sdk/trts/init_enclave.cpp sdk/trts/init_enclave.cpp
      }
  
      /* for EDMM, we need to accept the trimming of the POST_REMOVE pages. */
-@@ -278,7 +289,6 @@
-     else
- #endif
-     {
--        memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);
-         memset_s(GET_PTR(void, enclave_base, g_global_data.rsrv_offset), g_global_data.rsrv_size, 0, g_global_data.rsrv_size);
-     }
- 
 diff -Nur sdk/trts/linux/trts_pic.S sdk/trts/linux/trts_pic.S
 --- sdk/trts/linux/trts_pic.S
 +++ sdk/trts/linux/trts_pic.S
