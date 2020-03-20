@@ -17,7 +17,9 @@
  */
 
 #include <pthread.h>
+#include <sched.h>
 #include <signal.h>
+#include <sys/mman.h>
 
 #include <array>
 #include <bitset>
@@ -32,6 +34,7 @@
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/include/semaphore.h"
 #include "asylo/platform/posix/pthread_impl.h"
+#include "asylo/platform/posix/syscall/enclave_clone.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/trusted_memory.h"
@@ -47,6 +50,7 @@ inline int InterlockedExchange(pthread_spinlock_t *dest,
 #ifndef PTHREAD_KEYS_MAX
 constexpr size_t PTHREAD_KEYS_MAX = 64;
 #endif
+
 thread_local std::array<const void *,
              PTHREAD_KEYS_MAX> thread_specific = {nullptr};
 
@@ -258,6 +262,22 @@ int pthread_rwlock_lock(pthread_rwlock_t *rwlock) {
   return ret;
 }
 
+#ifdef ASYLO_PTHREAD_TRANSITION
+struct start_args {
+  void *(*start_func)(void *);
+  void *start_arg;
+};
+
+int start(void *p) {
+  struct start_args *args = reinterpret_cast<struct start_args *>(p);
+  asylo::ThreadManager *const thread_manager =
+      asylo::ThreadManager::GetInstance();
+  thread_manager->UpdateThreadResult(pthread_self(),
+                                     args->start_func(args->start_arg));
+  return 0;
+}
+#endif
+
 }  // namespace
 
 namespace asylo {
@@ -362,10 +382,43 @@ pthread_t pthread_self() {
 
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                    void *(*start_routine)(void *), void *arg) {
+#ifdef ASYLO_PTHREAD_TRANSITION
+  // Store the __pthread_info and the start function in the TLS specified by
+  // pthread library, so it can be accessed by other pthread functions.
+  // The order is __pthread_info struct, then start function.
+  size_t size = sizeof(struct __pthread_info) + sizeof(struct start_args);
+  void *tls = mmap(/*addr=*/nullptr, size, PROT_READ | PROT_WRITE,
+                   MAP_PRIVATE | MAP_ANON, /*fd=*/-1, /*offset=*/0);
+  if (tls == MAP_FAILED) {
+    return -1;
+  }
+  memset(tls, 0, size);
+  auto thread_data = reinterpret_cast<struct __pthread_info *>(tls);
+  thread_data->self = thread_data;
+  thread_data->tls_size = size;
+  pthread_attr_t pthread_attr = {0};
+  if (attr) {
+    pthread_attr = *attr;
+    thread_data->attr = &pthread_attr;
+  }
+
+  struct start_args *args = reinterpret_cast<struct start_args *>(
+      reinterpret_cast<uintptr_t>(tls) + sizeof(struct __pthread_info));
+  args->start_func = start_routine;
+  args->start_arg = arg;
+  pid_t parent_tid;
+  int ret = enclave_clone(start, /*stack=*/nullptr, CLONE_THREAD | CLONE_SETTLS,
+                          args, &parent_tid, tls, /*child_tid=*/nullptr);
+  if (thread) {
+    *thread = thread_data->thread_id;
+  }
+  return ret;
+#else   // ASYLO_PTHREAD_TRANSITION
   asylo::ThreadManager *const thread_manager =
       asylo::ThreadManager::GetInstance();
   return thread_manager->CreateThread(std::bind(start_routine, arg),
                                       CreateOptions(attr), thread);
+#endif  // ASYLO_PTHREAD_TRANSITION
 }
 
 int pthread_join(pthread_t thread, void **value_ptr) {

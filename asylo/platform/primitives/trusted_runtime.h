@@ -63,6 +63,9 @@ asylo::primitives::PrimitiveStatus asylo_enclave_fini();
 // exported by each backend to support linking against libc.
 void *enclave_sbrk(intptr_t increment);
 
+// Updates the thread info of the current thread for pthread library to use.
+void enc_update_pthread_info(void *pthread_info);
+
 // Returns a unique identifier for the calling thread, which is guaranteed to be
 // a 64-bit non-zero scalar value on all architectures.
 uint64_t enc_thread_self();

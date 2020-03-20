@@ -18,6 +18,8 @@
 
 #include "asylo/platform/primitives/sgx/exit_handlers.h"
 
+#include <sys/syscall.h>
+
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/util/thread.h"
@@ -27,9 +29,11 @@ namespace primitives {
 namespace {
 
 void donate_thread(Client *sgx_client) {
+  primitives::MessageWriter in;
+  in.Push(syscall(SYS_gettid));
   primitives::MessageReader out;
   Status status =
-      sgx_client->EnclaveCall(kSelectorAsyloDonateThread, nullptr, &out);
+      sgx_client->EnclaveCall(kSelectorAsyloDonateThread, &in, &out);
   if (!out.empty()) {
     LOG(ERROR) << "Unexpected output size received from EnclaveCall to "
                   "kSelectorAsyloDonateThread";

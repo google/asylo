@@ -66,6 +66,19 @@ cc_library(
     alwayslink = 1,
 )
 
+cc_library(
+    name = "enclave_clone",
+    srcs = ["enclave_clone.cc"],
+    hdrs = ["enclave_clone.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    linkstatic = 1,
+    tags = ASYLO_ALL_BACKEND_TAGS,
+    deps = [
+        "//asylo/platform/posix/threading:thread_manager",
+    ],
+    alwayslink = 1,
+)
+
 cc_enclave_test(
     name = "enclave_syscall_test",
     srcs = ["enclave_syscall_test.cc"],

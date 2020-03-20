@@ -40,6 +40,8 @@ extern "C" int enclave_write(int fd, const void *buf, size_t count) {
 
 void enc_exit(int rc) { abort(); }
 
+void enc_update_pthread_info(void *pthread_info) { abort(); }
+
 uint64_t enc_thread_self() {
   static thread_local int thread_identity;
   return reinterpret_cast<uint64_t>(&thread_identity);

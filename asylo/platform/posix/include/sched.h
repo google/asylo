@@ -27,6 +27,11 @@
 extern "C" {
 #endif
 
+// The clone flags used in clone(2). Currently only creating a thread through
+// clone(2) is supported. Please use fork(2) for cloning a process.
+#define CLONE_THREAD 0x10000
+#define CLONE_SETTLS 0x80000
+
 // The maximum number of CPUs we support. Should match KLINUX_CPU_SET_MAX_CPUS
 // in asylo/platform/system_call/type_conversions/kernel_types.h.
 #define CPU_SETSIZE CPU_SET_MAX_CPUS

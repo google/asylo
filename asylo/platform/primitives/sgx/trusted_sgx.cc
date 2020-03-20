@@ -133,12 +133,16 @@ PrimitiveStatus FinalizeEnclave(void *context, MessageReader *in,
 PrimitiveStatus DonateThread(void *context, MessageReader *in,
                              MessageWriter *out) {
   if (in) {
-    ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
+    ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
   }
   int result = 0;
   try {
     ThreadManager *thread_manager = ThreadManager::GetInstance();
+#ifdef ASYLO_PTHREAD_TRANSITION
+    result = thread_manager->StartThread(in->next<pid_t>());
+#else
     result = thread_manager->StartThread();
+#endif
   } catch (...) {
     TrustedPrimitives::BestEffortAbort(
         "Uncaught exception in enclave entry handler: DonateThread. Failed to "

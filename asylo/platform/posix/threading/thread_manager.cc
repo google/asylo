@@ -19,6 +19,7 @@
 #include "asylo/platform/posix/threading/thread_manager.h"
 
 #include <pthread.h>
+#include <sys/mman.h>
 
 #include <algorithm>
 #include <cstdlib>
@@ -26,6 +27,7 @@
 
 #include "asylo/platform/posix/pthread_impl.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 
 namespace asylo {
 namespace {
@@ -45,16 +47,28 @@ using pthread_impl::PthreadMutexLock;
 
 bool ReturnFalse() { return false; }
 
+#ifdef ASYLO_PTHREAD_TRANSITION
+ThreadManager::Thread::Thread(const ThreadOptions &options,
+                              std::function<int()> start_routine, void *tls)
+    : start_routine_(std::move(start_routine)),
+      detached_(options.detached),
+      tls_(tls) {}
+#else
 ThreadManager::Thread::Thread(const ThreadOptions &options,
                               std::function<void *()> start_routine)
     : start_routine_(std::move(start_routine)), detached_(options.detached) {}
+#endif
 
 void ThreadManager::Thread::Run() {
   // Unblock anyone waiting for thread to start.
   UpdateThreadState(ThreadState::RUNNING);
 
   // Run the thread and store the start function's return value.
+#ifdef ASYLO_PTHREAD_TRANSITION
+  start_routine_();
+#else
   ret_ = start_routine_();
+#endif
 
   // Run cleanup routines, if any.
   RunCleanupRoutines();
@@ -76,6 +90,21 @@ pthread_t ThreadManager::Thread::GetThreadId() {
   PthreadMutexLock lock(&lock_);
   return thread_id_;
 }
+
+#ifdef ASYLO_PTHREAD_TRANSITION
+void *ThreadManager::Thread::GetThreadTls() {
+  PthreadMutexLock lock(&lock_);
+  return tls_;
+}
+
+void ThreadManager::Thread::SetTid(const pid_t tid) {
+  PthreadMutexLock lock(&lock_);
+  auto thread = reinterpret_cast<struct __pthread_info *>(thread_id_);
+  thread->tid = tid;
+}
+
+void ThreadManager::Thread::UpdateThreadResult(void *ret) { ret_ = ret; }
+#endif
 
 void ThreadManager::Thread::UpdateThreadState(const ThreadState &new_state) {
   PthreadMutexLock lock(&lock_);
@@ -139,6 +168,108 @@ ThreadManager *ThreadManager::GetInstance() {
   return instance;
 }
 
+#ifdef ASYLO_PTHREAD_TRANSITION
+std::shared_ptr<ThreadManager::Thread> ThreadManager::EnqueueThread(
+    const ThreadOptions &options, const std::function<int()> &start_routine,
+    void *tls) {
+  PthreadMutexLock lock(&threads_lock_);
+
+  queued_threads_.emplace(
+      std::make_shared<Thread>(options, start_routine, tls));
+  std::shared_ptr<Thread> thread = queued_threads_.back();
+
+  // If a Thread object cannot be allocated, abort.
+  CHECK(thread != nullptr);
+
+  pthread_cond_broadcast(&threads_cond_);
+  return thread;
+}
+
+std::shared_ptr<ThreadManager::Thread> ThreadManager::DequeueThread(pid_t tid) {
+  PthreadMutexLock lock(&threads_lock_);
+  // There should be a one-to-one mapping of threads donated to the enclave
+  // and threads created from above at the pthread API layer waiting to run.
+  // If a thread gets donated and there's no thread waiting to run, something
+  // has gone very wrong.
+  CHECK(!queued_threads_.empty());
+
+  std::shared_ptr<Thread> thread = queued_threads_.front();
+  queued_threads_.pop();
+
+  // Bind the Thread we just took off the queue to the thread id of the donated
+  // enclave thread we're running under.
+  const pthread_t thread_id = pthread_self();
+  thread->UpdateThreadId(thread_id);
+
+  threads_[thread_id] = thread;
+  thread->SetTid(tid);
+  reinterpret_cast<__pthread_info *>(thread->GetThreadTls())->thread_id =
+      thread_id;
+
+  pthread_cond_broadcast(&threads_cond_);
+  return thread;
+}
+
+int ThreadManager::CreateThread(const std::function<int()> &start_routine,
+                                pid_t *tid, void *tls) {
+  pthread_attr_t *attr = reinterpret_cast<struct __pthread_info *>(tls)->attr;
+  ThreadOptions options;
+  if (attr && attr->detach_state == PTHREAD_CREATE_DETACHED) {
+    options.detached = true;
+  }
+  std::shared_ptr<Thread> thread = EnqueueThread(options, start_routine, tls);
+
+  // Exit and create a thread to enter with EnclaveCall DonateThread.
+  if (asylo::primitives::TrustedPrimitives::CreateThread()) {
+    return ECHILD;
+  }
+
+  // Wait until a thread enters and executes the job.
+  thread->WaitForThreadToExitState(Thread::ThreadState::QUEUED);
+
+  if (tid) {
+    *tid = reinterpret_cast<struct __pthread_info *>(tls)->tid;
+  }
+
+  return 0;
+}
+
+// StartThread is called from trusted_application.cc as the start routine when
+// a new thread is donated to the Enclave.
+int ThreadManager::StartThread(pid_t tid) {
+  std::shared_ptr<Thread> thread = DequeueThread(tid);
+
+  // Update the thread info in pthread_self.
+  enc_update_pthread_info(thread->GetThreadTls());
+
+  // Run the start_routine.
+  thread->Run();
+
+  // Wait for the caller to join before releasing the thread if the thread is
+  // joinable.
+  thread->WaitForThreadToEnterState(Thread::ThreadState::JOINED,
+                                    std::bind(&Thread::detached, thread));
+
+  {
+    PthreadMutexLock threads_lock(&threads_lock_);
+    threads_.erase(pthread_self());
+    pthread_cond_broadcast(&threads_cond_);
+  }
+
+  // Thread finished execution, reset the thread ID and release the TLS memory.
+  munmap(reinterpret_cast<struct __pthread_info *>(pthread_self())->self,
+         reinterpret_cast<struct __pthread_info *>(pthread_self())->tls_size);
+  return 0;
+}
+
+void ThreadManager::UpdateThreadResult(const pthread_t thread_id, void *ret) {
+  std::shared_ptr<Thread> thread = GetThread(thread_id);
+  if (thread != nullptr) {
+    thread->UpdateThreadResult(ret);
+  }
+}
+
+#else   // ASYLO_PTHREAD_TRANSITION
 std::shared_ptr<ThreadManager::Thread> ThreadManager::EnqueueThread(
     const ThreadOptions &options,
     const std::function<void *()> &start_routine) {
@@ -215,6 +346,7 @@ int ThreadManager::StartThread() {
 
   return 0;
 }
+#endif  // ASYLO_PTHREAD_TRANSITION
 
 int ThreadManager::JoinThread(const pthread_t thread_id,
                               void **return_value_out) {

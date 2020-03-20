@@ -35,5 +35,6 @@ cc_library(
     deps = [
         "//asylo/platform/posix:pthread_impl",
         "//asylo/platform/primitives:trusted_primitives",
+        "//asylo/platform/primitives:trusted_runtime",
     ],
 )

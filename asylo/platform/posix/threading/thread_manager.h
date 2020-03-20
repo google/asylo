@@ -45,6 +45,23 @@ class ThreadManager {
     bool detached = false;
   };
 
+#ifdef ASYLO_PTHREAD_TRANSITION
+  // Adds the given |function| to a start_routine queue of functions waiting to
+  // be run by the pthreads implementation. |tid| updates the system thread ID
+  // of the new thread. |tls| specifies the pthread TLS address for the new
+  // thread, which stores the pthread info that's used by other pthread calls.
+  int CreateThread(const std::function<int()> &start_routine, pid_t *tid,
+                   void *tls);
+
+  // Removes a function from the start_routine queue and runs it. If no
+  // start_routine is present this function will abort(). |tid| is the system
+  // thread ID from the host.
+  int StartThread(pid_t tid);
+
+  // Updates the result of start function in the ThreadManager.
+  void UpdateThreadResult(pthread_t thread_id, void *ret);
+
+#else  // ASYLO_PTHREAD_TRANSITION
   // Adds the given |function| to a start_routine queue of functions waiting to
   // be run by the pthreads implementation. |thread_id_out| will be updated to
   // the pthread_t of the created thread. |options| contains options for
@@ -55,6 +72,7 @@ class ThreadManager {
   // Removes a function from the start_routine queue and runs it. If no
   // start_routine is present this function will abort().
   int StartThread();
+#endif
 
   // Waits till given |thread_id| has returned and assigns its returned void* to
   // |return_value|.
@@ -87,7 +105,22 @@ class ThreadManager {
     enum class ThreadState { QUEUED, RUNNING, DONE, JOINED };
 
     // Creates a thread in the QUEUED state with the specified |start_routine|.
+#ifdef ASYLO_PTHREAD_TRANSITION
+    Thread(const ThreadOptions &options, std::function<int()> start_routine,
+           void *tls);
+
+    // Sets the system thread ID |tid|.
+    void SetTid(pid_t tid);
+
+    // Updates the result from start function.
+    void UpdateThreadResult(void *ret);
+
+    // Accessor for the pthread TLS address.
+    void *GetThreadTls();
+
+#else  // ASYLO_PTHREAD_TRANSITION
     Thread(const ThreadOptions &options, std::function<void *()> start_routine);
+#endif
 
     ~Thread() = default;
 
@@ -137,8 +170,13 @@ class ThreadManager {
     // run the cleanup stack implicitly when thread execution ends.
     void RunCleanupRoutines();
 
+#ifdef ASYLO_PTHREAD_TRANSITION
     // Function passed to pthread_create() bound to its argument.
+    const std::function<int()> start_routine_;
+#else
+    // Function passed to clone(2) bound to its argument.
     const std::function<void *()> start_routine_;
+#endif
 
     // Return value of start_routine, set when Run() is complete.
     void *ret_;
@@ -152,6 +190,11 @@ class ThreadManager {
     ThreadState state_ = ThreadState::QUEUED;
     bool detached_ = false;
 
+#ifdef ASYLO_PTHREAD_TRANSITION
+    // The pthread TLS address that saves the thread info.
+    void *tls_;
+#endif
+
     // Stack of cleanup functions that have been pushed and not yet popped or
     // executed.
     std::stack<std::function<void()>> cleanup_functions_;
@@ -160,14 +203,23 @@ class ThreadManager {
   // Adds a Thread object with the given |options| and |start_routine| to
   // queued_threads_. Guaranteed to return a valid std::shared_ptr or this
   // function will abort.
+#ifdef ASYLO_PTHREAD_TRANSITION
+  std::shared_ptr<Thread> EnqueueThread(
+      const ThreadOptions &options, const std::function<int()> &start_routine,
+      void *tls);
+#else
   std::shared_ptr<Thread> EnqueueThread(
       const ThreadOptions &options,
       const std::function<void *()> &start_routine);
-
+#endif
   // Removes a Thread object from queued_threads_ and setups up the Thread with
   // pthread_self() as the thread id and adding it to the threads_ map.
   // Guaranteed to return a valid std::shared_ptr or this function will abort.
+#ifdef ASYLO_PTHREAD_TRANSITION
+  std::shared_ptr<Thread> DequeueThread(pid_t tid);
+#else
   std::shared_ptr<Thread> DequeueThread();
+#endif
 
   // Returns a Thread pointer for a given |thread_id|.
   std::shared_ptr<Thread> GetThread(pthread_t thread_id);
