@@ -32,7 +32,7 @@
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 #include "include/sgx_report.h"
-#include "QuoteGeneration/pce_wrapper/inc/sgx_pce.h"
+#include "QuoteGeneration/pce_wrapper/inc/sgx_pce_types.h"
 #include "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h"
 
 namespace asylo {

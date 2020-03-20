@@ -36,8 +36,8 @@
 #include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
-#include "QuoteGeneration/pce_wrapper/inc/sgx_pce.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h"
+#include "QuoteGeneration/pce_wrapper/inc/sgx_pce_types.h"
 #include "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h"
 
 namespace asylo {

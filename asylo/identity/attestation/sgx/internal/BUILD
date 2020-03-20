@@ -234,6 +234,7 @@ cc_library(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",
         "@linux_sgx//:public",
+        "@sgx_dcap//:pce_types",
         "@sgx_dcap//:quote_wrapper_common",
     ],
 )
@@ -262,6 +263,7 @@ cc_library(
     visibility = ["//asylo/identity/attestation/sgx:__pkg__"],
     deps = [
         "@linux_sgx//:public",
+        "@sgx_dcap//:pce_types",
         "@sgx_dcap//:quote_wrapper_common",
     ],
 )
@@ -274,6 +276,8 @@ cc_library(
     deps = [
         ":dcap_library_interface",
         "@linux_sgx//:public",
+        "@sgx_dcap//:pce_types",
+        "@sgx_dcap//:pce_wrapper",
         "@sgx_dcap//:quote_wrapper",
         "@sgx_dcap//:quote_wrapper_common",
     ],
@@ -291,6 +295,8 @@ cc_library(
     deps = [
         ":dcap_library_interface",
         "//asylo/platform/primitives/sgx:trusted_sgx",
+        "@sgx_dcap//:pce_types",
+        "@sgx_dcap//:quote_wrapper_common",
     ],
 )
 
@@ -444,6 +450,7 @@ cc_test(
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
         "@sgx_dcap//:pce_constants",
+        "@sgx_dcap//:pce_types",
         "@sgx_dcap//:quote_wrapper_common",
     ],
 )

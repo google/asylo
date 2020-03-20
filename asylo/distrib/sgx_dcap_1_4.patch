@@ -73,9 +73,37 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/common/src/se_map.
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h
 --- QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h
 +++ QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h
-@@ -0,0 +1,20 @@
-+#ifndef _SGX_PCE_CONSTANTS_H_
-+#define _SGX_PCE_CONSTANTS_H_
+@@ -0,0 +1,51 @@
++/*
++ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ *   * Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *   * Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in
++ *     the documentation and/or other materials provided with the
++ *     distribution.
++ *   * Neither the name of Intel Corporation nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
 +
 +/**
 + * File: sgx_pce_constants.h
@@ -83,6 +111,9 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sg
 + *
 + * Constants used in the PCE interface
 + */
++
++#ifndef _SGX_PCE_CONSTANTS_H_
++#define _SGX_PCE_CONSTANTS_H_
 +
 +/* PCE ID for the PCE in this library */
 +#define PCE_ID = 0;
@@ -97,22 +128,35 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sg
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sgx_pce.h QuoteGeneration/pce_wrapper/inc/sgx_pce.h
 --- QuoteGeneration/pce_wrapper/inc/sgx_pce.h
 +++ QuoteGeneration/pce_wrapper/inc/sgx_pce.h
-@@ -40,6 +40,11 @@
+@@ -33,56 +33,19 @@
+  * File: sgx_pce.h
+  * Description: Definition for pce interface.
+  *
+- * PCE interface and supporting structure definitions.
++ * PCE interface.
+  */
+ #ifndef _SGX_PCE_H_
+ #define _SGX_PCE_H_
  
  #include "sgx_key.h"
  #include "sgx_report.h"
 +#include "sgx_pce_constants.h"
-+
-+#ifdef _MSC_VER
-+#include <tchar.h>
-+#endif
++#include "sgx_pce_types.h"
  
- #define SGX_PCE_MK_ERROR(x)          (0x0000F000|(x))
- typedef enum _sgx_pce_error_t
-@@ -55,17 +60,6 @@
-     SGX_PCE_INVALID_TCB              = SGX_PCE_MK_ERROR(0x0008),      /* PCE could not sign at the requested TCB */
- } sgx_pce_error_t;
- 
+-#define SGX_PCE_MK_ERROR(x)          (0x0000F000|(x))
+-typedef enum _sgx_pce_error_t
+-{
+-    SGX_PCE_SUCCESS                  = SGX_PCE_MK_ERROR(0x0000),
+-    SGX_PCE_UNEXPECTED               = SGX_PCE_MK_ERROR(0x0001),      /* Unexpected error */
+-    SGX_PCE_INVALID_PARAMETER        = SGX_PCE_MK_ERROR(0x0002),      /* The parameter is incorrect */
+-    SGX_PCE_OUT_OF_EPC               = SGX_PCE_MK_ERROR(0x0003),      /* Not enough memory is available to complete this operation */
+-    SGX_PCE_INTERFACE_UNAVAILABLE    = SGX_PCE_MK_ERROR(0x0004),      /* SGX API is unavailable */
+-    SGX_PCE_INVALID_REPORT           = SGX_PCE_MK_ERROR(0x0005),      /* the report cannot be verified */
+-    SGX_PCE_CRYPTO_ERROR             = SGX_PCE_MK_ERROR(0x0006),      /* Cannot decrypt or verify ciphertext */
+-    SGX_PCE_INVALID_PRIVILEGE        = SGX_PCE_MK_ERROR(0x0007),      /* Not enough privilege to perform the operation */
+-    SGX_PCE_INVALID_TCB              = SGX_PCE_MK_ERROR(0x0008),      /* PCE could not sign at the requested TCB */
+-} sgx_pce_error_t;
+-
 -
 -/* PCE ID for the PCE in this library */
 -#define PCE_ID 0
@@ -124,10 +168,30 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sg
 -#define PCE_NIST_P256_ECDSA_SHA256 0
 -
 -
- //TODO: in qe pce common header
- /** Typedef enum _sgx_ql_request_policy */ 
- typedef enum _sgx_ql_request_policy
-@@ -91,6 +85,14 @@
+-//TODO: in qe pce common header
+-/** Typedef enum _sgx_ql_request_policy */ 
+-typedef enum _sgx_ql_request_policy
+-{
+-    SGX_QL_PERSISTENT, ///< QE is initialized on first use and reused until process ends.
+-    SGX_QL_EPHEMERAL,  ///< QE is initialized and terminated on every quote.
+-                       ///< If a previous QE exists, it is stopped & restarted before quoting.
+-    SGX_QL_DEFAULT = SGX_QL_PERSISTENT
+-} sgx_ql_request_policy_t;
+-
+-#pragma pack(push, 1)
+-/** Structure for the Platform Certificate Enclave identity information   */
+-typedef struct _sgx_pce_info_t {
+-    sgx_isv_svn_t pce_isv_svn;  ///< PCE ISVSVN
+-    uint16_t      pce_id;       ///< PCE ID.  It will change when something in the PCE would cause the PPID generation to change on the same platform
+-}sgx_pce_info_t;
+-#pragma pack(pop)
++#ifdef _MSC_VER
++#include <tchar.h>
++#endif
+ 
+ #if defined(__cplusplus)
+ extern "C" {
+@@ -91,6 +54,14 @@
  sgx_pce_error_t sgx_set_pce_enclave_load_policy(
                                sgx_ql_request_policy_t policy);
  
@@ -142,6 +206,89 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sg
  sgx_pce_error_t sgx_pce_get_target(
                                sgx_target_info_t *p_pce_target,
                                sgx_isv_svn_t *p_pce_isv_svn);
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sgx_pce_types.h QuoteGeneration/pce_wrapper/inc/sgx_pce_types.h
+--- QuoteGeneration/pce_wrapper/inc/sgx_pce_types.h
++++ QuoteGeneration/pce_wrapper/inc/sgx_pce_types.h
+@@ -0,0 +1,79 @@
++/*
++ * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *
++ *   * Redistributions of source code must retain the above copyright
++ *     notice, this list of conditions and the following disclaimer.
++ *   * Redistributions in binary form must reproduce the above copyright
++ *     notice, this list of conditions and the following disclaimer in
++ *     the documentation and/or other materials provided with the
++ *     distribution.
++ *   * Neither the name of Intel Corporation nor the names of its
++ *     contributors may be used to endorse or promote products derived
++ *     from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++/**
++ * File: sgx_pce_types.h
++ * Description: Type definitions for pce interface.
++ *
++ * PCE supporting structure definitions.
++ */
++
++#ifndef _SGX_PCE_TYPES_H_
++#define _SGX_PCE_TYPES_H_
++
++#include <stdint.h>
++
++#include "sgx_key.h"
++
++#define SGX_PCE_MK_ERROR(x)          (0x0000F000|(x))
++typedef enum _sgx_pce_error_t
++{
++    SGX_PCE_SUCCESS                  = SGX_PCE_MK_ERROR(0x0000),
++    SGX_PCE_UNEXPECTED               = SGX_PCE_MK_ERROR(0x0001),      /* Unexpected error */
++    SGX_PCE_INVALID_PARAMETER        = SGX_PCE_MK_ERROR(0x0002),      /* The parameter is incorrect */
++    SGX_PCE_OUT_OF_EPC               = SGX_PCE_MK_ERROR(0x0003),      /* Not enough memory is available to complete this operation */
++    SGX_PCE_INTERFACE_UNAVAILABLE    = SGX_PCE_MK_ERROR(0x0004),      /* SGX API is unavailable */
++    SGX_PCE_INVALID_REPORT           = SGX_PCE_MK_ERROR(0x0005),      /* the report cannot be verified */
++    SGX_PCE_CRYPTO_ERROR             = SGX_PCE_MK_ERROR(0x0006),      /* Cannot decrypt or verify ciphertext */
++    SGX_PCE_INVALID_PRIVILEGE        = SGX_PCE_MK_ERROR(0x0007),      /* Not enough privilege to perform the operation */
++    SGX_PCE_INVALID_TCB              = SGX_PCE_MK_ERROR(0x0008),      /* PCE could not sign at the requested TCB */
++} sgx_pce_error_t;
++
++/** Typedef enum _sgx_ql_request_policy */ 
++typedef enum _sgx_ql_request_policy
++{
++    SGX_QL_PERSISTENT, ///< QE is initialized on first use and reused until process ends.
++    SGX_QL_EPHEMERAL,  ///< QE is initialized and terminated on every quote.
++                       ///< If a previous QE exists, it is stopped & restarted before quoting.
++    SGX_QL_DEFAULT = SGX_QL_PERSISTENT
++} sgx_ql_request_policy_t;
++
++#pragma pack(push, 1)
++/** Structure for the Platform Certificate Enclave identity information   */
++typedef struct _sgx_pce_info_t {
++    sgx_isv_svn_t pce_isv_svn;  ///< PCE ISVSVN
++    uint16_t      pce_id;       ///< PCE ID.  It will change when something in the PCE would cause the PPID generation to change on the same platform
++}sgx_pce_info_t;
++#pragma pack(pop)
++
++#endif
++
++
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/linux/pce_parser.cpp QuoteGeneration/pce_wrapper/linux/pce_parser.cpp
 --- QuoteGeneration/pce_wrapper/linux/pce_parser.cpp
 +++ QuoteGeneration/pce_wrapper/linux/pce_parser.cpp
@@ -335,12 +482,26 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/pce_wr
          return SGX_PCE_INTERFACE_UNAVAILABLE;
  
      if (!pce_get_metadata(pce_enclave_path, &metadata))
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/qcnl/sgx_default_qcnl_wrapper.cpp QuoteGeneration/qcnl/sgx_default_qcnl_wrapper.cpp
+--- QuoteGeneration/qcnl/sgx_default_qcnl_wrapper.cpp
++++ QuoteGeneration/qcnl/sgx_default_qcnl_wrapper.cpp
+@@ -43,7 +43,7 @@
+ #include <algorithm>
+ #include <sgx_key.h>
+ #include "sgx_default_qcnl_wrapper.h"
+-#include "sgx_pce.h"
++#include "sgx_pce_types.h"
+ #include "network_wrapper.h"
+ #include "se_memcpy.h"
+ 
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h QuoteGeneration/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h
 --- QuoteGeneration/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h
 +++ QuoteGeneration/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h
-@@ -40,6 +40,11 @@
+@@ -39,7 +39,13 @@
+ #ifndef _SGX_QL_ECDSA_QUOTE_H_
  #define _SGX_QL_ECDSA_QUOTE_H_
  
++#include "sgx_pce_types.h"  // sgx_ql_request_policy_t
  #include "sgx_ql_quote.h"
 +#include "user_types.h"
 +
@@ -350,7 +511,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/comm
  
  /**
      Class definition of the reference ECDSA-P256 quoting code which implements the quoting interface, IQuote.
-@@ -48,6 +53,12 @@
+@@ -48,6 +54,12 @@
  public:
      virtual quote3_error_t set_enclave_load_policy(sgx_ql_request_policy_t policy);
  
@@ -363,7 +524,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/comm
      virtual quote3_error_t init_quote(sgx_ql_att_key_id_t* p_att_key_id,
                                        sgx_ql_cert_key_type_t certification_key_type,
                                        sgx_target_info_t *p_target_info,
-@@ -68,6 +79,12 @@
+@@ -68,6 +80,12 @@
  private:
      quote3_error_t ecdsa_set_enclave_load_policy(sgx_ql_request_policy_t policy);
  
@@ -376,11 +537,27 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/comm
      quote3_error_t ecdsa_init_quote(sgx_ql_cert_key_type_t certification_key_type,
                                      sgx_target_info_t *p_target_info,
                                      bool refresh_att_key,
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/common/inc/sgx_quote_3.h QuoteGeneration/quote_wrapper/common/inc/sgx_quote_3.h
+--- QuoteGeneration/quote_wrapper/common/inc/sgx_quote_3.h
++++ QuoteGeneration/quote_wrapper/common/inc/sgx_quote_3.h
+@@ -40,7 +40,7 @@
+ #define _SGX_QUOTE_3_H_
+ 
+ #include "sgx_report.h"
+-#include "sgx_pce.h"
++#include "sgx_pce_types.h"
+ 
+ #define REF_QUOTE_MAX_AUTHENTICATON_DATA_SIZE 64
+ #define USE_PCEID
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h
 --- QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h
 +++ QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h
-@@ -42,12 +42,22 @@
- #include "sgx_pce.h"
+@@ -39,15 +39,25 @@
+ #define _SGX_DCAP_QL_WRAPPER_H_
+ 
+ #include "sgx_report.h"
+-#include "sgx_pce.h"
++#include "sgx_pce_types.h"
  #include "sgx_ql_lib_common.h"
  
 +#if defined(_MSC_VER)
@@ -436,6 +613,42 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/ql/s
   * This API will allow the calling code to retrieve the target info of the QE.  This maps to the Initialize Quote
   * Attestation Key API of the core library.  It will be a simple wrapper around the core library's
   * sgx_ql_init_quote() API. The loading of the QE and the PCE will follow the selected loading policy. 
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quote/enclave/quoting_enclave_3.cpp QuoteGeneration/quote_wrapper/quote/enclave/quoting_enclave_3.cpp
+--- QuoteGeneration/quote_wrapper/quote/enclave/quoting_enclave_3.cpp
++++ QuoteGeneration/quote_wrapper/quote/enclave/quoting_enclave_3.cpp
+@@ -51,14 +51,14 @@
+ 
+ #include "qe3.h"
+ #include "user_types.h"
+-#include "sgx_pce.h"
++#include "sgx_pce_types.h"
+ #include "sgx_lfence.h"
+ 
+-  //Compile switches for debug and for currently unsupported features.
+-  //#define ALLOW_DEBUG_PCE 1
+-  //#define ALLOW_CLEARTEXT_PPID 1
+-  //#define USE_ALPHA_ENCRYPTION_KEY 1
+-  //#define GENERATE_RANDOM_ATTESTATION_KEY 1
++// Compile switches for debug and for currently unsupported features.
++//#define ALLOW_DEBUG_PCE 1
++//#define ALLOW_CLEARTEXT_PPID 1
++//#define USE_ALPHA_ENCRYPTION_KEY 1
++//#define GENERATE_RANDOM_ATTESTATION_KEY 1
+ 
+ #define REF_N_SIZE_IN_BYTES    384
+ #define REF_E_SIZE_IN_BYTES    4
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quote/inc/ecdsa_quote.h QuoteGeneration/quote_wrapper/quote/inc/ecdsa_quote.h
+--- QuoteGeneration/quote_wrapper/quote/inc/ecdsa_quote.h
++++ QuoteGeneration/quote_wrapper/quote/inc/ecdsa_quote.h
+@@ -40,7 +40,7 @@
+ #define _ECDSA_QUOTE_H_
+ 
+ #include "sgx_tseal.h"
+-#include "sgx_pce.h"
++#include "sgx_pce_types.h"
+ #include "sgx_quote_3.h"
+ 
+ #define REF_ECDSDA_AUTHENTICATION_DATA_SIZE 32
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quote/inc/sgx_ql_core_wrapper.h QuoteGeneration/quote_wrapper/quote/inc/sgx_ql_core_wrapper.h
 --- QuoteGeneration/quote_wrapper/quote/inc/sgx_ql_core_wrapper.h
 +++ QuoteGeneration/quote_wrapper/quote/inc/sgx_ql_core_wrapper.h
@@ -466,7 +679,16 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quote/qe_logic.cpp QuoteGeneration/quote_wrapper/quote/qe_logic.cpp
 --- QuoteGeneration/quote_wrapper/quote/qe_logic.cpp
 +++ QuoteGeneration/quote_wrapper/quote/qe_logic.cpp
-@@ -67,9 +67,11 @@
+@@ -53,6 +53,8 @@
+ #include "qe3.h"
+ #include "qe3_u.h"
+ #include "sgx_pce.h"
++#include "sgx_pce_constants.h"
++#include "sgx_pce_types.h"
+ #ifdef MSFT_COM_WRAPPER
+     #include "sgx_provision_certificate.h"
+ #endif
+@@ -67,9 +69,11 @@
      #define SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME_LEGACY "libdcap_quoteprov.so"
      #define TCHAR char
      #define _T(x) (x)
@@ -478,7 +700,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  #endif
  #define ECDSA_BLOB_LABEL "ecdsa_data.blob"
  
-@@ -163,6 +165,8 @@
+@@ -163,6 +167,8 @@
      se_mutex_t m_ecdsa_blob_mutex;
  
      sgx_ql_request_policy_t m_load_policy;
@@ -487,7 +709,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
      sgx_enclave_id_t m_eid;
      sgx_misc_attribute_t m_attributes;
      sgx_launch_token_t m_launch_token;
-@@ -171,6 +175,7 @@
+@@ -171,6 +177,7 @@
  
      ql_global_data():
          m_load_policy(SGX_QL_DEFAULT),
@@ -495,7 +717,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
          m_eid(0),
          m_pencryptedppid(NULL)
      {
-@@ -194,7 +199,10 @@
+@@ -194,7 +201,10 @@
      }
  };
  
@@ -507,7 +729,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  
  #ifdef ENABLE_QE3_LOGGING
  /* OCall functions for debug */
-@@ -445,24 +453,38 @@
+@@ -445,24 +455,38 @@
      if(!p_file_name || !p_file_path) {
          return false;
      }
@@ -560,7 +782,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
      }
  
      char* p_last_slash = strrchr(p_file_path, '/' );
-@@ -479,16 +501,18 @@
+@@ -479,16 +503,18 @@
      }
      (void)strncat(p_file_path,p_file_name, strnlen(p_file_name,buf_size));
      #else
@@ -587,7 +809,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  
      TCHAR *p_last_slash = _tcsrchr(p_file_path, _T('\\'));
      if (p_last_slash != NULL)
-@@ -1074,6 +1098,62 @@
+@@ -1074,6 +1100,62 @@
      return(refqt_ret);
  }
  
@@ -903,7 +1125,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationL
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,271 @@
+@@ -0,0 +1,287 @@
 +# Description: sgx_data_center_attestation_primitives is the Intel SGX Data
 +# Center Attestation Primitives library for linux.
 +
@@ -949,6 +1171,16 @@ diff -Nur /dev/null BUILD
 +)
 +
 +cc_library(
++    name = "pce_types",
++    hdrs = ["QuoteGeneration/pce_wrapper/inc/sgx_pce_types.h"],
++    copts = [
++        "-Iexternal/linux_sgx/include",
++    ],
++    visibility = ["//visibility:public"],
++    deps = ["@linux_sgx//:public"],
++)
++
++cc_library(
 +    name = "pce_constants",
 +    hdrs = ["QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h"],
 +    copts = [
@@ -969,6 +1201,7 @@ diff -Nur /dev/null BUILD
 +    name = "pce_wrapper",
 +    srcs = [
 +        "QuoteGeneration/ae/inc/aeerror.h",
++        "QuoteGeneration/pce_wrapper/inc/sgx_pce_types.h",
 +        "QuoteGeneration/pce_wrapper/linux/pce_parser.cpp",
 +        "QuoteGeneration/pce_wrapper/pce_wrapper.cpp",
 +    ],
@@ -981,12 +1214,14 @@ diff -Nur /dev/null BUILD
 +        "-Iexternal/sgx_dcap/QuoteGeneration/ae/common",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/ae/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/ae/inc/internal",
++        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
 +    ],
 +    visibility = ["//visibility:public"],
 +    deps = [
 +        ":common_inc_internal",
 +        ":parser",
 +        ":pce_constants",
++        ":pce_types",
 +        ":pce_untrusted",
 +        "@linux_sgx//:common_inc",
 +        "@linux_sgx//:untrusted_inc",
@@ -1013,7 +1248,6 @@ diff -Nur /dev/null BUILD
 +cc_library(
 +    name = "quote_wrapper_common",
 +    hdrs = [
-+        "QuoteGeneration/pce_wrapper/inc/sgx_pce.h",
 +        "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h",
 +        "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_quote.h",
 +        "QuoteGeneration/quote_wrapper/common/inc/sgx_quote_3.h",
@@ -1029,7 +1263,7 @@ diff -Nur /dev/null BUILD
 +        "//visibility:public",
 +    ],
 +    deps = [
-+        ":pce_constants",
++        ":pce_types",
 +        "@linux_sgx//:common_inc",
 +        "@linux_sgx//:public",
 +    ],
@@ -1052,6 +1286,7 @@ diff -Nur /dev/null BUILD
 +    strip_include_prefix = "QuoteGeneration/quote_wrapper/generated/",
 +    deps = [
 +        ":common_inc_internal",
++        ":pce_types",
 +        ":quote_wrapper_common",
 +        "@linux_sgx//:common_inc",
 +        "@linux_sgx//:public",
@@ -1062,6 +1297,7 @@ diff -Nur /dev/null BUILD
 +cc_library(
 +    name = "quote_wrapper",
 +    srcs = [
++        "QuoteGeneration/pce_wrapper/inc/sgx_pce.h",
 +        "QuoteGeneration/quote_wrapper/common/inc/user_types.h",
 +        "QuoteGeneration/quote_wrapper/generated/qe3_u.h",
 +        "QuoteGeneration/quote_wrapper/ql/sgx_dcap_ql_wrapper.cpp",
@@ -1078,7 +1314,7 @@ diff -Nur /dev/null BUILD
 +        "QuoteGeneration/quote_wrapper/quote/inc/sgx_ql_core_wrapper.h",
 +    ],
 +    copts = [
-+        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/generated",
++        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote/enclave",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
@@ -1098,6 +1334,8 @@ diff -Nur /dev/null BUILD
 +    ],
 +    deps = [
 +        ":common_inc_internal",
++        ":pce_constants",
++        ":pce_types",
 +        ":qe3_untrusted",
 +        ":quote_wrapper_common",
 +        "@linux_sgx//:common_inc",

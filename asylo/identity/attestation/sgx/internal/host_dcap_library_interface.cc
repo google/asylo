@@ -22,6 +22,7 @@
 
 #include "include/sgx_report.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce.h"
+#include "QuoteGeneration/pce_wrapper/inc/sgx_pce_types.h"
 #include "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h"
 #include "QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h"
 
