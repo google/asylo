@@ -145,6 +145,14 @@ TEST(FakeSgxPkiKeyTest, FakePckPairIsValid) {
   EXPECT_TRUE(*actual_verifying_key == *expected_verifying_key);
 }
 
+TEST(FakeSgxPkiTest, FakeSgxRootMatchesExpectedValue) {
+  Certificate expected_fake_root;
+  expected_fake_root.set_format(Certificate::X509_PEM);
+  expected_fake_root.set_data(kFakeSgxRootCa.certificate_pem.data(),
+                              kFakeSgxRootCa.certificate_pem.size());
+  EXPECT_THAT(GetFakeSgxRootCertificate(), EqualsProto(expected_fake_root));
+}
+
 TEST(FakeSgxPckCertChainTest, CertificateChainIsValid) {
   CertificateInterfaceVector certificate_chain;
   ASYLO_ASSERT_OK_AND_ASSIGN(

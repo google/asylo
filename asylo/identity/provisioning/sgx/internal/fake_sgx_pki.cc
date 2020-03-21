@@ -172,10 +172,15 @@ void AppendFakePckCertificateChain(CertificateChain *certificate_chain) {
       kFakeSgxProcessorCa.certificate_pem.data(),
       kFakeSgxProcessorCa.certificate_pem.size());
 
-  Certificate *fake_sgx_root_ca_cert = certificate_chain->add_certificates();
-  fake_sgx_root_ca_cert->set_format(Certificate::X509_PEM);
-  fake_sgx_root_ca_cert->set_data(kFakeSgxRootCa.certificate_pem.data(),
-                                  kFakeSgxRootCa.certificate_pem.size());
+  *certificate_chain->add_certificates() = GetFakeSgxRootCertificate();
+}
+
+Certificate GetFakeSgxRootCertificate() {
+  Certificate fake_sgx_root_ca_cert;
+  fake_sgx_root_ca_cert.set_format(Certificate::X509_PEM);
+  fake_sgx_root_ca_cert.set_data(kFakeSgxRootCa.certificate_pem.data(),
+                                 kFakeSgxRootCa.certificate_pem.size());
+  return fake_sgx_root_ca_cert;
 }
 
 CertificateChain GetFakePckCertificateChain() {

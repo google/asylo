@@ -60,6 +60,9 @@ extern const absl::string_view kFakePckPublicPem;
 // |certificate_chain|.
 void AppendFakePckCertificateChain(CertificateChain *certificate_chain);
 
+// Returns the root CA Certificate used by Asylo in the fake SGX PKI.
+Certificate GetFakeSgxRootCertificate();
+
 // Returns a fake certificate chain containing the following certificates:
 //   * PCK Certificate for kFakeSgxPck
 //   * Asylo Fake SGX Processor CA Certificate
