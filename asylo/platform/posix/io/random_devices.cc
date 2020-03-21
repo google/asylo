@@ -135,7 +135,7 @@ std::unique_ptr<io::IOManager::IOContext> RandomPathHandler::Open(
   if (is_random || is_urandom) {
     int fd = -1;
     if (!rdrand_supported()) {
-        fd = open(path, flags, mode);
+        fd = enc_untrusted_open(path, flags, mode);
         if (fd < 0) {
           return nullptr;
         }

@@ -60,7 +60,7 @@ static void CalculateAlignment(const void *buf, size_t size, size_t align_size,
 
 static bool cpuid_rdrand() {
   unsigned int eax, ebx, ecx, edx;
-  __cpuid(0, eax, ebx, ecx, edx);
+  __cpuid(1, eax, ebx, ecx, edx);
   // Bit 30 of ECX is set => machine supports RDRAND.
   return !!(ecx & (1 << 30));
 }

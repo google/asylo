@@ -47,6 +47,7 @@ cc_enclave_test(
     deps = [
         "//asylo/platform/posix/io:io_manager",
         "//asylo/platform/storage/utils:fd_closer",
+        "//asylo/test/util:status_matchers",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@boringssl//:crypto",

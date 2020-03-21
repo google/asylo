@@ -19,6 +19,7 @@
 #include <fcntl.h>
 #include <openssl/rand.h>
 #include <unistd.h>
+
 #include <algorithm>
 #include <string>
 
@@ -27,6 +28,7 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
+#include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -50,10 +52,20 @@ StatusOr<std::string> ReadRandomBytes(const char *path, size_t read_bytes,
     return Status(error::GoogleError::INTERNAL,
                   absl::StrCat("Invalid alignment requested: ", align_bytes));
   }
-  size_t count = read(fd, &buf[align_bytes], read_bytes);
+  size_t count = 0;
+  while (count < read_bytes) {
+    ssize_t status = read(fd, &buf[align_bytes + count], read_bytes - count);
+    if (status < 0) {
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("Cannot read ", path, " (", strerror(errno), ")"));
+    }
+    count += status;
+  }
   if (count != read_bytes) {
     return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("Cannot read ", path));
+                  absl::StrCat("Incorrect read amount (", count,
+                               " != ", read_bytes, ")"));
   }
 
   // If reading unaligned (start or end), return the unread part so the test can
@@ -82,11 +94,11 @@ TEST(DevicesTest, RandomHandlerTest) {
            ++align_bytes) {
         // Get random bytes.
         auto result1_or_error = ReadRandomBytes(path, read_bytes, align_bytes);
-        ASSERT_TRUE(result1_or_error.ok());
+        ASYLO_ASSERT_OK(result1_or_error);
         std::string result1 = result1_or_error.ValueOrDie();
         // Get random bytes again.
         auto result2_or_error = ReadRandomBytes(path, read_bytes, align_bytes);
-        ASSERT_TRUE(result2_or_error.ok());
+        ASYLO_ASSERT_OK(result2_or_error);
         std::string result2 = result2_or_error.ValueOrDie();
 
         // Check that we got different results (since it's random).
@@ -125,12 +137,12 @@ TEST(BoringSSLTest, RandomHandlerTest) {
   int read_bytes = 16;
   // Read bytes from Boring SSL.
   auto result1_or_error = ReadRandomBytesFromBoringSSL(read_bytes);
-  ASSERT_TRUE(result1_or_error.ok());
+  ASYLO_ASSERT_OK(result1_or_error);
   std::string result1 = result1_or_error.ValueOrDie();
 
   // Read bytes from Boring SSL again.
   auto result2_or_error = ReadRandomBytesFromBoringSSL(read_bytes);
-  ASSERT_TRUE(result2_or_error.ok());
+  ASYLO_ASSERT_OK(result2_or_error);
   std::string result2 = result2_or_error.ValueOrDie();
 
   // Check that we got different results (since it's random).
