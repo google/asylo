@@ -650,6 +650,7 @@ sgx_enclave_test(
     enclaves = {"enclave": ":die.so"},
     test_args = [
         "--enclave_path='{enclave}'",
+        "--loader_path=$(rootpath :double_die_host_bin)",
     ],
     deps = [
         "//asylo:enclave_client",
@@ -691,6 +692,7 @@ enclave_test(
     enclaves = {"enclave": ":exception.so"},
     test_args = [
         "--enclave_path='{enclave}'",
+        "--loader_path=$(rootpath :exception_app_host_bin)",
     ],
     deps = [
         ":exception",
@@ -701,7 +703,6 @@ enclave_test(
         "//asylo/test/util:test_main",
         "//asylo/util:logging",
         "//asylo/util:status",
-        "@bazel_tools//tools/cpp/runfiles",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",

@@ -20,11 +20,11 @@
 
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
-#include "tools/cpp/runfiles/runfiles.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/exec_tester.h"
 
-using bazel::tools::cpp::runfiles::Runfiles;
+ABSL_FLAG(std::string, loader_path, "", "Path to enclave loader");
+
 
 namespace asylo {
 namespace {
@@ -32,12 +32,7 @@ namespace {
 class DieTest : public ::testing::Test {
  public:
   void SetUp() override {
-    std::string error;
-    std::unique_ptr<Runfiles> runfiles(Runfiles::CreateForTest(&error));
-    ASSERT_NE(runfiles, nullptr) << error;
-
-    app_ = runfiles->Rlocation(
-        "com_google_asylo/asylo/test/misc/double_die_host_bin");
+    app_ = absl::GetFlag(FLAGS_loader_path);
   }
 
  protected:
