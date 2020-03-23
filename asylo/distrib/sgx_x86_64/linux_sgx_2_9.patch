@@ -875,7 +875,21 @@ diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_encla
  {
      se_mutex_lock(&s_device_mutex);
  
-@@ -389,7 +392,15 @@
+@@ -382,22 +385,38 @@
+         }
+         //The in-kernel driver does not do the base and size alignment. This is up to user mode to do it. 
+         //Therefore enclave_size will be virtual_size*2. The unused region will be released by calling munmap later.
+-        enclave_size = virtual_size*2;
++        //Don't do this for a forked enclave with provided |base_address|,
++        //because in this case |base_address| is the address of an existing
++        //enclave that is already aligned.
++        if (!base_address)
++        {
++            enclave_size = virtual_size*2;
++        }
+     }
+     else
+     {
          hdevice_temp = s_hdevice;
      }
      
@@ -892,7 +906,19 @@ diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_encla
      if (enclave_base == MAP_FAILED) {
          SE_TRACE(SE_TRACE_WARNING, "\ncreate enclave: mmap failed, errno = %d\n", errno);
          if (enclave_error != NULL)
-@@ -784,15 +795,7 @@
+             *enclave_error = ENCLAVE_OUT_OF_MEMORY;
+         return NULL;
+     }
+-    
+-    if(s_driver_type == SGX_DRIVER_IN_KERNEL)
++
++    // The alignment is not needed for forked enclave with provided
++    // |base_address|, since it's already aligned.
++    if(s_driver_type == SGX_DRIVER_IN_KERNEL && !base_address)
+     {
+         uint64_t aligned_addr = ((uint64_t)enclave_base + virtual_size - 1) & ~(virtual_size - 1);
+         if(aligned_addr != (uint64_t)enclave_base)
+@@ -784,15 +803,7 @@
  
          enclave_css_t* enclave_css = (enclave_css_t*)enclave_init_sgx->sigstruct;
          if (0 == enclave_css->header.hw_version) {
@@ -909,7 +935,7 @@ diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_encla
              if (status != SGX_SUCCESS) {
                  if (enclave_error != NULL)
                      *enclave_error = error_aesm2api(status);
-@@ -842,6 +845,13 @@
+@@ -842,6 +853,13 @@
      }
  
      se_mutex_lock(&s_enclave_mutex);
@@ -1326,12 +1352,13 @@ diff -Nur psw/urts/linux/sig_handler.cpp psw/urts/linux/sig_handler.cpp
 diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 --- psw/urts/linux/urts.cpp
 +++ psw/urts/linux/urts.cpp
-@@ -29,21 +29,23 @@
+@@ -29,21 +29,24 @@
   *
   */
  
 -
 +#include "arch.h"
++#include "edmm_utility.h"
 +#include "enclave.h"
  #include "sgx_error.h"
  #include "sgx_urts.h"
@@ -1353,7 +1380,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
      
      uint32_t i;
  
-@@ -65,6 +67,30 @@
+@@ -65,6 +68,44 @@
      return ((ex_features | _SGX_EX_FEATURES_MASK_) == _SGX_EX_FEATURES_MASK_);
  }
  
@@ -1372,6 +1399,20 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 +    if (asylo_config->base_address && *asylo_config->base_address &&
 +        asylo_config->enclave_size > 0)
 +    {
++        int driver_type = SGX_DRIVER_UNKNOWN;
++        if (!get_driver_type(&driver_type))
++        {
++            SE_TRACE(SE_TRACE_ERROR, "Could not get driver typed\n");
++            return SGX_ERROR_NO_DEVICE;
++        }
++        // For in kernel driver, the enclave memory address still contains VMAs
++        // after fork() on the host, they need to be unmapped before reserving
++        // the enclave memory.
++        if (driver_type == SGX_DRIVER_IN_KERNEL
++            && munmap(*asylo_config->base_address, asylo_config->enclave_size) != 0)
++        {
++            return SGX_ERROR_MEMORY_MAP_CONFLICT;
++        }
 +        void *reserved_address = mmap(*asylo_config->base_address,
 +                                      asylo_config->enclave_size, PROT_NONE,
 +                                      MAP_SHARED | MAP_ANONYMOUS, -1, 0);
@@ -1384,7 +1425,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
  extern "C" sgx_status_t __sgx_create_enclave_ex(const char *file_name, 
                                                  const int debug, 
                                                  sgx_launch_token_t *launch_token, 
-@@ -74,7 +100,10 @@
+@@ -74,7 +115,10 @@
                                                  const uint32_t ex_features,
                                                  const void* ex_features_p[32])
  {
@@ -1396,7 +1437,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
  
      //Only true or false is valid
      if(TRUE != debug &&  FALSE != debug)
-@@ -158,7 +187,10 @@
+@@ -158,7 +202,10 @@
                                                            const uint32_t ex_features,
                                                            const void* ex_features_p[32])
  {
