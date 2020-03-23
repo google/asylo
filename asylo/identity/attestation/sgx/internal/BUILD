@@ -273,6 +273,7 @@ cc_library(
     srcs = ["host_dcap_library_interface.cc"],
     hdrs = ["host_dcap_library_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = [
         ":dcap_library_interface",
         "@linux_sgx//:public",
