@@ -709,7 +709,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
      sgx_enclave_id_t m_eid;
      sgx_misc_attribute_t m_attributes;
      sgx_launch_token_t m_launch_token;
-@@ -171,6 +177,7 @@
+@@ -172,6 +178,7 @@
  
      ql_global_data():
          m_load_policy(SGX_QL_DEFAULT),
@@ -717,7 +717,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
          m_eid(0),
          m_pencryptedppid(NULL)
      {
-@@ -194,7 +201,10 @@
+@@ -196,7 +203,10 @@
      }
  };
  
@@ -729,7 +729,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  
  #ifdef ENABLE_QE3_LOGGING
  /* OCall functions for debug */
-@@ -445,24 +455,38 @@
+@@ -447,24 +457,38 @@
      if(!p_file_name || !p_file_path) {
          return false;
      }
@@ -782,7 +782,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
      }
  
      char* p_last_slash = strrchr(p_file_path, '/' );
-@@ -479,16 +503,18 @@
+@@ -481,16 +505,18 @@
      }
      (void)strncat(p_file_path,p_file_name, strnlen(p_file_name,buf_size));
      #else
@@ -809,7 +809,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  
      TCHAR *p_last_slash = _tcsrchr(p_file_path, _T('\\'));
      if (p_last_slash != NULL)
-@@ -1074,6 +1100,62 @@
+@@ -1077,6 +1103,62 @@
      return(refqt_ret);
  }
  
@@ -922,70 +922,6 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
          {
                  ret_val = SGX_QL_ERROR_UNEXPECTED;
          }
-diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h
---- QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h
-+++ QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h
-@@ -1,60 +0,0 @@
--/*
-- * Copyright (C) 2011-2019 Intel Corporation. All rights reserved.
-- *
-- * Redistribution and use in source and binary forms, with or without
-- * modification, are permitted provided that the following conditions
-- * are met:
-- *
-- *   * Redistributions of source code must retain the above copyright
-- *     notice, this list of conditions and the following disclaimer.
-- *   * Redistributions in binary form must reproduce the above copyright
-- *     notice, this list of conditions and the following disclaimer in
-- *     the documentation and/or other materials provided with the
-- *     distribution.
-- *   * Neither the name of Intel Corporation nor the names of its
-- *     contributors may be used to endorse or promote products derived
-- *     from this software without specific prior written permission.
-- *
-- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-- * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-- * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-- * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-- * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-- * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-- *
-- */
--
--#ifndef INTEL_SGX_QVL_QUOTE_CONSTANTS_H_
--#define INTEL_SGX_QVL_QUOTE_CONSTANTS_H_
--
--#include <array>
--
--namespace intel { namespace sgx { namespace qvl { namespace constants {
--
--const uint16_t QUOTE_VERSION = 3;
--
--const uint16_t ECDSA_256_WITH_P256_CURVE = 1;
--const uint16_t ECDSA_384_WITH_P384_CURVE = 2;
--constexpr size_t ECDSA_P256_SIGNATURE_BYTE_LEN = 64;
--constexpr size_t ENCLAVE_REPORT_BYTE_LEN = 384;
--
--const uint16_t PCK_ID_PLAIN_PPID = 1;
--const uint16_t PCK_ID_ENCRYPTED_PPID_2048 = 2;
--const uint16_t PCK_ID_ENCRYPTED_PPID_3072 = 3;
--const uint16_t PCK_ID_PCK_CERTIFICATE = 4;
--const uint16_t PCK_ID_PCK_CERT_CHAIN = 5;
--
--const std::array<uint16_t, 5> SUPPORTED_PCK_IDS = {{ PCK_ID_PLAIN_PPID, PCK_ID_ENCRYPTED_PPID_2048,
--    PCK_ID_ENCRYPTED_PPID_3072, PCK_ID_PCK_CERTIFICATE, PCK_ID_PCK_CERT_CHAIN }};
--
--const std::array<uint16_t, 1> ALLOWED_ATTESTATION_KEY_TYPES = {{ ECDSA_256_WITH_P256_CURVE }};
--const std::array<uint8_t, 16> INTEL_QE_VENDOR_ID = {{ 0x93, 0x9A, 0x72, 0x33, 0xF7, 0x9C, 0x4C, 0xA9, 0x94, 0x0A, 0x0D, 0xB3, 0x95, 0x7F, 0x06, 0x07 }};
--
--}}}} // namespace intel { namespace sgx { namespace qvl { namespace constants {
--
--#endif
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification.cpp QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification.cpp
 --- QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification.cpp
 +++ QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification.cpp
