@@ -72,6 +72,7 @@ namespace constants = ::intel::sgx::qvl::constants;
 using ::testing::ElementsAreArray;
 using ::testing::Eq;
 
+template <typename T>
 class DcapIntelArchitecturalEnclaveInterfaceE2eTest : public ::testing::Test {
  public:
   static void SetUpTestSuite() {
@@ -147,16 +148,24 @@ class DcapIntelArchitecturalEnclaveInterfaceE2eTest : public ::testing::Test {
   static EnclaveManager *enclave_manager_;
 
   DcapIntelArchitecturalEnclaveInterface enclave_interface_{
-      absl::make_unique<HostDcapLibraryInterface>()};
+      absl::make_unique<T>()};
 
  private:
   EnclaveClient *enclave_client_ = nullptr;
 };
 
-EnclaveManager
-    *DcapIntelArchitecturalEnclaveInterfaceE2eTest::enclave_manager_ = nullptr;
+using DcapLibraryInterfacesForTest = ::testing::Types<
+HostDcapLibraryInterface>;
 
-TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceTargetinfo) {
+TYPED_TEST_SUITE(DcapIntelArchitecturalEnclaveInterfaceE2eTest,
+                 DcapLibraryInterfacesForTest);
+
+template <typename T>
+EnclaveManager
+    *DcapIntelArchitecturalEnclaveInterfaceE2eTest<T>::enclave_manager_ =
+        nullptr;
+
+TYPED_TEST(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceTargetinfo) {
   SecsAttributeSet expected_attributes;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expected_attributes,
@@ -166,7 +175,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceTargetinfo) {
 
   Targetinfo targetinfo;
   uint16_t svn;
-  ASYLO_ASSERT_OK(enclave_interface_.GetPceTargetinfo(&targetinfo, &svn));
+  ASYLO_ASSERT_OK(this->enclave_interface_.GetPceTargetinfo(&targetinfo, &svn));
 
   EXPECT_THAT(svn, Eq(kExpectedPceSvn));
   EXPECT_THAT(targetinfo.attributes.flags, Eq(expected_attributes.flags));
@@ -174,10 +183,10 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceTargetinfo) {
   // from platform to platform.
 }
 
-TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceInfo) {
+TYPED_TEST(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceInfo) {
   Targetinfo pce_targetinfo;
   uint16_t pce_svn_from_get_target_info;
-  ASYLO_ASSERT_OK(enclave_interface_.GetPceTargetinfo(
+  ASYLO_ASSERT_OK(this->enclave_interface_.GetPceTargetinfo(
       &pce_targetinfo, &pce_svn_from_get_target_info));
 
   std::unique_ptr<RsaOaepDecryptionKey> ppid_decryption_key;
@@ -195,8 +204,8 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceInfo) {
                              CreateReportdataForGetPceInfo(ppid_ek_proto));
 
   Report report;
-  ASYLO_ASSERT_OK_AND_ASSIGN(report,
-                             GetEnclaveReport(pce_targetinfo, reportdata));
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      report, this->GetEnclaveReport(pce_targetinfo, reportdata));
 
   std::vector<uint8_t> ppid_ek;
   ASYLO_ASSERT_OK_AND_ASSIGN(ppid_ek, SerializePpidek(ppid_ek_proto));
@@ -205,7 +214,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceInfo) {
   uint16_t pce_svn;
   uint16_t pce_id;
   SignatureScheme signature_scheme;
-  ASYLO_ASSERT_OK(enclave_interface_.GetPceInfo(
+  ASYLO_ASSERT_OK(this->enclave_interface_.GetPceInfo(
       report, ppid_ek, ppid_decryption_key->GetEncryptionScheme(),
       &ppid_encrypted, &pce_svn, &pce_id, &signature_scheme));
 
@@ -220,37 +229,40 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceInfo) {
   EXPECT_THAT(ppid_decrypted.size(), Eq(kPpidSize));
 }
 
-TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, PceSignReport) {
+TYPED_TEST(DcapIntelArchitecturalEnclaveInterfaceE2eTest, PceSignReport) {
   Targetinfo pce_targetinfo;
   uint16_t pce_svn;
-  EXPECT_THAT(enclave_interface_.GetPceTargetinfo(&pce_targetinfo, &pce_svn),
-              IsOk());
+  EXPECT_THAT(
+      this->enclave_interface_.GetPceTargetinfo(&pce_targetinfo, &pce_svn),
+      IsOk());
 
   Reportdata reportdata;
   reportdata.data.fill('a');
   Report report;
-  ASYLO_ASSERT_OK_AND_ASSIGN(report,
-                             GetEnclaveReport(pce_targetinfo, reportdata));
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      report, this->GetEnclaveReport(pce_targetinfo, reportdata));
 
   std::string signature;
-  ASYLO_ASSERT_OK(enclave_interface_.PceSignReport(
+  ASYLO_ASSERT_OK(this->enclave_interface_.PceSignReport(
       report, pce_svn, report.body.cpusvn, &signature));
 
   ASSERT_THAT(signature.length(), Eq(kEcdsaP256SignatureSize));
 
 }
 
-TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetQeQuote) {
+TYPED_TEST(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetQeQuote) {
   Targetinfo targetinfo;
-  ASYLO_ASSERT_OK_AND_ASSIGN(targetinfo, enclave_interface_.GetQeTargetinfo());
+  ASYLO_ASSERT_OK_AND_ASSIGN(targetinfo,
+                             this->enclave_interface_.GetQeTargetinfo());
 
   Reportdata reportdata = TrivialRandomObject<Reportdata>();
   Report report;
-  ASYLO_ASSERT_OK_AND_ASSIGN(report, GetEnclaveReport(targetinfo, reportdata));
+  ASYLO_ASSERT_OK_AND_ASSIGN(report,
+                             this->GetEnclaveReport(targetinfo, reportdata));
 
   std::vector<uint8_t> packed_quote;
   ASYLO_ASSERT_OK_AND_ASSIGN(packed_quote,
-                             enclave_interface_.GetQeQuote(report));
+                             this->enclave_interface_.GetQeQuote(report));
 
   IntelQeQuote quote;
   ASYLO_ASSERT_OK_AND_ASSIGN(quote, ParseDcapPackedQuote(packed_quote));

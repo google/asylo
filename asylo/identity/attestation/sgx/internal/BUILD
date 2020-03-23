@@ -260,7 +260,7 @@ cc_library(
     name = "dcap_library_interface",
     hdrs = ["dcap_library_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo/identity/attestation/sgx:__pkg__"],
+    visibility = ["//asylo:implementation"],
     deps = [
         "@linux_sgx//:public",
         "@sgx_dcap//:pce_types",
