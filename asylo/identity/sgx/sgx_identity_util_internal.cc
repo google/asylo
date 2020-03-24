@@ -184,17 +184,16 @@ bool IsValidMatchSpec(const CodeIdentityMatchSpec &match_spec) {
          match_spec.has_attributes_match_mask();
 }
 
-CodeIdentity ParseCodeIdentityFromHardwareReport(const Report &report) {
+CodeIdentity ParseCodeIdentityFromHardwareReport(const ReportBody &report) {
   CodeIdentity identity;
-  identity.mutable_mrenclave()->set_hash(report.body.mrenclave.data(),
-                                          report.body.mrenclave.size());
+  identity.mutable_mrenclave()->set_hash(report.mrenclave.data(),
+                                         report.mrenclave.size());
   identity.mutable_signer_assigned_identity()->mutable_mrsigner()->set_hash(
-      report.body.mrsigner.data(), report.body.mrsigner.size());
-  identity.mutable_signer_assigned_identity()->set_isvprodid(
-      report.body.isvprodid);
-  identity.mutable_signer_assigned_identity()->set_isvsvn(report.body.isvsvn);
-  *identity.mutable_attributes() = report.body.attributes.ToProtoAttributes();
-  identity.set_miscselect(report.body.miscselect);
+      report.mrsigner.data(), report.mrsigner.size());
+  identity.mutable_signer_assigned_identity()->set_isvprodid(report.isvprodid);
+  identity.mutable_signer_assigned_identity()->set_isvsvn(report.isvsvn);
+  *identity.mutable_attributes() = report.attributes.ToProtoAttributes();
+  identity.set_miscselect(report.miscselect);
   return identity;
 }
 
@@ -442,10 +441,10 @@ bool IsValidExpectation(const SgxIdentityExpectation &expectation,
   return IsIdentityCompatibleWithMatchSpec(identity, spec, is_legacy);
 }
 
-SgxIdentity ParseSgxIdentityFromHardwareReport(const Report &report) {
+SgxIdentity ParseSgxIdentityFromHardwareReport(const ReportBody &report) {
   SgxIdentity identity;
   identity.mutable_machine_configuration()->mutable_cpu_svn()->set_value(
-      report.body.cpusvn.data(), report.body.cpusvn.size());
+      report.cpusvn.data(), report.cpusvn.size());
   *identity.mutable_code_identity() =
       ParseCodeIdentityFromHardwareReport(report);
   return identity;

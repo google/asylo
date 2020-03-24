@@ -205,7 +205,7 @@ AttestationKeyCertificateImpl::Create(const Certificate &certificate) {
 }
 
 SgxIdentity AttestationKeyCertificateImpl::GetAssertedSgxIdentity() const {
-  return ParseSgxIdentityFromHardwareReport(report_);
+  return ParseSgxIdentityFromHardwareReport(report_.body);
 }
 
 bool AttestationKeyCertificateImpl::operator==(

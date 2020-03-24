@@ -53,7 +53,7 @@ SelfIdentity::SelfIdentity() {
   isvprodid = report.body.isvprodid;
   isvsvn = report.body.isvsvn;
 
-  sgx_identity = ParseSgxIdentityFromHardwareReport(report);
+  sgx_identity = ParseSgxIdentityFromHardwareReport(report.body);
 }
 
 }  // namespace sgx

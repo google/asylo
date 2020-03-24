@@ -183,7 +183,8 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
 
   // Serialize the protobuf representation of the peer's SGX identity and save
   // it in |peer_identity|.
-  SgxIdentity sgx_identity = sgx::ParseSgxIdentityFromHardwareReport(report);
+  SgxIdentity sgx_identity =
+      sgx::ParseSgxIdentityFromHardwareReport(report.body);
   ASYLO_RETURN_IF_ERROR(sgx::SerializeSgxIdentity(sgx_identity, peer_identity));
 
   return Status::OkStatus();
