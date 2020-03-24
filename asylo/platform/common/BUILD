@@ -134,3 +134,17 @@ cc_library(
         ":time_util",
     ],
 )
+
+# Provide the current state of the enclave.
+cc_library(
+    name = "enclave_state",
+    srcs = ["enclave_state.cc"],
+    hdrs = ["enclave_state.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/platform/core:trusted_spin_lock",
+        "//asylo/util:lock_guard",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+    ],
+)

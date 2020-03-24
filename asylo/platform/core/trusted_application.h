@@ -69,23 +69,6 @@ namespace asylo {
 /// destructible, and any such destructor will never be invoked by the runtime.
 class TrustedApplication {
  public:
-  /// An enumeration of possible enclave runtime states.
-  enum class State {
-    /// Enclave initialization has not started.
-    kUninitialized,
-    /// Asylo internals are initializing.
-    kInternalInitializing,
-    /// Asylo internals are initialized. User-defined initialization is
-    /// in-progress.
-    kUserInitializing,
-    /// All initialization has completed. The enclave is running.
-    kRunning,
-    /// The enclave is finalizing.
-    kFinalizing,
-    /// The enclave has finalized.
-    kFinalized,
-  };
-
   /// \private
   Status InitializeInternal(const EnclaveConfig &config);
 
@@ -124,23 +107,8 @@ class TrustedApplication {
   /// enclave runtime.
   virtual ~TrustedApplication() = default;
 
-  /// Returns the enclave state in a thread-safe manner.
-  State GetState() ABSL_LOCKS_EXCLUDED(mutex_);
 
  private:
-  // Tracks the current enclave state.
-  State enclave_state_ ABSL_GUARDED_BY(mutex_) = State::kUninitialized;
-  absl::Mutex mutex_;
-
-  // Verifies the expected enclave state and sets a new one in thread-safe
-  // manner. Returns error if the verification fails.
-  asylo::Status VerifyAndSetState(const State &expected_state,
-                                  const State &new_state)
-      ABSL_LOCKS_EXCLUDED(mutex_);
-
-  // Sets the enclave state in thread-safe manner.
-  void SetState(const State &state) ABSL_LOCKS_EXCLUDED(mutex_);
-
   friend int __asylo_user_init(const char *name, const char *config,
                                size_t config_len, char **output,
                                size_t *output_len);

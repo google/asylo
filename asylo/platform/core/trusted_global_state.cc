@@ -18,6 +18,12 @@
 
 #include "asylo/platform/core/trusted_global_state.h"
 
+#include <string>
+
+#include "asylo/enclave.pb.h"
+#include "asylo/util/status.h"
+#include "asylo/util/statusor.h"
+
 namespace asylo {
 
 // Name of the enclave, as specified at the time the enclave was loaded.

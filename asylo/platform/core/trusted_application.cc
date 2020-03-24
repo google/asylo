@@ -29,10 +29,9 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/init.h"
+#include "asylo/platform/common/enclave_state.h"
 #include "asylo/platform/core/entry_selectors.h"
 #include "asylo/platform/core/shared_name_kind.h"
 #include "asylo/platform/core/trusted_global_state.h"
@@ -57,14 +56,13 @@ using ::asylo::primitives::MessageReader;
 using ::asylo::primitives::MessageWriter;
 using ::asylo::primitives::PrimitiveStatus;
 using ::asylo::primitives::TrustedPrimitives;
-using EnclaveState = ::asylo::TrustedApplication::State;
 using google::protobuf::RepeatedPtrField;
 
 namespace asylo {
 namespace {
 
 void LogError(const Status &status) {
-  EnclaveState state = GetApplicationInstance()->GetState();
+  EnclaveState state = GetState();
   if (state < EnclaveState::kUserInitializing) {
     // LOG() is unavailable here because the I/O subsystem has not yet been
     // initialized.
@@ -159,27 +157,6 @@ PrimitiveStatus Finalize(void *context, MessageReader *in, MessageWriter *out) {
 
 }  // namespace
 
-Status TrustedApplication::VerifyAndSetState(const EnclaveState &expected_state,
-                                             const EnclaveState &new_state) {
-  absl::MutexLock lock(&mutex_);
-  if (enclave_state_ != expected_state) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  ::absl::StrCat("Enclave is in state: ", enclave_state_,
-                                 " expected state: ", expected_state));
-  }
-  enclave_state_ = new_state;
-  return Status::OkStatus();
-}
-
-EnclaveState TrustedApplication::GetState() {
-  absl::MutexLock lock(&mutex_);
-  return enclave_state_;
-}
-
-void TrustedApplication::SetState(const EnclaveState &state) {
-  absl::MutexLock lock(&mutex_);
-  enclave_state_ = state;
-}
 
 Status VerifyOutputArguments(char **output, size_t *output_len) {
   if (!output || !output_len) {
@@ -307,22 +284,21 @@ int __asylo_user_init(const char *name, const char *config, size_t config_len,
     return status_serializer.Serialize(status);
   }
 
-  TrustedApplication *trusted_application = GetApplicationInstance();
-  status = trusted_application->VerifyAndSetState(
-      EnclaveState::kUninitialized, EnclaveState::kInternalInitializing);
+  status = VerifyAndSetState(EnclaveState::kUninitialized,
+                             EnclaveState::kInternalInitializing);
   if (!status.ok()) {
     return status_serializer.Serialize(status);
   }
 
   SetEnclaveName(name);
   // Invoke the enclave entry-point.
-  status = trusted_application->InitializeInternal(enclave_config);
+  status = GetApplicationInstance()->InitializeInternal(enclave_config);
   if (!status.ok()) {
-    trusted_application->SetState(EnclaveState::kUninitialized);
+    SetState(EnclaveState::kUninitialized);
     return status_serializer.Serialize(status);
   }
 
-  trusted_application->SetState(EnclaveState::kRunning);
+  SetState(EnclaveState::kRunning);
   return status_serializer.Serialize(status);
 }
 
@@ -344,15 +320,14 @@ int __asylo_user_run(const char *input, size_t input_len, char **output,
     return status_serializer.Serialize(status);
   }
 
-  TrustedApplication *trusted_application = GetApplicationInstance();
-  if (trusted_application->GetState() != EnclaveState::kRunning) {
+  if (GetState() != EnclaveState::kRunning) {
     status = Status(error::GoogleError::FAILED_PRECONDITION,
                     "Enclave not in state RUNNING");
     return status_serializer.Serialize(status);
   }
 
   // Invoke the enclave entry-point.
-  status = trusted_application->Run(enclave_input, &enclave_output);
+  status = GetApplicationInstance()->Run(enclave_input, &enclave_output);
   return status_serializer.Serialize(status);
 }
 
@@ -372,20 +347,18 @@ int __asylo_user_fini(const char *input, size_t input_len, char **output,
     return status_serializer.Serialize(status);
   }
 
-  TrustedApplication *trusted_application = GetApplicationInstance();
-  status = trusted_application->VerifyAndSetState(EnclaveState::kRunning,
-                                                  EnclaveState::kFinalizing);
+  status = VerifyAndSetState(EnclaveState::kRunning, EnclaveState::kFinalizing);
   if (!status.ok()) {
     return status_serializer.Serialize(status);
   }
 
   // Invoke the enclave entry-point.
-  status = trusted_application->Finalize(enclave_final);
+  status = GetApplicationInstance()->Finalize(enclave_final);
 
   ThreadManager *thread_manager = ThreadManager::GetInstance();
   thread_manager->Finalize();
 
-  trusted_application->SetState(EnclaveState::kFinalized);
+  SetState(EnclaveState::kFinalized);
   return status_serializer.Serialize(status);
 }
 

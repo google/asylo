@@ -133,6 +133,7 @@ cc_library(
         "//asylo:enclave_cc_proto",
         "//asylo/identity:init",
         "//asylo/platform/arch:trusted_arch",
+        "//asylo/platform/common:enclave_state",
         "//asylo/platform/posix/io:io_manager",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/posix/threading:thread_manager",
@@ -147,8 +148,6 @@ cc_library(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/synchronization",
     ],
     alwayslink = 1,
 )
