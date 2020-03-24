@@ -464,6 +464,7 @@ cc_library(
         "//asylo/identity/sgx:hardware_types",
         "//asylo/identity/sgx:pce_util",
         "//asylo/identity/sgx:sgx_identity_util",
+        "//asylo/identity/sgx:sgx_identity_util_internal",
         "//asylo/platform/common:static_map",
         "//asylo/util:error_codes",
         "//asylo/util:mutex_guarded",
