@@ -51,11 +51,18 @@ inline int InterlockedExchange(pthread_spinlock_t *dest,
 constexpr size_t PTHREAD_KEYS_MAX = 64;
 #endif
 
+#ifdef ASYLO_PTHREAD_TRANSITION
+static void (*tsd_destructors[PTHREAD_KEYS_MAX])(void *) = {0};
+static pthread_rwlock_t key_lock = PTHREAD_RWLOCK_INITIALIZER;
+static void NoDestructor(void *dummy) {}
+size_t __pthread_tsd_size = sizeof(void *) * PTHREAD_KEYS_MAX;
+#else  // ASYLO_PTHREAD_TRANSITION
 thread_local std::array<const void *,
              PTHREAD_KEYS_MAX> thread_specific = {nullptr};
 
 static pthread_mutex_t used_thread_keys_lock = PTHREAD_MUTEX_INITIALIZER;
 std::bitset<PTHREAD_KEYS_MAX> used_thread_keys;
+#endif
 
 inline int pthread_spin_lock(pthread_spinlock_t *lock) {
   while (InterlockedExchange(lock, 0, 1) != 0) {
@@ -263,6 +270,21 @@ int pthread_rwlock_lock(pthread_rwlock_t *rwlock) {
 }
 
 #ifdef ASYLO_PTHREAD_TRANSITION
+void pthread_tsd_run_destructors() {
+  struct __pthread_info *self =
+      reinterpret_cast<struct __pthread_info *>(pthread_self());
+  pthread_rwlock_rdlock(&key_lock);
+  for (int i = 0; i < PTHREAD_KEYS_MAX; ++i) {
+    void *val = self->tsd[i];
+    void (*destructor)(void *) = tsd_destructors[i];
+    self->tsd[i] = nullptr;
+    if (val && destructor && destructor != NoDestructor) {
+      destructor(val);
+    }
+  }
+  pthread_rwlock_unlock(&key_lock);
+}
+
 struct start_args {
   void *(*start_func)(void *);
   void *start_arg;
@@ -274,7 +296,25 @@ int start(void *p) {
       asylo::ThreadManager::GetInstance();
   thread_manager->UpdateThreadResult(pthread_self(),
                                      args->start_func(args->start_arg));
+  pthread_tsd_run_destructors();
   return 0;
+}
+
+// Allocate thread specific data for the calling thread if it hasn't yet been
+// allocated.
+bool CheckAndAllocateThreadSpecificData() {
+  auto self = reinterpret_cast<struct __pthread_info *>(pthread_self());
+  // This can only happen in the main thread or the threads created by the host
+  // entering the enclave.
+  if (!self->tsd) {
+    void *tsd = malloc(__pthread_tsd_size);
+    if (tsd == MAP_FAILED) {
+      return false;
+    }
+    memset(tsd, 0, __pthread_tsd_size);
+    self->tsd = reinterpret_cast<void **>(tsd);
+  }
+  return true;
 }
 #endif
 
@@ -386,7 +426,8 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
   // Store the __pthread_info and the start function in the TLS specified by
   // pthread library, so it can be accessed by other pthread functions.
   // The order is __pthread_info struct, then start function.
-  size_t size = sizeof(struct __pthread_info) + sizeof(struct start_args);
+  size_t size = sizeof(struct __pthread_info) + sizeof(struct start_args) +
+                __pthread_tsd_size;
   void *tls = mmap(/*addr=*/nullptr, size, PROT_READ | PROT_WRITE,
                    MAP_PRIVATE | MAP_ANON, /*fd=*/-1, /*offset=*/0);
   if (tls == MAP_FAILED) {
@@ -406,6 +447,11 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
       reinterpret_cast<uintptr_t>(tls) + sizeof(struct __pthread_info));
   args->start_func = start_routine;
   args->start_arg = arg;
+
+  void *tsd = reinterpret_cast<void *>(reinterpret_cast<uintptr_t>(tls) + size -
+                                       __pthread_tsd_size);
+  thread_data->tsd = reinterpret_cast<void **>(tsd);
+
   pid_t parent_tid;
   int ret = enclave_clone(start, /*stack=*/nullptr, CLONE_THREAD | CLONE_SETTLS,
                           args, &parent_tid, tls, /*child_tid=*/nullptr);
@@ -433,6 +479,7 @@ int pthread_detach(pthread_t thread) {
   return thread_manager->DetachThread(thread);
 }
 
+#ifndef ASYLO_PTHREAD_TRANSITION
 bool assign_key(pthread_key_t *key) {
   bool ret = false;
   pthread_key_t next_key;
@@ -447,22 +494,50 @@ bool assign_key(pthread_key_t *key) {
   }
   return ret;
 }
+#endif
 
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
+#ifdef ASYLO_PTHREAD_TRANSITION
+  if (!CheckAndAllocateThreadSpecificData()) {
+    return -1;
+  }
+  if (!destructor) {
+    destructor = NoDestructor;
+  }
+  pthread_rwlock_wrlock(&key_lock);
+  for (pthread_key_t next_key = 0; next_key < PTHREAD_KEYS_MAX; ++next_key) {
+    if (!tsd_destructors[next_key]) {
+      tsd_destructors[next_key] = destructor;
+      *key = next_key;
+      pthread_rwlock_unlock(&key_lock);
+      return 0;
+    }
+  }
+  pthread_rwlock_unlock(&key_lock);
+  return EAGAIN;
+#else  // ASYLO_PTHREAD_TRANSITION
   if (!assign_key(key)) {
     // Limit on the total number of keys per process has been exceeded.
     return EAGAIN;
   }
   return 0;
+#endif
 }
 
 int pthread_key_delete(pthread_key_t key) {
   if (key > PTHREAD_KEYS_MAX) {
     return EINVAL;
   }
+#ifdef ASYLO_PTHREAD_TRANSITION
+  pthread_rwlock_wrlock(&key_lock);
+  tsd_destructors[key] = nullptr;
+  pthread_rwlock_unlock(&key_lock);
+  return 0;
+#else  // ASYLO_PTHREAD_TRANSITION
   asylo::pthread_impl::PthreadMutexLock lock(&used_thread_keys_lock);
   used_thread_keys[key] = false;
   return 0;
+#endif
 }
 
 void *pthread_getspecific(pthread_key_t key) {
@@ -472,9 +547,17 @@ void *pthread_getspecific(pthread_key_t key) {
     return nullptr;
   }
 
+#ifdef ASYLO_PTHREAD_TRANSITION
+  if (!CheckAndAllocateThreadSpecificData()) {
+    return nullptr;
+  }
+  auto self = reinterpret_cast<struct __pthread_info *>(pthread_self());
+  return self->tsd[key];
+#else  // ASYLO_PTHREAD_TRANSTION
   // If the key is unset, this is to return nullptr. Because it is initialized
   // to nullptr, there is no need to check if it has been previously set.
   return const_cast<void *>(thread_specific[key]);
+#endif
 }
 
 int pthread_setspecific(pthread_key_t key, const void *value) {
@@ -483,8 +566,15 @@ int pthread_setspecific(pthread_key_t key, const void *value) {
   if (key >= PTHREAD_KEYS_MAX) {
     return EINVAL;
   }
-
+#ifdef ASYLO_PTHREAD_TRANSITION
+  if (!CheckAndAllocateThreadSpecificData()) {
+    return -1;
+  }
+  auto self = reinterpret_cast<struct __pthread_info *>(pthread_self());
+  self->tsd[key] = const_cast<void *>(value);
+#else  // ASYLO_PTHREAD_TRANSITION
   thread_specific[key] = value;
+#endif
   return 0;
 }
 // Initializes |mutex|, |attr| is unused.
