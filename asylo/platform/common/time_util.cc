@@ -62,6 +62,15 @@ int64_t TimeValToNanoseconds(const timeval *tv) {
          tv->tv_usec * kNanosecondsPerMicrosecond;
 }
 
+int64_t TimeSpecToMicroseconds(const timespec *ts) {
+  return ts->tv_sec * kMicrosecondsPerSecond +
+         ts->tv_nsec / kNanosecondsPerMicrosecond;
+}
+
+int64_t TimeValToMicroseconds(const timeval *tv) {
+  return tv->tv_sec * kMicrosecondsPerSecond + tv->tv_usec;
+}
+
 timespec *NanosecondsToTimeSpec(timespec *ts, int64_t nanosecs) {
   ts->tv_sec = nanosecs / kNanosecondsPerSecond;
   ts->tv_nsec = nanosecs % kNanosecondsPerSecond;
@@ -79,6 +88,12 @@ timespec *MicrosecondsToTimeSpec(timespec *ts, int64_t microsecs) {
   ts->tv_nsec =
       (microsecs % kMicrosecondsPerSecond) * kNanosecondsPerMicrosecond;
   return ts;
+}
+
+timeval *MicrosecondsToTimeVal(timeval *tv, int64_t microsecs) {
+  tv->tv_sec = microsecs / kMicrosecondsPerSecond;
+  tv->tv_usec = microsecs % kMicrosecondsPerSecond;
+  return tv;
 }
 
 int64_t TimeValDiffInMicroseconds(const timeval *end, const timeval *start) {

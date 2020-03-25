@@ -40,6 +40,8 @@ TEST(TimeTests, Conversions) {
     struct timespec ts;
     NanosecondsToTimeSpec(&ts, value);
     EXPECT_EQ(TimeSpecToNanoseconds(&ts), value);
+    MicrosecondsToTimeSpec(&ts, value);
+    EXPECT_EQ(TimeSpecToMicroseconds(&ts), value);
   }
 
   // Timeval tests.
@@ -50,6 +52,8 @@ TEST(TimeTests, Conversions) {
     // microseconds.
     int64_t expectation = value - value % kNanosecondsPerMicrosecond;
     EXPECT_EQ(TimeValToNanoseconds(&tv), expectation);
+    MicrosecondsToTimeVal(&tv, value);
+    EXPECT_EQ(TimeValToMicroseconds(&tv), value);
   }
 }
 
