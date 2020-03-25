@@ -49,13 +49,9 @@ class SelectTest : public ::testing::Test {
   }
 
   void RunSelectTest(bool is_read_test) {
-    // Create a pipe and write to it to make sure one end is ready for writing
-    // and the other end is ready for reading.
     ASSERT_EQ(pipe(fd_pairs_), 0);
     platform::storage::FdCloser fd_closer_read(fd_pairs_[0]);
     platform::storage::FdCloser fd_closer_write(fd_pairs_[1]);
-    EXPECT_THAT(WriteToFile(fd_pairs_[kWrite], kMessage), IsOk());
-
     fd_set fds;
     FD_ZERO(&fds);
     FD_SET(fd_pairs_[kRead], &fds);
@@ -67,6 +63,8 @@ class SelectTest : public ::testing::Test {
     int nfds = std::max(fd_pairs_[kRead], fd_pairs_[kWrite]) + 1;
 
     if (is_read_test) {
+      // Write to the write end to make sure the other end is ready to read.
+      ASSERT_THAT(WriteToFile(fd_pairs_[kWrite], kMessage), IsOk());
       ASSERT_EQ(select(nfds, &fds, /*writefds=*/nullptr, /*exceptfds=*/nullptr,
                        &timeout),
                 1);
