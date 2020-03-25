@@ -30,6 +30,7 @@
 #include <type_traits>
 
 #include "asylo/platform/common/time_util.h"
+#include "asylo/platform/core/atomic.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/include/semaphore.h"
@@ -40,12 +41,6 @@
 #include "asylo/platform/primitives/util/trusted_memory.h"
 
 namespace {
-
-inline int InterlockedExchange(pthread_spinlock_t *dest,
-                               pthread_spinlock_t old_value,
-                               pthread_spinlock_t new_value) {
-  return __sync_val_compare_and_swap(dest, old_value, new_value);
-}
 
 #ifndef PTHREAD_KEYS_MAX
 constexpr size_t PTHREAD_KEYS_MAX = 64;
@@ -65,7 +60,9 @@ std::bitset<PTHREAD_KEYS_MAX> used_thread_keys;
 #endif
 
 inline int pthread_spin_lock(pthread_spinlock_t *lock) {
-  while (InterlockedExchange(lock, 0, 1) != 0) {
+  constexpr unsigned int kLocked = 1;
+  constexpr unsigned int kUnlocked = 0;
+  while (asylo::Exchange(lock, kLocked) != kUnlocked) {
     while (*lock) {
       enc_pause();
     }
@@ -74,7 +71,7 @@ inline int pthread_spin_lock(pthread_spinlock_t *lock) {
 }
 
 inline int pthread_spin_unlock(pthread_spinlock_t *lock) {
-  *lock = 0;
+  asylo::AtomicRelease(lock);
   return 0;
 }
 

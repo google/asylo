@@ -159,6 +159,7 @@ package_group(
     packages = [
         "//asylo/platform/core/trusted_mutex",
         "//asylo/platform/core/trusted_spin_lock",
+        "//asylo/platform/posix",
     ],
 )
 
