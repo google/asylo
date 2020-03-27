@@ -28,19 +28,16 @@
 #include "asylo/enclave_manager.h"
 #include "asylo/grpc/util/enclave_server.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
-#include "asylo/identity/platform/sgx/architecture_bits.h"
-#include "asylo/identity/platform/sgx/attributes.pb.h"
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
-#include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/test/grpc/client_enclave.pb.h"
+#include "asylo/test/grpc/client_side_auth_test_constants.h"
 #include "asylo/test/grpc/messenger_server_impl.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
-#include "debug_key_mrsigner.h"
 
 ABSL_FLAG(std::string, server_enclave_path, "", "Path to gRPC server enclave.");
 ABSL_FLAG(std::string, client_enclave_path, "", "Path to gRPC client enclave.");
@@ -57,9 +54,6 @@ constexpr char kServerName[] = "Secure Server";
 
 constexpr char kClientInput[] = "Random string?";
 
-// Matches the server's configuration in the BUILD file.
-constexpr uint32_t kExpectedServerIsvprodid = 1;
-constexpr uint32_t kExpectedServerIsvsvn = 2;
 
 constexpr char kHost[] = "[::1]";
 
@@ -126,31 +120,6 @@ class ClientSideAuthorizationTest : public Test {
     return client_input;
   }
 
-  StatusOr<SgxIdentityExpectation> CreateSgxIdentityExpectation() {
-    SgxIdentity sgx_identity;
-    sgx::CodeIdentity *code_identity = sgx_identity.mutable_code_identity();
-    code_identity->set_miscselect(0);
-    sgx::SecsAttributeSet attributes;
-    ASYLO_ASSIGN_OR_RETURN(attributes, sgx::SecsAttributeSet::FromBits(
-                                           {sgx::AttributeBit::INIT,
-                                            sgx::AttributeBit::DEBUG,
-                                            sgx::AttributeBit::MODE64BIT}));
-    *code_identity->mutable_attributes() = attributes.ToProtoAttributes();
-
-    sgx::SignerAssignedIdentity *signer_assigned_identity =
-        code_identity->mutable_signer_assigned_identity();
-    if (!google::protobuf::TextFormat::ParseFromString(
-            linux_sgx::kDebugKeyMrsignerTextProto,
-            signer_assigned_identity->mutable_mrsigner())) {
-      return Status(error::GoogleError::INTERNAL, "Error parsing MRSIGNER");
-    }
-    signer_assigned_identity->set_isvprodid(kExpectedServerIsvprodid);
-    signer_assigned_identity->set_isvsvn(kExpectedServerIsvsvn);
-
-    return asylo::CreateSgxIdentityExpectation(
-        std::move(sgx_identity), SgxIdentityMatchSpecOptions::DEFAULT);
-  }
-
   static asylo::EnclaveManager *manager_;
   asylo::EnclaveClient *client_enclave_;
   asylo::EnclaveClient *server_enclave_;
@@ -165,7 +134,8 @@ TEST_F(ClientSideAuthorizationTest, AuthorizationSuccess) {
 
   ClientEnclaveInput client_input = CreateClientInput();
   SgxIdentityExpectation sgx_expectation;
-  ASYLO_ASSERT_OK_AND_ASSIGN(sgx_expectation, CreateSgxIdentityExpectation());
+  ASYLO_ASSERT_OK_AND_ASSIGN(sgx_expectation,
+                             ClientSideAuthEnclaveSgxIdentityExpectation());
 
   IdentityAclPredicate acl;
   ASYLO_ASSERT_OK_AND_ASSIGN(*acl.mutable_expectation(),
@@ -186,7 +156,8 @@ TEST_F(ClientSideAuthorizationTest, AuthorizationIncorrectSgxIdentityFailure) {
 
   ClientEnclaveInput client_input = CreateClientInput();
   SgxIdentityExpectation sgx_expectation;
-  ASYLO_ASSERT_OK_AND_ASSIGN(sgx_expectation, CreateSgxIdentityExpectation());
+  ASYLO_ASSERT_OK_AND_ASSIGN(sgx_expectation,
+                             ClientSideAuthEnclaveSgxIdentityExpectation());
   sgx_expectation.mutable_reference_identity()
       ->mutable_code_identity()
       ->mutable_signer_assigned_identity()

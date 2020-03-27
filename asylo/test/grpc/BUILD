@@ -306,6 +306,27 @@ sgx_enclave_test(
     ],
 )
 
+cc_library(
+    name = "client_side_auth_test_constants",
+    testonly = 1,
+    srcs = ["client_side_auth_test_constants.cc"],
+    hdrs = ["client_side_auth_test_constants.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/crypto:sha256_hash_cc_proto",
+        "//asylo/identity/platform/sgx:architecture_bits",
+        "//asylo/identity/platform/sgx:attributes_cc_proto",
+        "//asylo/identity/platform/sgx:code_identity_cc_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/sgx:hardware_types",
+        "//asylo/identity/sgx:sgx_identity_util",
+        "//asylo/util:proto_parse_util",
+        "//asylo/util:status",
+        "//asylo/util:status_macros",
+        "@linux_sgx//:debug_key_mrsigner",
+    ],
+)
+
 sgx.enclave_configuration(
     name = "client_side_auth_test_enclave_config",
     base = "//asylo/grpc/util:grpc_enclave_config",
@@ -336,17 +357,15 @@ sgx_enclave_test(
     ],
     deps = [
         ":client_enclave_cc_proto",
+        ":client_side_auth_test_constants",
         ":messenger_server_impl",
         "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
         "//asylo/crypto:sha256_hash_cc_proto",
         "//asylo/grpc/util:enclave_server_cc_proto",
         "//asylo/identity:identity_acl_cc_proto",
-        "//asylo/identity/platform/sgx:architecture_bits",
-        "//asylo/identity/platform/sgx:attributes_cc_proto",
         "//asylo/identity/platform/sgx:code_identity_cc_proto",
         "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
-        "//asylo/identity/sgx:hardware_types",
         "//asylo/identity/sgx:sgx_identity_util",
         "//asylo/test/util:enclave_assertion_authority_configs",
         "//asylo/test/util:status_matchers",
@@ -355,6 +374,5 @@ sgx_enclave_test(
         "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
-        "@linux_sgx//:debug_key_mrsigner",
     ],
 )

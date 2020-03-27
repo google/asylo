@@ -68,7 +68,7 @@ class ParseTextProtoOrDieHelper {
 // function is intended to be used for static protobufs, which are known good
 // at build time. If |text| is not a known, build time constant,
 // `ParseTextProto` should be used instead.
-internal::ParseTextProtoOrDieHelper ParseTextProtoOrDie(
+inline internal::ParseTextProtoOrDieHelper ParseTextProtoOrDie(
     absl::string_view text) {
   return internal::ParseTextProtoOrDieHelper(text);
 }
