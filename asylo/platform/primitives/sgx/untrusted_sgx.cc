@@ -21,7 +21,11 @@
 #include <sys/mman.h>
 #include <unistd.h>
 
+#include <cstddef>
+#include <cstdint>
 #include <cstdlib>
+#include <cstring>
+#include <memory>
 #include <string>
 
 #include "asylo/platform/primitives/sgx/exit_handlers.h"
@@ -34,6 +38,8 @@
 #include "asylo/util/cleanup.h"
 #include "asylo/util/elf_reader.h"
 #include "asylo/util/file_mapping.h"
+#include "asylo/util/function_deleter.h"
+#include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
@@ -182,6 +188,8 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
     absl::string_view section_name, size_t enclave_size,
     const EnclaveConfig &config, bool debug,
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
+  constexpr size_t kEnclaveAlignment = 4096;
+
   std::shared_ptr<SgxEnclaveClient> client(
       new SgxEnclaveClient(enclave_name, std::move(exit_call_provider)));
   client->RegisterExitHandlers();
@@ -208,6 +216,20 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
   ASYLO_ASSIGN_OR_RETURN(enclave_buffer,
                          self_binary_reader.GetSectionData(section_name));
 
+  // The SGX kernel driver requires enclaves to be aligned at a 4096-byte
+  // boundary.
+  void *aligned_enclave_ptr = nullptr;
+  int memalign_result = posix_memalign(&aligned_enclave_ptr, kEnclaveAlignment,
+                                       enclave_buffer.size());
+  if (memalign_result != 0) {
+    return Status(static_cast<error::PosixError>(memalign_result),
+                  "Failed to allocate aligned enclave buffer");
+  }
+  std::unique_ptr<uint8_t, FunctionDeleter<free>> aligned_enclave_buffer(
+      reinterpret_cast<uint8_t *>(aligned_enclave_ptr));
+  memcpy(aligned_enclave_buffer.get(), enclave_buffer.data(),
+         enclave_buffer.size());
+
   if (base_address && enclave_size > 0 &&
       munmap(base_address, enclave_size) < 0) {
     return Status(error::GoogleError::INTERNAL,
@@ -224,8 +246,9 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
   ex_features_p[SGX_CREATE_ENCLAVE_EX_ASYLO_BIT_IDX] = &create_config;
   for (int i = 0; i < kMaxEnclaveCreateAttempts; ++i) {
     status = sgx_create_enclave_from_buffer_ex(
-        const_cast<uint8_t *>(enclave_buffer.data()), enclave_buffer.size(),
-        debug, &client->id_, /*misc_attr=*/nullptr, ex_features, ex_features_p);
+        const_cast<uint8_t *>(aligned_enclave_buffer.get()),
+        enclave_buffer.size(), debug, &client->id_,
+        /*misc_attr=*/nullptr, ex_features, ex_features_p);
 
     if (status != SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED) {
       break;

@@ -158,6 +158,7 @@ cc_library(
         "//asylo/util:cleanup",
         "//asylo/util:elf_reader",
         "//asylo/util:file_mapping",
+        "//asylo/util:function_deleter",
         "//asylo/util:logging",
         "//asylo/util:status",
         "//asylo/util:status_macros",
