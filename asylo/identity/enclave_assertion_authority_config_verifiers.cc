@@ -28,6 +28,7 @@
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
+#include "asylo/util/error_codes.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
@@ -53,10 +54,10 @@ Status VerifySgxLocalAssertionAuthorityConfig(
 
 Status VerifySgxAgeRemoteAssertionAuthorityConfig(
     const SgxAgeRemoteAssertionAuthorityConfig &config) {
-  if (config.root_ca_certificates_size() == 0) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        "SGX AGE remote authority config must have at least one certificate");
+  if (!config.has_intel_root_certificate()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "SGX AGE remote authority config must include an Intel root "
+                  "certificate");
   }
 
   if (config.server_address().empty()) {

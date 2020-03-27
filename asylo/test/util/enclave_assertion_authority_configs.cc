@@ -18,8 +18,19 @@
 
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 
+#include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/enclave_assertion_authority_configs.h"
+#include "asylo/identity/identity_acl.pb.h"
+#include "asylo/identity/platform/sgx/attributes.pb.h"
+#include "asylo/identity/platform/sgx/code_identity.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
+#include "asylo/identity/sgx/secs_attributes.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
+#include "asylo/util/proto_parse_util.h"
+#include "debug_key_mrsigner.h"
 
 namespace asylo {
 
@@ -33,6 +44,47 @@ EnclaveAssertionAuthorityConfig GetNullAssertionAuthorityTestConfig() {
 EnclaveAssertionAuthorityConfig GetSgxLocalAssertionAuthorityTestConfig() {
   return CreateSgxLocalAssertionAuthorityConfig(kAttestationDomain)
       .ValueOrDie();
+}
+
+EnclaveAssertionAuthorityConfig GetSgxAgeRemoteAssertionAuthorityTestConfig(
+    std::string server_address, SgxIdentity age_identity) {
+  IdentityAclPredicate age_identity_expectation;
+
+  SgxIdentityExpectation age_sgx_identity_expectation =
+      CreateSgxIdentityExpectation(std::move(age_identity),
+                                   SgxIdentityMatchSpecOptions::DEFAULT)
+          .ValueOrDie();
+
+  *age_identity_expectation.mutable_expectation() =
+      SerializeSgxIdentityExpectation(age_sgx_identity_expectation)
+          .ValueOrDie();
+
+  return CreateSgxAgeRemoteAssertionAuthorityConfig(
+             sgx::GetFakeSgxRootCertificate(), {}, std::move(server_address),
+             age_identity_expectation)
+      .ValueOrDie();
+}
+
+EnclaveAssertionAuthorityConfig GetSgxAgeRemoteAssertionAuthorityTestConfig(
+    std::string server_address) {
+  SgxIdentity age_identity;
+  sgx::CodeIdentity *age_code_identity = age_identity.mutable_code_identity();
+  age_code_identity->set_miscselect(0);
+  sgx::SecsAttributeSet attributes =
+      sgx::SecsAttributeSet::FromBits({sgx::AttributeBit::INIT,
+                                       sgx::AttributeBit::DEBUG,
+                                       sgx::AttributeBit::MODE64BIT})
+          .ValueOrDie();
+  *age_code_identity->mutable_attributes() = attributes.ToProtoAttributes();
+  sgx::SignerAssignedIdentity *age_signer_assigned_identity =
+      age_identity.mutable_code_identity()->mutable_signer_assigned_identity();
+  *age_signer_assigned_identity->mutable_mrsigner() =
+      ParseTextProtoOrDie(linux_sgx::kDebugKeyMrsignerTextProto);
+  age_signer_assigned_identity->set_isvprodid(0);
+  age_signer_assigned_identity->set_isvsvn(0);
+
+  return GetSgxAgeRemoteAssertionAuthorityTestConfig(std::move(server_address),
+                                                     age_identity);
 }
 
 }  // namespace asylo

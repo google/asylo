@@ -30,18 +30,23 @@
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/identity_acl.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/intel_certs/intel_sgx_root_ca_cert.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/error_codes.h"
 #include "asylo/util/proto_enum_util.h"
 #include "asylo/util/proto_parse_util.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace {
 
 using ::testing::ElementsAre;
+using ::testing::IsEmpty;
 using ::testing::SizeIs;
 using ::testing::StrEq;
 using ::testing::Test;
@@ -109,6 +114,84 @@ TEST(EnclaveAssertionAuthorityConfigsTest,
 
   EXPECT_THAT(CreateSgxLocalAssertionAuthorityConfig("too short"),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(EnclaveAssertionAuthorityConfigsTest,
+     CreateSgxAgeRemoteAssertionAuthorityConfigSuccess) {
+  constexpr char kServerAddress[] = "the address";
+
+  AssertionDescription description;
+  SetSgxAgeRemoteAssertionDescription(&description);
+
+  Certificate additional_root_certificate;
+  additional_root_certificate.set_data("Cert Data");
+  additional_root_certificate.set_format(Certificate::X509_DER);
+
+  Certificate intel_root_cert =
+      ParseTextProtoOrDie("format: X509_PEM\ndata: '" TEST_PEM_CERT "'");
+
+  SgxIdentityExpectation sgx_age_expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      sgx_age_expectation,
+      CreateSgxIdentityExpectation(GetSelfSgxIdentity(),
+                                   SgxIdentityMatchSpecOptions::DEFAULT));
+  IdentityAclPredicate age_identity_expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      *age_identity_expectation.mutable_expectation(),
+      SerializeSgxIdentityExpectation(sgx_age_expectation));
+
+  EnclaveAssertionAuthorityConfig config;
+  ASYLO_ASSERT_OK_AND_ASSIGN(config,
+                             CreateSgxAgeRemoteAssertionAuthorityConfig(
+                                 intel_root_cert, {additional_root_certificate},
+                                 kServerAddress, age_identity_expectation));
+
+  EXPECT_THAT(config.description(), EqualsProto(description));
+
+  SgxAgeRemoteAssertionAuthorityConfig sgx_config;
+  ASSERT_TRUE(sgx_config.ParseFromString(config.config()));
+  EXPECT_THAT(sgx_config.root_ca_certificates(),
+              ElementsAre(EqualsProto(additional_root_certificate)));
+  EXPECT_THAT(sgx_config.server_address(), StrEq(kServerAddress));
+  EXPECT_THAT(sgx_config.intel_root_certificate(),
+              EqualsProto(intel_root_cert));
+  EXPECT_THAT(sgx_config.age_identity_expectation(),
+              EqualsProto(age_identity_expectation));
+}
+
+TEST(EnclaveAssertionAuthorityConfigsTest,
+     CreateSgxAgeRemoteAssertionAuthorityConfigWithDefaultsSuccess) {
+  constexpr char kServerAddress[] = "Home";
+
+  SgxIdentity age_identity = GetSelfSgxIdentity();
+
+  EnclaveAssertionAuthorityConfig config;
+  ASYLO_ASSERT_OK_AND_ASSIGN(config, CreateSgxAgeRemoteAssertionAuthorityConfig(
+                                         kServerAddress, age_identity));
+
+  AssertionDescription expected_description;
+  SetSgxAgeRemoteAssertionDescription(&expected_description);
+  EXPECT_THAT(config.description(), EqualsProto(expected_description));
+
+  IdentityAclPredicate expected_age_expectation;
+
+  SgxIdentityExpectation expected_age_sgx_expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expected_age_sgx_expectation,
+      CreateSgxIdentityExpectation(age_identity,
+                                   SgxIdentityMatchSpecOptions::DEFAULT));
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      *expected_age_expectation.mutable_expectation(),
+      SerializeSgxIdentityExpectation(expected_age_sgx_expectation));
+
+  SgxAgeRemoteAssertionAuthorityConfig sgx_config;
+  ASSERT_TRUE(sgx_config.ParseFromString(config.config()));
+  EXPECT_THAT(sgx_config.intel_root_certificate(),
+              EqualsProto(MakeIntelSgxRootCaCertificateProto()));
+  EXPECT_THAT(sgx_config.root_ca_certificates(), IsEmpty());
+  EXPECT_THAT(sgx_config.server_address(), StrEq(kServerAddress));
+  EXPECT_THAT(sgx_config.age_identity_expectation(),
+              EqualsProto(expected_age_expectation));
 }
 
 TEST(EnclaveAssertionAuthorityConfigsTest,

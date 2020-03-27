@@ -25,6 +25,8 @@
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
+#include "asylo/identity/identity_acl.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/util/statusor.h"
 
 /// @file enclave_assertion_authority_configs.h
@@ -92,6 +94,38 @@ CreateSgxLocalAssertionAuthorityConfig(std::string attestation_domain);
 /// /return A config for the SGX local assertion authority.
 StatusOr<EnclaveAssertionAuthorityConfig>
 CreateSgxLocalAssertionAuthorityConfig();
+
+/// Creates a configuration for the SGX AGE remote assertion authority.
+///
+/// This configuration is required when using the
+/// SgxAgeRemoteAssertionGenerator or SgxAgeRemoteAssertionVerifier.
+///
+/// \param intel_cert The Intel root certificate to use for verification.
+/// \param certificates A vector of X.509-formatted CA certificates that can
+///                     be used to verify whether an assertion is valid.
+/// \param server_address The address of the AGE's service.
+/// \param age_identity_expectation The identity expectation for the AGE.
+/// \return A config for the SGX AGE remote assertion authority.
+StatusOr<EnclaveAssertionAuthorityConfig>
+CreateSgxAgeRemoteAssertionAuthorityConfig(
+    Certificate intel_root_cert, std::vector<Certificate> certificates,
+    std::string server_address, IdentityAclPredicate age_identity_expectation);
+
+/// Creates a configuration for the SGX AGE remote assertion authority.
+///
+/// This configuration is required when using the
+/// SgxAgeRemoteAssertionGenerator or SgxAgeRemoteAssertionVerifier. It uses the
+/// Intel root certificate value |kIntelSgxRootCaCertificate| and no additional
+/// root certificates. It sets the AGE identity expectation to the default
+/// expectation of the given SgxIdentity, as documented by
+/// `SgxIdentityMatchSpecOptions`.
+///
+/// \param server_address The address of the AGE's service.
+/// \param age_identity The expected identity of the AGE.
+/// \return A config for the SGX AGE remote assertion authority.
+StatusOr<EnclaveAssertionAuthorityConfig>
+CreateSgxAgeRemoteAssertionAuthorityConfig(std::string server_address,
+                                           SgxIdentity age_identity);
 
 namespace experimental {
 

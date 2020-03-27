@@ -38,7 +38,7 @@ licenses(["notice"])
 proto_library(
     name = "sgx_age_remote_assertion_authority_config_proto",
     srcs = ["sgx_age_remote_assertion_authority_config.proto"],
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [
         "//asylo/crypto:certificate_proto",
         "//asylo/identity:identity_acl_proto",
@@ -47,7 +47,7 @@ proto_library(
 
 cc_proto_library(
     name = "sgx_age_remote_assertion_authority_config_cc_proto",
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = ["sgx_age_remote_assertion_authority_config_proto"],
 )
 
@@ -210,6 +210,7 @@ cc_library(
     srcs = ["sgx_age_remote_assertion_verifier.cc"],
     hdrs = ["sgx_age_remote_assertion_verifier.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
     deps = [
         ":sgx_age_remote_assertion_authority_config_cc_proto",
         "//asylo/crypto:certificate_cc_proto",

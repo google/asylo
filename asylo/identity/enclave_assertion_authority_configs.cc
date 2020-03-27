@@ -30,7 +30,11 @@
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/enclave_assertion_authority_config_verifiers.h"
+#include "asylo/identity/identity.pb.h"
+#include "asylo/identity/identity_acl.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/intel_certs/intel_sgx_root_ca_cert.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
@@ -77,6 +81,41 @@ CreateSgxLocalAssertionAuthorityConfig() {
   std::string attestation_domain;
   ASYLO_ASSIGN_OR_RETURN(attestation_domain, GetAttestationDomain());
   return CreateSgxLocalAssertionAuthorityConfig(std::move(attestation_domain));
+}
+
+StatusOr<EnclaveAssertionAuthorityConfig>
+CreateSgxAgeRemoteAssertionAuthorityConfig(
+    Certificate intel_root_cert,
+    std::vector<Certificate> additional_certificates,
+    std::string server_address, IdentityAclPredicate age_identity_expectation) {
+  SgxAgeRemoteAssertionAuthorityConfig config;
+  *config.mutable_intel_root_certificate() = std::move(intel_root_cert);
+  config.set_server_address(std::move(server_address));
+  for (auto &certificate : additional_certificates) {
+    *config.add_root_ca_certificates() = std::move(certificate);
+  }
+  *config.mutable_age_identity_expectation() =
+      std::move(age_identity_expectation);
+  ASYLO_RETURN_IF_ERROR(VerifySgxAgeRemoteAssertionAuthorityConfig(config));
+
+  return SerializeToAuthorityConfig(config,
+                                    SetSgxAgeRemoteAssertionDescription);
+}
+
+StatusOr<EnclaveAssertionAuthorityConfig>
+CreateSgxAgeRemoteAssertionAuthorityConfig(std::string server_address,
+                                           SgxIdentity age_identity) {
+  IdentityAclPredicate age_identity_expectation;
+  SgxIdentityExpectation age_sgx_expectation;
+  ASYLO_ASSIGN_OR_RETURN(
+      age_sgx_expectation,
+      CreateSgxIdentityExpectation(age_identity,
+                                   SgxIdentityMatchSpecOptions::DEFAULT));
+  ASYLO_ASSIGN_OR_RETURN(*age_identity_expectation.mutable_expectation(),
+                         SerializeSgxIdentityExpectation(age_sgx_expectation));
+  return CreateSgxAgeRemoteAssertionAuthorityConfig(
+      MakeIntelSgxRootCaCertificateProto(), {}, server_address,
+      age_identity_expectation);
 }
 
 namespace experimental {

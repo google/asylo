@@ -407,8 +407,41 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:sha256_hash_cc_proto",
         "//asylo/identity:enclave_assertion_authority_config_cc_proto",
         "//asylo/identity:enclave_assertion_authority_configs",
+        "//asylo/identity:identity_acl_cc_proto",
+        "//asylo/identity/platform/sgx:attributes_cc_proto",
+        "//asylo/identity/platform/sgx:code_identity_cc_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:fake_sgx_pki",
+        "//asylo/identity/sgx:hardware_types",
+        "//asylo/identity/sgx:sgx_identity_util",
+        "//asylo/util:proto_parse_util",
+        "@linux_sgx//:debug_key_mrsigner",
+    ],
+)
+
+cc_test(
+    name = "enclave_assertion_authority_configs_test",
+    srcs = ["enclave_assertion_authority_configs_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":enclave_assertion_authority_configs",
+        ":proto_matchers",
+        ":status_matchers",
+        ":test_main",
+        "//asylo/identity:descriptions",
+        "//asylo/identity:enclave_assertion_authority_config_cc_proto",
+        "//asylo/identity:identity_acl_cc_proto",
+        "//asylo/identity/attestation/sgx:sgx_age_remote_assertion_authority_config_cc_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:fake_sgx_pki",
+        "//asylo/identity/sgx:sgx_identity_expectation_matcher",
+        "//asylo/identity/sgx:sgx_identity_util",
+        "//asylo/util:proto_parse_util",
+        "@com_google_googletest//:gtest",
     ],
 )
 
