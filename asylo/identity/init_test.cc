@@ -24,11 +24,22 @@
 #include <gtest/gtest.h>
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/proto_parse_util.h"
 
 namespace asylo {
 namespace {
 
 using ::testing::Not;
+
+constexpr char kTestConfig[] = R"proto(
+  description: { identity_type: NULL_IDENTITY authority_type: "Any" }
+  config: "The office was underappreciated. Let me back"
+)proto";
+
+constexpr char kTestInvalidConfig[] = R"proto(
+  description: { identity_type: CODE_IDENTITY authority_type: "foobar" }
+  config: "I miss my desk chair"
+)proto";
 
 // Verify that InitializeEnclaveAssertionAuthorities succeeds with a set of
 // empty configs.
@@ -47,12 +58,7 @@ TEST(InitTest, InitializeSucceedsWithConfigs) {
   std::vector<EnclaveAssertionAuthorityConfig> configs(1);
 
   ASSERT_TRUE(
-      google::protobuf::TextFormat::ParseFromString("description: {                 "
-                                          "  identity_type: NULL_IDENTITY "
-                                          "  authority_type: 'Any'        "
-                                          "}                              "
-                                          "config: 'foobar'               ",
-                                          &configs.front()));
+      google::protobuf::TextFormat::ParseFromString(kTestConfig, &configs.front()));
 
   EXPECT_THAT(
       InitializeEnclaveAssertionAuthorities(configs.begin(), configs.end()),
@@ -80,17 +86,34 @@ TEST(InitTest, InitializeSucceedsRepeatedlyAfterFirstSuccess) {
 TEST(InitTest, InitializeFailsWithNonMatchingConfigs) {
   std::vector<EnclaveAssertionAuthorityConfig> configs(1);
 
-  ASSERT_TRUE(
-      google::protobuf::TextFormat::ParseFromString("description: {                 "
-                                          "  identity_type: CODE_IDENTITY "
-                                          "  authority_type: 'foobar'     "
-                                          "}                              "
-                                          "config: 'baz'                  ",
-                                          &configs.front()));
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestInvalidConfig,
+                                                  &configs.front()));
 
   EXPECT_THAT(
       InitializeEnclaveAssertionAuthorities(configs.begin(), configs.end()),
       Not(IsOk()));
+}
+
+TEST(InitTest, InitializeEnclaveAssertionVerifierSuccess) {
+  EnclaveAssertionAuthorityConfig config = ParseTextProtoOrDie(kTestConfig);
+  ASYLO_EXPECT_OK(InitializeEnclaveAssertionVerifier(config));
+}
+
+TEST(InitTest, InitializeEnclaveAssertionVerifierFailsWithInvalidConfig) {
+  EnclaveAssertionAuthorityConfig config =
+      ParseTextProtoOrDie(kTestInvalidConfig);
+  EXPECT_THAT(InitializeEnclaveAssertionVerifier(config), Not(IsOk()));
+}
+
+TEST(InitTest, InitializeEnclaveAssertionGeneratorSuccess) {
+  EnclaveAssertionAuthorityConfig config = ParseTextProtoOrDie(kTestConfig);
+  ASYLO_EXPECT_OK(InitializeEnclaveAssertionGenerator(config));
+}
+
+TEST(InitTest, InitializeEnclaveAssertionGeneratorFailsWithInvalidConfig) {
+  EnclaveAssertionAuthorityConfig config =
+      ParseTextProtoOrDie(kTestInvalidConfig);
+  EXPECT_THAT(InitializeEnclaveAssertionGenerator(config), Not(IsOk()));
 }
 
 }  // namespace

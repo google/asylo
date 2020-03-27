@@ -399,7 +399,8 @@ Status ClientEkepHandshaker::WriteClientPrecommit(std::string *output) {
         GetEnclaveAssertionGenerator(description)
             ->CreateAssertionOffer(client_precommit.add_client_offers());
     if (!status.ok()) {
-      LOG(ERROR) << "Failed to create assertion offer: " << status;
+      LOG(ERROR) << "Failed to create assertion offer for description"
+                 << description.ShortDebugString() << ": " << status;
       return Status(Abort::INTERNAL_ERROR, "Failed to create assertion offer");
     }
   }

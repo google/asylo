@@ -181,6 +181,7 @@ cc_unsigned_enclave(
         "//asylo:enclave_runtime",
         "//asylo/grpc/auth:grpc++_security_enclave",
         "//asylo/grpc/auth:null_credentials_options",
+        "//asylo/grpc/auth:sgx_age_remote_credentials_options",
         "//asylo/grpc/auth:sgx_local_credentials_options",
         "//asylo/identity:identity_cc_proto",
         "//asylo/util:status",
@@ -374,5 +375,77 @@ sgx_enclave_test(
         "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_unsigned_enclave(
+    name = "sgx_age_remote_server_enclave_unsigned.so",
+    testonly = 1,
+    srcs = ["sgx_age_remote_server_enclave.cc"],
+    backends = sgx.backend_labels,
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":messenger_server_impl",
+        "//asylo/grpc/auth:grpc++_security_enclave",
+        "//asylo/grpc/auth:null_credentials_options",
+        "//asylo/grpc/auth:sgx_age_remote_credentials_options",
+        "//asylo/grpc/util:enclave_server",
+        "//asylo/identity:identity_cc_proto",
+        "@com_google_absl//absl/memory",
+    ],
+)
+
+debug_sign_enclave(
+    name = "sgx_age_remote_server_enclave.so",
+    testonly = 1,
+    backends = sgx.backend_labels,
+    config = ":client_side_auth_test_enclave_config",
+    unsigned = ":sgx_age_remote_server_enclave_unsigned.so",
+)
+
+# Test for SGX AGE remote attestation.
+sgx_enclave_test(
+    name = "sgx_age_remote_server_enclave_test",
+    srcs = ["sgx_age_remote_server_enclave_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {
+        "client_enclave": ":client_enclave.so",
+        "server_enclave": ":sgx_age_remote_server_enclave.so",
+        "age_enclave": "//asylo/identity/attestation/sgx/internal:remote_assertion_generator_enclave_no_flc.so",
+    },
+    test_args = [
+        "--enclave_path='{server_enclave}'",
+        "--client_enclave_path='{client_enclave}'",
+        "--age_path='{age_enclave}'",
+    ],
+    deps = [
+        ":client_enclave_cc_proto",
+        ":client_side_auth_test_constants",
+        ":messenger_client_impl",
+        ":messenger_server_impl",
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_client",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/grpc/auth:grpc++_security_enclave",
+        "//asylo/grpc/auth:null_credentials_options",
+        "//asylo/grpc/auth:peer_sgx_age_remote_credentials_options",
+        "//asylo/grpc/util:enclave_server_cc_proto",
+        "//asylo/identity:init",
+        "//asylo/identity/attestation/sgx/internal:fake_pce",
+        "//asylo/identity/provisioning/sgx/internal:fake_sgx_pki",
+        "//asylo/identity/sgx:sgx_identity_util",
+        "//asylo/identity/sgx:sgx_infrastructural_enclave_manager",
+        "//asylo/test/util:enclave_assertion_authority_configs",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:enclave_test_launcher",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "//asylo/util:status_macros",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
     ],
 )

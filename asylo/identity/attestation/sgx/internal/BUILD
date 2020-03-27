@@ -168,6 +168,7 @@ cc_library(
     visibility = [
         "//asylo/identity/attestation/sgx:__pkg__",
         "//asylo/identity/sgx:__pkg__",
+        "//asylo/test/grpc:__pkg__",
     ],
     deps = [
         ":intel_architectural_enclave_interface",
@@ -671,6 +672,7 @@ sgx_debug_sign_enclave(
     name = "remote_assertion_generator_enclave_no_flc.so",
     config = ":remote_assertion_generator_enclave_no_flc_config",
     unsigned = "remote_assertion_generator_enclave_unsigned.so",
+    visibility = ["//asylo:implementation"],
 )
 
 # The AGE with the PROVISION_KEY bit. Suitable for use in tests and deployments

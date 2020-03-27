@@ -105,6 +105,45 @@ cc_library(
     ],
 )
 
+# Configurations for building remote SGX credentials based on
+# Asylo's AGE.
+cc_library(
+    name = "peer_sgx_age_remote_credentials_options",
+    srcs = ["peer_sgx_age_remote_credentials_options.cc"],
+    hdrs = ["peer_sgx_age_remote_credentials_options.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":grpc++_security_enclave",
+        "//asylo/identity:descriptions",
+        "//asylo/identity/attestation/sgx:sgx_age_remote_assertion_verifier",  # alwayslink = 1
+        "//asylo/identity/sgx:sgx_identity_expectation_matcher",  # alwayslink = 1
+    ],
+)
+
+# Configuration for building SGX AGE remote credentials (used for gRPC
+# connections between SGX enclaves).
+cc_library(
+    name = "sgx_age_remote_credentials_options",
+    srcs = [
+        "peer_sgx_age_remote_credentials_options.cc",
+        "sgx_age_remote_credentials_options.cc",
+    ],
+    hdrs = [
+        "peer_sgx_age_remote_credentials_options.h",
+        "sgx_age_remote_credentials_options.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":grpc++_security_enclave",
+        "//asylo/identity:descriptions",
+        "//asylo/identity/attestation/sgx:sgx_age_remote_assertion_generator",  # alwayslink = 1
+        "//asylo/identity/attestation/sgx:sgx_age_remote_assertion_verifier",  # alwayslink = 1
+        "//asylo/identity/sgx:sgx_identity_expectation_matcher",  # alwayslink = 1
+    ],
+)
+
 cc_library(
     name = "enclave_auth_context",
     srcs = ["enclave_auth_context.cc"],

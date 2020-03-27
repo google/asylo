@@ -79,17 +79,22 @@ cc_proto_library(
 
 cc_library(
     name = "init",
-    srcs = ["init_internal.h"],
+    srcs = [
+        "init.cc",
+        "init_internal.h",
+    ],
     hdrs = ["init.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":enclave_assertion_authority",
         ":enclave_assertion_authority_config_cc_proto",
+        ":identity_cc_proto",
         "//asylo/identity/attestation:enclave_assertion_generator",
         "//asylo/identity/attestation:enclave_assertion_verifier",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -104,6 +109,7 @@ cc_test(
         "//asylo/identity/attestation/null:null_assertion_verifier",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "//asylo/util:proto_parse_util",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
     ],

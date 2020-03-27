@@ -31,12 +31,37 @@
 
 namespace asylo {
 
+// Initializes an EnclaveAssertionVerifier that has been statically-registered
+// into the program static maps using |config|. Each authority will be
+// initialized at most once between all calls to this function or
+// |InitializeEnclaveAssertionAuthorities|.
+//
+// This function will return a non-ok status if any of the following occurs:
+//   * |config| does not have a matching EnclaveAssertionVerifier
+//   * The verifier could not be initialized with |config|
+//   * The authority identifier could not be generated from |config|
+Status InitializeEnclaveAssertionVerifier(
+    const EnclaveAssertionAuthorityConfig &config);
+
+// Initializes an EnclaveAssertionGenerator that has been statically-registered
+// into the program static maps using |config|. Each authority will be
+// initialized at most once between all calls to this function or
+// |InitializeEnclaveAssertionAuthorities|.
+//
+// This function will return a non-ok status if any of the following occurs:
+//   * |config| does not have a matching EnclaveAssertionGenerator
+//   * The generator could not be initialized with |config|
+//   * The authority identifier could not be generated from |config|
+Status InitializeEnclaveAssertionGenerator(
+    const EnclaveAssertionAuthorityConfig &config);
+
 // Initializes EnclaveAssertionGenerators and EnclaveAssertionVerifiers that
 // have been statically-registered into the program static maps using the
 // configs provided in the range [|configs_begin|, |configs_end|). If a config
 // is not available for an authority, does not attempt to initialize that
 // authority. Each authority will be initialized at most once between all calls
-// to this function.
+// to this function and |InitializeEnclaveAssertionGenerator| and
+// |InitializeEnclaveAssertionVerifier|.
 //
 // ConfigIteratorT must be an iterator type that satisfies the following
 // constraints:

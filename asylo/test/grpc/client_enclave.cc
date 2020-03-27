@@ -25,6 +25,8 @@
 #include "asylo/enclave.pb.h"
 #include "asylo/grpc/auth/enclave_channel_credentials.h"
 #include "asylo/grpc/auth/null_credentials_options.h"
+#include "asylo/grpc/auth/peer_sgx_age_remote_credentials_options.h"
+#include "asylo/grpc/auth/sgx_age_remote_credentials_options.h"
 #include "asylo/grpc/auth/sgx_local_credentials_options.h"
 #include "asylo/test/grpc/client_enclave.pb.h"
 #include "asylo/test/grpc/messenger_client_impl.h"
@@ -54,6 +56,10 @@ EnclaveCredentialsOptions GetCredentialsOptions(
       case SGX_LOCAL_GRPC_CREDENTIALS_OPTIONS:
         options.Add(self ? SelfSgxLocalCredentialsOptions()
                          : PeerSgxLocalCredentialsOptions());
+        break;
+      case SGX_AGE_REMOTE_GRPC_CREDENTIALS_OPTIONS:
+        options.Add(self ? SelfSgxAgeRemoteCredentialsOptions()
+                         : PeerSgxAgeRemoteCredentialsOptions());
         break;
       case UNKNOWN_GRPC_CREDENTIALS_OPTIONS:
       default:
