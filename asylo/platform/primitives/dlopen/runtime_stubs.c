@@ -53,4 +53,3 @@ int pthread_mutex_lock() { return 0; }
 int pthread_mutex_trylock() { return 0; }
 int pthread_mutex_unlock() { return 0; }
 int pthread_setspecific() { return 0; }
-int pthread_sigmask() { return 0; }

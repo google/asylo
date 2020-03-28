@@ -16,8 +16,6 @@
  *
  */
 
-#ifndef NEWLIB_SIGNAL_DEFINED
-
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -34,6 +32,7 @@
 
 extern "C" {
 
+#ifndef ASYLO_NEWLIB_SIGNAL_DEFINED
 int sigaction(int signum, const struct sigaction *act,
               struct sigaction *oldact) {
   return asylo::RtSigaction(signum, act, oldact, sizeof(sigset_t));
@@ -62,6 +61,7 @@ sighandler_t signal(int signum, sighandler_t handler) {
   }
   return oldact.sa_handler;
 }
+#endif  // !defined(ASYLO_NEWLIB_SIGNAL_DEFINED)
 
 // Raise a signal to be handled.
 //
@@ -72,5 +72,3 @@ sighandler_t signal(int signum, sighandler_t handler) {
 int raise(int sig) { return enc_untrusted_raise(sig); }
 
 }  // extern "C"
-
-#endif /* !NEWLIB_SIGNAL_DEFINED */
