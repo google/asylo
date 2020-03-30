@@ -372,10 +372,10 @@ cc_library(
         http_archive(
             name = "com_github_curl_curl",
             urls = [
-                "https://github.com/curl/curl/archive/curl-7_68_0.tar.gz",
+                "https://github.com/curl/curl/archive/curl-7_69_1.tar.gz",
             ],
-            sha256 = "32c712e4d8c9fa3b56b5be2242e9e2f1bf1bc1d6ac2c0cc5c50130ecdcd25c48",
-            strip_prefix = "curl-curl-7_68_0",
+            sha256 = "6d5d2b9c19f31cd42f85d5cd0643122745411de605d3e599fb2a909585aa1196",
+            strip_prefix = "curl-curl-7_69_1",
             build_file = str(Label("//asylo/third_party:curl.BUILD")),
         )
     if not native.existing_rule("rules_jvm_external"):
