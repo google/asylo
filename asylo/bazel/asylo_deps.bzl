@@ -216,10 +216,10 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("rules_proto"):
         http_archive(
             name = "rules_proto",
-            # Commit from 2020 January 09
-            urls = ["https://github.com/bazelbuild/rules_proto/archive/d7666ec475c1f8d4a6803cbc0a0b6b4374360868.tar.gz"],
-            sha256 = "3cd625058dc989f6fac0bf8cf7c3cac6d654052500bd8ffea15de1b47bd3d20d",
-            strip_prefix = "rules_proto-d7666ec475c1f8d4a6803cbc0a0b6b4374360868",
+            # Commit from 2020 March 2
+            urls = ["https://github.com/bazelbuild/rules_proto/archive/218ffa7dfa5408492dc86c01ee637614f8695c45.tar.gz"],
+            sha256 = "2490dca4f249b8a9a3ab07bd1ba6eca085aaf8e45a734af92aad0c42d9dc7aaf",
+            strip_prefix = "rules_proto-218ffa7dfa5408492dc86c01ee637614f8695c45",
         )
 
     # Required for Protobuf.
