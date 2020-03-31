@@ -197,11 +197,19 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
 
   // If an address is specified to load the enclave, temporarily reserve it to
   // prevent these mappings from occupying that location.
-  if (base_address && enclave_size > 0 &&
-      mmap(base_address, enclave_size, PROT_NONE, MAP_SHARED | MAP_ANONYMOUS,
-           -1, 0) != base_address) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed to reserve enclave memory");
+  if (base_address && enclave_size > 0) {
+    // Unmap the remaining memory in the space to load the child enclave,
+    // because the in-kernel SGX driver leaves VMA pages in that address space
+    // after fork().
+    if (munmap(base_address, enclave_size) != 0) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Failed to release enclave memory");
+    }
+    if (mmap(base_address, enclave_size, PROT_NONE, MAP_SHARED | MAP_ANONYMOUS,
+             -1, 0) != base_address) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Failed to reserve enclave memory");
+    }
   }
 
   FileMapping self_binary_mapping;
