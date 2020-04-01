@@ -223,20 +223,11 @@ cc_test(
     ],
 )
 
-# For testing large pipe sizes, we increase the size of heap, since the
-# primitives implementation of enc_untrusted_pipe2() duplicates the data
-# during serialization.
-sgx.enclave_configuration(
-    name = "pipe_test_config",
-    heap_max_size = "0x200000",
-)
-
 cc_test(
     name = "pipe_test",
     srcs = ["pipe_test.cc"],
     backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_config = ":pipe_test_config",
     deps = [
         "//asylo/test/util:memory_matchers",
         "//asylo/test/util:test_main",
