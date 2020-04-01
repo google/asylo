@@ -87,6 +87,9 @@ int enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num) {
 int32_t *enc_untrusted_create_wait_queue() {
   int32_t *const queue = static_cast<int32_t *const>(
       TrustedPrimitives::UntrustedLocalAlloc(sizeof(int32_t)));
+  if (!queue) {
+    return nullptr;
+  }
   TrustedPrimitives::UntrustedLocalMemcpy(queue, &kWaitQueueDisabled,
                                           sizeof(int32_t));
   return queue;
