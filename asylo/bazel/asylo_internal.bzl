@@ -202,6 +202,7 @@ def internal_cc_enclave_test(
     # Collect any arguments to cc_unsigned_enclave that override the defaults
     size = kwargs.pop("size", None)  # Meant for the test.
     data = kwargs.pop("data", [])  # Meant for the test.
+    test_args = kwargs.pop("test_args", [])  # Meant for the test.
     cc_unsigned_enclave(
         name = unsigned_enclave_name,
         srcs = srcs,
@@ -224,7 +225,7 @@ def internal_cc_enclave_test(
     # //asylo/bazel:test_shim_loader expects the path to
     # :enclave_test_shim to be provided as the --enclave_path command-line flag.
     enclaves = {"shim": enclave_target}
-    loader_args = ['--enclave_path="{shim}"']
+    loader_args = ['--enclave_path="{shim}"'] + test_args
     if test_in_initialize:
         loader_args.append("--test_in_initialize")
     else:
