@@ -253,8 +253,8 @@ TEST_F(HostCallTest, TestSetSid) {
   MessageWriter in;
   MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSetSid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
-  EXPECT_THAT(out.next<pid_t>(), Eq(getsid(0)));
+  ASSERT_THAT(out, SizeIs(2));  // should contain return value and errno.
+  EXPECT_THAT(out.next<pid_t>(), Eq(getsid(0))) << strerror(out.next<int>());
 }
 
 // Tests enc_untrusted_getgid() by making the host call from inside the enclave

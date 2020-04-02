@@ -88,6 +88,7 @@ PrimitiveStatus TestSetSid(void *context, MessageReader *in,
   ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
 
   out->Push<pid_t>(enc_untrusted_setsid());
+  out->Push<int>(errno);
   return PrimitiveStatus::OkStatus();
 }
 
