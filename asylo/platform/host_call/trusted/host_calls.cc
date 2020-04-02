@@ -1363,6 +1363,10 @@ unsigned int enc_untrusted_if_nametoindex(const char *ifname) {
 }
 
 char *enc_untrusted_if_indextoname(unsigned int ifindex, char *ifname) {
+  if (!ifname) {
+    return nullptr;
+  }
+
   MessageWriter input;
   input.Push(ifindex);
   MessageReader output;
