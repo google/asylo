@@ -1237,7 +1237,7 @@ int enc_untrusted_utime(const char *filename, const struct utimbuf *times) {
 }
 
 int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
-  if (!src) {
+  if (!src || !dst) {
     return 0;
   }
 
@@ -1272,6 +1272,10 @@ int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
 
 const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
                                     socklen_t size) {
+  if (!src || !dst) {
+    errno = EFAULT;
+    return nullptr;
+  }
   size_t src_size = 0;
   if (af == AF_INET) {
     src_size = sizeof(struct in_addr);
