@@ -83,15 +83,6 @@ PrimitiveStatus TestGetPpid(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestSetSid(void *context, MessageReader *in,
-                           MessageWriter *out) {
-  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
-
-  out->Push<pid_t>(enc_untrusted_setsid());
-  out->Push<int>(errno);
-  return PrimitiveStatus::OkStatus();
-}
-
 PrimitiveStatus TestGetuid(void *context, MessageReader *in,
                            MessageWriter *out) {
   ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
@@ -1078,9 +1069,6 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestGetPpid,
       EntryHandler{asylo::host_call::TestGetPpid}));
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      asylo::host_call::kTestSetSid,
-      EntryHandler{asylo::host_call::TestSetSid}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestGetUid,
       EntryHandler{asylo::host_call::TestGetuid}));

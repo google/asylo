@@ -246,17 +246,6 @@ TEST_F(HostCallTest, TestGetPpid) {
   EXPECT_THAT(out.next<pid_t>(), Eq(getppid()));
 }
 
-// Tests enc_untrusted_setsid() by calling it from inside the enclave and
-// verifying its return value against sid obtained from getsid(0), which
-// gets the sid of the current process.
-TEST_F(HostCallTest, TestSetSid) {
-  MessageWriter in;
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSetSid, &in, &out));
-  ASSERT_THAT(out, SizeIs(2));  // should contain return value and errno.
-  EXPECT_THAT(out.next<pid_t>(), Eq(getsid(0))) << strerror(out.next<int>());
-}
-
 // Tests enc_untrusted_getgid() by making the host call from inside the enclave
 // and comparing the result with the value obtained from native getgid().
 TEST_F(HostCallTest, TestGetgid) {

@@ -54,8 +54,6 @@ constexpr uint64_t kTestGetPid =
     kFirstSelector + asylo::system_call::kSYS_getpid;
 constexpr uint64_t kTestGetPpid =
     kFirstSelector + asylo::system_call::kSYS_getppid;
-constexpr uint64_t kTestSetSid =
-    kFirstSelector + asylo::system_call::kSYS_setsid;
 constexpr uint64_t kTestKill = kFirstSelector + asylo::system_call::kSYS_kill;
 constexpr uint64_t kTestLink = kFirstSelector + asylo::system_call::kSYS_link;
 constexpr uint64_t kTestLseek = kFirstSelector + asylo::system_call::kSYS_lseek;
