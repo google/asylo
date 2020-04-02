@@ -1203,6 +1203,10 @@ int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
       asylo::system_call::kSYS_poll, klinux_fds.get(),
       static_cast<uint64_t>(nfds), timeout);
 
+  if (result < 0) {
+    return result;
+  }
+
   for (int i = 0; i < nfds; ++i) {
     if (!FromkLinuxPollfd(&klinux_fds[i], &fds[i])) {
       errno = EFAULT;
