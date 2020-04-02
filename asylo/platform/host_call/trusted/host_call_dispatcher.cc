@@ -57,6 +57,10 @@ primitives::PrimitiveStatus SystemCallDispatcher(const uint8_t* request_buffer,
   // *response_buffer is expected to be owned by the caller, so we wouldn't
   // worry about freeing the memory we allocate here.
   *response_buffer = reinterpret_cast<uint8_t*>(malloc(*response_size));
+  if (!response_buffer) {
+    return primitives::PrimitiveStatus{error::GoogleError::RESOURCE_EXHAUSTED,
+                                       "Failed to malloc response buffer"};
+  }
   memcpy(*response_buffer, response.As<uint8_t>(), *response_size);
 
   return primitives::PrimitiveStatus::OkStatus();
