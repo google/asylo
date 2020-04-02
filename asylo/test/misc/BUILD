@@ -311,6 +311,18 @@ cc_enclave_test(
     ],
 )
 
+# Test to illustrate how absl::Now hangs in sgx-gdb
+cc_enclave_test(
+    name = "now_test",
+    srcs = ["now_test.cc"],
+    backends = sgx.backend_labels,  # Uses SGX-specific configuration.
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 sgx.enclave_configuration(
     name = "exhaust_sgx_tcs_config",
     tcs_num = "3",
