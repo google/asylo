@@ -61,7 +61,7 @@ cc_proto_library(
 proto_library(
     name = "remote_assertion_generator_enclave_proto",
     srcs = ["remote_assertion_generator_enclave.proto"],
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:private"],
     deps = [
         ":remote_assertion_proto",
         "//asylo:enclave_proto",
