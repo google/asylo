@@ -1615,6 +1615,10 @@ int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
 
   // The caller to this host call owns memory pointed by |*serialized_events|.
   *serialized_events = reinterpret_cast<char *>(malloc(*serialized_events_len));
+  if (!serialized_events) {
+    errno = ENOMEM;
+    return -1;
+  }
   memcpy(*serialized_events, serialized_buf.As<char>(), *serialized_events_len);
   return result;
 }
