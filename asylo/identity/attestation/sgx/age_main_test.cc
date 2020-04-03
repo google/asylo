@@ -37,6 +37,9 @@ ABSL_FLAG(std::string, age_path, "", "Path to the AGE binary");
 ABSL_FLAG(bool, is_debuggable_enclave, true,
           "Whether to run the AGE in debug mode");
 
+ABSL_FLAG(bool, age_validate_certificate_chains, false,
+          "Whether the AGE should validate its certificate chains");
+
 // Default to a short server lifetime for the test.
 ABSL_FLAG(absl::Duration, server_lifetime, absl::Seconds(2),
           "The amount of time to run the AGE's attestation server before "
@@ -82,6 +85,7 @@ class SgxPlatformInfoExecTester : public experimental::ExecTester {
 TEST(AgeMainTest, FakeCertificationSuccess) {
   experimental::ExecTester tester(
       {absl::GetFlag(FLAGS_loader_path), "--start_age", "--use_fake_pce",
+       absl::StrCat("--age_validate_certificate_chains=false"),
        absl::StrCat("--server_lifetime=",
                     absl::FormatDuration(absl::GetFlag(FLAGS_server_lifetime))),
        absl::StrCat("--is_debuggable_enclave=",

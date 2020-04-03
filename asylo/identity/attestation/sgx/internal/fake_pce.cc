@@ -76,9 +76,9 @@ Status FakePce::GetPceTargetinfo(Targetinfo *targetinfo, uint16_t *pce_svn) {
 Status FakePce::PceSignReport(const Report &report, uint16_t /*target_pce_svn*/,
                               UnsafeBytes<kCpusvnSize> /*target_cpu_svn*/,
                               std::string *signature) {
-  std::string report_bin = ConvertTrivialObjectToBinaryString(report);
   Signature pck_signature;
-  ASYLO_RETURN_IF_ERROR(pck_->Sign(report_bin, &pck_signature));
+  ASYLO_RETURN_IF_ERROR(pck_->Sign(
+      ByteContainerView(&report.body, sizeof(report.body)), &pck_signature));
 
   const EcdsaSignature &ecdsa_signature = pck_signature.ecdsa_signature();
   *signature = absl::StrCat(ecdsa_signature.r(), ecdsa_signature.s());

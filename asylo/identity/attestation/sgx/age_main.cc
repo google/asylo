@@ -70,6 +70,9 @@ ABSL_FLAG(bool, use_fake_pce, false,
           "the AGE and/or printing SGX platform info. When used with "
           "--start_age, attestations will be rooted in the Asylo Fake PKI.");
 
+ABSL_FLAG(bool, age_validate_certificate_chains, true,
+          "Whether the AGE should validate its certificate chains");
+
 // Optional for Option A.
 //
 // This flag is ignored if --use_fake_pce is used.
@@ -276,7 +279,10 @@ int main(int argc, char **argv) {
     }
 
     asylo::Status status =
-        sgx_infra_enclave_manager->AgeUpdateCerts({age_certificate_chain})
+        sgx_infra_enclave_manager
+            ->AgeUpdateCerts(
+                {age_certificate_chain},
+                absl::GetFlag(FLAGS_age_validate_certificate_chains))
             .status();
     LOG_IF(QFATAL, !status.ok()) << "Failed to update AGE certs: " << status;
 

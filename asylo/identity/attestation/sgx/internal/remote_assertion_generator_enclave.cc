@@ -221,13 +221,15 @@ Status RemoteAssertionGeneratorEnclave::UpdateCerts(
       attestation_public_key,
       attestation_key_certs_pair_locked->attestation_key->GetVerifyingKey());
 
-  // Verify that all certificate chains are valid and that they certify the
-  // current attestation key before saving them.
-  Status status = CheckCertificateChainsForAttestationPublicKey(
-      *attestation_public_key, input.certificate_chains(),
-      *GetSgxCertificateFactories(), verification_config_);
-  if (!status.ok()) {
-    return status.WithPrependedContext("Cannot update certificates");
+  if (input.validate_certificate_chains()) {
+    // Verify that all certificate chains are valid and that they certify the
+    // current attestation key before saving them.
+    Status status = CheckCertificateChainsForAttestationPublicKey(
+        *attestation_public_key, input.certificate_chains(),
+        *GetSgxCertificateFactories(), verification_config_);
+    if (!status.ok()) {
+      return status.WithPrependedContext("Cannot update certificates");
+    }
   }
 
   if (input.output_sealed_secret()) {

@@ -673,7 +673,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, GenerateKeyAndCsrSuccess) {
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest,
-       UpdateCertsWithInvalidCertificateChainFails) {
+       DISABLED_UpdateCertsWithInvalidCertificateChainFails) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
   ASYLO_ASSERT_OK(StartTestUtilEnclave());
@@ -683,6 +683,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
   UpdateCertsInput *update_certs_input =
       enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
           ->mutable_update_certs_input();
+  update_certs_input->set_validate_certificate_chains(true);
 
   CertificateChain *certificate_chain =
       update_certs_input->add_certificate_chains();
@@ -745,11 +746,12 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
 
   EnclaveInput enclave_input;
   EnclaveOutput enclave_output;
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-           ->mutable_update_certs_input()
-           ->add_certificate_chains(),
-      CreateValidAgeCertificateChain());
+  UpdateCertsInput *update_certs_input =
+      enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+          ->mutable_update_certs_input();
+  ASYLO_ASSERT_OK_AND_ASSIGN(*update_certs_input->add_certificate_chains(),
+                             CreateValidAgeCertificateChain());
+  update_certs_input->set_validate_certificate_chains(false);
 
   ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
       enclave_input, &enclave_output));
@@ -770,6 +772,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
           ->mutable_update_certs_input();
   ASYLO_ASSERT_OK_AND_ASSIGN(*update_certs_input->add_certificate_chains(),
                              CreateValidAgeCertificateChain());
+  update_certs_input->set_validate_certificate_chains(false);
   update_certs_input->set_output_sealed_secret(true);
 
   ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(

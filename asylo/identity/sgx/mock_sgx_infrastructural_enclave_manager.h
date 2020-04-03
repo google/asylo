@@ -39,8 +39,9 @@ class MockSgxInfrastructuralEnclaveManager
       AgeGeneratePceInfoSgxHardwareReport,
       StatusOr<sgx::ReportProto>(const sgx::TargetInfoProto &,
                                  const AsymmetricEncryptionKeyProto &));
-  MOCK_METHOD1(AgeUpdateCerts,
-               StatusOr<SealedSecret>(const std::vector<CertificateChain> &));
+  MOCK_METHOD2(AgeUpdateCerts,
+               StatusOr<SealedSecret>(const std::vector<CertificateChain> &,
+                                      bool));
   MOCK_METHOD0(AgeStartServer, Status());
   MOCK_METHOD1(AgeStartServer, Status(const SealedSecret &));
   MOCK_METHOD0(AgeGetSgxIdentity, StatusOr<SgxIdentity>());

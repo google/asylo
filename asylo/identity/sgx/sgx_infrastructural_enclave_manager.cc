@@ -173,7 +173,8 @@ SgxInfrastructuralEnclaveManager::AgeGeneratePceInfoSgxHardwareReport(
 }
 
 StatusOr<SealedSecret> SgxInfrastructuralEnclaveManager::AgeUpdateCerts(
-    const std::vector<asylo::CertificateChain> &cert_chains) {
+    const std::vector<asylo::CertificateChain> &cert_chains,
+    bool validate_cert_chains) {
   EnclaveInput input;
   sgx::UpdateCertsInput *update_certs_input =
       input.MutableExtension(sgx::remote_assertion_generator_enclave_input)
@@ -181,6 +182,7 @@ StatusOr<SealedSecret> SgxInfrastructuralEnclaveManager::AgeUpdateCerts(
   *update_certs_input->mutable_certificate_chains() = {cert_chains.begin(),
                                                        cert_chains.end()};
   update_certs_input->set_output_sealed_secret(true);
+  update_certs_input->set_validate_certificate_chains(validate_cert_chains);
 
   EnclaveOutput output;
   ASYLO_RETURN_IF_ERROR(

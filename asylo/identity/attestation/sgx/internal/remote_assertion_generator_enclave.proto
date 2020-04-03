@@ -126,6 +126,9 @@ message UpdateCertsInput {
   // attestation key.
   repeated CertificateChain certificate_chains = 1;
 
+  // Whether to parse and validate the provided certificate chains.
+  optional bool validate_certificate_chains = 3;
+
   // If the value is set to true, the RemoteAssertionGenerator enclave seals its
   // attestation key and certificates and returns the sealed secret in the
   // corresponding output message. Required.

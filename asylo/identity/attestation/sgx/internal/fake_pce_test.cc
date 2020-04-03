@@ -92,8 +92,8 @@ TEST(FakePceTest, PceSignReportSuccess) {
   ASYLO_ASSERT_OK_AND_ASSIGN(
       signature, CreateSignatureFromPckEcdsaP256Sha256Signature(pck_signature));
 
-  ASYLO_EXPECT_OK(
-      pck_pub->Verify(ByteContainerView(&report, sizeof(Report)), signature));
+  ASYLO_EXPECT_OK(pck_pub->Verify(
+      ByteContainerView(&report.body, sizeof(report.body)), signature));
 }
 
 TEST(FakePceTest, GetPceInfoSuccess) {

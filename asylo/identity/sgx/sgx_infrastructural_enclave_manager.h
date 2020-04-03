@@ -109,7 +109,8 @@ class SgxInfrastructuralEnclaveManager {
   // |cert_chains|. On success, returns a sealed secret containing the AGE's
   // attestation key and associated certificates.
   virtual StatusOr<SealedSecret> AgeUpdateCerts(
-      const std::vector<asylo::CertificateChain> &cert_chains);
+      const std::vector<asylo::CertificateChain> &cert_chains,
+      bool validate_cert_chains = false);
 
   // Starts the AGE's remote assertion generator server with the enclave's
   // current state.
