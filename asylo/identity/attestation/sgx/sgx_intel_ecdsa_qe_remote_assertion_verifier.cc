@@ -44,12 +44,15 @@
 #include "asylo/identity/enclave_assertion_authority.h"
 #include "asylo/identity/enclave_assertion_authority_config_verifiers.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/identity_acl.pb.h"
+#include "asylo/identity/identity_acl_evaluator.h"
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/pce_util.h"
+#include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/platform/common/static_map.h"
@@ -182,6 +185,30 @@ Status ParseEnclaveIdentityFromQuote(const sgx::ReportBody &report_body,
   return Status::OkStatus();
 }
 
+Status VerifyQeIdentityMatchesExpectation(
+    const sgx::IntelQeQuote &quote,
+    const IdentityAclPredicate &qe_expectation) {
+  EnclaveIdentity qe_identity;
+  ASYLO_RETURN_IF_ERROR(
+      ParseEnclaveIdentityFromQuote(quote.signature.qe_report, &qe_identity));
+
+  std::string explanation;
+  SgxIdentityExpectationMatcher matcher;
+
+  bool qe_match_result;
+  ASYLO_ASSIGN_OR_RETURN(qe_match_result,
+                         EvaluateIdentityAcl({qe_identity}, qe_expectation,
+                                             matcher, &explanation));
+
+  if (!qe_match_result) {
+    return Status(
+        error::GoogleError::UNAUTHENTICATED,
+        absl::StrCat("QE identity did not match expectation: ", explanation));
+  }
+
+  return Status::OkStatus();
+}
+
 }  // namespace
 
 SgxIntelEcdsaQeRemoteAssertionVerifier::SgxIntelEcdsaQeRemoteAssertionVerifier()
@@ -222,6 +249,13 @@ Status SgxIntelEcdsaQeRemoteAssertionVerifier::Initialize(
     ASYLO_ASSIGN_OR_RETURN(inserter, X509Certificate::Create(cert));
   }
 
+  if (!config.verifier_info().has_qe_identity_expectation()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Authority configuration is missing QE identity expectation");
+  }
+
+  members_view->qe_identity_expectation = std::move(
+      *config.mutable_verifier_info()->mutable_qe_identity_expectation());
   members_view->root_certificates = std::move(root_certificates);
   members_view->is_initialized = true;
 
@@ -274,6 +308,9 @@ Status SgxIntelEcdsaQeRemoteAssertionVerifier::Verify(
   ASYLO_RETURN_IF_ERROR(VerifyQuoteMeetsMinimumTcbLevel(quote));
   ASYLO_RETURN_IF_ERROR(VerifyPckSignatureOverQuotingEnclave(quote));
   ASYLO_RETURN_IF_ERROR(VerifyPckCertificateChain(quote));
+  ASYLO_RETURN_IF_ERROR(VerifyQeIdentityMatchesExpectation(
+      quote, members_view->qe_identity_expectation));
+
   ASYLO_RETURN_IF_ERROR(
       ParseEnclaveIdentityFromQuote(quote.body, peer_identity));
 

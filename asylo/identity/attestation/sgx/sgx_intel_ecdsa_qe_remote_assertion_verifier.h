@@ -31,6 +31,8 @@
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/enclave_assertion_authority.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/identity_acl.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/platform/common/static_map.h"
 #include "asylo/util/mutex_guarded.h"
@@ -80,6 +82,7 @@ class SgxIntelEcdsaQeRemoteAssertionVerifier : public EnclaveAssertionVerifier {
     bool is_initialized = false;
     std::vector<std::unique_ptr<CertificateInterface>> root_certificates;
     std::unique_ptr<AdditionalAuthenticatedDataGenerator> aad_generator;
+    IdentityAclPredicate qe_identity_expectation;
   };
 
   Status CheckInitialization(absl::string_view caller) const;

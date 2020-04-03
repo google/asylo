@@ -19,6 +19,7 @@ syntax = "proto2";
 package asylo;
 
 import "asylo/crypto/certificate.proto";
+import "asylo/identity/identity_acl.proto";
 
 // Configuration for an assertion authority based on the Intel ECDSA quoting
 // enclave.
@@ -45,6 +46,13 @@ message SgxIntelEcdsaQeRemoteAssertionAuthorityConfig {
     // only if its certificate chain roots up to at least one of the roots
     // contained in this set of certificates.
     repeated Certificate root_certificates = 1;
+
+    // The identity expectation on the Intel ECDSA QE. Required.
+    //
+    // The latest Intel ECDSA QE identity is published on Intel's Provisioning
+    // Certification Service:
+    // https://api.portal.trustedservices.intel.com/documentation#pcs-qe-identity-v2
+    optional IdentityAclPredicate qe_identity_expectation = 2;
   }
 
   // This configuration field is required only for assertion generators. If your

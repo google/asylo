@@ -55,7 +55,10 @@ proto_library(
     name = "sgx_intel_ecdsa_qe_remote_assertion_authority_config_proto",
     srcs = ["sgx_intel_ecdsa_qe_remote_assertion_authority_config.proto"],
     visibility = ["//asylo:implementation"],
-    deps = ["//asylo/crypto:certificate_proto"],
+    deps = [
+        "//asylo/crypto:certificate_proto",
+        "//asylo/identity:identity_acl_proto",
+    ],
 )
 
 cc_proto_library(
@@ -456,6 +459,8 @@ cc_library(
         "//asylo/identity:descriptions",
         "//asylo/identity:enclave_assertion_authority",
         "//asylo/identity:enclave_assertion_authority_config_verifiers",
+        "//asylo/identity:identity_acl_cc_proto",
+        "//asylo/identity:identity_acl_evaluator",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity/attestation:enclave_assertion_verifier",
         "//asylo/identity/attestation/sgx/internal:intel_ecdsa_quote",
@@ -465,6 +470,7 @@ cc_library(
         "//asylo/identity/sgx:code_identity_constants",
         "//asylo/identity/sgx:hardware_types",
         "//asylo/identity/sgx:pce_util",
+        "//asylo/identity/sgx:sgx_identity_expectation_matcher",
         "//asylo/identity/sgx:sgx_identity_util",
         "//asylo/identity/sgx:sgx_identity_util_internal",
         "//asylo/platform/common:static_map",
@@ -473,6 +479,7 @@ cc_library(
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/types:optional",
         "@sgx_dcap//:quote_constants",
     ],
 )
@@ -504,6 +511,7 @@ cc_test(
         "//asylo/identity/sgx:code_identity_constants",
         "//asylo/identity/sgx:hardware_types",
         "//asylo/identity/sgx:sgx_identity_util",
+        "//asylo/identity/sgx:sgx_identity_util_internal",
         "//asylo/identity/sgx/intel_certs:intel_sgx_root_ca_cert",
         "//asylo/platform/common:static_map",
         "//asylo/test/util:memory_matchers",

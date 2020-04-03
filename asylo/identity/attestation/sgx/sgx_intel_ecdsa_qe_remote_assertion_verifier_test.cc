@@ -48,6 +48,7 @@
 #include "asylo/identity/sgx/intel_certs/intel_sgx_root_ca_cert.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
+#include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/platform/common/static_map.h"
 #include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/proto_matchers.h"
@@ -77,12 +78,25 @@ constexpr char kValidAssertionDescriptionProto[] = R"pb(
 class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
  protected:
   void SetUp() override {
+    qe_identity_ = TrivialRandomObject<sgx::ReportBody>();
+
     SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config;
     *config.mutable_generator_info()
          ->mutable_pck_certificate_chain()
          ->add_certificates() = MakeIntelSgxRootCaCertificateProto();
     *config.mutable_verifier_info()->add_root_certificates() =
         MakeIntelSgxRootCaCertificateProto();
+
+    SgxIdentityExpectation qe_expectation;
+    ASYLO_ASSERT_OK_AND_ASSIGN(
+        qe_expectation, CreateSgxIdentityExpectation(
+                            ParseSgxIdentityFromHardwareReport(qe_identity_),
+                            SgxIdentityMatchSpecOptions::DEFAULT));
+    ASYLO_ASSERT_OK_AND_ASSIGN(*config.mutable_verifier_info()
+                                    ->mutable_qe_identity_expectation()
+                                    ->mutable_expectation(),
+                               SerializeSgxIdentityExpectation(qe_expectation));
+
     ASSERT_TRUE(config.SerializeToString(&valid_config_));
   }
 
@@ -109,12 +123,13 @@ class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
     return body;
   }
 
-  void SignQuoteHeaderAndReport(sgx::IntelQeQuote *quote) const {
+  void SignQuoteHeaderAndReport(sgx::IntelQeQuote *quote,
+                                const sgx::ReportBody &qe_identity) const {
     auto signing_key = EcdsaP256Sha256SigningKey::Create().ValueOrDie();
     ByteContainerView data_to_sign(quote,
                                    sizeof(quote->header) + sizeof(quote->body));
     Signature signature;
-    ASSERT_THAT(signing_key->Sign(data_to_sign, &signature), IsOk());
+    ASYLO_ASSERT_OK(signing_key->Sign(data_to_sign, &signature));
     ASSERT_THAT(signature.ecdsa_signature().r().size(), Eq(32));
     quote->signature.body_signature.replace(0, signature.ecdsa_signature().r());
 
@@ -126,6 +141,8 @@ class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
     static_assert(sizeof(quote->signature.public_key) == sizeof(key_bytes),
                   "Key size mismatch");
     quote->signature.public_key.assign(&key_bytes, sizeof(key_bytes));
+
+    quote->signature.qe_report = qe_identity;
   }
 
   void SignQuotingEnclaveReport(sgx::IntelQeQuote *quote) const {
@@ -143,16 +160,22 @@ class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
         ::intel::sgx::qvl::constants::PCK_ID_PCK_CERT_CHAIN;
   }
 
-  sgx::IntelQeQuote GenerateValidQuote(ByteContainerView user_data) const {
+  sgx::IntelQeQuote GenerateValidQuote(
+      ByteContainerView user_data, const sgx::ReportBody &qe_identity) const {
     sgx::IntelQeQuote quote;
     quote.header = GenerateValidQuoteHeader();
     quote.body = GenerateValidQuoteBody(user_data);
-    SignQuoteHeaderAndReport(&quote);
+    SignQuoteHeaderAndReport(&quote, qe_identity);
     AppendTrivialObject(TrivialRandomObject<UnsafeBytes<123>>(),
                         &quote.qe_authn_data);
     SignQuotingEnclaveReport(&quote);
 
     return quote;
+  }
+
+  // Generates a valid quote issued by |qe_identity_|.
+  sgx::IntelQeQuote GenerateValidQuote(ByteContainerView user_data) const {
+    return GenerateValidQuote(user_data, qe_identity_);
   }
 
   // Creates an assertion object that wraps the given quote, with the correct
@@ -165,6 +188,7 @@ class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
     return assertion;
   }
 
+  sgx::ReportBody qe_identity_;
   std::string valid_config_;
 };
 
@@ -458,6 +482,21 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   EXPECT_THAT(
       verifier.Verify("user data", assertion, &identity),
       StatusIs(error::GoogleError::INTERNAL, HasSubstr("BAD_SIGNATURE")));
+}
+
+TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
+       VerifyFailsWithQeIdentityExpectationMismatch) {
+  SgxIntelEcdsaQeRemoteAssertionVerifier verifier;
+  ASYLO_ASSERT_OK(verifier.Initialize(valid_config_));
+
+  // Create a quote using a random QE identity, which should not match the
+  // default QE identity expectation in the authority config.
+  sgx::ReportBody qe_identity = TrivialRandomObject<sgx::ReportBody>();
+  sgx::IntelQeQuote quote = GenerateValidQuote("user data", qe_identity);
+  Assertion assertion = CreateAssertion(quote);
+  EnclaveIdentity identity;
+  EXPECT_THAT(verifier.Verify("user data", assertion, &identity),
+              StatusIs(error::GoogleError::UNAUTHENTICATED));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest, VerifySuccess) {
