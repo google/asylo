@@ -305,16 +305,6 @@ TEST_F(SgxIdentityUtilInternalTest, SgxMatchSpecValidityPositive) {
 }
 
 TEST_F(SgxIdentityUtilInternalTest,
-       SgxMatchSpecValidityPositiveLegacyMatchSpec) {
-  SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
-
-  // Clear MachineConfiguration to create a valid legacy match spec.
-  spec.clear_machine_configuration_match_spec();
-  EXPECT_FALSE(IsValidMatchSpec(spec, /*is_legacy=*/false));
-  EXPECT_TRUE(IsValidMatchSpec(spec, /*is_legacy=*/true));
-}
-
-TEST_F(SgxIdentityUtilInternalTest,
        SgxMatchSpecValidityNegativeMrenclaveUnset) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->clear_is_mrenclave_match_required();
@@ -368,24 +358,6 @@ TEST_F(SgxIdentityUtilInternalTest, SgxExpectationValidityPositive) {
   SgxIdentityExpectation expectation;
   ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
   EXPECT_TRUE(IsValidExpectation(expectation));
-}
-
-TEST_F(SgxIdentityUtilInternalTest,
-       SgxExpectationValidityPositiveLegacyMatchSpec) {
-  SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
-
-  SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_code_identity()->mutable_mrenclave() = h_acedface_;
-  *id.mutable_code_identity()->mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
-
-  SgxIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-
-  // Clear MachineConfiguration to create a valid legacy match spec.
-  expectation.mutable_match_spec()->clear_machine_configuration_match_spec();
-  EXPECT_FALSE(IsValidExpectation(expectation, /*is_legacy=*/false));
-  EXPECT_TRUE(IsValidExpectation(expectation, /*is_legacy=*/true));
 }
 
 TEST_F(SgxIdentityUtilInternalTest,
@@ -523,17 +495,6 @@ TEST_F(SgxIdentityUtilInternalTest, SgxIdentitySelfMatch) {
 
   EXPECT_THAT(
       MatchIdentityToExpectation(id, expectation, /*explanation=*/nullptr),
-      IsOkAndHolds(true));
-
-  // Clear SgxMachineConfiguration to create a valid legacy match spec.
-  expectation.mutable_match_spec()->clear_machine_configuration_match_spec();
-  EXPECT_THAT(
-      MatchIdentityToExpectation(id, expectation, /*explanation=*/nullptr,
-                                 /*is_legacy_expectation=*/false),
-      Not(IsOk()));
-  EXPECT_THAT(
-      MatchIdentityToExpectation(id, expectation, /*explanation=*/nullptr,
-                                 /*is_legacy_expectation=*/true),
       IsOkAndHolds(true));
 }
 
@@ -1096,20 +1057,6 @@ TEST_F(SgxIdentityUtilInternalTest, SetStrictRemoteSelfSgxExpectation) {
       << FormatProto(expectation.match_spec()) << FormatProto(match_spec);
 }
 
-TEST_F(SgxIdentityUtilInternalTest, ParseLegacySgxIdentitySuccess) {
-  for (int i = 0; i < kNumRandomParseTrials; i++) {
-    EnclaveIdentity generic_identity;
-    SgxIdentity generated_sgx_identity;
-    ASYLO_ASSERT_OK(SetRandomValidLegacyGenericIdentity(
-        &generic_identity, &generated_sgx_identity));
-    SgxIdentity parsed_sgx_identity;
-    ASYLO_ASSERT_OK(ParseSgxIdentity(generic_identity, &parsed_sgx_identity));
-    ASSERT_THAT(generated_sgx_identity, EquivalentProto(parsed_sgx_identity))
-        << FormatProto(generated_sgx_identity)
-        << FormatProto(parsed_sgx_identity);
-  }
-}
-
 TEST_F(SgxIdentityUtilInternalTest, ParseSgxIdentitySuccess) {
   for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
@@ -1121,17 +1068,6 @@ TEST_F(SgxIdentityUtilInternalTest, ParseSgxIdentitySuccess) {
     ASSERT_THAT(generated_sgx_identity, EquivalentProto(parsed_sgx_identity))
         << FormatProto(generated_sgx_identity)
         << FormatProto(parsed_sgx_identity);
-  }
-}
-
-// Parse legacy CodeIdentity-based EnclaveIdentity messages into SgxIdentity.
-TEST_F(SgxIdentityUtilInternalTest, ParseLegacySgxIdentityFailure) {
-  for (int i = 0; i < kNumRandomParseTrials; i++) {
-    EnclaveIdentity generic_identity;
-    SetRandomInvalidLegacyGenericIdentity(&generic_identity);
-    SgxIdentity parsed_sgx_identity;
-    ASSERT_THAT(ParseSgxIdentity(generic_identity, &parsed_sgx_identity),
-                Not(IsOk()));
   }
 }
 
@@ -1204,24 +1140,6 @@ TEST_F(SgxIdentityUtilInternalTest, ParseSgxIdentityExpectationFailure) {
   }
 }
 
-TEST_F(SgxIdentityUtilInternalTest,
-       SerializeAndParseLegacySgxIdentityEndToEnd) {
-  SgxIdentity generated_sgx_identity;
-  EnclaveIdentity generic_identity;
-
-  EXPECT_THAT(SerializeSgxIdentity(generated_sgx_identity, &generic_identity),
-              Not(IsOk()));
-  *generated_sgx_identity.mutable_code_identity() =
-      GetRandomValidCodeIdentity();
-  ASYLO_ASSERT_OK(
-      SerializeSgxIdentity(generated_sgx_identity, &generic_identity));
-  SgxIdentity parsed_sgx_identity;
-  ASYLO_ASSERT_OK(ParseSgxIdentity(generic_identity, &parsed_sgx_identity));
-  ASSERT_THAT(generated_sgx_identity, EquivalentProto(parsed_sgx_identity))
-      << FormatProto(generated_sgx_identity)
-      << FormatProto(parsed_sgx_identity);
-}
-
 TEST_F(SgxIdentityUtilInternalTest, SerializeAndParseSgxIdentityEndToEnd) {
   SgxIdentity generated_sgx_identity;
   EnclaveIdentity generic_identity;
@@ -1254,27 +1172,6 @@ TEST_F(SgxIdentityUtilInternalTest,
 }
 
 TEST_F(SgxIdentityUtilInternalTest,
-       SerializeAndParseLegacySgxIdentityMatchSpecEndToEnd) {
-  SgxIdentityMatchSpec generated_sgx_spec;
-  std::string generic_spec;
-  generated_sgx_spec = GetRandomValidSgxMatchSpec();
-
-  // Clear SgxMachineConfiguration to create a valid legacy match spec.
-  generated_sgx_spec.clear_machine_configuration_match_spec();
-
-  ASYLO_ASSERT_OK(SerializeSgxMatchSpec(
-      generated_sgx_spec.code_identity_match_spec(), &generic_spec));
-  SgxIdentityMatchSpec parsed_sgx_spec;
-  EXPECT_THAT(
-      ParseSgxMatchSpec(generic_spec, &parsed_sgx_spec, /*is_legacy=*/false),
-      Not(IsOk()));
-  ASYLO_ASSERT_OK(
-      ParseSgxMatchSpec(generic_spec, &parsed_sgx_spec, /*is_legacy=*/true));
-  ASSERT_THAT(parsed_sgx_spec, EquivalentProto(generated_sgx_spec))
-      << FormatProto(parsed_sgx_spec) << FormatProto(generated_sgx_spec);
-}
-
-TEST_F(SgxIdentityUtilInternalTest,
        SerializeAndParseSgxIdentityExpectationEndToEnd) {
   SgxIdentityExpectation generated_sgx_expectation;
   EnclaveIdentityExpectation generic_expectation;
@@ -1292,39 +1189,6 @@ TEST_F(SgxIdentityUtilInternalTest,
               EquivalentProto(parsed_sgx_expectation))
       << FormatProto(generated_sgx_expectation)
       << FormatProto(parsed_sgx_expectation);
-}
-
-TEST_F(SgxIdentityUtilInternalTest,
-       SerializeAndParseLegacySgxIdentityExpectationEndToEnd) {
-  SgxIdentityExpectation generated_sgx_expectation =
-      GetRandomValidSgxExpectation();
-  EnclaveIdentityExpectation generic_expectation;
-
-  // Clear SgxMachineConfiguration to create a valid legacy expectation.
-  generated_sgx_expectation.mutable_reference_identity()
-      ->clear_machine_configuration();
-  generated_sgx_expectation.mutable_match_spec()
-      ->clear_machine_configuration_match_spec();
-
-  CodeIdentityExpectation generated_code_expectation;
-  *generated_code_expectation.mutable_reference_identity() =
-      generated_sgx_expectation.reference_identity().code_identity();
-  *generated_code_expectation.mutable_match_spec() =
-      generated_sgx_expectation.match_spec().code_identity_match_spec();
-
-  ASYLO_ASSERT_OK(SerializeSgxExpectation(generated_code_expectation,
-                                          &generic_expectation));
-
-  SgxIdentityExpectation parsed_sgx_expectation;
-  EXPECT_THAT(ParseSgxExpectation(generic_expectation, &parsed_sgx_expectation,
-                                  /*is_legacy=*/false),
-              Not(IsOk()));
-  ASYLO_ASSERT_OK(ParseSgxExpectation(
-      generic_expectation, &parsed_sgx_expectation, /*is_legacy=*/true));
-  ASSERT_THAT(parsed_sgx_expectation,
-              EquivalentProto(generated_sgx_expectation))
-      << FormatProto(parsed_sgx_expectation)
-      << FormatProto(generated_sgx_expectation);
 }
 
 TEST_F(SgxIdentityUtilInternalTest, SetTargetinfoFromSelfIdentity) {

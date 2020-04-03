@@ -26,7 +26,6 @@
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sealing/sealed_secret.pb.h"
-#include "asylo/identity/sealing/sgx/internal/local_sealed_secret.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
@@ -68,7 +67,7 @@ Status Open(AeadCryptor *cryptor, const SealedSecret &sealed_secret,
 
 // Parses and returns the AEAD scheme associated with |header|. Returns a non-OK
 // status if |header| cannot be parsed.
-StatusOr<AeadScheme> ParseAeadSchemeFromSealedSecretHeader(
+StatusOr<AeadScheme> GetAeadSchemeFromSealedSecretHeader(
     const SealedSecretHeader &header);
 
 }  // namespace internal

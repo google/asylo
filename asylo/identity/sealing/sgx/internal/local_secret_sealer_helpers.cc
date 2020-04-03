@@ -33,7 +33,6 @@
 #include "asylo/identity/identity_acl.pb.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sealing/sealed_secret.pb.h"
-#include "asylo/identity/sealing/sgx/internal/local_sealed_secret.pb.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/self_identity.h"
@@ -45,27 +44,6 @@
 
 namespace asylo {
 namespace sgx {
-namespace {
-
-// Translates |cipher_suite| to the AeadScheme equivalent.
-AeadScheme CipherSuiteToAeadScheme(CipherSuite cipher_suite) {
-  switch (cipher_suite) {
-    case sgx::AES256_GCM_SIV:
-      return AeadScheme::AES256_GCM_SIV;
-    default:
-      return AeadScheme::UNKNOWN_AEAD_SCHEME;
-  }
-}
-
-// Use the presence of the |version| field in the reference identity contained
-// in the header ACL to determine whether the secret was created before/after
-// the migration from CodeIdentity to SgxIdentity.
-bool IsLegacySealedSecret(const SealedSecretHeader &header) {
-  return !header.client_acl().expectation().reference_identity().has_version();
-}
-
-}  // namespace
-
 namespace internal {
 
 const char *const kSgxLocalSecretSealerRootName = "SGX";
@@ -86,52 +64,17 @@ Status ParseKeyGenerationParamsFromSealedSecretHeader(
     return Status(error::GoogleError::INVALID_ARGUMENT, "Malformed client_acl");
   }
 
-  const EnclaveIdentityExpectation &generic_expectation =
-      header.client_acl().expectation();
-
-  bool is_legacy = IsLegacySealedSecret(header);
-
-  if (is_legacy) {
-    LOG(WARNING)
-        << "Support for unsealing pre-Asylo 0.5 secrets is deprecated, and "
-           "will be removed in Asylo 0.6. To retain the ability to unseal "
-        << (header.has_secret_name() ? header.secret_name() : "this secret")
-        << ", please reseal it (see the Asylo release notes for more info).";
-  }
-
-  // Call ParseSgxExpectation before attempting to populate legacy fields to
-  // avoid causing the parsing step to "undo" any of the fields manually set
-  // by the legacy flow.
   ASYLO_RETURN_IF_ERROR(
-      ParseSgxExpectation(generic_expectation, sgx_expectation, is_legacy));
-
-  // Set CPUSVN from SealedSecretAdditionalInfo if present (ie. legacy secret);
-  // otherwise, it was populated when parsing the SgxIdentityExpectation above.
-  if (root_info.has_additional_info()) {
-    SealedSecretAdditionalInfo info;
-    if (!info.ParseFromString(root_info.additional_info())) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Could not parse additional_info");
-    }
-    if (info.cpusvn().size() != kCpusvnSize) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Incorrect cpusvn size");
-    }
-    sgx_expectation->mutable_reference_identity()
-        ->mutable_machine_configuration()
-        ->mutable_cpu_svn()
-        ->set_value(info.cpusvn());
-  }
+      ParseSgxExpectation(header.client_acl().expectation(), sgx_expectation));
 
   ASYLO_ASSIGN_OR_RETURN(*aead_scheme,
-                         ParseAeadSchemeFromSealedSecretHeader(header));
+                         GetAeadSchemeFromSealedSecretHeader(header));
 
   bool result;
   std::string explanation;
   ASYLO_ASSIGN_OR_RETURN(
-      result,
-      MatchIdentityToExpectation(GetSelfIdentity()->sgx_identity,
-                                 *sgx_expectation, &explanation, is_legacy));
+      result, MatchIdentityToExpectation(GetSelfIdentity()->sgx_identity,
+                                         *sgx_expectation, &explanation));
   if (!result) {
     return Status(
         error::GoogleError::PERMISSION_DENIED,
@@ -265,21 +208,9 @@ Status Open(AeadCryptor *cryptor, const SealedSecret &sealed_secret,
   return Status::OkStatus();
 }
 
-StatusOr<AeadScheme> ParseAeadSchemeFromSealedSecretHeader(
+StatusOr<AeadScheme> GetAeadSchemeFromSealedSecretHeader(
     const SealedSecretHeader &header) {
-  AeadScheme aead_scheme;
-  if (IsLegacySealedSecret(header)) {
-    // This is a legacy secret, so we need to parse the sgx::CipherSuite from
-    // the |additional_info| field, and then convert it to asylo::AeadScheme.
-    SealedSecretAdditionalInfo info;
-    if (!info.ParseFromString(header.root_info().additional_info())) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Could not parse additional_info");
-    }
-    aead_scheme = CipherSuiteToAeadScheme(info.cipher_suite());
-  } else {
-    aead_scheme = header.root_info().aead_scheme();
-  }
+  AeadScheme aead_scheme = header.root_info().aead_scheme();
 
   if (aead_scheme != AeadScheme::AES256_GCM_SIV) {
     return Status(error::GoogleError::INVALID_ARGUMENT,

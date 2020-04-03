@@ -76,105 +76,6 @@ TEST(SgxIdentityExpectationMatcherTest, MatcherPositive) {
       << sgx::FormatProto(sgx_identity_expectation);
 }
 
-TEST(SgxIdentityExpectationMatcherTest, MatcherLegacyExpectationPositive) {
-  EnclaveIdentityExpectation expectation;
-  SgxIdentityExpectation sgx_identity_expectation;
-  ASYLO_ASSERT_OK(sgx::SetRandomValidLegacyGenericExpectation(
-      &expectation, &sgx_identity_expectation));
-
-  SgxIdentityExpectationMatcher matcher;
-  StatusOr<bool> matcher_result =
-      matcher.Match(expectation.reference_identity(), expectation);
-  ASSERT_THAT(matcher_result, IsOkAndHolds(true))
-      << sgx::FormatProto(sgx_identity_expectation);
-}
-
-// Tests that SgxIdentityExpectationMatcher correctly matches a legacy identity
-// when the expectation itself is not a legacy expectation, given that the
-// expectation does not expect anything with respect to non-legacy fields.
-TEST(SgxIdentityExpectationMatcherTest,
-     MatchLegacyIdentityNonLegacyExpectationSuccess) {
-  EnclaveIdentityExpectation expectation;
-  SgxIdentityExpectation sgx_identity_expectation;
-  ASSERT_THAT(sgx::SetRandomValidGenericExpectation(&expectation,
-                                                    &sgx_identity_expectation),
-              IsOk());
-
-  // Backfill the expectation with a legacy identity.
-  EnclaveIdentity identity;
-  ASYLO_ASSERT_OK(sgx::SerializeSgxIdentity(
-      sgx_identity_expectation.reference_identity().code_identity(),
-      &identity));
-  ASSERT_FALSE(identity.has_version());
-
-  // Clear the MachineConfiguration fields of the expectation's match spec,
-  // since the legacy identity will never match the expectation identity for
-  // these fields.
-  SgxIdentityMatchSpec *match_spec =
-      sgx_identity_expectation.mutable_match_spec();
-  sgx::MachineConfigurationMatchSpec *machine_config_match_spec =
-      match_spec->mutable_machine_configuration_match_spec();
-  machine_config_match_spec->set_is_cpu_svn_match_required(false);
-  machine_config_match_spec->set_is_sgx_type_match_required(false);
-
-  ASYLO_ASSERT_OK(sgx::SerializeSgxMatchSpec(*match_spec,
-                                             expectation.mutable_match_spec()));
-
-  SgxIdentity parsed_identity;
-  ASYLO_ASSERT_OK(sgx::ParseSgxIdentity(identity, &parsed_identity));
-
-  SgxIdentityExpectationMatcher matcher;
-  StatusOr<bool> matcher_result = matcher.Match(identity, expectation);
-  ASSERT_THAT(matcher_result, IsOk())
-      << sgx::FormatProto(parsed_identity)
-      << sgx::FormatProto(sgx_identity_expectation);
-  EXPECT_TRUE(matcher_result.ValueOrDie())
-      << sgx::FormatProto(parsed_identity)
-      << sgx::FormatProto(sgx_identity_expectation);
-}
-
-// Tests that SgxIdentityExpectationMatcher will fail to evaluate a match for
-// any legacy identity when the expectation itself is not a legacy expectation,
-// given that at least one non-legacy field is set to "expected".
-TEST(SgxIdentityExpectationMatcherTest,
-     MatchLegacyIdentityNonLegacyExpectationIncompatible) {
-  EnclaveIdentityExpectation expectation;
-  SgxIdentityExpectation sgx_identity_expectation;
-  ASSERT_THAT(sgx::SetRandomValidGenericExpectation(&expectation,
-                                                    &sgx_identity_expectation),
-              IsOk());
-
-  // Backfill the expectation with a legacy identity.
-  EnclaveIdentity identity;
-  ASYLO_ASSERT_OK(sgx::SerializeSgxIdentity(
-      sgx_identity_expectation.reference_identity().code_identity(),
-      &identity));
-  ASSERT_FALSE(identity.has_version());
-
-  for (int i = 0;
-       i < sgx::MachineConfigurationMatchSpec::GetDescriptor()->field_count();
-       ++i) {
-    SgxIdentityMatchSpec *match_spec =
-        sgx_identity_expectation.mutable_match_spec();
-    sgx::MachineConfigurationMatchSpec *machine_config_match_spec =
-        match_spec->mutable_machine_configuration_match_spec();
-    machine_config_match_spec->set_is_cpu_svn_match_required(i == 0);
-    machine_config_match_spec->set_is_sgx_type_match_required(i == 1);
-
-    ASYLO_ASSERT_OK(sgx::SerializeSgxMatchSpec(
-        *match_spec, expectation.mutable_match_spec()));
-
-    SgxIdentity parsed_identity;
-    ASYLO_ASSERT_OK(sgx::ParseSgxIdentity(identity, &parsed_identity));
-
-    SgxIdentityExpectationMatcher matcher;
-    StatusOr<bool> matcher_result = matcher.Match(identity, expectation);
-    ASSERT_THAT(matcher_result, Not(IsOk()))
-        << sgx::FormatProto(parsed_identity)
-        << sgx::FormatProto(sgx_identity_expectation);
-  }
-}
-
 // Tests that when an SgxIdentityExpectationMatcher returns false it populates
 // the explanation, and does not populate the explanation when it returns true.
 TEST(SgxIdentityExpectationMatcherTest, MatchAndExplain) {
@@ -220,21 +121,6 @@ TEST(SgxIdentityExpectationMatcherTest, MatchInvalidIdentity) {
       << sgx::FormatProto(sgx_identity_expectation);
 }
 
-TEST(SgxIdentityExpectationMatcherTest, MatchLegacyInvalidIdentity) {
-  EnclaveIdentity identity;
-  sgx::SetRandomInvalidGenericIdentity(&identity);
-
-  EnclaveIdentityExpectation expectation;
-  SgxIdentityExpectation sgx_identity_expectation;
-  ASYLO_ASSERT_OK(sgx::SetRandomValidLegacyGenericExpectation(
-      &expectation, &sgx_identity_expectation));
-
-  SgxIdentityExpectationMatcher matcher;
-  EXPECT_THAT(matcher.Match(identity, expectation), Not(IsOk()))
-      << sgx::FormatProto(identity)
-      << sgx::FormatProto(sgx_identity_expectation);
-}
-
 // Tests that SgxIdentityExpectationMatcher returns a non-OK status when
 // invoked with an invalid SGX identity expectation.
 TEST(SgxIdentityExpectationMatcherTest, MatchInvalidExpectation) {
@@ -244,20 +130,6 @@ TEST(SgxIdentityExpectationMatcherTest, MatchInvalidExpectation) {
 
   EnclaveIdentityExpectation expectation;
   ASSERT_THAT(sgx::SetRandomInvalidGenericExpectation(&expectation), IsOk());
-
-  SgxIdentityExpectationMatcher matcher;
-  ASSERT_THAT(matcher.Match(identity, expectation), Not(IsOk()))
-      << sgx::FormatProto(sgx_identity) << sgx::FormatProto(expectation);
-}
-
-TEST(SgxIdentityExpectationMatcherTest, MatcherLegacyInvalidExpectation) {
-  EnclaveIdentity identity;
-  SgxIdentity sgx_identity;
-  sgx::SetRandomValidLegacyGenericIdentity(&identity, &sgx_identity);
-
-  EnclaveIdentityExpectation expectation;
-  SgxIdentityExpectation sgx_identity_expectation;
-  ASYLO_ASSERT_OK(sgx::SetRandomInvalidGenericExpectation(&expectation));
 
   SgxIdentityExpectationMatcher matcher;
   ASSERT_THAT(matcher.Match(identity, expectation), Not(IsOk()))

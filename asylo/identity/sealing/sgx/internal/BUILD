@@ -24,16 +24,6 @@ licenses(["notice"])
 package(default_visibility = ["//asylo/identity/sealing/sgx:__subpackages__"])
 
 proto_library(
-    name = "local_sealed_secret_proto",
-    srcs = ["local_sealed_secret.proto"],
-)
-
-cc_proto_library(
-    name = "local_sealed_secret_cc_proto",
-    deps = [":local_sealed_secret_proto"],
-)
-
-proto_library(
     name = "local_secret_sealer_test_data_proto",
     srcs = ["local_secret_sealer_test_data.proto"],
     deps = [
@@ -54,7 +44,6 @@ cc_library(
     hdrs = ["local_secret_sealer_helpers.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":local_sealed_secret_cc_proto",
         "//asylo/crypto:aead_cryptor",
         "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto:sha256_hash",

@@ -108,8 +108,7 @@ StatusOr<size_t> SgxLocalSecretSealer::MaxMessageSize(
     const SealedSecretHeader &header) const {
   AeadScheme aead_scheme;
   ASYLO_ASSIGN_OR_RETURN(
-      aead_scheme,
-      sgx::internal::ParseAeadSchemeFromSealedSecretHeader(header));
+      aead_scheme, sgx::internal::GetAeadSchemeFromSealedSecretHeader(header));
   return AeadCryptor::MaxMessageSize(aead_scheme);
 }
 
@@ -117,8 +116,7 @@ StatusOr<uint64_t> SgxLocalSecretSealer::MaxSealedMessages(
     const SealedSecretHeader &header) const {
   AeadScheme aead_scheme;
   ASYLO_ASSIGN_OR_RETURN(
-      aead_scheme,
-      sgx::internal::ParseAeadSchemeFromSealedSecretHeader(header));
+      aead_scheme, sgx::internal::GetAeadSchemeFromSealedSecretHeader(header));
   return AeadCryptor::MaxSealedMessages(aead_scheme);
 }
 

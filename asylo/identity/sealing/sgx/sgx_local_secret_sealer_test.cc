@@ -40,7 +40,6 @@
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sealing/sealed_secret.pb.h"
-#include "asylo/identity/sealing/sgx/internal/local_sealed_secret.pb.h"
 #include "asylo/identity/sealing/sgx/internal/local_secret_sealer_helpers.h"
 #include "asylo/identity/sealing/sgx/internal/local_secret_sealer_test_data.pb.h"
 #include "asylo/identity/sgx/fake_enclave.h"
@@ -64,11 +63,8 @@ namespace {
 using ::testing::Not;
 
 constexpr char kBadRootName[] = "BAD";
-constexpr char kBadAdditionalInfo[] = "BAD";
 constexpr char kBadExpectation[] = "BAD";
-constexpr char kBadCpusvn[] = "BAD";
 constexpr char kTestString[] = "test";
-constexpr sgx::CipherSuite kBadCipherSuite = sgx::UNKNOWN_CIPHER_SUITE;
 constexpr char kTestAad[] = "Mary had a little lamb";
 constexpr char kTestSecret[] = "Its fleece was white as snow";
 constexpr size_t kTestSecretSize = sizeof(kTestSecret) - 1;
@@ -203,52 +199,12 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadSealingRootName) {
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-// Verify that ParseKeyGenerationParamsFromSealedSecretHeader() fails when the
-// additional info in the header is malformed.
-TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadAdditionalInfo) {
+TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadAeadScheme) {
   std::unique_ptr<SgxLocalSecretSealer> sealer =
       SgxLocalSecretSealer::CreateMrenclaveSecretSealer();
   SealedSecretHeader header;
   sealer->SetDefaultHeader(&header);
-  header.mutable_root_info()->set_additional_info(kBadAdditionalInfo);
-
-  AeadScheme aead_scheme;
-  SgxIdentityExpectation sgx_expectation;
-  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &aead_scheme, &sgx_expectation),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
-}
-
-// Verify that ParseKeyGenerationParamsFromSealedSecretHeader() fails when the
-// CPUSVN (which is a part of additional info) is malformed.
-TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadCpusvn) {
-  std::unique_ptr<SgxLocalSecretSealer> sealer =
-      SgxLocalSecretSealer::CreateMrenclaveSecretSealer();
-  SealedSecretHeader header;
-  sealer->SetDefaultHeader(&header);
-  sgx::SealedSecretAdditionalInfo info;
-  info.set_cpusvn(kBadCpusvn);
-  ASSERT_TRUE(info.SerializeToString(
-      header.mutable_root_info()->mutable_additional_info()));
-
-  AeadScheme aead_scheme;
-  SgxIdentityExpectation sgx_expectation;
-  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &aead_scheme, &sgx_expectation),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
-}
-
-// Verify that ParseKeyGenerationParamsFromSealedSecretHeader() fails when the
-// CPUSVN (which is a part of additional info) is malformed.
-TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadCipherSuite) {
-  std::unique_ptr<SgxLocalSecretSealer> sealer =
-      SgxLocalSecretSealer::CreateMrenclaveSecretSealer();
-  SealedSecretHeader header;
-  sealer->SetDefaultHeader(&header);
-  sgx::SealedSecretAdditionalInfo info;
-  info.set_cipher_suite(kBadCipherSuite);
-  ASSERT_TRUE(info.SerializeToString(
-      header.mutable_root_info()->mutable_additional_info()));
+  header.mutable_root_info()->set_aead_scheme(AeadScheme::UNKNOWN_AEAD_SCHEME);
 
   AeadScheme aead_scheme;
   SgxIdentityExpectation sgx_expectation;
@@ -777,26 +733,7 @@ TEST_F(SgxLocalSecretSealerTest, BackwardCompatibility) {
               sgx::TestDataRecordHeader::FAKE_ENCLAVE);
 
     sgx::FakeEnclave enclave;
-    if (record.header().has_enclave_identity()) {
-      // Pull out the CPUSVN used to seal the legacy secret.
-      SealedSecretHeader header;
-      ASSERT_TRUE(header.ParseFromString(
-          record.sealed_secret().sealed_secret_header()));
-
-      sgx::SealedSecretAdditionalInfo info;
-      ASSERT_TRUE(info.ParseFromString(header.root_info().additional_info()));
-
-      SgxIdentity identity;
-      *identity.mutable_code_identity() = record.header().enclave_identity();
-      identity.mutable_machine_configuration()->mutable_cpu_svn()->set_value(
-          info.cpusvn());
-
-      enclave.SetIdentity(identity);
-    } else if (record.header().has_sgx_identity()) {
-      enclave.SetIdentity(record.header().sgx_identity());
-    } else {
-      FAIL() << "Test data contains neither CodeIdentity nor SgxIdentity.";
-    }
+    enclave.SetIdentity(record.header().sgx_identity());
     sgx::FakeEnclave::ExitEnclave();
     sgx::FakeEnclave::EnterEnclave(enclave);
 

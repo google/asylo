@@ -68,7 +68,6 @@ cc_test(
         "//asylo/identity/platform/sgx:code_identity_cc_proto",
         "//asylo/identity/platform/sgx:machine_configuration_cc_proto",
         "//asylo/identity/sealing:sealed_secret_cc_proto",
-        "//asylo/identity/sealing/sgx/internal:local_sealed_secret_cc_proto",
         "//asylo/identity/sealing/sgx/internal:local_secret_sealer_helpers",
         "//asylo/identity/sealing/sgx/internal:local_secret_sealer_test_data_cc_proto",
         "//asylo/identity/sgx:fake_enclave",
