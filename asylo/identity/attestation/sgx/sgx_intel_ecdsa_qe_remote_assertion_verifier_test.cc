@@ -37,12 +37,14 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/attestation/enclave_assertion_verifier.h"
+#include "asylo/identity/attestation/sgx/internal/fake_pce.h"
 #include "asylo/identity/attestation/sgx/internal/intel_ecdsa_quote.h"
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/enclave_assertion_authority.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/intel_certs/intel_sgx_root_ca_cert.h"
@@ -151,13 +153,37 @@ class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
     sha256.Update(quote->qe_authn_data);
 
     std::vector<uint8_t> report_data;
-    ASSERT_THAT(sha256.CumulativeHash(&report_data), IsOk());
+    ASYLO_ASSERT_OK(sha256.CumulativeHash(&report_data));
     report_data.resize(sgx::kReportdataSize);
     quote->signature.qe_report.reportdata.data.assign(report_data);
 
-
     quote->cert_data.qe_cert_data_type =
         ::intel::sgx::qvl::constants::PCK_ID_PCK_CERT_CHAIN;
+    quote->cert_data.qe_cert_data.insert(
+        quote->cert_data.qe_cert_data.end(),
+        sgx::kFakeSgxPck.certificate_pem.begin(),
+        sgx::kFakeSgxPck.certificate_pem.end());
+    quote->cert_data.qe_cert_data.insert(
+        quote->cert_data.qe_cert_data.end(),
+        sgx::kFakeSgxProcessorCa.certificate_pem.begin(),
+        sgx::kFakeSgxProcessorCa.certificate_pem.end());
+    quote->cert_data.qe_cert_data.insert(
+        quote->cert_data.qe_cert_data.end(),
+        sgx::kFakeSgxRootCa.certificate_pem.begin(),
+        sgx::kFakeSgxRootCa.certificate_pem.end());
+
+    std::unique_ptr<sgx::FakePce> pce;
+    ASYLO_ASSERT_OK_AND_ASSIGN(pce, sgx::FakePce::CreateFromFakePki());
+
+    sgx::Report qe_report_to_sign;
+    qe_report_to_sign.body = quote->signature.qe_report;
+
+    std::string qe_report_signature;
+    ASYLO_ASSERT_OK(pce->PceSignReport(qe_report_to_sign, sgx::FakePce::kPceSvn,
+                                       quote->signature.qe_report.cpusvn,
+                                       &qe_report_signature));
+    std::copy(qe_report_signature.begin(), qe_report_signature.end(),
+              quote->signature.qe_report_signature.begin());
   }
 
   sgx::IntelQeQuote GenerateValidQuote(
@@ -504,9 +530,10 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest, VerifySuccess) {
   ASYLO_ASSERT_OK(verifier.Initialize(valid_config_));
 
   sgx::IntelQeQuote quote = GenerateValidQuote("important data");
+
   Assertion assertion = CreateAssertion(quote);
   EnclaveIdentity identity;
-  EXPECT_THAT(verifier.Verify("important data", assertion, &identity), IsOk());
+  ASYLO_ASSERT_OK(verifier.Verify("important data", assertion, &identity));
 
   SgxIdentity peer_identity;
   ASYLO_ASSERT_OK_AND_ASSIGN(peer_identity, ParseSgxIdentity(identity));

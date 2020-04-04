@@ -34,6 +34,7 @@
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/sha256_hash.pb.h"
+#include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/crypto/x509_certificate.h"
@@ -60,6 +61,7 @@
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
+#include "QuoteGeneration/quote_wrapper/common/inc/sgx_quote_3.h"
 #include "QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h"
 
 namespace asylo {
@@ -170,8 +172,45 @@ Status VerifyQuoteMeetsMinimumTcbLevel(const sgx::IntelQeQuote &quote) {
   return Status::OkStatus();
 }
 
+Status VerifyPckSignatureFromPckCertChain(
+    const std::vector<uint8_t> &cert_data,
+    const sgx::IntelEcdsaP256QuoteSignature &signature) {
+  CertificateChain pck_cert_chain;
+  ASYLO_ASSIGN_OR_RETURN(
+      pck_cert_chain,
+      GetCertificateChainFromPem(absl::string_view(
+          reinterpret_cast<const char *>(cert_data.data()), cert_data.size())));
+
+  std::unique_ptr<X509Certificate> pck_cert;
+  ASYLO_ASSIGN_OR_RETURN(pck_cert, X509Certificate::Create(
+                                       *pck_cert_chain.certificates().begin()));
+
+  std::string pck_der;
+  ASYLO_ASSIGN_OR_RETURN(pck_der, pck_cert->SubjectKeyDer());
+
+  std::unique_ptr<EcdsaP256Sha256VerifyingKey> pck_pub;
+  ASYLO_ASSIGN_OR_RETURN(pck_pub,
+                         EcdsaP256Sha256VerifyingKey::CreateFromDer(pck_der));
+
+  Signature qe_report_signature;
+  ASYLO_ASSIGN_OR_RETURN(qe_report_signature,
+                         sgx::CreateSignatureFromPckEcdsaP256Sha256Signature(
+                             signature.qe_report_signature));
+  return pck_pub->Verify(
+      ConvertTrivialObjectToBinaryString(signature.qe_report),
+      qe_report_signature);
+}
+
 Status VerifyPckSignatureOverQuotingEnclave(const sgx::IntelQeQuote &quote) {
-  return Status::OkStatus();
+  switch (quote.cert_data.qe_cert_data_type) {
+    case PCK_CERT_CHAIN:
+      return VerifyPckSignatureFromPckCertChain(quote.cert_data.qe_cert_data,
+                                                quote.signature);
+  }
+  return Status(
+      error::GoogleError::UNIMPLEMENTED,
+      absl::StrFormat("Verification not supported for QE cert data type %d",
+                      quote.cert_data.qe_cert_data_type));
 }
 
 Status VerifyPckCertificateChain(const sgx::IntelQeQuote &quote) {

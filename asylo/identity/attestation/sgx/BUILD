@@ -453,6 +453,7 @@ cc_library(
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto:sha256_hash_cc_proto",
         "//asylo/crypto:x509_certificate",
+        "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:additional_authenticated_data_generator",
@@ -481,6 +482,7 @@ cc_library(
         "@com_google_absl//absl/strings:str_format",
         "@com_google_absl//absl/types:optional",
         "@sgx_dcap//:quote_constants",
+        "@sgx_dcap//:quote_wrapper_common",
     ],
 )
 
@@ -505,9 +507,11 @@ cc_test(
         "//asylo/identity:enclave_assertion_authority",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity/attestation:enclave_assertion_verifier",
+        "//asylo/identity/attestation/sgx/internal:fake_pce",
         "//asylo/identity/attestation/sgx/internal:intel_ecdsa_quote",
         "//asylo/identity/platform/sgx:code_identity_cc_proto",
         "//asylo/identity/platform/sgx:machine_configuration_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:fake_sgx_pki",
         "//asylo/identity/sgx:code_identity_constants",
         "//asylo/identity/sgx:hardware_types",
         "//asylo/identity/sgx:sgx_identity_util",
