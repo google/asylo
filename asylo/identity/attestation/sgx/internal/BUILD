@@ -115,7 +115,6 @@ cc_proto_library(
 proto_library(
     name = "attestation_key_proto",
     srcs = ["attestation_key.proto"],
-    visibility = ["//asylo:implementation"],
     deps = ["//asylo/crypto:keys_proto"],
 )
 
@@ -128,7 +127,6 @@ cc_proto_library(
 proto_library(
     name = "attestation_key_certificate_proto",
     srcs = ["attestation_key_certificate.proto"],
-    visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/crypto:keys_proto",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning_proto",
@@ -518,10 +516,6 @@ cc_library(
     srcs = ["remote_assertion_generator_constants.cc"],
     hdrs = ["remote_assertion_generator_constants.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = [
-        "//asylo/identity/attestation/sgx:__subpackages__",
-        "//asylo/identity/sgx:__subpackages__",
-    ],
 )
 
 cc_library(
