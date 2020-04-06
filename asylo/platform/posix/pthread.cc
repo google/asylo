@@ -42,22 +42,10 @@
 
 namespace {
 
-#ifndef PTHREAD_KEYS_MAX
-constexpr size_t PTHREAD_KEYS_MAX = 64;
-#endif
-
-#ifdef ASYLO_PTHREAD_TRANSITION
 static void (*tsd_destructors[PTHREAD_KEYS_MAX])(void *) = {0};
 static pthread_rwlock_t key_lock = PTHREAD_RWLOCK_INITIALIZER;
 static void NoDestructor(void *dummy) {}
 size_t __pthread_tsd_size = sizeof(void *) * PTHREAD_KEYS_MAX;
-#else  // ASYLO_PTHREAD_TRANSITION
-thread_local std::array<const void *,
-             PTHREAD_KEYS_MAX> thread_specific = {nullptr};
-
-static pthread_mutex_t used_thread_keys_lock = PTHREAD_MUTEX_INITIALIZER;
-std::bitset<PTHREAD_KEYS_MAX> used_thread_keys;
-#endif
 
 inline int pthread_spin_lock(pthread_spinlock_t *lock) {
   constexpr unsigned int kLocked = 1;
@@ -266,7 +254,6 @@ int pthread_rwlock_lock(pthread_rwlock_t *rwlock) {
   return ret;
 }
 
-#ifdef ASYLO_PTHREAD_TRANSITION
 void pthread_tsd_run_destructors() {
   struct __pthread_info *self =
       reinterpret_cast<struct __pthread_info *>(pthread_self());
@@ -313,7 +300,6 @@ bool CheckAndAllocateThreadSpecificData() {
   }
   return true;
 }
-#endif
 
 }  // namespace
 
@@ -419,7 +405,6 @@ pthread_t pthread_self() {
 
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                    void *(*start_routine)(void *), void *arg) {
-#ifdef ASYLO_PTHREAD_TRANSITION
   // Store the __pthread_info and the start function in the TLS specified by
   // pthread library, so it can be accessed by other pthread functions.
   // The order is __pthread_info struct, then start function.
@@ -456,12 +441,6 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
     *thread = thread_data->thread_id;
   }
   return ret;
-#else   // ASYLO_PTHREAD_TRANSITION
-  asylo::ThreadManager *const thread_manager =
-      asylo::ThreadManager::GetInstance();
-  return thread_manager->CreateThread(std::bind(start_routine, arg),
-                                      CreateOptions(attr), thread);
-#endif  // ASYLO_PTHREAD_TRANSITION
 }
 
 int pthread_join(pthread_t thread, void **value_ptr) {
@@ -476,25 +455,7 @@ int pthread_detach(pthread_t thread) {
   return thread_manager->DetachThread(thread);
 }
 
-#ifndef ASYLO_PTHREAD_TRANSITION
-bool assign_key(pthread_key_t *key) {
-  bool ret = false;
-  pthread_key_t next_key;
-  asylo::pthread_impl::PthreadMutexLock lock(&used_thread_keys_lock);
-  for (next_key = 0; next_key < PTHREAD_KEYS_MAX; next_key++) {
-    if (!used_thread_keys[next_key]) {
-      used_thread_keys[next_key] = true;
-      *key = next_key;
-      ret = true;
-      break;
-    }
-  }
-  return ret;
-}
-#endif
-
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
-#ifdef ASYLO_PTHREAD_TRANSITION
   if (!CheckAndAllocateThreadSpecificData()) {
     return -1;
   }
@@ -512,29 +473,16 @@ int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
   }
   pthread_rwlock_unlock(&key_lock);
   return EAGAIN;
-#else  // ASYLO_PTHREAD_TRANSITION
-  if (!assign_key(key)) {
-    // Limit on the total number of keys per process has been exceeded.
-    return EAGAIN;
-  }
-  return 0;
-#endif
 }
 
 int pthread_key_delete(pthread_key_t key) {
   if (key > PTHREAD_KEYS_MAX) {
     return EINVAL;
   }
-#ifdef ASYLO_PTHREAD_TRANSITION
   pthread_rwlock_wrlock(&key_lock);
   tsd_destructors[key] = nullptr;
   pthread_rwlock_unlock(&key_lock);
   return 0;
-#else  // ASYLO_PTHREAD_TRANSITION
-  asylo::pthread_impl::PthreadMutexLock lock(&used_thread_keys_lock);
-  used_thread_keys[key] = false;
-  return 0;
-#endif
 }
 
 void *pthread_getspecific(pthread_key_t key) {
@@ -544,17 +492,11 @@ void *pthread_getspecific(pthread_key_t key) {
     return nullptr;
   }
 
-#ifdef ASYLO_PTHREAD_TRANSITION
   if (!CheckAndAllocateThreadSpecificData()) {
     return nullptr;
   }
   auto self = reinterpret_cast<struct __pthread_info *>(pthread_self());
   return self->tsd[key];
-#else  // ASYLO_PTHREAD_TRANSTION
-  // If the key is unset, this is to return nullptr. Because it is initialized
-  // to nullptr, there is no need to check if it has been previously set.
-  return const_cast<void *>(thread_specific[key]);
-#endif
 }
 
 int pthread_setspecific(pthread_key_t key, const void *value) {
@@ -563,15 +505,11 @@ int pthread_setspecific(pthread_key_t key, const void *value) {
   if (key >= PTHREAD_KEYS_MAX) {
     return EINVAL;
   }
-#ifdef ASYLO_PTHREAD_TRANSITION
   if (!CheckAndAllocateThreadSpecificData()) {
     return -1;
   }
   auto self = reinterpret_cast<struct __pthread_info *>(pthread_self());
   self->tsd[key] = const_cast<void *>(value);
-#else  // ASYLO_PTHREAD_TRANSITION
-  thread_specific[key] = value;
-#endif
   return 0;
 }
 // Initializes |mutex|, |attr| is unused.

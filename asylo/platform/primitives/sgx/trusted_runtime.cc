@@ -74,13 +74,11 @@ void enc_exit(int rc) {
 }
 
 void enc_update_pthread_info(void *pthread_info) {
-#ifdef ASYLO_PTHREAD_TRANSITION
   if (pthread_info) {
     auto thread_data =
         reinterpret_cast<struct __pthread_info *>(enc_thread_self());
     *thread_data = *reinterpret_cast<struct __pthread_info *>(pthread_info);
   }
-#endif
 }
 
 // The SGX SDK function sgx_thread_self() returns nullptr during early
@@ -90,12 +88,8 @@ void enc_update_pthread_info(void *pthread_info) {
 // instance of this variable, and all instances are in the same address space,
 // this guarantees a distinct non-zero value is provisioned to each thread.
 uint64_t enc_thread_self() {
-#ifdef ASYLO_PTHREAD_TRANSITION
   static thread_local struct __pthread_info thread_identity = {0, nullptr, 0, 0,
                                                                nullptr};
-#else
-  static thread_local int thread_identity;
-#endif
   return reinterpret_cast<uint64_t>(&thread_identity);
 }
 

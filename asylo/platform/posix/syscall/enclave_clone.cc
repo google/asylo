@@ -26,7 +26,6 @@ extern "C" {
 
 int enclave_clone(int (*fn)(void *), void *stack, int flags, void *arg,
                   pid_t *parent_tid, void *tls, pid_t *child_tid) {
-#ifdef ASYLO_PTHREAD_TRANSITION
   if ((flags | CLONE_THREAD) && (flags | CLONE_SETTLS)) {
     pid_t tid;
     int ret = asylo::ThreadManager::GetInstance()->CreateThread(
@@ -36,10 +35,6 @@ int enclave_clone(int (*fn)(void *), void *stack, int flags, void *arg,
   }
   errno = ENOSYS;
   return -1;
-#else  // ASYLO_PTHREAD_TRANSITION
-  errno = ENOSYS;
-  return -1;
-#endif
 }
 
 }  // extern "C"

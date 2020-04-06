@@ -5605,20 +5605,6 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/_types.h ./newlib/li
  typedef	long		__suseconds_t;	/* microseconds (signed) */
  typedef	unsigned long	__useconds_t;	/* microseconds (unsigned) */
  
-diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/types.h ./newlib/libc/include/sys/types.h
---- ../newlib-2.5.0.20170922/newlib/libc/include/sys/types.h
-+++ ./newlib/libc/include/sys/types.h
-@@ -21,6 +21,10 @@
- #include <sys/cdefs.h>
- #include <machine/_types.h>
- 
-+// Asylo toolchain transitional defines to allow smooth changes to libc between
-+// releases to the container, and manual toolchain installations.
-+#define ASYLO_PTHREAD_TRANSITION 1
-+
- /* BSD types permitted by POSIX and always exposed as in Glibc.  Only provided
-    for backward compatibility with BSD code.  The uintN_t standard types should
-    be preferred in new code. */
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/time.h ./newlib/libc/include/time.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/time.h
 +++ ./newlib/libc/include/time.h
