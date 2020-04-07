@@ -1,7 +1,7 @@
 diff -Naur -x '*~' -x '*.orig' include/grpc/impl/codegen/port_platform.h include/grpc/impl/codegen/port_platform.h
 --- include/grpc/impl/codegen/port_platform.h
 +++ include/grpc/impl/codegen/port_platform.h
-@@ -198,6 +198,9 @@
+@@ -212,6 +212,9 @@
  #define GPR_POSIX_TIME 1
  #define GPR_POSIX_ENV 1
  #define GPR_ASYLO 1
