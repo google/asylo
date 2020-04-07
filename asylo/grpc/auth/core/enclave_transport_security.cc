@@ -44,11 +44,12 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 namespace asylo {
 namespace {
 
-constexpr int kEnclavePeerPropertyCount = 3;
+constexpr int kEnclavePeerPropertyCount = 4;
 
 }  // namespace
 
@@ -95,6 +96,7 @@ class TsiEnclaveHandshakerResult {
   // Extracts the peer's identity into |peer|. The resulting peer has the
   // following peer properties:
   //   * TSI_CERTIFICATE_TYPE_PEER_PROPERTY
+  //   * TSI_SECURITY_LEVEL_PEER_PROPERTY
   //   * TSI_ENCLAVE_IDENTITIES_PROTO_PEER_PROPERTY
   //   * TSI_ENCLAVE_RECORD_PROTOCOL_PEER_PROPERTY
   tsi_result ExtractPeer(tsi_peer *peer) {
@@ -135,6 +137,14 @@ class TsiEnclaveHandshakerResult {
         TSI_ENCLAVE_RECORD_PROTOCOL_PEER_PROPERTY,
         reinterpret_cast<const char *>(serialized_record_protocol.data()),
         serialized_record_protocol.size(), &peer->properties[2]);
+    if (result != TSI_OK) {
+      tsi_peer_destruct(peer);
+      return result;
+    }
+    result = tsi_construct_string_peer_property_from_cstring(
+        TSI_SECURITY_LEVEL_PEER_PROPERTY,
+        tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
+        &peer->properties[3]);
     if (result != TSI_OK) {
       tsi_peer_destruct(peer);
       return result;

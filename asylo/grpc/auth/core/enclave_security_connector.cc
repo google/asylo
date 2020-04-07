@@ -37,6 +37,7 @@
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/tsi/transport_security.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 namespace {
 
@@ -45,10 +46,12 @@ grpc_security_status grpc_enclave_auth_context_from_tsi_peer(
     grpc_core::RefCountedPtr<grpc_auth_context> *auth_context) {
   // Authenticated peers should have the following properties:
   //   * TSI_CERTIFICATE_TYPE_PEER_PROPERTY
+  //   * TSI_SECURITY_LEVEL_PEER_PROPERTY
   //   * TSI_ENCLAVE_IDENTITIES_PROTO_PEER_PROPERTY
   //   * TSI_ENCLAVE_RECORD_PROTOCOL_PEER_PROPERTY
   // They are translated into the following authentication context properties:
   //   * GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME
+  //   * GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME
   //   * GRPC_ENCLAVE_IDENTITIES_PROTO_PROPERTY_NAME
   //   * GRPC_ENCLAVE_RECORD_PROTOCOL_PROPERTY_NAME
   const tsi_peer_property *certificate_type_property =
@@ -62,6 +65,12 @@ grpc_security_status grpc_enclave_auth_context_from_tsi_peer(
               certificate_type_property->value.data,
               certificate_type_property->value.length) != 0) {
     gpr_log(GPR_ERROR, "Invalid certificate type peer property");
+    return GRPC_SECURITY_ERROR;
+  }
+  const tsi_peer_property *security_level_property =
+      tsi_peer_get_property_by_name(peer, TSI_SECURITY_LEVEL_PEER_PROPERTY);
+  if (security_level_property == nullptr) {
+    gpr_log(GPR_ERROR, "Missing security level property.");
     return GRPC_SECURITY_ERROR;
   }
 
@@ -93,6 +102,10 @@ grpc_security_status grpc_enclave_auth_context_from_tsi_peer(
                                  GRPC_ENCLAVE_RECORD_PROTOCOL_PROPERTY_NAME,
                                  record_protocol_property->value.data,
                                  record_protocol_property->value.length);
+  grpc_auth_context_add_property(auth_context->get(),
+                                 GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
+                                 security_level_property->value.data,
+                                 security_level_property->value.length);
   // The EnclaveIdentities proto is the identity in the authentication context.
   if (!grpc_auth_context_set_peer_identity_property_name(
           auth_context->get(), GRPC_ENCLAVE_IDENTITIES_PROTO_PROPERTY_NAME)) {

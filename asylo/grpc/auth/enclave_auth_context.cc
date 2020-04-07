@@ -24,6 +24,7 @@
 #include "asylo/identity/identity_acl_evaluator.h"
 #include "asylo/util/status.h"
 #include "src/core/lib/security/context/security_context.h"
+#include "src/core/tsi/transport_security_interface.h"
 
 namespace asylo {
 
@@ -44,7 +45,19 @@ StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromAuthContext(
   for (auto it = auth_context.begin(); it != auth_context.end(); ++it) {
     ::grpc::AuthProperty auth_property = *it;
 
-    if (auth_property.first == GRPC_ENCLAVE_RECORD_PROTOCOL_PROPERTY_NAME) {
+    if (auth_property.first == GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME) {
+      if (auth_property.second !=
+          tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY)) {
+        return Status(error::GoogleError::INVALID_ARGUMENT,
+                      absl::StrCat("Invalid transport security level: ",
+                                   std::string(auth_property.second.data(),
+                                               auth_property.second.size()),
+                                   "; expected ",
+                                   tsi_security_level_to_string(
+                                       TSI_PRIVACY_AND_INTEGRITY)));
+      }
+    } else if (auth_property.first ==
+               GRPC_ENCLAVE_RECORD_PROTOCOL_PROPERTY_NAME) {
       google::protobuf::io::CodedInputStream::ReadLittleEndian32FromArray(
           reinterpret_cast<const uint8_t *>(auth_property.second.data()),
           &record_protocol);
