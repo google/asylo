@@ -40,7 +40,7 @@ void donate_thread(Client *sgx_client) {
     abort();
   }
   if (!status.ok()) {
-    LOG(ERROR) << "EnclaveCall to kSelectorAsyloDonateThread failed.";
+    LOG(ERROR) << "EnclaveCall to kSelectorAsyloDonateThread failed." << status;
   }
 }
 
