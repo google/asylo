@@ -43,6 +43,8 @@
 
 namespace {
 
+constexpr size_t kNumSpinLockAttempts = 10000;
+
 static void (*tsd_destructors[PTHREAD_KEYS_MAX])(void *) = {0};
 static pthread_rwlock_t key_lock = PTHREAD_RWLOCK_INITIALIZER;
 static void NoDestructor(void *dummy) {}
@@ -123,16 +125,12 @@ int pthread_mutex_lock_internal(pthread_mutex_t *mutex) {
     return EBUSY;
   }
 
-  asylo::pthread_impl::QueueOperations list(mutex);
-  if (list.Empty() || list.Front() == self) {
-    list.Dequeue();
-    mutex->_owner = self;
-    mutex->_refcount++;
-
-    return 0;
+  mutex->_owner = self;
+  mutex->_refcount++;
+  if (mutex->_untrusted_wait_queue) {
+    enc_untrusted_enable_waiting(mutex->_untrusted_wait_queue);
   }
-
-  return EBUSY;
+  return 0;
 }
 
 // Read locks the given |rwlock| if possible and returns 0. On success,
@@ -554,12 +552,6 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
     return ret;
   }
 
-  asylo::pthread_impl::QueueOperations list(mutex);
-  {
-    LockableGuard lock_guard(mutex);
-    list.Enqueue(pthread_self());
-  }
-
   if (!mutex->_untrusted_wait_queue) {
     LockableGuard lock_guard(mutex);
     // Ensure that the external wait queue is initialized
@@ -567,15 +559,22 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
   }
 
   while (true) {
-    {
-      LockableGuard lock_guard(mutex);
-      ret = pthread_mutex_lock_internal(mutex);
-    }
-    if (ret == 0) {
-      return ret;
+    for (int i = 0; i < kNumSpinLockAttempts; i++) {
+      {
+        LockableGuard lock_guard(mutex);
+        ret = pthread_mutex_lock_internal(mutex);
+      }
+      if (ret == 0) {
+        return ret;
+      }
     }
 
-    enc_untrusted_sched_yield();
+    // Sleep on an untrusted wait queue until woken up. Waiting will
+    // be enabled if the lock is held, as the holder of the lock is
+    // responsible for enabling and disabling waiting.
+    if (mutex->_untrusted_wait_queue) {
+      enc_untrusted_thread_wait(mutex->_untrusted_wait_queue);
+    }
   }
 }
 
@@ -587,7 +586,6 @@ int pthread_mutex_trylock(pthread_mutex_t *mutex) {
 
   LockableGuard lock_guard(mutex);
   ret = pthread_mutex_lock_internal(mutex);
-
   return ret;
 }
 
@@ -598,7 +596,6 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) {
     return ret;
   }
 
-  const pthread_t self = pthread_self();
 
   LockableGuard lock_guard(mutex);
 
@@ -606,13 +603,17 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) {
     return EINVAL;
   }
 
-  if (mutex->_owner != self) {
+  if (mutex->_owner != pthread_self()) {
     return EPERM;
   }
 
   mutex->_refcount--;
   if (mutex->_refcount == 0) {
     mutex->_owner = PTHREAD_T_NULL;
+    if (mutex->_untrusted_wait_queue) {
+      enc_untrusted_disable_waiting(mutex->_untrusted_wait_queue);
+      enc_untrusted_notify(mutex->_untrusted_wait_queue);
+    }
   }
 
   return 0;
