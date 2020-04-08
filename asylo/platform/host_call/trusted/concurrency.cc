@@ -85,18 +85,25 @@ int enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num) {
 }
 
 int32_t *enc_untrusted_create_wait_queue() {
-  int32_t *const queue = static_cast<int32_t *const>(
-      TrustedPrimitives::UntrustedLocalAlloc(sizeof(int32_t)));
-  if (!queue) {
-    return nullptr;
+  MessageWriter input;
+  MessageReader output;
+  input.Push<uint64_t>(sizeof(int32_t));
+  const auto status = NonSystemCallDispatcher(
+      ::asylo::host_call::kLocalLifetimeAllocHandler, &input, &output);
+  CheckStatusAndParamCount(status, output, "enc_untrusted_create_wait_queue",
+                           2);
+  int32_t *queue = reinterpret_cast<int32_t *>(output.next<uintptr_t>());
+  int klinux_errno = output.next<int>();
+  if (queue == nullptr) {
+    errno = FromkLinuxErrorNumber(klinux_errno);
   }
-  TrustedPrimitives::UntrustedLocalMemcpy(queue, &kWaitQueueDisabled,
-                                          sizeof(int32_t));
+  enc_untrusted_disable_waiting(queue);
   return queue;
 }
 
 void enc_untrusted_destroy_wait_queue(int32_t *const queue) {
-  TrustedPrimitives::UntrustedLocalFree(queue);
+  // This is a no op on purpose. Wait queue pointers are now
+  // registered to be freed on enclave exit.
 }
 
 void enc_untrusted_thread_wait(int32_t *const queue,
