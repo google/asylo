@@ -103,7 +103,9 @@ cc_library(
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/primitives/util:status_conversions",
         "//asylo/util:asylo_macros",
+        "//asylo/util:mutex_guarded",
         "//asylo/util:status",
+        "@com_google_absl//absl/base:core_headers",
     ],
 )
 

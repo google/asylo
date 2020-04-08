@@ -29,6 +29,7 @@
 #include <syslog.h>
 #include <unistd.h>
 
+#include <cstdint>
 #include <ctime>
 
 #include "asylo/platform/common/memory.h"
@@ -575,6 +576,22 @@ Status SysFutexWakeHandler(const std::shared_ptr<primitives::Client> &client,
                            void *context, primitives::MessageReader *input,
                            primitives::MessageWriter *output) {
   return SysFutexWakeHelper(input, output);
+}
+
+Status LocalLifetimeAllocHandler(
+    const std::shared_ptr<primitives::Client> &client, void *context,
+    primitives::MessageReader *input, primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
+  size_t size = input->next<size_t>();
+  void *result = malloc(size);
+  if (result) {
+    client->RegisterMemory(result);
+  }
+  // To send just a raw pointer through MessageWriter, we need to
+  // obscure the fact that it is actually a pointer.
+  output->Push<uintptr_t>(reinterpret_cast<uintptr_t>(result));
+  output->Push<int>(errno);
+  return Status::OkStatus();
 }
 
 }  // namespace host_call

@@ -75,6 +75,11 @@ class EnclaveClient {
   // client at the time the enclave is destroyed.
   virtual Status DestroyEnclave() = 0;
 
+  /// Frees enclave resources registered to the client. Called after
+  /// EnclaveClient::DestroyEnclave from within
+  /// EnclaveManager::DestroyEnclave.
+  virtual void ReleaseMemory() {}
+
   std::string name_;
 };
 

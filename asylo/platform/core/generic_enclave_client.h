@@ -75,6 +75,8 @@ class GenericEnclaveClient : public EnclaveClient {
   // that contains output from the enclave.
   Status Finalize(const char *input, size_t input_len,
                   std::unique_ptr<char[]> *output, size_t *output_len);
+
+  void ReleaseMemory() override { primitive_client_->ReleaseMemory(); }
 };
 
 }  // namespace asylo

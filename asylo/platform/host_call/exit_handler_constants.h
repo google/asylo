@@ -135,9 +135,13 @@ static constexpr uint64_t kSysFutexWaitHandler =
 static constexpr uint64_t kSysFutexWakeHandler =
     primitives::kSelectorHostCall + 29;
 
+// Exit handler constant for |LocalLifetimeAllocHandler|.
+static constexpr uint64_t kLocalLifetimeAllocHandler =
+    primitives::kSelectorHostCall + 30;
+
 // Assert that the largest host call handler lies in
 // [kSelectorHostCall, kSelectorRemote).
-static_assert(kSysFutexWakeHandler < primitives::kSelectorRemote,
+static_assert(kLocalLifetimeAllocHandler < primitives::kSelectorRemote,
               "Cannot have host call handler constant spill over into "
               "|kSelectorRemote|.");
 

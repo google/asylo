@@ -25,11 +25,13 @@
 #include <memory>
 #include <utility>
 
+#include "absl/base/thread_annotations.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/asylo_macros.h"
+#include "asylo/util/mutex_guarded.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -158,7 +160,7 @@ class Client : public std::enable_shared_from_this<Client> {
     const pid_t pid_;
   };
 
-  virtual ~Client() = default;
+  virtual ~Client() { ReleaseMemory(); }
 
   /// An overridable handler registration method.
   ///
@@ -233,6 +235,22 @@ class Client : public std::enable_shared_from_this<Client> {
   /// \returns A mutable pointer to the client's ExitCallProvider.
   ExitCallProvider *exit_call_provider() { return exit_call_provider_.get(); }
 
+  /// Register memory to be freed upon enclave destruction.
+  ///
+  /// \param mem A pointer to be passed to free on enclave exit.
+  virtual void RegisterMemory(void *mem) {
+    memory_to_free_.Lock()->emplace_back(mem);
+  }
+
+  /// Frees enclave resources registered to the client.
+  virtual void ReleaseMemory() {
+    auto to_free = memory_to_free_.Lock();
+    for (auto ptr : *to_free) {
+      free(ptr);
+    }
+    to_free->clear();
+  }
+
  protected:
   /// Constructs a client, reserved for only backend implementations.
   ///
@@ -241,7 +259,8 @@ class Client : public std::enable_shared_from_this<Client> {
   ///    takes ownership of. The provider is the source of all `ExitHandler`s.
   Client(const absl::string_view name,
          std::unique_ptr<ExitCallProvider> exit_call_provider)
-      : exit_call_provider_(std::move(exit_call_provider)), name_(name) {}
+      : exit_call_provider_(std::move(exit_call_provider)),
+        name_(name) {}
 
   /// Provides implementation of EnclaveCall.
   ///
@@ -270,6 +289,9 @@ class Client : public std::enable_shared_from_this<Client> {
 
   // Enclave name.
   absl::string_view name_;
+
+  // A collection of memory to free upon enclave exit.
+  MutexGuarded<std::vector<void *>> memory_to_free_;
 };
 
 }  // namespace primitives

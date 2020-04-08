@@ -229,6 +229,13 @@ Status SysFutexWakeHandler(const std::shared_ptr<primitives::Client> &client,
                            void *context, primitives::MessageReader *input,
                            primitives::MessageWriter *output);
 
+// Handler for host call helper LocalLifetimeAlloc. Expects [size_t
+// bytes] and returns [uintptr_t result, int errno] on the
+// MessageWriter.
+Status LocalLifetimeAllocHandler(
+    const std::shared_ptr<primitives::Client> &client, void *context,
+    primitives::MessageReader *input, primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

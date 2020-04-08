@@ -106,6 +106,8 @@ Status EnclaveManager::DestroyEnclave(EnclaveClient *client,
   Status status = client->DestroyEnclave();
   LOG_IF(ERROR, !status.ok()) << "Client's DestroyEnclave failed: " << status;
 
+  client->ReleaseMemory();
+
   absl::WriterMutexLock lock(&client_table_lock_);
   const auto &name = name_by_client_[client];
   client_by_name_.erase(name);
