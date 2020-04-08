@@ -29,6 +29,7 @@
 #include <functional>
 #include <type_traits>
 
+#include "asylo/platform/common/enclave_state.h"
 #include "asylo/platform/common/time_util.h"
 #include "asylo/platform/core/atomic.h"
 #include "asylo/platform/core/trusted_global_state.h"
@@ -214,7 +215,7 @@ asylo::ThreadManager::ThreadOptions CreateOptions(
     const pthread_attr_t *const attr) {
   asylo::ThreadManager::ThreadOptions options;
 
-  if (attr != nullptr && attr->detach_state == PTHREAD_CREATE_DETACHED) {
+  if (attr && attr->detach_state == PTHREAD_CREATE_DETACHED) {
     options.detached = true;
   }
 
@@ -307,13 +308,13 @@ namespace asylo {
 namespace pthread_impl {
 
 QueueOperations::QueueOperations(__pthread_list_t *list) : list_(list) {
-  if (list_ == nullptr) {
+  if (!list_) {
     abort();
   }
 }
 
 void QueueOperations::Dequeue() {
-  if (list_->_first == nullptr) {
+  if (!list_->_first) {
     return;
   }
 
@@ -323,7 +324,7 @@ void QueueOperations::Dequeue() {
 }
 
 pthread_t QueueOperations::Front() const {
-  if (list_->_first == nullptr) {
+  if (!list_->_first) {
     return PTHREAD_T_NULL;
   }
   return list_->_first->_thread_id;
@@ -347,10 +348,10 @@ void QueueOperations::Enqueue(const pthread_t id) {
 bool QueueOperations::Remove(const pthread_t id) {
   __pthread_list_node_t *curr, *prev;
 
-  for (curr = list_->_first, prev = nullptr; curr != nullptr;
+  for (curr = list_->_first, prev = nullptr; curr;
        prev = curr, curr = curr->_next) {
     if (curr->_thread_id == id) {
-      if (prev == nullptr) {
+      if (!prev) {
         // Node to remove was the first item in the list. Change the list head.
         list_->_first = curr->_next;
       } else {
@@ -538,6 +539,14 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex) {
   return 0;
 }
 
+inline void initialize_wait_queue(int32_t **wait_queue_ptr) {
+  if (wait_queue_ptr && !(*wait_queue_ptr) &&
+      asylo::GetState() == asylo::EnclaveState::kRunning) {
+    *wait_queue_ptr = enc_untrusted_create_wait_queue();
+    CHECK_NE(*wait_queue_ptr, nullptr);
+  }
+}
+
 // Locks |mutex|.
 int pthread_mutex_lock(pthread_mutex_t *mutex) {
   int ret = pthread_mutex_check_parameter(mutex);
@@ -549,6 +558,12 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
   {
     LockableGuard lock_guard(mutex);
     list.Enqueue(pthread_self());
+  }
+
+  if (!mutex->_untrusted_wait_queue) {
+    LockableGuard lock_guard(mutex);
+    // Ensure that the external wait queue is initialized
+    initialize_wait_queue(&mutex->_untrusted_wait_queue);
   }
 
   while (true) {
@@ -655,7 +670,7 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
   }
 
   // If a deadline has been specified, ensure it is valid.
-  if (deadline != nullptr &&
+  if (deadline &&
       !asylo::primitives::IsValidEnclaveAddress<timespec>(deadline)) {
     return EFAULT;
   }
@@ -677,7 +692,7 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
     enc_untrusted_sched_yield();
 
     // If a deadline has been specified, check to see if it has passed.
-    if (deadline != nullptr) {
+    if (deadline) {
       timespec curr_time;
       ret = clock_gettime(CLOCK_REALTIME, &curr_time);
       if (ret != 0) {
@@ -814,7 +829,7 @@ int sem_timedwait(sem_t *sem, const timespec *abs_timeout) {
     return ConvertToErrno(EFAULT);
   }
 
-  if (abs_timeout != nullptr &&
+  if (abs_timeout &&
       !asylo::primitives::IsValidEnclaveAddress<timespec>(abs_timeout)) {
     return ConvertToErrno(EFAULT);
   }

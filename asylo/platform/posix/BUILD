@@ -153,6 +153,7 @@ cc_library(
         "@com_google_absl//absl/synchronization",
         "//asylo/util:logging",
         "//asylo/platform/host_call",
+        "//asylo/platform/common:enclave_state",
         "//asylo/platform/core:atomic",
         "//asylo/platform/core:shared_name",
         "//asylo/platform/core:trusted_core",
