@@ -22,6 +22,7 @@
 
 #include "absl/memory/memory.h"
 #include "asylo/platform/core/trusted_spin_lock.h"
+#include "asylo/platform/posix/memory/memory.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/util/lock_guard.h"
@@ -124,7 +125,10 @@ void *UntrustedCacheMalloc::GetBuffer() {
 }
 
 void *UntrustedCacheMalloc::Malloc(size_t size) {
-  if (is_destroyed_ || (size > kPoolEntrySize)) {
+  // Don't access UnturstedCacheMalloc if not running on normal heap, otherwise
+  // it will cause error when UntrustedCacheMalloc tries to free the memory on
+  // the normal heap.
+  if (is_destroyed_ || (size > kPoolEntrySize) || GetSwitchedHeapNext()) {
     return primitives::TrustedPrimitives::UntrustedLocalAlloc(size);
   }
   return GetBuffer();
@@ -142,7 +146,7 @@ void UntrustedCacheMalloc::PushToFreeList(void *buffer) {
 }
 
 void UntrustedCacheMalloc::Free(void *buffer) {
-  if (is_destroyed_) {
+  if (is_destroyed_ || GetSwitchedHeapNext()) {
     primitives::TrustedPrimitives::UntrustedLocalFree(buffer);
     return;
   }

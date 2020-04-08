@@ -103,11 +103,12 @@ cc_library(
     deps = select(
         {
             "@com_google_asylo//asylo": [
+                "//asylo/platform/core:trusted_spin_lock",
+                "//asylo/platform/posix/memory",
                 "//asylo/platform/primitives:trusted_primitives",
                 "//asylo/platform/primitives:trusted_runtime",
-                "//asylo/platform/system_call/type_conversions",
-                "//asylo/platform/core:trusted_spin_lock",
                 "//asylo/platform/primitives/util:trusted_memory",
+                "//asylo/platform/system_call/type_conversions",
             ],
         },
         no_match_error = "Must be built in the Asylo toolchain",
