@@ -56,30 +56,35 @@ class SgxPlatformInfoExecTester : public experimental::ExecTester {
 
  protected:
   bool CheckLine(const std::string &line) override {
-    if (line.find("PCE SVN") != std::string::npos) {
+    if (line.find("pce_svn") != std::string::npos) {
       pce_svn_found_ = true;
     }
-    if (line.find("PCE ID") != std::string::npos) {
+    if (line.find("pce_id") != std::string::npos) {
       pce_id_found_ = true;
     }
-    if (line.find("CPU SVN") != std::string::npos) {
+    if (line.find("cpu_svn") != std::string::npos) {
       cpu_svn_found_ = true;
     }
-    if (line.find("PPID") != std::string::npos) {
-      ppid_found_ = true;
+    if (line.find("Encrypted PPID") != std::string::npos) {
+      encrypted_ppid_found_ = true;
+    }
+    if (line.find("ppid") != std::string::npos) {
+      decrypted_ppid_found_ = true;
     }
     return true;
   }
 
   bool FinalCheck(bool accumulated) override {
-    return pce_svn_found_ && pce_id_found_ && cpu_svn_found_ && ppid_found_;
+    return pce_svn_found_ && pce_id_found_ && cpu_svn_found_ &&
+           (encrypted_ppid_found_ || decrypted_ppid_found_);
   }
 
  private:
   bool pce_svn_found_ = false;
   bool pce_id_found_ = false;
   bool cpu_svn_found_ = false;
-  bool ppid_found_ = false;
+  bool encrypted_ppid_found_ = false;
+  bool decrypted_ppid_found_ = false;
 };
 
 TEST(AgeMainTest, FakeCertificationSuccess) {
@@ -104,6 +109,23 @@ TEST(AgeMainTest, FakePrintPlatformInfoSuccess) {
   SgxPlatformInfoExecTester tester(
       {absl::GetFlag(FLAGS_loader_path), "--print_sgx_platform_info",
        "--use_fake_pce",
+       absl::StrCat("--server_lifetime=",
+                    absl::FormatDuration(absl::GetFlag(FLAGS_server_lifetime))),
+       absl::StrCat("--is_debuggable_enclave=",
+                    absl::GetFlag(FLAGS_is_debuggable_enclave)),
+       absl::StrCat("--age_path=", absl::GetFlag(FLAGS_age_path))});
+
+  int status = -1;
+
+  ASSERT_TRUE(tester.Run("", &status));
+  EXPECT_TRUE(WIFEXITED(status));
+  EXPECT_EQ(WEXITSTATUS(status), 0);
+}
+
+TEST(AgeMainTest, FakePrintPlatformInfoRandomPpidekSuccess) {
+  SgxPlatformInfoExecTester tester(
+      {absl::GetFlag(FLAGS_loader_path), "--print_sgx_platform_info",
+       "--use_fake_pce", "--print_plaintext_ppid",
        absl::StrCat("--server_lifetime=",
                     absl::FormatDuration(absl::GetFlag(FLAGS_server_lifetime))),
        absl::StrCat("--is_debuggable_enclave=",

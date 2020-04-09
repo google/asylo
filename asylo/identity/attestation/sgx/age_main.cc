@@ -16,6 +16,7 @@
  *
  */
 
+#include <cstdint>
 #include <ios>
 #include <iostream>
 #include <memory>
@@ -32,6 +33,7 @@
 #include "asylo/client.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/keys.pb.h"
+#include "asylo/crypto/rsa_oaep_encryption_key.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/identity/attestation/sgx/internal/dcap_intel_architectural_enclave_interface.h"
 #include "asylo/identity/attestation/sgx/internal/fake_pce.h"
@@ -41,8 +43,10 @@
 #include "asylo/identity/enclave_assertion_authority_configs.h"
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/sgx_infrastructural_enclave_manager.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
+#include "asylo/util/cleansing_types.h"
 #include "asylo/util/proto_parse_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -123,6 +127,11 @@ ABSL_FLAG(
         .ValueOrDie(),
     "The RSA-3072 PPID encryption key");
 
+// Required for Option B.
+ABSL_FLAG(bool, print_plaintext_ppid, false,
+          "Whether to use a random PPIDEK in order to decrypt and print the "
+          "plaintext version of the PPID");
+
 namespace asylo {
 
 template <class T>
@@ -184,6 +193,7 @@ asylo::Status GetSgxPlatformInfo(
 
 asylo::Status PrintSgxPlatformInfo(
     asylo::AsymmetricEncryptionKeyProto ppidek,
+    const asylo::RsaOaepDecryptionKey *ppiddk,
     asylo::SgxInfrastructuralEnclaveManager *manager) {
   std::string encrypted_ppid;
   asylo::sgx::CpuSvn cpu_svn;
@@ -193,15 +203,38 @@ asylo::Status PrintSgxPlatformInfo(
   ASYLO_RETURN_IF_ERROR(GetSgxPlatformInfo(std::move(ppidek), manager,
                                            &encrypted_ppid, &cpu_svn, &pce_svn,
                                            &pce_id));
+  if (ppiddk != nullptr) {
+    asylo::CleansingVector<uint8_t> plaintext;
+    ASYLO_RETURN_IF_ERROR(ppiddk->Decrypt(encrypted_ppid, &plaintext));
 
-  std::cout << "Encrypted PPID: 0x" << absl::BytesToHexString(encrypted_ppid)
-            << std::endl;
-  std::cout << "CPU SVN: 0x" << absl::BytesToHexString(cpu_svn.value())
-            << std::endl;
-  std::cout << "PCE SVN: 0x" << std::hex << pce_svn.value() << std::endl;
-  std::cout << "PCE ID: 0x" << std::hex << pce_id.value() << std::endl;
+    asylo::sgx::Ppid ppid;
+    ppid.set_value(plaintext.data(), plaintext.size());
+    std::cout << "ppid { " << ppid.ShortDebugString() << " }" << std::endl;
+  } else {
+    std::cout << "Encrypted PPID: 0x" << absl::BytesToHexString(encrypted_ppid)
+              << std::endl;
+  }
+
+  std::cout << "cpu_svn { " << cpu_svn.ShortDebugString() << " }" << std::endl;
+  std::cout << "pce_svn { " << pce_svn.ShortDebugString() << " }" << std::endl;
+  std::cout << "pce_id { " << pce_id.ShortDebugString() << " }" << std::endl;
 
   return asylo::Status::OkStatus();
+}
+
+asylo::StatusOr<std::unique_ptr<asylo::RsaOaepDecryptionKey>>
+GenerateRandomPpiddk(asylo::AsymmetricEncryptionKeyProto *ppidek_proto) {
+  std::unique_ptr<asylo::RsaOaepDecryptionKey> ppiddk;
+  ASYLO_ASSIGN_OR_RETURN(
+      ppiddk, asylo::RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey(
+                  asylo::HashAlgorithm::SHA256));
+
+  std::unique_ptr<asylo::AsymmetricEncryptionKey> ppidek;
+  ASYLO_ASSIGN_OR_RETURN(ppidek, ppiddk->GetEncryptionKey());
+  ASYLO_ASSIGN_OR_RETURN(*ppidek_proto,
+                         asylo::ConvertToAsymmetricEncryptionKeyProto(*ppidek));
+
+  return ppiddk;
 }
 
 }  // namespace
@@ -293,12 +326,18 @@ int main(int argc, char **argv) {
   }
 
   if (absl::GetFlag(FLAGS_print_sgx_platform_info)) {
+    std::unique_ptr<asylo::RsaOaepDecryptionKey> ppiddk;
     asylo::AsymmetricEncryptionKeyProto ppidek = absl::GetFlag(FLAGS_ppidek);
-    LOG_IF(QFATAL, ppidek.key().empty())
-        << "Must provide valid PPID encryption key with --ppidek";
+
+    if (absl::GetFlag(FLAGS_print_plaintext_ppid)) {
+      auto ppiddk_or_status = GenerateRandomPpiddk(&ppidek);
+      LOG_IF(QFATAL, !ppiddk_or_status.ok())
+          << "Failed to generate random PPIDDK: " << ppiddk_or_status.status();
+      ppiddk = std::move(ppiddk_or_status).ValueOrDie();
+    }
 
     asylo::Status status = PrintSgxPlatformInfo(
-        std::move(ppidek), sgx_infra_enclave_manager.get());
+        std::move(ppidek), ppiddk.get(), sgx_infra_enclave_manager.get());
     LOG_IF(QFATAL, !status.ok())
         << "Failed to get SGX platform info: " << status;
   }
