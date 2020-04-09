@@ -84,6 +84,12 @@ Status VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
     ASYLO_RETURN_IF_ERROR(FullyValidateCertificate(cert));
   }
 
+  if (config.has_verifier_info() &&
+      config.verifier_info().root_certificates().empty()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Must provide at least one trusted root certificate");
+  }
+
   return Status::OkStatus();
 }
 

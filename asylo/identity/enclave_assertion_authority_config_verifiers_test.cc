@@ -106,6 +106,16 @@ TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
 }
 
 TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
+     VerifySgxIntelEcdsaQeRemoteAssertionVerifierConfigNoRootCerts) {
+  SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config =
+      ParseTextProtoOrDie(R"pb(
+        verifier_info: {})pb");
+  EXPECT_THAT(VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(config),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       HasSubstr("root certificate")));
+}
+
+TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
      VerifySgxIntelEcdsaQeRemoteAssertionGeneratorConfigInvalidCertFormat) {
   SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config =
       ParseTextProtoOrDie(R"pb(
