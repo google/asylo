@@ -263,41 +263,6 @@ def asylo_deps(toolchain_path = None):
             strip_prefix = "grpc-1.28.1",
         )
 
-    # Required by gRPC
-    if not native.existing_rule("build_bazel_rules_apple"):
-        http_archive(
-            name = "build_bazel_rules_apple",
-            urls = ["https://github.com/bazelbuild/rules_apple/archive/0.19.0.tar.gz"],
-            sha256 = "4bd79bb66d48a629f67515ad4822d293368a0e84f3102e2bd660435c83a20a19",
-            strip_prefix = "rules_apple-0.19.0",
-        )
-
-    # Required by gRPC
-    if not native.existing_rule("build_bazel_rules_swift"):
-        http_archive(
-            name = "build_bazel_rules_swift",
-            urls = ["https://github.com/bazelbuild/rules_swift/archive/0.13.0.tar.gz"],
-            sha256 = "617e568aa8263c454f63362f5ab837038da710d646510b8f4a6760ff6361f714",
-            strip_prefix = "rules_swift-0.13.0",
-        )
-
-    # Required by gRPC
-    if not native.existing_rule("build_bazel_apple_support"):
-        http_archive(
-            name = "build_bazel_apple_support",
-            urls = ["https://github.com/bazelbuild/apple_support/archive/0.7.2.tar.gz"],
-            sha256 = "519a3bc32132f7b5780e82c2fc6ad2a78d4b28b81561e6fd7b7e0b14ea110074",
-            strip_prefix = "apple_support-0.7.2",
-        )
-
-    # Required by gRPC
-    if not native.existing_rule("bazel_version"):
-        _bazel_version_repository = repository_rule(
-            implementation = _bazel_version_repository_impl,
-            local = True,
-        )
-        _bazel_version_repository(name = "bazel_version")
-
     # Google benchmark.
     if not native.existing_rule("com_github_google_benchmark"):
         http_archive(
@@ -358,7 +323,7 @@ cc_library(
             strip_prefix = "bazel-skylib-1.0.2",
         )
 
-    # Required by protobuf and gRPC
+    # Required by protobuf
     http_archive(
         name = "zlib",
         build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
