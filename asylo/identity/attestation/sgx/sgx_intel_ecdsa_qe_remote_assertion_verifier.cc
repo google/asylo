@@ -20,6 +20,7 @@
 
 #include <math.h>
 
+#include <algorithm>
 #include <iterator>
 #include <string>
 
@@ -85,6 +86,12 @@ Status CheckDescription(const AssertionDescription &description) {
   }
 
   return Status::OkStatus();
+}
+
+StatusOr<CertificateChain> GetPckCertificateChainFromCertData(
+    const std::vector<uint8_t> &cert_data) {
+  return GetCertificateChainFromPem(absl::string_view(
+      reinterpret_cast<const char *>(cert_data.data()), cert_data.size()));
 }
 
 Status VerifyQuoteHeader(const sgx::IntelQeQuote &quote) {
@@ -176,10 +183,8 @@ Status VerifyPckSignatureFromPckCertChain(
     const std::vector<uint8_t> &cert_data,
     const sgx::IntelEcdsaP256QuoteSignature &signature) {
   CertificateChain pck_cert_chain;
-  ASYLO_ASSIGN_OR_RETURN(
-      pck_cert_chain,
-      GetCertificateChainFromPem(absl::string_view(
-          reinterpret_cast<const char *>(cert_data.data()), cert_data.size())));
+  ASYLO_ASSIGN_OR_RETURN(pck_cert_chain,
+                         GetPckCertificateChainFromCertData(cert_data));
 
   std::unique_ptr<X509Certificate> pck_cert;
   ASYLO_ASSIGN_OR_RETURN(pck_cert, X509Certificate::Create(
@@ -213,7 +218,38 @@ Status VerifyPckSignatureOverQuotingEnclave(const sgx::IntelQeQuote &quote) {
                       quote.cert_data.qe_cert_data_type));
 }
 
-Status VerifyPckCertificateChain(const sgx::IntelQeQuote &quote) {
+Status VerifyPckCertificateChain(
+    const sgx::IntelQeQuote &quote,
+    const std::vector<std::unique_ptr<CertificateInterface>>
+        &trusted_root_certificates) {
+  CertificateChain pck_cert_chain;
+  ASYLO_ASSIGN_OR_RETURN(pck_cert_chain, GetPckCertificateChainFromCertData(
+                                             quote.cert_data.qe_cert_data));
+
+  CertificateInterfaceVector certificate_chain;
+  ASYLO_ASSIGN_OR_RETURN(
+      certificate_chain,
+      CreateCertificateChain({{Certificate::X509_PEM, X509Certificate::Create}},
+                             pck_cert_chain));
+
+  VerificationConfig verification_config(/*all_fields=*/true);
+  ASYLO_RETURN_IF_ERROR(
+      VerifyCertificateChain(certificate_chain, verification_config));
+
+  const CertificateInterface &root_certificate = *certificate_chain.back();
+
+  if (std::none_of(
+          trusted_root_certificates.begin(), trusted_root_certificates.end(),
+          [&root_certificate](
+              const std::unique_ptr<CertificateInterface> &trusted_root) {
+            return root_certificate == *trusted_root;
+          })) {
+    return Status(
+        error::GoogleError::UNAUTHENTICATED,
+        absl::StrCat("Unrecognized root certificate: ",
+                     root_certificate.SubjectName().value_or("Unknown CA")));
+  }
+
   return Status::OkStatus();
 }
 
@@ -346,7 +382,8 @@ Status SgxIntelEcdsaQeRemoteAssertionVerifier::Verify(
   ASYLO_RETURN_IF_ERROR(VerifyQeReportDataMatchesQuoteSigningKey(quote));
   ASYLO_RETURN_IF_ERROR(VerifyQuoteMeetsMinimumTcbLevel(quote));
   ASYLO_RETURN_IF_ERROR(VerifyPckSignatureOverQuotingEnclave(quote));
-  ASYLO_RETURN_IF_ERROR(VerifyPckCertificateChain(quote));
+  ASYLO_RETURN_IF_ERROR(
+      VerifyPckCertificateChain(quote, members_view->root_certificates));
   ASYLO_RETURN_IF_ERROR(VerifyQeIdentityMatchesExpectation(
       quote, members_view->qe_identity_expectation));
 

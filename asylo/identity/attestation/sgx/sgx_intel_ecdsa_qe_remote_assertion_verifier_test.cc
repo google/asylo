@@ -47,7 +47,6 @@
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/identity/sgx/intel_certs/intel_sgx_root_ca_cert.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/identity/sgx/sgx_identity_util_internal.h"
@@ -82,24 +81,20 @@ class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
   void SetUp() override {
     qe_identity_ = TrivialRandomObject<sgx::ReportBody>();
 
-    SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config;
-    *config.mutable_generator_info()
-         ->mutable_pck_certificate_chain()
-         ->add_certificates() = MakeIntelSgxRootCaCertificateProto();
-    *config.mutable_verifier_info()->add_root_certificates() =
-        MakeIntelSgxRootCaCertificateProto();
+    *valid_config_proto_.mutable_verifier_info()->add_root_certificates() =
+        sgx::GetFakeSgxRootCertificate();
 
     SgxIdentityExpectation qe_expectation;
     ASYLO_ASSERT_OK_AND_ASSIGN(
         qe_expectation, CreateSgxIdentityExpectation(
                             ParseSgxIdentityFromHardwareReport(qe_identity_),
                             SgxIdentityMatchSpecOptions::DEFAULT));
-    ASYLO_ASSERT_OK_AND_ASSIGN(*config.mutable_verifier_info()
+    ASYLO_ASSERT_OK_AND_ASSIGN(*valid_config_proto_.mutable_verifier_info()
                                     ->mutable_qe_identity_expectation()
                                     ->mutable_expectation(),
                                SerializeSgxIdentityExpectation(qe_expectation));
 
-    ASSERT_TRUE(config.SerializeToString(&valid_config_));
+    ASSERT_TRUE(valid_config_proto_.SerializeToString(&valid_config_));
   }
 
   sgx::IntelQeQuoteHeader GenerateValidQuoteHeader() const {
@@ -147,6 +142,15 @@ class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
     quote->signature.qe_report = qe_identity;
   }
 
+  std::vector<uint8_t> CreateCertData(
+      const std::vector<absl::string_view> &pem_certificates) const {
+    std::vector<uint8_t> cert_data;
+    for (auto pem_cert : pem_certificates) {
+      cert_data.insert(cert_data.end(), pem_cert.begin(), pem_cert.end());
+    }
+    return cert_data;
+  }
+
   void SignQuotingEnclaveReport(sgx::IntelQeQuote *quote) const {
     Sha256Hash sha256;
     sha256.Update(quote->signature.public_key);
@@ -159,18 +163,11 @@ class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
 
     quote->cert_data.qe_cert_data_type =
         ::intel::sgx::qvl::constants::PCK_ID_PCK_CERT_CHAIN;
-    quote->cert_data.qe_cert_data.insert(
-        quote->cert_data.qe_cert_data.end(),
-        sgx::kFakeSgxPck.certificate_pem.begin(),
-        sgx::kFakeSgxPck.certificate_pem.end());
-    quote->cert_data.qe_cert_data.insert(
-        quote->cert_data.qe_cert_data.end(),
-        sgx::kFakeSgxProcessorCa.certificate_pem.begin(),
-        sgx::kFakeSgxProcessorCa.certificate_pem.end());
-    quote->cert_data.qe_cert_data.insert(
-        quote->cert_data.qe_cert_data.end(),
-        sgx::kFakeSgxRootCa.certificate_pem.begin(),
-        sgx::kFakeSgxRootCa.certificate_pem.end());
+    quote->cert_data.qe_cert_data = CreateCertData({
+        sgx::kFakeSgxPck.certificate_pem,
+        sgx::kFakeSgxProcessorCa.certificate_pem,
+        sgx::kFakeSgxRootCa.certificate_pem,
+    });
 
     std::unique_ptr<sgx::FakePce> pce;
     ASYLO_ASSERT_OK_AND_ASSIGN(pce, sgx::FakePce::CreateFromFakePki());
@@ -195,7 +192,6 @@ class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
     AppendTrivialObject(TrivialRandomObject<UnsafeBytes<123>>(),
                         &quote.qe_authn_data);
     SignQuotingEnclaveReport(&quote);
-
     return quote;
   }
 
@@ -216,6 +212,7 @@ class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
 
   sgx::ReportBody qe_identity_;
   std::string valid_config_;
+  SgxIntelEcdsaQeRemoteAssertionAuthorityConfig valid_config_proto_;
 };
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest, VerifierFoundInStaticMap) {
@@ -266,7 +263,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config;
   *config.mutable_generator_info()
        ->mutable_pck_certificate_chain()
-       ->add_certificates() = MakeIntelSgxRootCaCertificateProto();
+       ->add_certificates() = sgx::GetFakeSgxRootCertificate();
   ASSERT_TRUE(config.SerializeToString(&serialized_config));
 
   SgxIntelEcdsaQeRemoteAssertionVerifier verifier;
@@ -508,6 +505,67 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   EXPECT_THAT(
       verifier.Verify("user data", assertion, &identity),
       StatusIs(error::GoogleError::INTERNAL, HasSubstr("BAD_SIGNATURE")));
+}
+
+TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
+       VerifyFailsWithQeReportSignatureMismatch) {
+  SgxIntelEcdsaQeRemoteAssertionVerifier verifier;
+  ASYLO_ASSERT_OK(verifier.Initialize(valid_config_));
+
+  sgx::IntelQeQuote quote = GenerateValidQuote("user data");
+  quote.signature.qe_report_signature[0] ^= 0xff;
+
+  Assertion assertion = CreateAssertion(quote);
+  EnclaveIdentity identity;
+  EXPECT_THAT(
+      verifier.Verify("user data", assertion, &identity),
+      StatusIs(error::GoogleError::INTERNAL, HasSubstr("BAD_SIGNATURE")));
+}
+
+TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
+       VerifyFailsWithInvalidPckCertChain) {
+  SgxIntelEcdsaQeRemoteAssertionVerifier verifier;
+  ASYLO_ASSERT_OK(verifier.Initialize(valid_config_));
+
+  sgx::IntelQeQuote quote = GenerateValidQuote("user data");
+  // Remove the root certificate to invalidate the cert chain.
+  quote.cert_data.qe_cert_data = CreateCertData({
+      sgx::kFakeSgxPck.certificate_pem,
+      sgx::kFakeSgxProcessorCa.certificate_pem,
+  });
+
+  Assertion assertion = CreateAssertion(quote);
+  EnclaveIdentity identity;
+  EXPECT_THAT(
+      verifier.Verify("user data", assertion, &identity),
+      StatusIs(error::GoogleError::INTERNAL, HasSubstr("BAD_SIGNATURE")));
+}
+
+TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
+       VerifyFailsWithUnrecognizedRootCertificate) {
+  SgxIntelEcdsaQeRemoteAssertionVerifier verifier;
+
+  // Use a config that specifies a different trusted root certificate.
+  valid_config_proto_.mutable_verifier_info()
+      ->mutable_root_certificates()
+      ->Clear();
+  Certificate *cert =
+      valid_config_proto_.mutable_verifier_info()->add_root_certificates();
+  cert->set_format(Certificate::X509_PEM);
+  cert->set_data({sgx::kFakeSgxPlatformCa.certificate_pem.begin(),
+                  sgx::kFakeSgxPlatformCa.certificate_pem.end()});
+
+  std::string config;
+  ASSERT_TRUE(valid_config_proto_.SerializeToString(&config));
+  ASYLO_ASSERT_OK(verifier.Initialize(config));
+
+  sgx::IntelQeQuote quote = GenerateValidQuote("user data");
+
+  Assertion assertion = CreateAssertion(quote);
+  EnclaveIdentity identity;
+  EXPECT_THAT(verifier.Verify("user data", assertion, &identity),
+              StatusIs(error::GoogleError::UNAUTHENTICATED,
+                       HasSubstr("Unrecognized root certificate")));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
