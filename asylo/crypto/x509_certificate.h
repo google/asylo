@@ -119,7 +119,7 @@ struct CrlDistributionPoints {
 // Represents an X.509 Extension.
 struct X509Extension {
   ObjectId oid;
-  bool is_critical;
+  bool is_critical = false;  // Default to false in accordance with RFC2459.
   Asn1Value value;
 };
 
