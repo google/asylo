@@ -46,70 +46,6 @@ package(
 )
 
 proto_library(
-    name = "attributes_proto",
-    srcs = ["attributes.proto"],
-    deprecation = "Use //asylo/identity/platform/sgx:attributes_proto",
-    visibility = ["//visibility:public"],
-    exports = ["//asylo/identity/platform/sgx:attributes_proto"],
-    deps = ["//asylo/identity/platform/sgx:attributes_proto"],
-)
-
-cc_proto_library(
-    name = "attributes_cc_proto",
-    deprecation = "Use //asylo/identity/platform/sgx:attributes_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = [":attributes_proto"],
-)
-
-proto_library(
-    name = "code_identity_proto",
-    srcs = ["code_identity.proto"],
-    deprecation = "Use //asylo/identity/platform/sgx:code_identity_proto",
-    visibility = ["//visibility:public"],
-    exports = ["//asylo/identity/platform/sgx:code_identity_proto"],
-    deps = ["//asylo/identity/platform/sgx:code_identity_proto"],
-)
-
-cc_proto_library(
-    name = "code_identity_cc_proto",
-    deprecation = "Use //asylo/identity/platform/sgx:code_identity_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = [":code_identity_proto"],
-)
-
-proto_library(
-    name = "machine_configuration_proto",
-    srcs = ["machine_configuration.proto"],
-    deprecation = "Use //asylo/identity/platform/sgx:machine_configuration_proto",
-    visibility = ["//visibility:public"],
-    exports = ["//asylo/identity/platform/sgx:machine_configuration_proto"],
-    deps = ["//asylo/identity/platform/sgx:machine_configuration_proto"],
-)
-
-cc_proto_library(
-    name = "machine_configuration_cc_proto",
-    deprecation = "Use //asylo/identity/platform/sgx:machine_configuration_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = [":machine_configuration_proto"],
-)
-
-proto_library(
-    name = "sgx_identity_proto",
-    srcs = ["sgx_identity.proto"],
-    deprecation = "Use //asylo/identity/platform/sgx:sgx_identity_proto",
-    visibility = ["//visibility:public"],
-    exports = ["//asylo/identity/platform/sgx:sgx_identity_proto"],
-    deps = ["//asylo/identity/platform/sgx:sgx_identity_proto"],
-)
-
-cc_proto_library(
-    name = "sgx_identity_cc_proto",
-    deprecation = "Use //asylo/identity/platform/sgx:sgx_identity_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = [":sgx_identity_proto"],
-)
-
-proto_library(
     name = "pck_certificates_proto",
     srcs = ["pck_certificates.proto"],
     visibility = ["//asylo:implementation"],
@@ -145,23 +81,6 @@ cc_proto_library(
     name = "sgx_local_assertion_authority_config_cc_proto",
     visibility = ["//visibility:public"],
     deps = ["sgx_local_assertion_authority_config_proto"],
-)
-
-proto_library(
-    name = "sgx_age_remote_assertion_authority_config_proto",
-    srcs = ["sgx_age_remote_assertion_authority_config.proto"],
-    deprecation = "Use //asylo/identity/attestation/sgx:sgx_age_remote_assertion_authority_config_proto",
-    exports = ["//asylo/identity/attestation/sgx:sgx_age_remote_assertion_authority_config_proto"],
-    deps = [
-        "//asylo/identity/attestation/sgx:sgx_age_remote_assertion_authority_config_proto",
-    ],
-)
-
-cc_proto_library(
-    name = "sgx_age_remote_assertion_authority_config_cc_proto",
-    deprecation = "Use //asylo/identity/attestation/sgx:sgx_age_remote_assertion_authority_config_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = ["sgx_age_remote_assertion_authority_config_proto"],
 )
 
 proto_library(
@@ -439,15 +358,6 @@ cc_test(
 )
 
 cc_library(
-    name = "sgx_age_remote_assertion_generator",
-    hdrs = ["sgx_age_remote_assertion_generator.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deprecation = "Use //asylo/identity/attestation/sgx:sgx_age_remote_assertion_generator",
-    visibility = ["//visibility:public"],
-    deps = ["//asylo/identity/attestation/sgx:sgx_age_remote_assertion_generator"],
-)
-
-cc_library(
     name = "sgx_identity_test_util",
     testonly = 1,
     srcs = ["sgx_identity_test_util.cc"],
@@ -583,16 +493,6 @@ cc_test(
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
-)
-
-cc_library(
-    name = "sgx_code_identity_expectation_matcher",
-    hdrs = ["sgx_code_identity_expectation_matcher.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deprecation = "Use sgx_identity_expectation_matcher instead",
-    visibility = ["//visibility:public"],
-    deps = [":sgx_identity_expectation_matcher"],
-    alwayslink = 1,
 )
 
 cc_library(
@@ -988,15 +888,6 @@ cc_library(
         "//asylo/util:status",
         "@com_google_googletest//:gtest",
     ],
-)
-
-cc_library(
-    name = "sgx_local_secret_sealer",
-    hdrs = ["sgx_local_secret_sealer.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deprecation = "Use //asylo/identity/sealing/sgx:sgx_local_secret_sealer",
-    visibility = ["//visibility:public"],
-    deps = ["//asylo/identity/sealing/sgx:sgx_local_secret_sealer"],
 )
 
 cc_library(

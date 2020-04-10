@@ -61,22 +61,6 @@ cc_proto_library(
     deps = ["enclave_assertion_authority_config_proto"],
 )
 
-proto_library(
-    name = "sealed_secret_proto",
-    srcs = ["sealed_secret.proto"],
-    deprecation = "Use //asylo/identity/sealing:sealed_secret_proto",
-    visibility = ["//visibility:public"],
-    exports = ["//asylo/identity/sealing:sealed_secret_proto"],
-    deps = ["//asylo/identity/sealing:sealed_secret_proto"],
-)
-
-cc_proto_library(
-    name = "sealed_secret_cc_proto",
-    deprecation = "Use //asylo/identity/sealing:sealed_secret_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = [":sealed_secret_proto"],
-)
-
 cc_library(
     name = "init",
     srcs = [
@@ -225,15 +209,6 @@ cc_test(
 )
 
 cc_library(
-    name = "secret_sealer",
-    hdrs = ["secret_sealer.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deprecation = "Use //asylo/identity/sealing:secret_sealer",
-    visibility = ["//visibility:public"],
-    deps = ["//asylo/identity/sealing:secret_sealer"],
-)
-
-cc_library(
     name = "identity_acl_evaluator",
     srcs = ["identity_acl_evaluator.cc"],
     hdrs = ["identity_acl_evaluator.h"],
@@ -364,22 +339,4 @@ cc_library(
         "//asylo/crypto/util:byte_container_util",
         "//asylo/util:status",
     ],
-)
-
-cc_library(
-    name = "enclave_assertion_generator",
-    hdrs = ["enclave_assertion_generator.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deprecation = "Use //asylo/identity/attestation:enclave_assertion_generator",
-    visibility = ["//visibility:public"],
-    deps = ["//asylo/identity/attestation:enclave_assertion_generator"],
-)
-
-cc_library(
-    name = "enclave_assertion_verifier",
-    hdrs = ["enclave_assertion_verifier.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deprecation = "Use //asylo/identity/attestation:enclave_assertion_verifier",
-    visibility = ["//visibility:public"],
-    deps = ["//asylo/identity/attestation:enclave_assertion_verifier"],
 )
