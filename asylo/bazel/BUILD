@@ -143,20 +143,3 @@ sh_test(
     toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
     deps = ["//asylo/test/util:shell_testing"],
 )
-
-sh_test(
-    name = "passing_remote_cfh_test",
-    srcs = ["passing_test.sh"],
-    tags = ASYLO_ALL_BACKENDS + [
-        "asylo-cfh",
-        "asylo-remote",
-    ],
-    visibility = ["//visibility:public"],
-)
-
-sh_test(
-    name = "passing_test",
-    srcs = ["passing_test.sh"],
-    tags = ASYLO_ALL_BACKENDS + ["asylo-cfh"],
-    visibility = ["//visibility:public"],
-)
