@@ -81,10 +81,7 @@ def _make_primitives_dlopen_enclave(transition):
 
 _primitives_dlopen_enclave_old = _make_primitives_dlopen_enclave(False)
 
-def _placeholder(**kwargs):
-    fail("Asylo's transition rules are not currently supported in Bazel.")
-
-_primitives_dlopen_enclave_new = _placeholder
+_primitives_dlopen_enclave_new = _make_primitives_dlopen_enclave(True)
 
 def primitives_dlopen_enclave(name, **kwargs):
     """Defines a cc_binary enclave that uses the dlopen backend.

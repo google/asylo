@@ -22,7 +22,6 @@ load(
     "cc_enclave_binary",
     "enclave_test",
 )
-load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
 
 licenses(["notice"])
 
@@ -53,26 +52,23 @@ sgx_enclave_configuration(
 cc_enclave_binary(
     name = "asylo_redis",
     application_enclave_config = ":redis_enclave_config",
-    enclave_build_config = "redis_enclave_configuration",
+    enclave_build_config = ":redis_enclave_configuration",
     deps = ["@com_github_antirez_redis//:redis_main"],
-)
-
-copy_from_host(
-    output = "redis_client_host_bin",
-    target = "@com_github_antirez_redis//:redis_cli_bin",
 )
 
 enclave_test(
     name = "redis_test",
     srcs = ["redis_test.cc"],
-    data = [
+    backend_dependent_data = [
         ":asylo_redis_host_loader",
-        ":redis_client_host_bin",
     ],
+    backends = sgx.backend_labels,
+    copts = ASYLO_DEFAULT_COPTS,
+    data = ["@com_github_antirez_redis//:redis_cli_bin"],
     tags = ["exclusive"],
     test_args = [
-        "--server_path=$(location :asylo_redis_host_loader)",
-        "--client_path=$(location :redis_client_host_bin)",
+        "--server_path=$(rootpath :asylo_redis_host_loader)",
+        "--client_path=$(rootpath @com_github_antirez_redis//:redis_cli_bin)",
     ],
     deps = [
         "//asylo/test/util:exec_tester",

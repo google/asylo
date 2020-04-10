@@ -17,8 +17,9 @@
 
 source asylo/test/util/shell_testing.sh
 
-NORMAL_APPLICATION="asylo/bazel/application_wrapper/test_host_application"
-ENCLAVE_APPLICATION="asylo/bazel/application_wrapper/test_enclave_application"
+NORMAL_APPLICATION="asylo/bazel/application_wrapper/test_application"
+ENCLAVE_APPLICATION="asylo/bazel/application_wrapper/test_enclave_application_sgx_sim"
+ENCLAVE_LOADER="asylo/bazel/application_wrapper/test_enclave_application_host_loader"
 
 # Command-line arguments to pass to the test applications.
 TEST_ARGS="the quick brown fox jumps over the lazy dog"
@@ -63,8 +64,8 @@ function test::normal_application_prints_command_line_args_and_environment_varia
 }
 
 function test::enclave_application_prints_command_line_args_and_foo_variable() {
-  test_application "${ENCLAVE_APPLICATION}" \
-      "./${ENCLAVE_APPLICATION}_host_loader" "$(printf 'FOO="foooo"\n')"
+  test_application "${ENCLAVE_APPLICATION}" "./${ENCLAVE_LOADER}" \
+    "$(printf 'FOO="foooo"\n')"
 }
 
 test_main

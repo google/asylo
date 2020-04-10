@@ -974,10 +974,7 @@ def _make_enclave_build_test(transition):
 
 _enclave_build_test = _make_enclave_build_test(False)
 
-def _placeholder(**kwargs):
-    fail("Asylo's transition rules are not currently supported in Bazel.")
-
-_enclave_build_transition_test = _placeholder
+_enclave_build_transition_test = _make_enclave_build_test(True)
 
 def enclave_build_test(
         name,

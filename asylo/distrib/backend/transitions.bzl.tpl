@@ -4,19 +4,22 @@ load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 load("@rules_cc//cc:defs.bzl", "cc_binary")
 
 BACKEND_LABEL = "@com_google_asylo_backend_provider//:backend"
+
+GRPC_ARES_LABEL = "@com_github_grpc_grpc//:grpc_use_ares"
 PRETRANSITION_TAGS = [
     "asylo-pretransition",
     "manual",
 ]
 
-def _placeholder(**kwargs):
-    fail("Transition rules in external repositories are unsupported in Bazel.")
-
 def _empty_transition_impl(settings, attr):
     _ignore = (settings, attr)
     return {}
 
-empty_transition = _placeholder
+empty_transition = transition(
+    implementation = _empty_transition_impl,
+    inputs = [],
+    outputs = [],
+)
 
 def _asylo_toolchain_and_backend_transition_impl(settings, attr):
     """Returns the configuration to use the Asylo toolchain."""
@@ -25,17 +28,33 @@ def _asylo_toolchain_and_backend_transition_impl(settings, attr):
         "//command_line_option:custom_malloc": "@com_google_asylo_toolchain//toolchain:malloc",
         "//command_line_option:dynamic_mode": "off",
         "//command_line_option:host_crosstool_top": "@bazel_tools//tools/cpp:toolchain",
+        GRPC_ARES_LABEL: False,
         BACKEND_LABEL: attr.backend or settings[BACKEND_LABEL],
     }
     return result
 
-asylo_toolchain_transition = _placeholder
+asylo_toolchain_transition = transition(
+    implementation = _asylo_toolchain_and_backend_transition_impl,
+    inputs = [BACKEND_LABEL],
+    outputs = [
+        "//command_line_option:crosstool_top",
+        "//command_line_option:custom_malloc",
+        "//command_line_option:dynamic_mode",
+        "//command_line_option:host_crosstool_top",
+        GRPC_ARES_LABEL,
+        BACKEND_LABEL,
+    ],
+)
 
 def _asylo_backend_transition_impl(settings, attr):
     _ignore = (settings)
     return {BACKEND_LABEL: attr.backend}
 
-asylo_backend_transition = _placeholder
+asylo_backend_transition = transition(
+    implementation = _asylo_backend_transition_impl,
+    inputs = [],
+    outputs = [BACKEND_LABEL],
+)
 
 def _forward_target_transition(ctx, executable):
     """Copies cc_target output from a transitioned toolchain to the host.
@@ -165,11 +184,12 @@ _UNSUPPORTED_PKGS = [
     # Bazel (v1.0.1) does not support transitions from external dependencies,
     # which com_google_asylo_backend_provider is, so no packages are supported
     # yet.
-    "",
 ]
 
 def transitions_supported(package_name):
-    """Returns true if a given package has been converted to use transitions.
+    """Returns false if the user has opted out of using transitions.
+
+    May also return false for hard-coded unsupported packages.
 
     Args:
         package_name: The package name that is using an enclave rule.
@@ -177,28 +197,56 @@ def transitions_supported(package_name):
     Returns:
         True only if package_name is expected to work with transitions.
     """
+
+    # A top level opt-out by a WORKSPACE declaration.
+    if native.existing_rule("com_google_asylo_disable_transitions"):
+        return False
     for pkg in _UNSUPPORTED_PKGS:
         if package_name.startswith(pkg):
             return False
     return True
 
-with_asylo_binary = _placeholder
-with_asylo_test = _placeholder
-with_asylo_library = _placeholder
+with_asylo_binary = _make_transition_forwarding_rule(executable = True)
+with_asylo_test = _make_transition_forwarding_rule(test = True)
+with_asylo_library = _make_transition_forwarding_rule()
 
-with_backend_binary = _placeholder
-with_backend_test = _placeholder
-with_backend_library = _placeholder
+with_backend_binary = _make_asylo_backend_rule(executable = True)
+with_backend_test = _make_asylo_backend_rule(test = True)
+with_backend_library = _make_asylo_backend_rule()
 
 def _cc_backend_binary_impl(ctx):
     return backend_tools.cc_binary(
         ctx,
         ctx.label.name,
         extra_data = ctx.files.backend_dependent_data,
-        extra_deps = [ctx.attr._stl],
     )
 
-_cc_backend_binary = _placeholder
+_cc_backend_binary = rule(
+    doc = "A cc_binary that transitions the Asylo backend before building",
+    implementation = _cc_backend_binary_impl,
+    executable = True,
+    cfg = asylo_backend_transition,
+    attrs = backend_tools.merge_dicts(
+        backend_tools.cc_binary_attrs(
+            executable = True,
+            toolchain = "@bazel_tools//tools/cpp:current_cc_toolchain",
+        ),
+        {
+            "backend": attr.label(
+                providers = [backend_tools.AsyloBackendInfo],
+                mandatory = True,
+            ),
+            "backend_dependent_data": attr.label_list(
+                allow_files = True,
+                cfg = asylo_backend_transition,
+            ),
+            "_whitelist_function_transition": attr.label(
+                default = "//tools/whitelists/function_transition_whitelist",
+            ),
+        },
+    ),
+    fragments = ["cpp", "google-cpp"],
+)
 
 def _cc_binary(name, backends = backend_tools.should_be_all_backends, name_by_backend = {}, **kwargs):
     if transitions_supported(native.package_name()):

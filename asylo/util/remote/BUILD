@@ -20,7 +20,6 @@ load("//asylo/bazel:asylo.bzl", "enclave_loader")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
-load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
 
 licenses(["notice"])  # Apache v2.0
 
@@ -121,14 +120,8 @@ cc_library(
     ],
 )
 
-copy_from_host(
-    output = "dlopen_remote_proxy",
-    target = "dlopen_remote_proxy_bin",
-    visibility = ["//visibility:public"],
-)
-
 cc_binary(
-    name = "dlopen_remote_proxy_bin",
+    name = "dlopen_remote_proxy",
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
@@ -137,20 +130,8 @@ cc_binary(
     ],
 )
 
-copy_from_host(
-    output = "sgx_remote_proxy",
-    target = "sgx_remote_proxy_bin",
-    visibility = ["//visibility:public"],
-)
-
-copy_from_host(
-    output = "remote_provision_host_loader",
-    target = "remote_provision_host_server_host_loader",
-    visibility = ["//visibility:public"],
-)
-
 cc_binary(
-    name = "sgx_remote_proxy_bin",
+    name = "sgx_remote_proxy",
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [

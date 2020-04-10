@@ -98,6 +98,18 @@ def _bazel_version_repository_impl(repository_ctx):
     repository_ctx.file("bazel_version.bzl", s)
     repository_ctx.file("BUILD", "")
 
+def _asylo_disable_transitions_impl(repository_ctx):
+    pass
+
+_asylo_disable_transitions = repository_rule(
+    implementation = _asylo_disable_transitions_impl,
+)
+
+def asylo_disable_transitions():
+    """Serves as a workspace-wide transition-disable flag."""
+    if not native.existing_rule("com_google_asylo_disable_transitions"):
+        _asylo_disable_transitions(name = "com_google_asylo_disable_transitions")
+
 def asylo_testonly_deps():
     """Macro to include Asylo's testing-only dependencies in a WORKSPACE."""
 

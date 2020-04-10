@@ -1380,7 +1380,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
      
      uint32_t i;
  
-@@ -65,6 +68,44 @@
+@@ -65,6 +68,45 @@
      return ((ex_features | _SGX_EX_FEATURES_MASK_) == _SGX_EX_FEATURES_MASK_);
  }
  
@@ -1402,14 +1402,15 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 +        int driver_type = SGX_DRIVER_UNKNOWN;
 +        if (!get_driver_type(&driver_type))
 +        {
-+            SE_TRACE(SE_TRACE_ERROR, "Could not get driver typed\n");
++            SE_TRACE(SE_TRACE_ERROR, "Could not get driver type\n");
 +            return SGX_ERROR_NO_DEVICE;
 +        }
 +        // For in kernel driver, the enclave memory address still contains VMAs
 +        // after fork() on the host, they need to be unmapped before reserving
 +        // the enclave memory.
 +        if (driver_type == SGX_DRIVER_IN_KERNEL
-+            && munmap(*asylo_config->base_address, asylo_config->enclave_size) != 0)
++            && munmap(*asylo_config->base_address,
++                      asylo_config->enclave_size) != 0)
 +        {
 +            return SGX_ERROR_MEMORY_MAP_CONFLICT;
 +        }
@@ -1425,7 +1426,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
  extern "C" sgx_status_t __sgx_create_enclave_ex(const char *file_name, 
                                                  const int debug, 
                                                  sgx_launch_token_t *launch_token, 
-@@ -74,7 +115,10 @@
+@@ -74,7 +116,10 @@
                                                  const uint32_t ex_features,
                                                  const void* ex_features_p[32])
  {
@@ -1437,7 +1438,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
  
      //Only true or false is valid
      if(TRUE != debug &&  FALSE != debug)
-@@ -158,7 +202,10 @@
+@@ -158,7 +203,10 @@
                                                            const uint32_t ex_features,
                                                            const void* ex_features_p[32])
  {
@@ -3421,13 +3422,15 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1278 @@
+@@ -0,0 +1,1338 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(":sgx_sdk.bzl", "asylo_sgx_backend", "enclave_lds", "sgx")
 +load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 +load("@rules_proto//proto:defs.bzl", "proto_library")
 +load("@rules_cc//cc:defs.bzl", "cc_proto_library")
++load("@bazel_skylib//lib:selects.bzl", "selects")
++load(":internal.bzl", "internal_is_simulation")
 +
 +# "notice" licenses present:
 +# BSD (Intel SGX SDK, libunwind, libcxxrt),
@@ -3556,6 +3559,11 @@ diff -Nur /dev/null BUILD
 +    deps = [
 +        ":uae_service_select",
 +    ],
++)
++
++package_group(
++    name = "implementation",
++    packages = ["//..."],
 +)
 +
 +proto_library(
@@ -4686,7 +4694,7 @@ diff -Nur /dev/null BUILD
 +)
 +
 +config_setting(
-+    name = "sgx_hw",
++    name = "sgx_hw_deprecated_config",
 +    values = {
 +        "define": "SGX_SIM=0",
 +    },
@@ -4694,16 +4702,69 @@ diff -Nur /dev/null BUILD
 +)
 +
 +config_setting(
-+    name = "sgx_sim",
++    name = "sgx_sim_deprecated_config",
 +    values = {
 +        "define": "SGX_SIM=1",
 +    },
 +    visibility = ["//visibility:public"],
 +)
++
++internal_is_simulation(
++    name = "internal_is_simulation",
++    build_setting_default = 0,
++    visibility = [":implementation"],
++)
++
++config_setting(
++    name = "internal_sgx_hw",
++    flag_values = {
++        ":internal_is_simulation": "2",
++    },
++)
++
++config_setting(
++    name = "internal_sgx_sim",
++    flag_values = {
++        ":internal_is_simulation": "1",
++    },
++)
++
++config_setting(
++    name = "backend_sgx_hw",
++    flag_values = {
++        "@com_google_asylo_backend_provider//:backend": "@linux_sgx//:asylo_sgx_hw",
++    },
++)
++
++selects.config_setting_group(
++    name = "sgx_hw",
++    match_any = [
++        ":internal_sgx_hw",
++        ":backend_sgx_hw",
++    ],
++    visibility = ["//visibility:public"],
++)
++
++config_setting(
++    name = "backend_sgx_sim",
++    flag_values = {
++        "@com_google_asylo_backend_provider//:backend": "@linux_sgx//:asylo_sgx_sim",
++    },
++)
++
++selects.config_setting_group(
++    name = "sgx_sim",
++    match_any = [
++        ":internal_sgx_sim",
++        ":backend_sgx_sim",
++        ":sgx_sim_deprecated_config",
++    ],
++    visibility = ["//visibility:public"],
++)
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,997 @@
+@@ -0,0 +1,999 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
@@ -4856,7 +4917,9 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    transition = False,
 +)
 +
-+_sgx_cc_unsigned_enclave_transition = None
++_sgx_cc_unsigned_enclave_transition = _make_sgx_cc_unsigned_enclave(
++    transition = True,
++)
 +
 +def sgx_unsigned_enclave(
 +        name,
@@ -5142,11 +5205,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +
 +_sgx_sign_enclave_with_untrusted_key = _make_sgx_sign_enclave_with_untrusted_key_rule(transition = False)
 +
-+
-+def _placeholder(**kwargs):
-+    fail("Transition support not implemented")
-+
-+_sgx_sign_enclave_with_untrusted_key_transition = _placeholder
++_sgx_sign_enclave_with_untrusted_key_transition = _make_sgx_sign_enclave_with_untrusted_key_rule(transition = True)
 +
 +def _backend_sgx_sign_enclave_with_untrusted_key(name, backend_label_struct, **kwargs):
 +    _sgx_sign_enclave_with_untrusted_key_transition(
@@ -5297,7 +5356,9 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    transition = False,
 +)
 +
-+_sgx_generate_enclave_signing_material_transition = _placeholder
++_sgx_generate_enclave_signing_material_transition = _make_backend_sgx_generate_enclave_signing_material_rule(
++    transition = True,
++)
 +
 +def _backend_sgx_generate_enclave_signing_material(
 +        name,
@@ -5430,7 +5491,9 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    transition = False,
 +)
 +
-+_boringssl_sign_enclave_signing_material_transition = _placeholder
++_boringssl_sign_enclave_signing_material_transition = _make_boringssl_sign_enclave_signing_material_rule(
++    transition = True,
++)
 +
 +def boringssl_sign_enclave_signing_material(
 +        name,
@@ -5589,7 +5652,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +
 +_sgx_signed_enclave = _make_sgx_signing_rule(transition = False)
 +
-+_sgx_signed_enclave_transition = _placeholder
++_sgx_signed_enclave_transition = _make_sgx_signing_rule(transition = True)
 +
 +def _backend_sgx_signed_enclave(name, backend_label_struct, **kwargs):
 +    _sgx_signed_enclave_transition(

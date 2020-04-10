@@ -17,6 +17,7 @@
 load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
 licenses(["notice"])
 
@@ -182,12 +183,27 @@ cc_test(
     ],
 )
 
+config_setting(
+    name = "asylo_dlopen_by_flag",
+    flag_values = {
+        "@com_google_asylo_backend_provider//:backend": "//asylo/platform/primitives/dlopen",
+    },
+)
+
 # Configuration setting for the primitives/dlopen backend.
 config_setting(
-    name = "asylo_dlopen",
+    name = "asylo_dlopen_deprecated_config",
     values = {
         "define": "ASYLO_DLOPEN=1",
     },
+)
+
+selects.config_setting_group(
+    name = "asylo_dlopen",
+    match_any = [
+        ":asylo_dlopen_deprecated_config",
+        ":asylo_dlopen_by_flag",
+    ],
     visibility = ["//visibility:public"],
 )
 

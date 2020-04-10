@@ -20,7 +20,6 @@ load(
     "enclave_test",
     cc_test = "cc_test_and_cc_enclave_test",
 )
-load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
     "//asylo/bazel:sgx_rules.bzl",
@@ -340,6 +339,7 @@ cc_enclave_test(
 enclave_test(
     name = "sgx_intel_ecdsa_qe_remote_assertion_e2e_test",
     srcs = ["sgx_intel_ecdsa_qe_remote_assertion_e2e_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
         "sgx_remote_assertion_generator_test_enclave": ":sgx_remote_assertion_generator_test_enclave.so",
@@ -409,24 +409,17 @@ transitions.cc_binary(
     ],
 )
 
-copy_from_host(
-    output = "age_main_host_bin",
-    target = "age_main",
-)
-
 sgx_enclave_test(
     name = "age_main_test",
     srcs = ["age_main_test.cc"],
-    backend_dependent_data = [
-        ":age_main_host_bin",
-    ],
+    backend_dependent_data = [":age_main"],
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
         "age": "//asylo/identity/attestation/sgx/internal:remote_assertion_generator_enclave_no_flc.so",
     },
     test_args = [
         "--age_path='{age}'",
-        "--loader_path=$(rootpath :age_main_host_bin)",
+        "--loader_path=$(rootpath :age_main)",
     ],
     deps = [
         "//asylo/test/util:exec_tester",

@@ -238,10 +238,10 @@ untrusted application.
 The following example shows an invocation of a loader,
 `//package/path:enclave_loader`, that accepts the path of the enclave binary via
 a command-line flag (`--enclave_path`). Note that
-`--@com_google_asylo_backend_provider//:backend=//third_party/linux_sgx:asylo_sgx_hw`
-must be passed to the Bazel command that builds the loader so that the SGX SDK
-is built for hardware mode. If using the Asylo Docker image on an SGX-enabled
-host, note that you can propagate the SGX capabilities from the host with the
+`--@com_google_asylo_backend_provider//:backend=@linux_sgx//:asylo_sgx_hw` must
+be passed to the Bazel command that builds the loader so that the SGX SDK is
+built for hardware mode. If using the Asylo Docker image on an SGX-enabled host,
+note that you can propagate the SGX capabilities from the host with the
 following Docker flags:
 
 *   `--device=/dev/isgx`
@@ -259,7 +259,7 @@ DOCKER="docker run --rm --device=/dev/isgx \
   gcr.io/asylo-framework/asylo"
 BAZEL="${DOCKER} bazel"
 
-${BAZEL} run --@com_google_asylo_backend_provider//:backend=//third_party/linux_sgx:asylo_sgx_hw \
+${BAZEL} run --@com_google_asylo_backend_provider//:backend=@linux_sgx//:asylo_sgx_hw \
   //package/path:enclave_loader -- --enclave_path="${RELEASE_DIR}/enclave.so"
 ```
 

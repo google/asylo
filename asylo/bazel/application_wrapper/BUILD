@@ -20,7 +20,6 @@ load(
     "cc_enclave_binary",
     "cc_test",
 )
-load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
 load(
     "//asylo/bazel:sgx_rules.bzl",
     "sgx_cc_unsigned_enclave",
@@ -249,23 +248,17 @@ cc_enclave_binary(
     deps = ["//asylo/util:logging"],
 )
 
-copy_from_host(
-    output = "test_host_application",
-    target = "test_application",
-)
-
 # An end-to-end test of the whole-application wrapper.
 sh_test(
-    name = "application_wrapper_end_to_end_test",
-    srcs = ["application_wrapper_end_to_end_test.sh"],
+    name = "application_wrapper_end_to_end_sgx_sim_test",
+    srcs = ["application_wrapper_end_to_end_sgx_sim_test.sh"],
     data = [
-        ":test_enclave_application",
-        ":test_host_application",
+        ":test_application",
+        ":test_enclave_application_sgx_sim",
     ],
     tags = [
-        "asylo-cfh",
-        "asylo-sgx-hw",
         "asylo-sgx-sim",
+        "asylo-transition",
         "enclave_test",
     ],
     deps = ["//asylo/test/util:shell_testing"],

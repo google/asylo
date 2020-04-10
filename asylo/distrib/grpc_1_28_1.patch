@@ -1,3 +1,70 @@
+diff -Naur -x '*~' -x '*.orig' bazel/build_settings.bzl bazel/build_settings.bzl
+--- bazel/build_settings.bzl
++++ bazel/build_settings.bzl
+@@ -0,0 +1,17 @@
++"""Configurable build settings for gRPC."""
++
++_ares_setting_info = provider(fields = ["use"])
++
++def _ares_setting_impl(ctx):
++    return [_ares_setting_info(use=ctx.build_setting_value)]
++
++_ares_setting = rule(
++    doc = "Build configuration setting for whether gRPC should use c-ares.",
++    implementation = _ares_setting_impl,
++    build_setting = config.bool(flag = True),
++)
++
++grpc_build_settings = struct(
++    ares_setting_info = _ares_setting_info,
++    ares = _ares_setting,
++)
+diff -Naur -x '*~' -x '*.orig' BUILD BUILD
+--- BUILD
++++ BUILD
+@@ -26,6 +26,8 @@
+     ],
+ )
+ 
++load("@bazel_skylib//lib:selects.bzl", "selects")
++load("//bazel:build_settings.bzl", "grpc_build_settings")
+ load(
+     "//bazel:grpc_build_system.bzl",
+     "grpc_cc_library",
+@@ -34,11 +36,32 @@
+     "python_config_settings",
+ )
+ 
++grpc_build_settings.ares(
++    name = "grpc_use_ares",
++    build_setting_default = True,
++    visibility = ["//visibility:public"],
++)
++
+ config_setting(
+-    name = "grpc_no_ares",
++    name = "grpc_no_ares_flag",
++    flag_values = {
++        ":grpc_use_ares": "False",
++    },
++)
++
++config_setting(
++    name = "grpc_no_ares_define",
+     values = {"define": "grpc_no_ares=true"},
+ )
+ 
++selects.config_setting_group(
++    name = "grpc_no_ares",
++    match_any = [
++        ":grpc_no_ares_define",
++        ":grpc_no_ares_flag",
++    ],
++)
++
+ config_setting(
+     name = "grpc_allow_exceptions",
+     values = {"define": "GRPC_ALLOW_EXCEPTIONS=1"},
 diff -Naur -x '*~' -x '*.orig' include/grpc/impl/codegen/port_platform.h include/grpc/impl/codegen/port_platform.h
 --- include/grpc/impl/codegen/port_platform.h
 +++ include/grpc/impl/codegen/port_platform.h

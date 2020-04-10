@@ -71,6 +71,15 @@ DLOPEN_REGRESSION_TESTS=($(${BAZEL} query "(${ASYLO_DLOPEN_TESTS} except
 )
 UNTAGGED_TESTS=($(${BAZEL} query "${ENCLAVE_TESTS} except
   (${IGNORE_TESTS} union ${ASYLO_DLOPEN_TESTS} union ${ASYLO_SGX_HW_TESTS} union ${ASYLO_SGX_SIM_TESTS})"))
+SGX_HW_TRANSITION_REGRESSION_TESTS=($(${BAZEL} query "(${ASYLO_SGX_HW_TESTS} except
+  (${IGNORE_TESTS} union ${ASYLO_REMOTE_TESTS})) intersect ${ASYLO_TRANSITION_TESTS}")
+)
+SGX_SIM_TRANSITION_REGRESSION_TESTS=($(${BAZEL} query "(${ASYLO_SGX_SIM_TESTS} except
+  (${IGNORE_TESTS} union ${ASYLO_REMOTE_TESTS})) intersect ${ASYLO_TRANSITION_TESTS}")
+)
+DLOPEN_TRANSITION_REGRESSION_TESTS=($(${BAZEL} query "(${ASYLO_DLOPEN_TESTS} except
+  (${IGNORE_TESTS} union ${ASYLO_REMOTE_TESTS})) intersect ${ASYLO_TRANSITION_TESTS}")
+)
 
 STAT=0
 if [[ "${#UNTAGGED_TESTS[@]}" -ne 0 ]]; then
@@ -104,6 +113,21 @@ fi
 if [[ " ${TO_TEST[@]} " =~ " dlopen " ]]; then
   ${BAZEL} test --build_tests_only --config=asylo-dlopen \
     "${DLOPEN_REGRESSION_TESTS[@]}"
+  STAT=$((${STAT} || $?))
+fi
+
+if [[ " ${TO_TEST[@]} " =~ " sgx-sim " ]]; then
+  ${BAZEL} test "${SGX_SIM_TRANSITION_REGRESSION_TESTS[@]}"
+  STAT=$((${STAT} || $?))
+fi
+
+if [[ " ${TO_TEST[@]} " =~ " sgx " ]]; then
+  ${BAZEL} test --test_strategy=local "${SGX_HW_TRANSITION_REGRESSION_TESTS[@]}"
+  STAT=$((${STAT} || $?))
+fi
+
+if [[ " ${TO_TEST[@]} " =~ " dlopen " ]]; then
+  ${BAZEL} test "${DLOPEN_TRANSITION_REGRESSION_TESTS[@]}"
   STAT=$((${STAT} || $?))
 fi
 

@@ -25,7 +25,6 @@ load(
     "debug_sign_enclave",
     "enclave_test",
 )
-load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
 load("//asylo/bazel:sgx_rules.bzl", "sgx_debug_sign_enclave", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
@@ -649,20 +648,15 @@ transitions.cc_binary(
     ],
 )
 
-copy_from_host(
-    output = "double_die_host_bin",
-    target = "double_die",
-)
-
 sgx_enclave_test(
     name = "die_test",
     srcs = ["die_test.cc"],
-    backend_dependent_data = [":double_die_host_bin"],
+    backend_dependent_data = [":double_die"],
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":die.so"},
     test_args = [
         "--enclave_path='{enclave}'",
-        "--loader_path=$(rootpath :double_die_host_bin)",
+        "--loader_path=$(rootpath :double_die)",
     ],
     deps = [
         "//asylo:enclave_client",
@@ -672,7 +666,6 @@ sgx_enclave_test(
         "//asylo/test/util:test_main",
         "//asylo/util:logging",
         "//asylo/util:status",
-        "@bazel_tools//tools/cpp/runfiles",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
@@ -691,20 +684,15 @@ transitions.cc_binary(
     ],
 )
 
-copy_from_host(
-    output = "exception_app_host_bin",
-    target = "exception_app",
-)
-
 enclave_test(
     name = "exception_test",
     srcs = ["exception_test.cc"],
-    backend_dependent_data = [":exception_app_host_bin"],
+    backend_dependent_data = [":exception_app"],
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":exception.so"},
     test_args = [
         "--enclave_path='{enclave}'",
-        "--loader_path=$(rootpath :exception_app_host_bin)",
+        "--loader_path=$(rootpath :exception_app)",
     ],
     deps = [
         ":exception",

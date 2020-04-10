@@ -4,9 +4,6 @@ load(":asylo_internal.bzl", "internal")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
 
-def _placeholder(**kwargs):
-    fail("Asylo's transition rules are not currently supported in Bazel.")
-
 def _cc_backend_unsigned_enclave_impl(ctx):
     return ctx.attr.backend[backend_tools.AsyloBackendInfo].unsigned_enclave_implementation(ctx)
 
@@ -32,13 +29,42 @@ def _make_cc_backend_unsigned_enclave(experimental):
         fragments = ["cpp"],
     )
 
-cc_backend_unsigned_enclave = _placeholder
-cc_backend_unsigned_enclave_experimental = _placeholder
+cc_backend_unsigned_enclave = _make_cc_backend_unsigned_enclave(experimental = False)
+cc_backend_unsigned_enclave_experimental = _make_cc_backend_unsigned_enclave(experimental = True)
 
 def _backend_sign_enclave_with_untrusted_key_impl(ctx):
     return ctx.attr.backend[backend_tools.AsyloBackendInfo].untrusted_sign_implementation(ctx)
 
-backend_sign_enclave_with_untrusted_key = _placeholder
+backend_sign_enclave_with_untrusted_key = rule(
+    executable = True,
+    doc = "Defines the 'signed' version of an unsigned enclave target in" +
+          " the provided backend.",
+    implementation = _backend_sign_enclave_with_untrusted_key_impl,
+    attrs = {
+        "backend": attr.label(
+            mandatory = True,
+            providers = [backend_tools.AsyloBackendInfo],
+        ),
+        "unsigned": attr.label(
+            mandatory = True,
+            allow_single_file = True,
+        ),
+        "config": attr.label(
+            default = "//asylo/bazel:default_sign_config",
+            allow_single_file = True,
+        ),
+        "key": attr.label(
+            mandatory = True,
+            allow_single_file = True,
+        ),
+        "sign_tool": attr.label(
+            mandatory = True,
+            allow_single_file = True,
+            executable = True,
+            cfg = "exec",
+        ),
+    },
+)
 
 def cc_enclave_test(
         name,
@@ -199,5 +225,5 @@ def _make_enclave_runner_rule(test = False):
         },
     )
 
-enclave_runner_script = _placeholder
-enclave_runner_test = _placeholder
+enclave_runner_script = _make_enclave_runner_rule()
+enclave_runner_test = _make_enclave_runner_rule(test = True)

@@ -101,11 +101,7 @@ class RedisServerEnclaveExecTester : public asylo::experimental::ExecTester {
 std::string GetPath(const std::string &flag) {
   std::string error;
   std::unique_ptr<Runfiles> runfiles(Runfiles::CreateForTest(&error));
-  char *path = strdup(flag.c_str());
-  std::string base_name(basename(path));
-  free(path);
-  return runfiles->Rlocation("com_google_asylo/asylo/examples/redis/" +
-                             base_name);
+  return runfiles->Rlocation(absl::StrCat("com_google_asylo/", flag));
 }
 
 // An ExecTester that scans stdout for |value_| message from the Redis client.
