@@ -159,6 +159,12 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2M/ETD1FV9EFzZBB1+emBFJuB1eh
 2/XyY3ZdNrT8lq7FQ0Z6ENdmoG+ldQH94d6FPkRWOMwY+ppB+SQ8XnUFRA==
 -----END PUBLIC KEY-----)pem";
 
+const absl::string_view kFakePckMachineConfigurationTextProto =
+    R"pb(
+  cpu_svn { value: "A fake TCB level" }
+  sgx_type: STANDARD
+    )pb";
+
 void AppendFakePckCertificateChain(CertificateChain *certificate_chain) {
   Certificate *fake_pck_cert = certificate_chain->add_certificates();
   fake_pck_cert->set_format(Certificate::X509_PEM);

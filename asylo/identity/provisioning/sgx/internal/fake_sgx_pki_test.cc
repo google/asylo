@@ -22,6 +22,7 @@
 #include <memory>
 #include <string>
 
+#include <google/protobuf/text_format.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/string_view.h"
@@ -33,6 +34,7 @@
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/x509_certificate.h"
+#include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -126,6 +128,16 @@ INSTANTIATE_TEST_SUITE_P(AllChains, FakeSgxPkiChainsTest,
                          Values(absl::MakeSpan(kPlatformCaChain),
                                 absl::MakeSpan(kProcessorCaChain),
                                 absl::MakeSpan(kTcbSignerChain)));
+
+TEST(FakeSgxPkiKeyTest, FakePckMachineConfigurationIsValid) {
+  MachineConfiguration machine_configuration;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(
+      std::string(kFakePckMachineConfigurationTextProto),
+      &machine_configuration));
+
+  EXPECT_EQ(machine_configuration.sgx_type(), SgxType::STANDARD);
+  EXPECT_EQ(machine_configuration.cpu_svn().value(), "A fake TCB level");
+}
 
 TEST(FakeSgxPkiKeyTest, FakePckPairIsValid) {
   std::unique_ptr<SigningKey> signing_key;

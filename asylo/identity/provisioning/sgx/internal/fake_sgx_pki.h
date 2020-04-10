@@ -55,6 +55,10 @@ extern const CertificateAndPrivateKey kFakeSgxPck;
 // The PEM-encoded ECDSA-P256 public key corresponding to |kFakeSgxPcks|.
 extern const absl::string_view kFakePckPublicPem;
 
+// A textproto of the MachineConfiguration encoded in the X.509 extensions of
+// |kFakeSgxPck|.
+extern const absl::string_view kFakePckMachineConfigurationTextProto;
+
 // Appends a PCK Certificate for kFakeSgxPck, the Asylo Fake SGX Processor CA
 // Certificate, and the Asylo Fake SGX Root CA certificate to
 // |certificate_chain|.
