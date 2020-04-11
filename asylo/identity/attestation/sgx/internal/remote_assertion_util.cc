@@ -185,45 +185,6 @@ Status VerifyAgeExpectation(const IdentityAclPredicate &age_expectation,
   return Status::OkStatus();
 }
 
-StatusOr<SgxExtensions> ExtractSgxExtensions(
-    absl::Span<X509Extension> pck_extensions) {
-  for (const X509Extension &extension : pck_extensions) {
-    if (extension.oid == GetSgxExtensionsOid()) {
-      return ReadSgxExtensions(extension.value);
-    }
-  }
-  return Status(error::GoogleError::INVALID_ARGUMENT,
-                "PCK certificate does not contain SGX extensions");
-}
-
-StatusOr<MachineConfiguration> ExtractMachineConfiguration(
-    const CertificateInterface *pck_certificate) {
-  X509Certificate const *pck_cert =
-      dynamic_cast<X509Certificate const *>(pck_certificate);
-  if (pck_cert == nullptr) {
-    return Status(error::GoogleError::UNAUTHENTICATED,
-                  "PCK certificate is not an X.509 certificate");
-  }
-
-  auto pck_extensions_result = pck_cert->GetOtherExtensions();
-  if (!pck_extensions_result.ok()) {
-    return pck_extensions_result.status().WithPrependedContext(
-        "PCK certificate does not contain extensions");
-  }
-  std::vector<X509Extension> pck_extensions =
-      std::move(pck_extensions_result).ValueOrDie();
-  SgxExtensions sgx_extensions;
-  ASYLO_ASSIGN_OR_RETURN(sgx_extensions,
-                         ExtractSgxExtensions(absl::MakeSpan(pck_extensions)));
-
-  sgx::MachineConfiguration machine_config;
-
-  *machine_config.mutable_cpu_svn() = std::move(sgx_extensions.cpu_svn);
-  machine_config.set_sgx_type(sgx_extensions.sgx_type);
-
-  return machine_config;
-}
-
 }  // namespace
 
 Status MakeRemoteAssertion(const std::string &user_data,
@@ -314,7 +275,7 @@ Status VerifyRemoteAssertion(
 
   MachineConfiguration peer_machine_config;
   ASYLO_ASSIGN_OR_RETURN(peer_machine_config,
-                         ExtractMachineConfiguration(
+                         ExtractMachineConfigurationFromPckCert(
                              intel_cert_chain[kPckCertificateIndex].get()));
 
   ASYLO_RETURN_IF_ERROR(VerifyAgeExpectation(

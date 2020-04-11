@@ -39,11 +39,14 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/types/span.h"
 #include "asylo/crypto/asn1.h"
 #include "asylo/crypto/asn1_schema.h"
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/certificate_interface.h"
 #include "asylo/crypto/certificate_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/crypto/x509_certificate.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/container_util.h"
@@ -339,6 +342,17 @@ Status ValidatePckCertificateInfo(
   return Status::OkStatus();
 }
 
+StatusOr<SgxExtensions> ExtractSgxExtensions(
+    absl::Span<X509Extension> pck_extensions) {
+  for (const X509Extension &extension : pck_extensions) {
+    if (extension.oid == GetSgxExtensionsOid()) {
+      return ReadSgxExtensions(extension.value);
+    }
+  }
+  return Status(error::GoogleError::INVALID_ARGUMENT,
+                "PCK certificate does not contain SGX extensions");
+}
+
 }  // namespace
 
 const ObjectId &GetSgxExtensionsOid() { return GetSgxOids().sgx_extensions; }
@@ -456,6 +470,34 @@ Status ValidatePckCertificates(const PckCertificates &pck_certificates) {
   }
 
   return Status::OkStatus();
+}
+
+StatusOr<MachineConfiguration> ExtractMachineConfigurationFromPckCert(
+    const CertificateInterface *pck_certificate) {
+  X509Certificate const *pck_cert =
+      dynamic_cast<X509Certificate const *>(pck_certificate);
+  if (pck_cert == nullptr) {
+    return Status(error::GoogleError::UNAUTHENTICATED,
+                  "PCK certificate is not an X.509 certificate");
+  }
+
+  auto pck_extensions_result = pck_cert->GetOtherExtensions();
+  if (!pck_extensions_result.ok()) {
+    return pck_extensions_result.status().WithPrependedContext(
+        "PCK certificate does not contain extensions");
+  }
+  std::vector<X509Extension> pck_extensions =
+      std::move(pck_extensions_result).ValueOrDie();
+  SgxExtensions sgx_extensions;
+  ASYLO_ASSIGN_OR_RETURN(sgx_extensions,
+                         ExtractSgxExtensions(absl::MakeSpan(pck_extensions)));
+
+  MachineConfiguration machine_config;
+
+  *machine_config.mutable_cpu_svn() = std::move(sgx_extensions.cpu_svn);
+  machine_config.set_sgx_type(sgx_extensions.sgx_type);
+
+  return machine_config;
 }
 
 }  // namespace sgx

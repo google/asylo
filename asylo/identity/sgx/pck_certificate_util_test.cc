@@ -21,6 +21,7 @@
 #include <algorithm>
 #include <bitset>
 #include <limits>
+#include <memory>
 #include <ostream>
 #include <string>
 #include <utility>
@@ -35,22 +36,54 @@
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/asn1.h"
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/certificate_interface.h"
+#include "asylo/crypto/certificate_util.h"
+#include "asylo/crypto/x509_certificate.h"
 #include "asylo/util/logging.h"
+#include "asylo/identity/attestation/sgx/internal/attestation_key_certificate_impl.h"
+#include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/identity/sgx/pck_certificates.pb.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/proto_enum_util.h"
+#include "asylo/util/proto_parse_util.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
 namespace sgx {
 namespace {
 
+using ::testing::HasSubstr;
+
 // The number of shuffles to use in a shuffling test.
 constexpr int kNumShuffles = 100;
+
+// A hex-encoded AttestationKeyCertificate binary proto.
+constexpr char kAttestationKeyCertificateHex[] =
+    "0ab3030ab00300000000000000000000000000000000010000000000000000000000000000"
+    "000000000000000000000000000000000027000000000000002700000000000000b0f58825"
+    "c26d5277c20aaaef3b3493aafcef70f36957b3d90712ee2c96b3f652000000000000000000"
+    "0000000000000000000000000000000000000000000000bdf1e39990510cf9429fae5fa64b"
+    "6cd39a67c99958a0103ba9be7948aae7de0c00000000000000000000000000000000000000"
+    "00000000000000000000000000000000000000000000000000000000000000000000000000"
+    "00000000000000000000000000000000000000000000000000000000000000000000000000"
+    "0000001e2c389c000000000000000000000000000000000000000000000000000000000000"
+    "000000000000000000000000000000000000000000000000000000000000164dc4494a164c"
+    "30afafb33f4bbbef77506c65b1d48fe4a47729594a86e2affa000000000000000000000000"
+    "000000004153594c4f205349474e5245504f52540000000000000000000000000000000000"
+    "000000000000000000000000000000e2543dbcb2c76a13001e0a9aa072526912dd010ac401"
+    "0a63080210011802225b3059301306072a8648ce3d020106082a8648ce3d03010703420004"
+    "bb69f2e901d926d9d7e7469d690176f904148b96887e890e5bb1b21c6018c85333f65500ca"
+    "2699d4702ec98986cc0c10a0ff13ae37517aae3926328c3f0b82681230417373657274696f"
+    "6e2047656e657261746f7220456e636c617665204174746573746174696f6e204b65792076"
+    "302e311a2b417373657274696f6e2047656e657261746f7220456e636c6176652041747465"
+    "73746174696f6e204b65791214504345205369676e205265706f72742076302e311a480801"
+    "12440a20a6a6e3bf578aa7bb236bae4cf90eb2d69ce703c35354c860826f8a8d424d9b7d12"
+    "20b375ee4ba12e616889ebb0ad47489c73c7977fa053c40476c2ee9852f1279d51";
 
 // Prints the text format representation of |message|.
 std::string PrintMessage(const google::protobuf::Message &message) {
@@ -712,6 +745,45 @@ TEST(PckCertificateUtilTest, PckCertificatesWithRepeatedEntriesIsValid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   *pck_certificates.add_certs() = pck_certificates.certs(0);
   ASYLO_EXPECT_OK(ValidatePckCertificates(pck_certificates));
+}
+
+TEST(PckCertificateUtilTest,
+     ExtractMachineConfigurationFromPckCertFailsWithWrongExtensions) {
+  std::unique_ptr<X509Certificate> cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      cert,
+      X509Certificate::Create(GetFakePckCertificateChain().certificates(2)));
+
+  ASSERT_THAT(ExtractMachineConfigurationFromPckCert(cert.get()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       HasSubstr("SGX extensions")));
+}
+
+TEST(PckCertificateUtilTest,
+     ExtractMachineConfigurationFromPckCertFailsWithNonX509Cert) {
+  Certificate non_x509_cert;
+  non_x509_cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
+  non_x509_cert.set_data(absl::HexStringToBytes(kAttestationKeyCertificateHex));
+
+  std::unique_ptr<AttestationKeyCertificateImpl> cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      cert, AttestationKeyCertificateImpl::Create(non_x509_cert));
+
+  ASSERT_THAT(ExtractMachineConfigurationFromPckCert(cert.get()),
+              StatusIs(error::GoogleError::UNAUTHENTICATED,
+                       HasSubstr("X.509 certificate")));
+}
+
+TEST(PckCertificateUtilTest, ExtractMachineConfigurationFromPckCertSuccess) {
+  std::unique_ptr<CertificateInterface> cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(cert, X509Certificate::Create(
+      *GetFakePckCertificateChain().certificates().begin()));
+
+  MachineConfiguration machine_configuration =
+      ParseTextProtoOrDie(kFakePckMachineConfigurationTextProto);
+
+  ASSERT_THAT(ExtractMachineConfigurationFromPckCert(cert.get()),
+              IsOkAndHolds(EqualsProto(machine_configuration)));
 }
 
 }  // namespace

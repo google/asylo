@@ -21,6 +21,7 @@
 
 #include "absl/types/optional.h"
 #include "asylo/crypto/asn1.h"
+#include "asylo/crypto/certificate_interface.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
@@ -77,6 +78,13 @@ StatusOr<Asn1Value> WriteSgxExtensions(const SgxExtensions &extensions);
 //   * There are no two distinct, unequal |certs| with identical |tcb_level|s or
 //     |tcbm|s.
 Status ValidatePckCertificates(const PckCertificates &pck_certificates);
+
+// Extracts the security-relevant machine configuration from the given
+// |pck_certificate|. If the provided certificate does not not represent an
+// X.509 certificate, or does not include the expected X.509 extensions, returns
+// a non-OK Status.
+StatusOr<MachineConfiguration> ExtractMachineConfigurationFromPckCert(
+    const CertificateInterface *pck_certificate);
 
 }  // namespace sgx
 }  // namespace asylo
