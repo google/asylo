@@ -19,6 +19,7 @@
 #include "asylo/platform/core/enclave_config_util.h"
 
 #include <errno.h>
+#include <limits.h>
 #include <unistd.h>
 
 #include "asylo/util/logging.h"
@@ -33,7 +34,11 @@ void SetDefaultHostName(EnclaveConfig *config) {
   if (config->has_host_name()) return;
 
   // Set the field to this host name.
-  char buf[1024];
+#ifdef HOST_NAME_MAX
+  char buf[HOST_NAME_MAX + 1];
+#else
+  char buf[256];
+#endif
   if (gethostname(buf, sizeof(buf)) != 0) {
     LOG(ERROR) << "gethostname on host failed:" << strerror(errno);
     return;

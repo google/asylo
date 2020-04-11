@@ -16,6 +16,7 @@
  *
  */
 
+#include <limits.h>
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
@@ -105,10 +106,17 @@ int gethostname(char *name, size_t len) {
   }
   std::string host_name = config->host_name();
   int size = host_name.size();
+#ifdef HOST_NAME_MAX
+  // The host name size is limited to HOST_NAME_MAX (without the trailing zero).
+  if (size >= HOST_NAME_MAX) {
+    size = HOST_NAME_MAX;
+  }
+#endif
   // Truncate |host_name| if longer than size of the buffer.
   if (size >= len) {
     size = len - 1;
   }
+
   memcpy(name, host_name.c_str(), size);
   name[size] = '\0';
   return 0;

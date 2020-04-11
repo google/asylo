@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
+#include <limits.h>
 #include <net/if.h>
 #include <openssl/rand.h>
 #include <pwd.h>
@@ -1403,7 +1404,11 @@ class SyscallsEnclave : public EnclaveTestCase {
   }
 
   Status RunGetHostNameTest(EnclaveOutput *output) {
-    char buf[1024];
+#ifdef HOST_NAME_MAX
+    char buf[HOST_NAME_MAX + 1];
+#else
+    char buf[256];
+#endif
     if (gethostname(buf, sizeof(buf)) == -1) {
       return Status(static_cast<error::GoogleError>(errno),
                     absl::StrCat("gethostname failed:", strerror(errno)));

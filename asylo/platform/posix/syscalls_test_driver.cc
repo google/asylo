@@ -20,6 +20,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
+#include <limits.h>
 #include <net/if.h>
 #include <netinet/in.h>
 #include <pwd.h>
@@ -1109,7 +1110,11 @@ TEST_F(SyscallsTest, GetHostName) {
   SyscallsTestOutput test_output;
   ASSERT_THAT(RunSyscallInsideEnclave("gethostname", "", &test_output), IsOk());
   ASSERT_TRUE(test_output.has_string_syscall_return());
-  char buf[1024];
+#ifdef HOST_NAME_MAX
+  char buf[HOST_NAME_MAX + 1];
+#else
+  char buf[256];
+#endif
   ASSERT_EQ(gethostname(buf, sizeof(buf)), 0);
   EXPECT_EQ(test_output.string_syscall_return(), buf);
 }

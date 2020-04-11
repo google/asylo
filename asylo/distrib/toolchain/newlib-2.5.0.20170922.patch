@@ -11963,10 +11963,11 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/syscall.
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/syslimits.h ./newlib/libc/sys/enclave/include/sys/syslimits.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/syslimits.h
 +++ ./newlib/libc/sys/enclave/include/sys/syslimits.h
-@@ -0,0 +1,7 @@
+@@ -0,0 +1,8 @@
 +#ifndef _SYS_SYSLIMITS_H_
 +#define _SYS_SYSLIMITS_H_
 +
++#define HOST_NAME_MAX 255
 +#define PATH_MAX 4096
 +#define PIPE_BUF 4096
 +
