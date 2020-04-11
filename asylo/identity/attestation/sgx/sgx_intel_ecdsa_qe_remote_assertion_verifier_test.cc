@@ -596,10 +596,10 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest, VerifySuccess) {
   SgxIdentity peer_identity;
   ASYLO_ASSERT_OK_AND_ASSIGN(peer_identity, ParseSgxIdentity(identity));
 
-  EXPECT_EQ(quote.body.cpusvn.size(),
-            peer_identity.machine_configuration().cpu_svn().value().size());
-  EXPECT_THAT(peer_identity.machine_configuration().cpu_svn().value().data(),
-              MemEq(quote.body.cpusvn.data(), quote.body.cpusvn.size()));
+  sgx::MachineConfiguration fake_pck_machine_config =
+      ParseTextProtoOrDie(sgx::kFakePckMachineConfigurationTextProto);
+  EXPECT_THAT(peer_identity.machine_configuration(),
+              EqualsProto(fake_pck_machine_config));
 
   sgx::SecsAttributeSet peer_attributes(
       peer_identity.code_identity().attributes());

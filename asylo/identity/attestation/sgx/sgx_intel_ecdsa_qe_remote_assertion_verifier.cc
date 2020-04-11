@@ -54,6 +54,7 @@
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/pce_util.h"
+#include "asylo/identity/sgx/pck_certificate_util.h"
 #include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/identity/sgx/sgx_identity_util_internal.h"
@@ -253,19 +254,50 @@ Status VerifyPckCertificateChain(
   return Status::OkStatus();
 }
 
+Status ParseAndAppendPeerMachineConfigurationFromPckCertChain(
+    const sgx::IntelCertData &cert_data, SgxIdentity *identity) {
+  CertificateChain pck_cert_chain;
+  ASYLO_ASSIGN_OR_RETURN(pck_cert_chain, GetPckCertificateChainFromCertData(
+                                             cert_data.qe_cert_data));
+
+  std::unique_ptr<X509Certificate> pck_cert;
+  ASYLO_ASSIGN_OR_RETURN(pck_cert, X509Certificate::Create(
+                                       *pck_cert_chain.certificates().begin()));
+
+  ASYLO_ASSIGN_OR_RETURN(
+      *identity->mutable_machine_configuration(),
+      sgx::ExtractMachineConfigurationFromPckCert(pck_cert.get()));
+
+  return Status::OkStatus();
+}
+
 Status ParseEnclaveIdentityFromQuote(const sgx::ReportBody &report_body,
+                                     const sgx::IntelCertData &cert_data,
                                      EnclaveIdentity *enclave_identity) {
   SgxIdentity identity = ParseSgxIdentityFromHardwareReport(report_body);
-  ASYLO_ASSIGN_OR_RETURN(*enclave_identity, SerializeSgxIdentity(identity));
-  return Status::OkStatus();
+
+  switch (cert_data.qe_cert_data_type) {
+    case PCK_CERT_CHAIN: {
+      ASYLO_RETURN_IF_ERROR(
+          ParseAndAppendPeerMachineConfigurationFromPckCertChain(cert_data,
+                                                                 &identity));
+      ASYLO_ASSIGN_OR_RETURN(*enclave_identity, SerializeSgxIdentity(identity));
+      return Status::OkStatus();
+    }
+  }
+
+  return Status(error::GoogleError::UNIMPLEMENTED,
+                absl::StrFormat("Extracting peer machine identity not "
+                                "supported for QE cert data type %d",
+                                cert_data.qe_cert_data_type));
 }
 
 Status VerifyQeIdentityMatchesExpectation(
     const sgx::IntelQeQuote &quote,
     const IdentityAclPredicate &qe_expectation) {
   EnclaveIdentity qe_identity;
-  ASYLO_RETURN_IF_ERROR(
-      ParseEnclaveIdentityFromQuote(quote.signature.qe_report, &qe_identity));
+  ASYLO_RETURN_IF_ERROR(ParseEnclaveIdentityFromQuote(
+      quote.signature.qe_report, quote.cert_data, &qe_identity));
 
   std::string explanation;
   SgxIdentityExpectationMatcher matcher;
@@ -387,8 +419,8 @@ Status SgxIntelEcdsaQeRemoteAssertionVerifier::Verify(
   ASYLO_RETURN_IF_ERROR(VerifyQeIdentityMatchesExpectation(
       quote, members_view->qe_identity_expectation));
 
-  ASYLO_RETURN_IF_ERROR(
-      ParseEnclaveIdentityFromQuote(quote.body, peer_identity));
+  ASYLO_RETURN_IF_ERROR(ParseEnclaveIdentityFromQuote(
+      quote.body, quote.cert_data, peer_identity));
 
   return Status::OkStatus();
 }
