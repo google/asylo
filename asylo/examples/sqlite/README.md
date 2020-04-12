@@ -138,10 +138,10 @@ As the SQLite build target is created, now it can be run with the following
 `bazel` command from the Docker container:
 
 ```shell
-bazel run --config=sgx-sim :asylo_sqlite
+bazel run :asylo_sqlite_sgx_sim
 ```
 
-Specifying `--config=sgx-sim` runs SQLite in SGX simulation mode.
+Specifying the `_sgx_sim` target suffix runs SQLite in SGX simulation mode.
 
 After finishing building, you should be able to see SQLite up and messages
 similar as following:
@@ -193,10 +193,10 @@ Now we can run with the following `bazel` command from the Docker container to
 run SQLite in SGX hardware mode:
 
 ```shell
-bazel run --config=sgx :asylo_sqlite
+bazel run :asylo_sqlite_sgx_hw
 ```
 
-Specifying `--config=sgx` runs SQLite in SGX hardware mode.
+Specifying the `_sgx_hw` target suffix runs SQLite in SGX hardware mode.
 
 SQLite should be running now in SGX hardware mode. Please follow the same steps
 above to create an example table.

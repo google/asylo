@@ -597,8 +597,7 @@ cc_library(
 You can run the server enclave using `bazel`:
 
 ```bash
-$ bazel run --config=sgx-sim \
-    //asylo/examples/grpc_server:grpc_server
+$ bazel run //asylo/examples/grpc_server:grpc_server_sgx_sim
 ```
 
 The above command starts the server and keeps it running for five minutes. If
@@ -609,8 +608,7 @@ you want to set a different upper bound for the server lifetime, you can use the
 For example, to set a maximum server lifetime of ten seconds, run:
 
 ```bash
-$ bazel run --config=sgx-sim \
-    //asylo/examples/grpc_server:grpc_server -- \
+$ bazel run //asylo/examples/grpc_server:grpc_server_sgx_sim -- \
     --server_max_lifetime=10
 ```
 
@@ -620,8 +618,7 @@ In addition, if you want the server listen on a specific port, you can use the
 For example, to make the server listen on port 62831, run:
 
 ```bash
-$ bazel run --config=sgx-sim \
-    //asylo/examples/grpc_server:grpc_server -- \
+$ bazel run //asylo/examples/grpc_server:grpc_server_sgx_sim -- \
     --port=62831
 ```
 

@@ -151,10 +151,10 @@ As the Redis build target is created, now it can be built with the following
 `bazel` command from the Docker container:
 
 ```shell
-bazel build --config=sgx-sim :asylo_redis
+bazel build :asylo_redis_sgx_sim
 ```
 
-Specifying `--config=sgx-sim` builds Redis in SGX simulation mode.
+Specifying the `_sgx-sim` target suffix builds Redis in SGX simulation mode.
 
 After the target is built, run the following command to start Redis server:
 
@@ -271,10 +271,10 @@ found on the
 In the container shell, build the target with the following `bazel` command:
 
 ```shell
-bazel build --config=sgx :asylo_redis
+bazel build :asylo_redis_sgx_hw
 ```
 
-Specifying `--config=sgx` builds Redis in SGX hardware mode.
+Specifying `_sgx_hw` target suffix builds Redis in SGX hardware mode.
 
 After the target is built, run the following command to start Redis server:
 

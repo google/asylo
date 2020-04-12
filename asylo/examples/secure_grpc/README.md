@@ -92,8 +92,7 @@ authorization checks on the server.
 Build and run the server enclave with the following command:
 
 ```bash
-$ bazel run --config=sgx-sim \
-   //asylo/examples/secure_grpc:grpc_server -- \
+$ bazel run //asylo/examples/secure_grpc:grpc_server_sgx_sim -- \
    --acl="$(cat asylo/examples/secure_grpc/acl_isvprodid_2.textproto)"
 ```
 
@@ -110,8 +109,7 @@ Run the client enclave in a separate terminal, passing the serverâ€™s port in
 `--port` and an input word to be translated in `--word_to_translate`:
 
 ```bash
-$ bazel run --config=sgx-sim \
-  //asylo/examples/secure_grpc:grpc_client -- \
+$ bazel run //asylo/examples/secure_grpc:grpc_client_sgx_sim -- \
   --word_to_translate="asylo" \
   --port=<PORT>
 ```
@@ -214,16 +212,14 @@ file specifies an ACL for an ISVPRODID of `3`, which does not match the clientâ€
 signer-assigned identity:
 
 ```bash
-$ bazel run --config=sgx-sim \
-   //asylo/examples/secure_grpc:grpc_server -- \
+$ bazel run //asylo/examples/secure_grpc:grpc_server_sgx_sim -- \
    --acl="$(cat asylo/examples/secure_grpc/acl_isvprodid_3.textproto)"
 ```
 
 Now, run the client enclave using the same command as before:
 
 ```bash
-$ bazel run --config=sgx-sim \
-  //asylo/examples/secure_grpc:grpc_client -- \
+$ bazel run //asylo/examples/secure_grpc:grpc_client_sgx_sim -- \
   --word_to_translate="asylo" \
   --port=<PORT>
 ```
@@ -298,8 +294,7 @@ match_spec: {
 ```
 
 ```bash
-$ bazel run --config=sgx-sim \
-   //asylo/examples/secure_grpc:grpc_server -- \
+$ bazel run //asylo/examples/secure_grpc:grpc_server_sgx_sim -- \
    --acl="$(cat asylo/examples/secure_grpc/acl_non_debug.textproto)"
 ```
 
@@ -322,8 +317,7 @@ mode. This requires configuring the `debug` field in the enclave's
 `--debug=false` in the command that runs the client enclave:
 
 ```bash
-$ bazel run --config=sgx-sim \
-  //asylo/examples/secure_grpc:grpc_client -- \
+$ bazel run //asylo/examples/secure_grpc:grpc_client_sgx_sim -- \
   --word_to_translate="asylo" \
   --debug=false \
   --port=<PORT>
@@ -338,18 +332,16 @@ a real non-debug enclave backed by SGX hardware.
 ### SGX Hardware Test
 
 If your system supports launching non-debug enclaves[^1], then you can test this
-ACL using a non-debug SGX hardware enclave. Recompile both the server and client
-with the `--config=sgx` option and then re-run the example.
+ACL using a non-debug SGX hardware enclave. Compile both the server and client
+targets that end instead with `_sgx_hw` and run the example.
 
 ```bash
-$ bazel run --config=sgx \
-   //asylo/examples/secure_grpc:grpc_server -- \
+$ bazel run //asylo/examples/secure_grpc:grpc_server_sgx_hw -- \
    --acl="$(cat asylo/examples/secure_grpc/acl_non_debug.textproto)"
 ```
 
 ```bash
-$ bazel run --config=sgx \
-  //asylo/examples/secure_grpc:grpc_client -- \
+$ bazel run //asylo/examples/secure_grpc:grpc_client_sgx_hw -- \
   --word_to_translate="asylo" \
   --debug=false \
   --port=<PORT>

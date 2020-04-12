@@ -201,7 +201,7 @@ BAZEL=bazel
 CP=cp
 
 # Build the signing material target.
-${BAZEL} build --config=sgx //package/path:enclave_signing_material
+${BAZEL} build //package/path:enclave_signing_material_sgx_hw
 
 # Copy out the generated signing material in order to sign it.
 ${CP} "$(${BAZEL} info bazel-bin)/package/path/enclave_signing_material.dat" "${RELEASE_DIR}"
@@ -218,13 +218,13 @@ guide.
 
 ### Step 4: Reincorporate the signed release data into the enclave binary
 
-The final enclave binary, `enclave.so`, can be produced once you have the signed
-signing material in your code tree. The example signature file is named
+The final enclave binary, `enclave_sgx_hw.so`, can be produced once you have the
+signed signing material in your code tree. The example signature file is named
 `enclave_signing_material.dat.sig`. The `sgx.signed_enclave` rule combines all
 the necessary components for a signed enclave.
 
 ```shell
-${BAZEL} build --config=sgx :enclave.so
+${BAZEL} build :enclave_sgx_hw.so
 ```
 
 ### Step 5: Launch the release enclave

@@ -50,7 +50,7 @@ fi
 # Enclave to be used in the example.
 ENCLAVE_TARGET=demo_enclave_debug_${ENCLAVE_TAG}.so
 
-bazel build --config=${CONFIG_TYPE} //remote/quickstart:${ENCLAVE_TARGET}
+bazel build //remote/quickstart_${ENCLAVE_TAG}:${ENCLAVE_TARGET}
 
 # Path where bazel puts built objects.
 BAZEL_BIN_PATH=$(bazel info bazel-bin)

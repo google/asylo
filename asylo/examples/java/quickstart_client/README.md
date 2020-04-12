@@ -156,7 +156,7 @@ enclave from
 by running:
 
 ```bash
-bazel build --config=sgx-sim //asylo/examples/quickstart:demo_enclave.so
+bazel build //asylo/examples/quickstart:demo_enclave_sgx_sim.so
 ```
 
 Copy the generated file to some location:

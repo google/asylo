@@ -89,7 +89,7 @@ cc_library(
             "@linux_sgx//:sgx_hw": _TRUSTED_SGX_HW_SRCS,
             "@linux_sgx//:sgx_sim": _TRUSTED_SGX_SIM_SRCS,
         },
-        no_match_error = "Expected an SGX backend configuration (e.g., --config=sgx)",
+        no_match_error = "Expected an SGX backend configuration",
     ),
     hdrs = [
         "trusted_sgx.h",
@@ -117,7 +117,7 @@ cc_library(
             "@linux_sgx//:sgx_hw": _TRUSTED_SGX_BACKEND_DEPS,
             "@linux_sgx//:sgx_sim": _TRUSTED_SGX_BACKEND_DEPS,
         },
-        no_match_error = "Trusted SGX components must be built with --define=ASYLO_SGX=1",
+        no_match_error = "Trusted SGX components must be built with an SGX backend selected",
     ) + [
         ":sgx_params",
         "@com_google_absl//absl/strings",
