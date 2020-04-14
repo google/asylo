@@ -50,3 +50,11 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_library(
+    name = "qe_identity",
+    srcs = ["qe_identity.cc"],
+    hdrs = ["qe_identity.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+)
