@@ -5797,8 +5797,10 @@ diff -Nur /dev/null internal.bzl
 diff -Nur /dev/null runtime_support/BUILD
 --- /dev/null
 +++ runtime_support/BUILD
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,18 @@
 +# Runtime support for linux_sgx
++
++load("@rules_cc//cc:defs.bzl", "cc_library")
 +
 +licenses(["notice"])
 +
