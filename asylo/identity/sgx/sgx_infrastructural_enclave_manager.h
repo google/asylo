@@ -83,8 +83,14 @@ class SgxInfrastructuralEnclaveManager {
   /////////////////////////////////////////////
 
   // Generates a new AGE attestation key and certifies it with the PCK at the
-  // current CPUSVN and current PCE SVN, returning the resulting attestation key
+  // |pce_svn| and |cpu_svn|, returning the resulting attestation key
   // certificate.
+  StatusOr<Certificate> CertifyAge(const sgx::PceSvn &target_pce_svn,
+                                   const sgx::CpuSvn &target_cpu_svn);
+
+  // Generates a new AGE attestation key and certifies it with the PCK at the
+  // current system PCE SVN and current system CPU SVN, returning the resulting
+  // attestation key certificate.
   StatusOr<Certificate> CertifyAge();
 
   /////////////////////////////////////////////
@@ -157,6 +163,14 @@ class SgxInfrastructuralEnclaveManager {
   SgxInfrastructuralEnclaveManager() = default;
 
  private:
+  // Certifies the AGE by signing the given |age_report| using the PCK at
+  // |target_pce_svn| and |target_cpu_svn|. Returns the resulting certificate
+  // containing the signed report and |pce_sign_report_payload|.
+  StatusOr<Certificate> CertifyAge(sgx::ReportProto age_report,
+                                   std::string pce_sign_report_payload,
+                                   const sgx::PceSvn &target_pce_svn,
+                                   const sgx::CpuSvn &target_cpu_svn);
+
   // Used to invoke operations on Intel architectural enclaves.
   std::unique_ptr<sgx::IntelArchitecturalEnclaveInterface> intel_ae_interface_;
 

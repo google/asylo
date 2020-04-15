@@ -667,5 +667,51 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgeSuccess) {
               IsOkAndHolds(EqualsProto(expected_certificate)));
 }
 
+TEST_F(SgxInfrastructuralEnclaveManagerTest,
+       CertifyAgeWithPceSvnAndCpuSvnSuccess) {
+  EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
+      .WillOnce(DoAll(SetArgPointee<0>(PceTargetinfo()),
+                      SetArgPointee<1>(PceSvn().value()),
+                      Return(Status::OkStatus())));
+
+  EnclaveOutput expected_gen_key_and_csr_output;
+  sgx::GenerateKeyAndCsrOutput *output =
+      expected_gen_key_and_csr_output
+          .MutableExtension(sgx::remote_assertion_generator_enclave_output)
+          ->mutable_generate_key_and_csr_output();
+
+  sgx::ReportProto report = Report();
+  *output->mutable_report() = report;
+  *output->mutable_pce_sign_report_payload() = kPceSignReportPayload;
+  *output->mutable_targeted_csr() = TargetedCertificateSigningRequest();
+
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(DoAll(SetArgPointee<1>(expected_gen_key_and_csr_output),
+                      Return(Status::OkStatus())));
+
+  sgx::CpuSvn pck_target_cpu_svn = CreateCpuSvn();
+  sgx::PceSvn pck_target_pce_svn;
+  pck_target_pce_svn.set_value(kPceSvn + 1);
+
+  sgx::Report expected_report;
+  SetTrivialObjectFromBinaryString(report.value(), &expected_report);
+  EXPECT_CALL(
+      *mock_intel_ae_,
+      PceSignReport(
+          TrivialObjectEq(expected_report), pck_target_pce_svn.value(),
+          UnsafeBytes<sgx::kCpusvnSize>(pck_target_cpu_svn.value()), NotNull()))
+      .WillOnce(
+          DoAll(SetArgPointee<3>(PckSignature()), Return(Status::OkStatus())));
+
+  Certificate expected_certificate;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expected_certificate,
+      CreateAttestationKeyCertificate(report, EcdsaSignature(),
+                                      kPceSignReportPayload));
+  EXPECT_THAT(sgx_infrastructural_enclave_manager_->CertifyAge(
+                  pck_target_pce_svn, pck_target_cpu_svn),
+              IsOkAndHolds(EqualsProto(expected_certificate)));
+}
+
 }  // namespace
 }  // namespace asylo

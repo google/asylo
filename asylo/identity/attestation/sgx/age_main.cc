@@ -44,6 +44,7 @@
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
+#include "asylo/identity/sgx/pck_certificate_util.h"
 #include "asylo/identity/sgx/sgx_infrastructural_enclave_manager.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/util/cleansing_types.h"
@@ -237,6 +238,33 @@ GenerateRandomPpiddk(asylo::AsymmetricEncryptionKeyProto *ppidek_proto) {
   return ppiddk;
 }
 
+asylo::StatusOr<asylo::Certificate> GetAttestationKeyCertificate(
+    const asylo::CertificateChain &pck_certificate_chain,
+    asylo::SgxInfrastructuralEnclaveManager *manager) {
+  if (!pck_certificate_chain.certificates().empty()) {
+    const asylo::Certificate &pck_certificate =
+        pck_certificate_chain.certificates(0);
+
+    asylo::sgx::PceSvn pce_svn;
+    ASYLO_ASSIGN_OR_RETURN(
+        pce_svn, asylo::sgx::ExtractPceSvnFromPckCert(pck_certificate));
+
+    asylo::sgx::CpuSvn cpu_svn;
+    ASYLO_ASSIGN_OR_RETURN(
+        cpu_svn, asylo::sgx::ExtractCpuSvnFromPckCert(pck_certificate));
+
+    LOG(INFO) << "Using PCK for CPU SVN "
+              << absl::BytesToHexString(cpu_svn.value()) << " and PCE SVN "
+              << pce_svn.value();
+
+    return manager->CertifyAge(pce_svn, cpu_svn);
+  }
+
+  LOG(INFO) << "Using PCK at system CPU SVN and system PCE SVN";
+
+  return manager->CertifyAge();
+}
+
 }  // namespace
 
 int main(int argc, char **argv) {
@@ -289,22 +317,21 @@ int main(int argc, char **argv) {
 
   if (absl::GetFlag(FLAGS_start_age)) {
     asylo::CertificateChain age_certificate_chain;
+    asylo::CertificateChain certificate_chain =
+        absl::GetFlag(FLAGS_issuer_certificate_chain);
 
-    auto attestation_key_certificate_result =
-        sgx_infra_enclave_manager->CertifyAge();
-    LOG_IF(QFATAL, !attestation_key_certificate_result.ok())
-        << "Failed to certify AGE";
+    auto attestation_key_cert_result = GetAttestationKeyCertificate(
+        certificate_chain, sgx_infra_enclave_manager.get());
+    LOG_IF(QFATAL, !attestation_key_cert_result.ok())
+        << "Failed to certify AGE with PCE: "
+        << attestation_key_cert_result.status();
 
     *age_certificate_chain.add_certificates() =
-        std::move(attestation_key_certificate_result).ValueOrDie();
+        std::move(attestation_key_cert_result).ValueOrDie();
 
     if (use_fake_pce) {
       asylo::sgx::AppendFakePckCertificateChain(&age_certificate_chain);
-    } else if (!absl::GetFlag(FLAGS_issuer_certificate_chain)
-                    .certificates()
-                    .empty()) {
-      asylo::CertificateChain certificate_chain =
-          absl::GetFlag(FLAGS_issuer_certificate_chain);
+    } else {
       std::move(certificate_chain.certificates().begin(),
                 certificate_chain.certificates().end(),
                 google::protobuf::RepeatedFieldBackInserter(

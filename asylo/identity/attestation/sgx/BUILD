@@ -396,6 +396,7 @@ transitions.cc_binary(
         "//asylo/identity/provisioning/sgx/internal:fake_sgx_pki",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
+        "//asylo/identity/sgx:pck_certificate_util",
         "//asylo/identity/sgx:sgx_infrastructural_enclave_manager",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/util:cleansing_types",

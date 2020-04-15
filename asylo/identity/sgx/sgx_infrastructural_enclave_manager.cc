@@ -90,7 +90,8 @@ StatusOr<EnclaveClient *> SgxInfrastructuralEnclaveManager::GetAgeEnclaveClient(
   return enclave_manager->GetClient(load_config.name());
 }
 
-StatusOr<Certificate> SgxInfrastructuralEnclaveManager::CertifyAge() {
+StatusOr<Certificate> SgxInfrastructuralEnclaveManager::CertifyAge(
+    const sgx::PceSvn &target_pce_svn, const sgx::CpuSvn &target_cpu_svn) {
   // Get the PCE's target info.
   sgx::TargetInfoProto pce_target_info;
   sgx::PceSvn pce_svn;
@@ -104,20 +105,44 @@ StatusOr<Certificate> SgxInfrastructuralEnclaveManager::CertifyAge() {
                                              &pce_sign_report_payload,
                                              &unused_signing_request));
 
+  // Certify key with the PCK at the selected PCESVN and selected CPUSVN.
+  return CertifyAge(std::move(report), std::move(pce_sign_report_payload),
+                    target_pce_svn, target_cpu_svn);
+}
+
+StatusOr<Certificate> SgxInfrastructuralEnclaveManager::CertifyAge() {
+  // Get the PCE's target info.
+  sgx::TargetInfoProto pce_target_info;
+  sgx::PceSvn pce_svn;
+  ASYLO_RETURN_IF_ERROR(PceGetTargetInfo(&pce_target_info, &pce_svn));
+
   // Fetch the platform's current CPUSVN from the AGE's identity.
+  sgx::ReportProto report;
+  std::string pce_sign_report_payload;
+  sgx::TargetedCertificateSigningRequest unused_signing_request;
+  ASYLO_RETURN_IF_ERROR(AgeGenerateKeyAndCsr(pce_target_info, &report,
+                                             &pce_sign_report_payload,
+                                             &unused_signing_request));
+
   SgxIdentity age_identity;
   ASYLO_ASSIGN_OR_RETURN(age_identity, AgeGetSgxIdentity());
-  const sgx::CpuSvn &cpu_svn = age_identity.machine_configuration().cpu_svn();
 
-  // Certify key with the PCK at the current CPUSVN and PCE SVN.
+  // Certify key with the PCK at the current CPUSVN and the current PCE SVN.
+  return CertifyAge(std::move(report), std::move(pce_sign_report_payload),
+                    pce_svn, age_identity.machine_configuration().cpu_svn());
+}
+
+StatusOr<Certificate> SgxInfrastructuralEnclaveManager::CertifyAge(
+    sgx::ReportProto age_report, std::string pce_sign_report_payload,
+    const sgx::PceSvn &target_pce_svn, const sgx::CpuSvn &target_cpu_svn) {
   Signature pck_signature;
-  ASYLO_ASSIGN_OR_RETURN(pck_signature,
-                         PceSignReport(pce_svn, cpu_svn, report));
+  ASYLO_ASSIGN_OR_RETURN(
+      pck_signature, PceSignReport(target_pce_svn, target_cpu_svn, age_report));
 
   Certificate attestation_key_certificate;
   ASYLO_ASSIGN_OR_RETURN(attestation_key_certificate,
                          sgx::CreateAttestationKeyCertificate(
-                             std::move(report), std::move(pck_signature),
+                             std::move(age_report), std::move(pck_signature),
                              std::move(pce_sign_report_payload)));
 
   return attestation_key_certificate;
