@@ -342,13 +342,21 @@ Status ValidatePckCertificateInfo(
   return Status::OkStatus();
 }
 
-StatusOr<SgxExtensions> ExtractSgxExtensions(
-    absl::Span<X509Extension> pck_extensions) {
+StatusOr<SgxExtensions> ExtractSgxExtensions(const X509Certificate &pck_cert) {
+  auto pck_extensions_result = pck_cert.GetOtherExtensions();
+  if (!pck_extensions_result.ok()) {
+    return pck_extensions_result.status().WithPrependedContext(
+        "PCK certificate does not contain extensions");
+  }
+  std::vector<X509Extension> pck_extensions =
+      std::move(pck_extensions_result).ValueOrDie();
+
   for (const X509Extension &extension : pck_extensions) {
     if (extension.oid == GetSgxExtensionsOid()) {
       return ReadSgxExtensions(extension.value);
     }
   }
+
   return Status(error::GoogleError::INVALID_ARGUMENT,
                 "PCK certificate does not contain SGX extensions");
 }
@@ -481,23 +489,34 @@ StatusOr<MachineConfiguration> ExtractMachineConfigurationFromPckCert(
                   "PCK certificate is not an X.509 certificate");
   }
 
-  auto pck_extensions_result = pck_cert->GetOtherExtensions();
-  if (!pck_extensions_result.ok()) {
-    return pck_extensions_result.status().WithPrependedContext(
-        "PCK certificate does not contain extensions");
-  }
-  std::vector<X509Extension> pck_extensions =
-      std::move(pck_extensions_result).ValueOrDie();
   SgxExtensions sgx_extensions;
-  ASYLO_ASSIGN_OR_RETURN(sgx_extensions,
-                         ExtractSgxExtensions(absl::MakeSpan(pck_extensions)));
+  ASYLO_ASSIGN_OR_RETURN(sgx_extensions, ExtractSgxExtensions(*pck_cert));
 
   MachineConfiguration machine_config;
-
   *machine_config.mutable_cpu_svn() = std::move(sgx_extensions.cpu_svn);
   machine_config.set_sgx_type(sgx_extensions.sgx_type);
 
   return machine_config;
+}
+
+StatusOr<CpuSvn> ExtractCpuSvnFromPckCert(const Certificate &pck_certificate) {
+  std::unique_ptr<X509Certificate> pck_cert;
+  ASYLO_ASSIGN_OR_RETURN(pck_cert, X509Certificate::Create(pck_certificate));
+
+  SgxExtensions sgx_extensions;
+  ASYLO_ASSIGN_OR_RETURN(sgx_extensions, ExtractSgxExtensions(*pck_cert));
+
+  return sgx_extensions.cpu_svn;
+}
+
+StatusOr<PceSvn> ExtractPceSvnFromPckCert(const Certificate &pck_certificate) {
+  std::unique_ptr<X509Certificate> pck_cert;
+  ASYLO_ASSIGN_OR_RETURN(pck_cert, X509Certificate::Create(pck_certificate));
+
+  SgxExtensions sgx_extensions;
+  ASYLO_ASSIGN_OR_RETURN(sgx_extensions, ExtractSgxExtensions(*pck_cert));
+
+  return sgx_extensions.tcb.pce_svn();
 }
 
 }  // namespace sgx

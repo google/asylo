@@ -907,7 +907,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":hardware_types",
+        "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:sha256_hash_cc_proto",
         "//asylo/identity/platform/sgx:attributes_cc_proto",
         "//asylo/identity/platform/sgx:attributes_util",
@@ -915,7 +915,6 @@ cc_library(
         "//asylo/identity/platform/sgx:machine_configuration_cc_proto",
         "//asylo/identity/platform/sgx:miscselect_cc_proto",
         "//asylo/identity/platform/sgx:miscselect_util",
-        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf",

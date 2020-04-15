@@ -86,6 +86,14 @@ Status ValidatePckCertificates(const PckCertificates &pck_certificates);
 StatusOr<MachineConfiguration> ExtractMachineConfigurationFromPckCert(
     const CertificateInterface *pck_certificate);
 
+// Extracts the CPU SVN from the provided |pck_certificate|. This represents the
+// CPU SVN from which the PCK public key was derived.
+StatusOr<CpuSvn> ExtractCpuSvnFromPckCert(const Certificate &pck_certificate);
+
+// Extracts the PCE SVN from the provided |pck_certificate|. This represents the
+// PCE SVN from which the PCK public key was derived.
+StatusOr<PceSvn> ExtractPceSvnFromPckCert(const Certificate &pck_certificate);
+
 }  // namespace sgx
 }  // namespace asylo
 

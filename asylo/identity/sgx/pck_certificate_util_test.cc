@@ -748,7 +748,7 @@ TEST(PckCertificateUtilTest, PckCertificatesWithRepeatedEntriesIsValid) {
 }
 
 TEST(PckCertificateUtilTest,
-     ExtractMachineConfigurationFromPckCertFailsWithWrongExtensions) {
+     ExtractMachineConfigurationFromPckCertWithoutSgxExtensionsFails) {
   std::unique_ptr<X509Certificate> cert;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       cert,
@@ -760,7 +760,7 @@ TEST(PckCertificateUtilTest,
 }
 
 TEST(PckCertificateUtilTest,
-     ExtractMachineConfigurationFromPckCertFailsWithNonX509Cert) {
+     ExtractMachineConfigurationFromPckCertFromNonX509CertFails) {
   Certificate non_x509_cert;
   non_x509_cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
   non_x509_cert.set_data(absl::HexStringToBytes(kAttestationKeyCertificateHex));
@@ -784,6 +784,58 @@ TEST(PckCertificateUtilTest, ExtractMachineConfigurationFromPckCertSuccess) {
 
   ASSERT_THAT(ExtractMachineConfigurationFromPckCert(cert.get()),
               IsOkAndHolds(EqualsProto(machine_configuration)));
+}
+
+TEST(PckCertificateUtilTest, ExtractCpuSvnFromPckCertNonX509Fails) {
+  Certificate non_x509_cert;
+  non_x509_cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
+  non_x509_cert.set_data(absl::HexStringToBytes(kAttestationKeyCertificateHex));
+
+  ASSERT_THAT(ExtractCpuSvnFromPckCert(non_x509_cert),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(PckCertificateUtilTest, ExtractCpuSvnFromPckCertNoSgxExtensionsFails) {
+  CertificateChain pck_cert_chain = GetFakePckCertificateChain();
+
+  ASSERT_THAT(ExtractCpuSvnFromPckCert(pck_cert_chain.certificates(1)),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(PckCertificateUtilTest, ExtractCpuSvnFromPckCertSuccess) {
+  CertificateChain pck_cert_chain = GetFakePckCertificateChain();
+
+  MachineConfiguration machine_configuration =
+      ParseTextProtoOrDie(kFakePckMachineConfigurationTextProto);
+
+  ASSERT_THAT(ExtractCpuSvnFromPckCert(pck_cert_chain.certificates(0)),
+              IsOkAndHolds(EqualsProto(machine_configuration.cpu_svn())));
+}
+
+TEST(PckCertificateUtilTest, ExtractPceSvnFromPckCertNonX509Fails) {
+  Certificate non_x509_cert;
+  non_x509_cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
+  non_x509_cert.set_data(absl::HexStringToBytes(kAttestationKeyCertificateHex));
+
+  ASSERT_THAT(ExtractPceSvnFromPckCert(non_x509_cert),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(PckCertificateUtilTest, ExtractPceSvnFromPckCertNoSgxExtensionsFails) {
+  CertificateChain pck_cert_chain = GetFakePckCertificateChain();
+
+  ASSERT_THAT(ExtractPceSvnFromPckCert(pck_cert_chain.certificates(1)),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(PckCertificateUtilTest, ExtractPceSvnFromPckCertSuccess) {
+  CertificateChain pck_cert_chain = GetFakePckCertificateChain();
+
+  PceSvn expected_pce_svn;
+  expected_pce_svn.set_value(2);
+
+  ASSERT_THAT(ExtractPceSvnFromPckCert(pck_cert_chain.certificates(0)),
+              IsOkAndHolds(EqualsProto(expected_pce_svn)));
 }
 
 }  // namespace
