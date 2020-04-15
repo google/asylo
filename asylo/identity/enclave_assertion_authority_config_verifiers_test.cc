@@ -24,6 +24,7 @@
 #include <gtest/gtest.h>
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/error_codes.h"
@@ -84,6 +85,7 @@ TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
   SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config =
       ParseTextProtoOrDie(R"pb(
         verifier_info: {
+          qe_identity_expectation: {}
           root_certificates:
           [ { format: UNKNOWN data: "" }]
         })pb");
@@ -97,6 +99,7 @@ TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
   SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config =
       ParseTextProtoOrDie(R"pb(
         verifier_info: {
+          qe_identity_expectation: {}
           root_certificates:
           [ { format: X509_PEM data: "junk data" }]
         })pb");
@@ -109,10 +112,56 @@ TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
      VerifySgxIntelEcdsaQeRemoteAssertionVerifierConfigNoRootCerts) {
   SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config =
       ParseTextProtoOrDie(R"pb(
-        verifier_info: {})pb");
+        verifier_info: { qe_identity_expectation: {} })pb");
   EXPECT_THAT(VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(config),
               StatusIs(error::GoogleError::INVALID_ARGUMENT,
                        HasSubstr("root certificate")));
+}
+
+TEST(
+    EnclaveAssertionAuthorityConfigVerifiersTest,
+    VerifySgxIntelEcdsaQeRemoteAssertionVerifierConfigNoQeExpectation) {
+  SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config =
+      ParseTextProtoOrDie(R"pb(
+        verifier_info: {
+          root_certificates:
+          [ { format: X509_PEM data: "" }]
+        })pb");
+  config.mutable_verifier_info()->mutable_root_certificates(0)->set_data(
+      {sgx::kFakeSgxRootCa.certificate_pem.begin(),
+       sgx::kFakeSgxRootCa.certificate_pem.end()});
+  EXPECT_THAT(VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(config),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       HasSubstr("QE identity expectation")));
+}
+
+TEST(
+    EnclaveAssertionAuthorityConfigVerifiersTest,
+    VerifySgxIntelEcdsaQeRemoteAssertionVerifierConfigInvalidQeExpectation) {
+  SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config =
+      ParseTextProtoOrDie(R"pb(
+        verifier_info: {
+          qe_identity_expectation: {
+            expectation: {
+              reference_identity: {
+                description: {
+                  identity_type: CODE_IDENTITY
+                  authority_type: "SGX"
+                }
+                identity: "baz"
+              }
+              match_spec: "foobar"
+            }
+          }
+          root_certificates:
+          [ { format: X509_PEM data: "" }]
+        })pb");
+  config.mutable_verifier_info()->mutable_root_certificates(0)->set_data(
+      {sgx::kFakeSgxRootCa.certificate_pem.begin(),
+       sgx::kFakeSgxRootCa.certificate_pem.end()});
+  EXPECT_THAT(VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(config),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       HasSubstr("QE identity expectation")));
 }
 
 TEST(EnclaveAssertionAuthorityConfigVerifiersTest,

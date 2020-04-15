@@ -34,9 +34,11 @@
 #include "asylo/identity/identity_acl.pb.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/intel_certs/intel_sgx_root_ca_cert.h"
+#include "asylo/identity/sgx/intel_certs/qe_identity.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/util/proto_enum_util.h"
+#include "asylo/util/proto_parse_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
@@ -56,6 +58,23 @@ StatusOr<EnclaveAssertionAuthorityConfig> SerializeToAuthorityConfig(
 
   set_description(authority_config.mutable_description());
   return authority_config;
+}
+
+// Creates an IdentityAclPredicate containing an EnclaveIdentityExpectation that
+// uses |sgx_identity| and the DEFAULT match spec.
+StatusOr<IdentityAclPredicate> CreateDefaultExpectation(
+    SgxIdentity sgx_identity) {
+  IdentityAclPredicate acl;
+
+  SgxIdentityExpectation sgx_identity_expectation;
+  ASYLO_ASSIGN_OR_RETURN(
+      sgx_identity_expectation,
+      CreateSgxIdentityExpectation(std::move(sgx_identity),
+                                   SgxIdentityMatchSpecOptions::DEFAULT));
+  ASYLO_ASSIGN_OR_RETURN(
+      *acl.mutable_expectation(),
+      SerializeSgxIdentityExpectation(sgx_identity_expectation));
+  return acl;
 }
 
 }  // namespace
@@ -106,16 +125,11 @@ StatusOr<EnclaveAssertionAuthorityConfig>
 CreateSgxAgeRemoteAssertionAuthorityConfig(std::string server_address,
                                            SgxIdentity age_identity) {
   IdentityAclPredicate age_identity_expectation;
-  SgxIdentityExpectation age_sgx_expectation;
-  ASYLO_ASSIGN_OR_RETURN(
-      age_sgx_expectation,
-      CreateSgxIdentityExpectation(age_identity,
-                                   SgxIdentityMatchSpecOptions::DEFAULT));
-  ASYLO_ASSIGN_OR_RETURN(*age_identity_expectation.mutable_expectation(),
-                         SerializeSgxIdentityExpectation(age_sgx_expectation));
+  ASYLO_ASSIGN_OR_RETURN(age_identity_expectation,
+                         CreateDefaultExpectation(age_identity));
   return CreateSgxAgeRemoteAssertionAuthorityConfig(
-      MakeIntelSgxRootCaCertificateProto(), {}, server_address,
-      age_identity_expectation);
+      MakeIntelSgxRootCaCertificateProto(), {}, std::move(server_address),
+      std::move(age_identity_expectation));
 }
 
 namespace experimental {
@@ -125,6 +139,10 @@ CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig() {
   SgxIntelEcdsaQeRemoteAssertionAuthorityConfig sgx_config;
   *sgx_config.mutable_verifier_info()->add_root_certificates() =
       MakeIntelSgxRootCaCertificateProto();
+  ASYLO_ASSIGN_OR_RETURN(
+      *sgx_config.mutable_verifier_info()->mutable_qe_identity_expectation(),
+      CreateDefaultExpectation(
+          ParseTextProtoOrDie(sgx::kIntelEcdsaQeIdentityTextproto)));
   sgx_config.mutable_generator_info()->mutable_use_dcap_default();
   return SerializeToAuthorityConfig(
       sgx_config, SetSgxIntelEcdsaQeRemoteAssertionDescription);
@@ -132,7 +150,7 @@ CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig() {
 
 StatusOr<EnclaveAssertionAuthorityConfig>
 CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
-    std::vector<Certificate> pck_certificate_chain) {
+    std::vector<Certificate> pck_certificate_chain, SgxIdentity qe_identity) {
   if (pck_certificate_chain.empty()) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "The pck_certificate_chain must not be empty");
@@ -147,6 +165,9 @@ CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
   for (auto &cert : pck_certificate_chain) {
     *config_pck_certs->add_certificates() = std::move(cert);
   }
+  ASYLO_ASSIGN_OR_RETURN(
+      *sgx_config.mutable_verifier_info()->mutable_qe_identity_expectation(),
+      CreateDefaultExpectation(std::move(qe_identity)));
   ASYLO_RETURN_IF_ERROR(
       VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(sgx_config));
 

@@ -27,6 +27,9 @@
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
+#include "asylo/identity/identity_acl.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity.pb.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/util/error_codes.h"
 #include "asylo/util/status.h"
@@ -84,10 +87,35 @@ Status VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
     ASYLO_RETURN_IF_ERROR(FullyValidateCertificate(cert));
   }
 
-  if (config.has_verifier_info() &&
-      config.verifier_info().root_certificates().empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Must provide at least one trusted root certificate");
+  if (config.has_verifier_info()) {
+    if (config.verifier_info().root_certificates().empty()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Verifier configuration must contain at least one trusted "
+                    "root certificate");
+    }
+    if (!config.verifier_info().has_qe_identity_expectation()) {
+      return Status(
+          error::GoogleError::INVALID_ARGUMENT,
+          "Verifier configuration is missing QE identity expectation");
+    }
+    if (config.verifier_info().qe_identity_expectation().item_case() ==
+        IdentityAclPredicate::ITEM_NOT_SET) {
+      return Status(
+          error::GoogleError::INVALID_ARGUMENT,
+          "QE identity expectation must be set to expectation or ACL group");
+    }
+    // The |qe_identity_expectation| field is an IdentityAclPredicate and would
+    // need to be recursively validated. This check just tests the basic case of
+    // a single expectation that is expected to be an SgxIdentityExpectation.
+    if (config.verifier_info().qe_identity_expectation().item_case() ==
+            IdentityAclPredicate::kExpectation &&
+        !ParseSgxIdentityExpectation(
+             config.verifier_info().qe_identity_expectation().expectation())
+             .ok()) {
+      return Status(
+          error::GoogleError::INVALID_ARGUMENT,
+          "QE identity expectation must be a valid SGX identity expectation");
+    }
   }
 
   return Status::OkStatus();

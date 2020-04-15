@@ -33,6 +33,7 @@
 #include "asylo/identity/identity_acl.pb.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/intel_certs/intel_sgx_root_ca_cert.h"
+#include "asylo/identity/sgx/intel_certs/qe_identity.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/test/util/proto_matchers.h"
@@ -196,9 +197,9 @@ TEST(EnclaveAssertionAuthorityConfigsTest,
 
 TEST(EnclaveAssertionAuthorityConfigsTest,
      CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfigWithEmptyChain) {
-  EXPECT_THAT(
-      experimental::CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig({}),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(experimental::CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
+                  {}, GetSelfSgxIdentity()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST(EnclaveAssertionAuthorityConfigsTest,
@@ -229,14 +230,25 @@ TEST(EnclaveAssertionAuthorityConfigsTest,
       sgx_config.mutable_verifier_info()->add_root_certificates();
   cert->set_format(Certificate::X509_PEM);
   cert->set_data(kIntelSgxRootCaCertificate);
+
+  SgxIdentityExpectation expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation,
+      CreateSgxIdentityExpectation(GetSelfSgxIdentity(),
+                                   SgxIdentityMatchSpecOptions::DEFAULT));
+  ASYLO_ASSERT_OK_AND_ASSIGN(*sgx_config.mutable_verifier_info()
+                                  ->mutable_qe_identity_expectation()
+                                  ->mutable_expectation(),
+                             SerializeSgxIdentityExpectation(expectation));
+
   ASSERT_TRUE(sgx_config.SerializeToString(expected_config.mutable_config()));
 
   std::vector<Certificate> certs = {
       ParseTextProtoOrDie("format: X509_PEM\ndata: '" TEST_PEM_CERT "'"),
       ParseTextProtoOrDie("format: X509_PEM\ndata: '" TEST_PEM_CERT "'")};
-  EXPECT_THAT(
-      experimental::CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(certs),
-      IsOkAndHolds(EqualsProto(expected_config)));
+  EXPECT_THAT(experimental::CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
+                  {certs}, GetSelfSgxIdentity()),
+              IsOkAndHolds(EqualsProto(expected_config)));
 }
 
 TEST(EnclaveAssertionAuthorityConfigsTest,
@@ -259,6 +271,17 @@ TEST(EnclaveAssertionAuthorityConfigsTest,
       sgx_config.mutable_verifier_info()->add_root_certificates();
   cert->set_format(Certificate::X509_PEM);
   cert->set_data(kIntelSgxRootCaCertificate);
+
+  SgxIdentityExpectation expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation, CreateSgxIdentityExpectation(
+                       ParseTextProtoOrDie(sgx::kIntelEcdsaQeIdentityTextproto),
+                       SgxIdentityMatchSpecOptions::DEFAULT));
+  ASYLO_ASSERT_OK_AND_ASSIGN(*sgx_config.mutable_verifier_info()
+                                  ->mutable_qe_identity_expectation()
+                                  ->mutable_expectation(),
+                             SerializeSgxIdentityExpectation(expectation));
+
   EXPECT_TRUE(sgx_config.SerializeToString(expected_config.mutable_config()));
 
   EXPECT_THAT(

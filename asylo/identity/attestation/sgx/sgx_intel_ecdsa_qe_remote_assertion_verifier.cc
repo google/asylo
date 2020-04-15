@@ -356,11 +356,6 @@ Status SgxIntelEcdsaQeRemoteAssertionVerifier::Initialize(
     ASYLO_ASSIGN_OR_RETURN(inserter, X509Certificate::Create(cert));
   }
 
-  if (!config.verifier_info().has_qe_identity_expectation()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Authority configuration is missing QE identity expectation");
-  }
-
   members_view->qe_identity_expectation = std::move(
       *config.mutable_verifier_info()->mutable_qe_identity_expectation());
   members_view->root_certificates = std::move(root_certificates);

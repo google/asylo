@@ -155,10 +155,11 @@ CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig();
 ///
 /// \param pck_certificate_chain The certification chain to include with any
 ///                              generated assertions.
+/// \param qe_identity The Intel ECDSA QE's identity.
 /// \return A config for the SGX Intel ECDSA QE remote assertion authority.
 StatusOr<EnclaveAssertionAuthorityConfig>
 CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
-    std::vector<Certificate> pck_certificate_chain);
+    std::vector<Certificate> pck_certificate_chain, SgxIdentity qe_identity);
 
 }  // namespace experimental
 
