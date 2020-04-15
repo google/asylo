@@ -176,10 +176,6 @@ Status VerifyQeReportDataMatchesQuoteSigningKey(
   return Status::OkStatus();
 }
 
-Status VerifyQuoteMeetsMinimumTcbLevel(const sgx::IntelQeQuote &quote) {
-  return Status::OkStatus();
-}
-
 Status VerifyPckSignatureFromPckCertChain(
     const std::vector<uint8_t> &cert_data,
     const sgx::IntelEcdsaP256QuoteSignature &signature) {
@@ -407,7 +403,6 @@ Status SgxIntelEcdsaQeRemoteAssertionVerifier::Verify(
   ASYLO_RETURN_IF_ERROR(
       VerifyQuoteBodySignature(*members_view->aad_generator, user_data, quote));
   ASYLO_RETURN_IF_ERROR(VerifyQeReportDataMatchesQuoteSigningKey(quote));
-  ASYLO_RETURN_IF_ERROR(VerifyQuoteMeetsMinimumTcbLevel(quote));
   ASYLO_RETURN_IF_ERROR(VerifyPckSignatureOverQuotingEnclave(quote));
   ASYLO_RETURN_IF_ERROR(
       VerifyPckCertificateChain(quote, members_view->root_certificates));
