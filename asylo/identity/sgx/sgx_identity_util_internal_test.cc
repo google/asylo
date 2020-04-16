@@ -30,6 +30,7 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/platform/sgx/attributes.pb.h"
 #include "asylo/identity/platform/sgx/attributes_util.h"
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
@@ -1216,14 +1217,43 @@ TEST_F(SgxIdentityUtilInternalTest, VerifyHardwareReportPositive) {
   ASYLO_EXPECT_OK(VerifyHardwareReport(report));
 }
 
-TEST_F(SgxIdentityUtilInternalTest, VerifyHardwareReportWrongTarget) {
+TEST_F(SgxIdentityUtilInternalTest,
+       VerifyHardwareReportWrongTargetMeasurement) {
   AlignedTargetinfoPtr tinfo;
   AlignedReportdataPtr data;
   *data = TrivialRandomObject<Reportdata>();
 
-  // Verify that corrupting MEASUREMENT results in an unverifiable report.
   SetTargetinfoFromSelfIdentity(tinfo.get());
   tinfo->measurement[0] ^= 0xFFFF;
+  Report report;
+  ASYLO_ASSERT_OK_AND_ASSIGN(report, hardware_->GetReport(*tinfo, *data));
+  EXPECT_THAT(VerifyHardwareReport(report), Not(IsOk()));
+}
+
+TEST_F(SgxIdentityUtilInternalTest, VerifyHardwareReportWrongTargetAttributes) {
+  AlignedTargetinfoPtr tinfo;
+  AlignedReportdataPtr data;
+  *data = TrivialRandomObject<Reportdata>();
+
+  SetTargetinfoFromSelfIdentity(tinfo.get());
+  Attributes attributes = tinfo->attributes.ToProtoAttributes();
+  tinfo->attributes = SecsAttributeSet(
+      attributes.flags() ^ std::numeric_limits<uint64_t>::max(),
+      attributes.xfrm() ^ std::numeric_limits<uint64_t>::max());
+  tinfo->attributes &= SecsAttributeSet::GetAllSupportedBits();
+  Report report;
+  ASYLO_ASSERT_OK_AND_ASSIGN(report, hardware_->GetReport(*tinfo, *data));
+  EXPECT_THAT(VerifyHardwareReport(report), Not(IsOk()));
+}
+
+TEST_F(SgxIdentityUtilInternalTest, VerifyHardwareReportWrongTargetMiscSelect) {
+  AlignedTargetinfoPtr tinfo;
+  AlignedReportdataPtr data;
+  *data = TrivialRandomObject<Reportdata>();
+
+  SetTargetinfoFromSelfIdentity(tinfo.get());
+  tinfo->miscselect ^= std::numeric_limits<uint32_t>::max();
+  tinfo->miscselect &= kValidMiscselectBitmask;
   Report report;
   ASYLO_ASSERT_OK_AND_ASSIGN(report, hardware_->GetReport(*tinfo, *data));
   EXPECT_THAT(VerifyHardwareReport(report), Not(IsOk()));
