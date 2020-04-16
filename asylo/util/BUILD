@@ -708,6 +708,39 @@ cc_library(
 )
 
 cc_library(
+    name = "http_fetcher_impl",
+    srcs = ["http_fetcher_impl.cc"],
+    hdrs = ["http_fetcher_impl.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":cleanup",
+        ":function_deleter",
+        ":http_fetcher",
+        ":status",
+        "@com_github_curl_curl//:curl",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_googlesource_code_re2//:re2",
+    ],
+)
+
+cc_test(
+    name = "http_fetcher_impl_test",
+    srcs = ["http_fetcher_impl_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":http_fetcher_impl",
+        ":status",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "time_conversions",
     srcs = [
         "time_conversions_internal.cc",
