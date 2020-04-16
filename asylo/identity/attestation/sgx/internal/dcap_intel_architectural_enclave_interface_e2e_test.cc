@@ -27,9 +27,12 @@
 #include "absl/memory/memory.h"
 #include "asylo/client.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/rsa_oaep_encryption_key.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/crypto/x509_certificate.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
 #include "asylo/identity/attestation/sgx/internal/dcap_intel_architectural_enclave_interface.h"
@@ -42,11 +45,13 @@
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/pce_util.h"
+#include "asylo/identity/sgx/pck_certificate_util.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/cleansing_types.h"
+#include "asylo/util/proto_flag.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h"
@@ -62,6 +67,9 @@ constexpr uint16_t kExpectedQeSvn = 2;
 
 ABSL_FLAG(std::string, report_oracle_enclave_path, "",
           "Path of DCAP test enclave to be loaded.");
+
+ABSL_FLAG(asylo::Certificate, pck_certificate, {},
+          "The PCK certificate used to verify signature from the PCE");
 
 namespace asylo {
 namespace sgx {
@@ -242,12 +250,44 @@ TYPED_TEST(DcapIntelArchitecturalEnclaveInterfaceE2eTest, PceSignReport) {
   ASYLO_ASSERT_OK_AND_ASSIGN(
       report, this->GetEnclaveReport(pce_targetinfo, reportdata));
 
+  Certificate pck_certificate = absl::GetFlag(FLAGS_pck_certificate);
+  bool cert_provided = !pck_certificate.data().empty() &&
+                       pck_certificate.format() == Certificate::X509_PEM;
+
   std::string signature;
-  ASYLO_ASSERT_OK(this->enclave_interface_.PceSignReport(
-      report, pce_svn, report.body.cpusvn, &signature));
+  if (cert_provided) {
+    PceSvn pck_pce_svn;
+    ASYLO_ASSERT_OK_AND_ASSIGN(pck_pce_svn,
+                               ExtractPceSvnFromPckCert(pck_certificate));
+    CpuSvn pck_cpu_svn;
+    ASYLO_ASSERT_OK_AND_ASSIGN(pck_cpu_svn,
+                               ExtractCpuSvnFromPckCert(pck_certificate));
+    ASYLO_ASSERT_OK(this->enclave_interface_.PceSignReport(
+        report, pck_pce_svn.value(), pck_cpu_svn.value(), &signature));
+  } else {
+    ASYLO_ASSERT_OK(this->enclave_interface_.PceSignReport(
+        report, pce_svn, report.body.cpusvn, &signature));
+  }
 
   ASSERT_THAT(signature.length(), Eq(kEcdsaP256SignatureSize));
 
+  if (cert_provided) {
+    std::unique_ptr<X509Certificate> pck_x509;
+    ASYLO_ASSERT_OK_AND_ASSIGN(pck_x509,
+                               X509Certificate::Create(pck_certificate));
+    std::string pck_pub_der;
+    ASYLO_ASSERT_OK_AND_ASSIGN(pck_pub_der, pck_x509->SubjectKeyDer());
+    std::unique_ptr<EcdsaP256Sha256VerifyingKey> pck_pub;
+    ASYLO_ASSERT_OK_AND_ASSIGN(
+        pck_pub, EcdsaP256Sha256VerifyingKey::CreateFromDer(pck_pub_der));
+
+    Signature pck_sig;
+    ASYLO_ASSERT_OK_AND_ASSIGN(
+        pck_sig, CreateSignatureFromPckEcdsaP256Sha256Signature(signature));
+
+    ASYLO_ASSERT_OK(pck_pub->Verify(
+        ConvertTrivialObjectToBinaryString(report.body), pck_sig));
+  }
 }
 
 TYPED_TEST(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetQeQuote) {
