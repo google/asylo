@@ -47,44 +47,41 @@ namespace {
 constexpr char kUserData[] = "User data";
 
 constexpr char kAttestationKeyCertificateDerHex[] =
-    "0ab3030ab00300000000000000000000000000000000000000000000000000000000000000"
-    "00000000000000000000000000000000003300000000000000a300000000000000fc472767"
-    "9b21934dcae43b77ec9fcaeb2523be349af57890e85aa68eae058574000000000000000000"
-    "0000000000000000000000000000000000000000000000fead2be7f1a24f725ee7e596873b"
-    "260f435ebbf14df5bbe8d99c0fa5bc3abeaf00000000000000000000000000000000000000"
+    "0ab3030ab0034820f3376ae6b2f2034d3b7a4b48a778000000000000000000000000000000"
+    "00000000000000000000000000000000000700000000000000e70000000000000049c80749"
+    "3583e5fb0d8d7c80f21e7c89ccbbf2820e75f94b7ef0cd37623d46a4000000000000000000"
+    "000000000000000000000000000000000000000000000083d719e77deaca1470f6baf62a4d"
+    "774303c899db69020f9c70ee1dfc08c7ce9e00000000000000000000000000000000000000"
     "00000000000000000000000000000000000000000000000000000000000000000000000000"
     "00000000000000000000000000000000000000000000000000000000000000000000000000"
-    "00000074efd1e4000000000000000000000000000000000000000000000000000000000000"
-    "000000000000000000000000000000000000000000000000000000000000f1bace90cd72b0"
-    "a8f874ea4264500b109142a284479e826ff74a6ae1659d159b000000000000000000000000"
-    "000000004153594c4f205349474e5245504f52540000000000000000000000000000000000"
-    "000000000000000000000000000000f5ee16c9593502a362aeba59a1d9ae1e12b6020a9d02"
-    "0abb0108021001180122b2012d2d2d2d2d424547494e205055424c4943204b45592d2d2d2d"
-    "2d0a4d466b77457759484b6f5a497a6a3043415159494b6f5a497a6a304441516344516741"
-    "453669416d6646584954635934426d583166396a5561733469343144450a643461754a486c"
-    "645337564c41676973354941753438724377776c5565474842644d746747444d53435a5051"
-    "677446384b5a4957392f317133773d3d0a2d2d2d2d2d454e44205055424c4943204b45592d"
-    "2d2d2d2d0a1230417373657274696f6e2047656e657261746f7220456e636c617665204174"
-    "746573746174696f6e204b65792076302e311a2b417373657274696f6e2047656e65726174"
-    "6f7220456e636c617665204174746573746174696f6e204b65791214504345205369676e20"
-    "5265706f72742076302e311a48080112440a203856d715177f8527a2f37b3ba42c98f1e69d"
-    "9e6630a39b0406d81b63f8faa5db12203e81f00dc10d5480437c3f78ea21ea8f9c13168be6"
-    "db18d5c248b0350eb473e1";
+    "00000000000000000000000000000000000000000000000000000000000000000000000000"
+    "000000000000000000000000000000000000000000000000000000000000be7a8807a1ba8e"
+    "785f17997bd29611637f7e8f12d4aec6c5696476f1c9ba52b8000000000000000000000000"
+    "000000004153594c4f205349474e5245504f5254ff00ff00ff00ff00ff00ff00ff00ff0000"
+    "000000000000000000000000000000cd49f8f05e1c228bf1d68d579549600e12dd010ac401"
+    "0a63080210011802225b3059301306072a8648ce3d020106082a8648ce3d03010703420004"
+    "bdb8ab220c1cb0089519cdf2818a91c6ccd957fcb0d528216139bf62e6a9272170e5b7a2e2"
+    "faba7a8debad920c7c0a099e18ba4781cd389dec2489be981b20f11230417373657274696f"
+    "6e2047656e657261746f7220456e636c617665204174746573746174696f6e204b65792076"
+    "302e311a2b417373657274696f6e2047656e657261746f7220456e636c6176652041747465"
+    "73746174696f6e204b65791214504345205369676e205265706f72742076302e311a480801"
+    "12440a204f316d3250975af904ea23e1a8d86d4c4a034e69401650fc7e0324837036e00812"
+    "20801b34199dc0a14397a0c830667677bd63f1ac0c3da73216ed4c4fe94df354ce";
 
 constexpr char kAttestationKeyCertificateIdentity[] = R"pb(
   code_identity {
     mrenclave {
-      hash: "\xfc\x47\x27\x67\x9b\x21\x93\x4d\xca\xe4\x3b\x77\xec\x9f\xca\xeb\x25\x23\xbe\x34\x9a\xf5\x78\x90\xe8\x5a\xa6\x8e\xae\x05\x85\x74"
+      hash: "I\310\007I5\203\345\373\r\215|\200\362\036|\211\314\273\362\202\016u\371K~\360\3157b=F\244"
     }
     signer_assigned_identity {
       mrsigner {
-        hash: "\xfe\xad\x2b\xe7\xf1\xa2\x4f\x72\x5e\xe7\xe5\x96\x87\x3b\x26\x0f\x43\x5e\xbb\xf1\x4d\xf5\xbb\xe8\xd9\x9c\x0f\xa5\xbc\x3a\xbe\xaf"
+        hash: "\203\327\031\347}\352\312\024p\366\272\366*MwC\003\310\231\333i\002\017\234p\356\035\374\010\307\316\236"
       }
-      isvprodid: 61300
-      isvsvn: 58577
+      isvprodid: 0
+      isvsvn: 0
     }
     miscselect: 0
-    attributes { flags: 51 xfrm: 163 }
+    attributes { flags: 7 xfrm: 231 }
   }
   machine_configuration {
     cpu_svn { value: "A fake TCB level" }
@@ -92,7 +89,7 @@ constexpr char kAttestationKeyCertificateIdentity[] = R"pb(
   }
 )pb";
 
-constexpr char kAdditionalRootCertPem[] = R"(
+constexpr char kAdditionalRootCertPem[] = R"pem(
 -----BEGIN CERTIFICATE-----
 MIICCzCCAbGgAwIBAgIUF/94/Naw8+Gb8bjA+ya6Zg9YHKswCgYIKoZIzj0EAwIw
 cjELMAkGA1UEBhMCVVMxEzARBgNVBAgMCldhc2hpbmd0b24xETAPBgNVBAcMCEtp
@@ -106,29 +103,16 @@ Gy/mHGn8nuraH+KaVn1s60aOFr2jIzAhMBIGA1UdEwEB/wQIMAYBAf8CAQEwCwYD
 VR0PBAQDAgIEMAoGCCqGSM49BAMCA0gAMEUCIA/rSJ6o/oIRuTk1MV0XjlZGF7+N
 HQAOOAfPvg/KSecOAiEAx1o+05huNjGLOMl37Ee0Sy1elzyo12WgcVQVbTY47z4=
 -----END CERTIFICATE-----
-)";
-
-constexpr char kAdditionalUserCertPem[] = R"(
------BEGIN CERTIFICATE-----
-MIIBsTCCAVgCFEqP7cn0EO/6JfCCduo57IyKPwDPMAoGCCqGSM49BAMCMHIxCzAJ
-BgNVBAYTAlVTMRMwEQYDVQQIDApXYXNoaW5ndG9uMREwDwYDVQQHDAhLaXJrbGFu
-ZDEPMA0GA1UECgwGR29vZ2xlMQ4wDAYDVQQLDAVBc3lsbzEaMBgGA1UEAwwRVGVz
-dCBSZWFsIFJvb3QgQ0EwHhcNMjAwMjA2MjA1NjAzWhcNMjAwMzA3MjA1NjAzWjBF
-MQswCQYDVQQGEwJVUzETMBEGA1UECAwKV2FzaGluZ3RvbjERMA8GA1UEBwwIS2ly
-a2xhbmQxDjAMBgNVBAoMBUFzeWxvMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE
-6iAmfFXITcY4BmX1f9jUas4i41DEd4auJHldS7VLAgis5IAu48rCwwlUeGHBdMtg
-GDMSCZPQgtF8KZIW9/1q3zAKBggqhkjOPQQDAgNHADBEAiABLsDucezCfoAUceC9
-bJvA715j/gAv0EnjX1xuSaIlAwIgcaJtKBHsHG2p8rFcB/olOAI3CV/luRGHOTkI
-3DwEqSU=
------END CERTIFICATE-----
-)";
+)pem";
 
 // The key asserted by |kAttestationKeyCertificateDerHex|.
-constexpr char kAttestationSigningKeyDerHex[] =
-    "30770201010420a2e1e43f82f267f006806f2ae9b2a662c98f20d7c75ebcc14df2f6cbf60b"
-    "e7b4a00a06082a8648ce3d030107a14403420004ea20267c55c84dc6380665f57fd8d46ace"
-    "22e350c47786ae24795d4bb54b0208ace4802ee3cac2c309547861c174cb601833120993d0"
-    "82d17c299216f7fd6adf";
+constexpr char kAttestationSigningKeyPem[] = R"pem(
+-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIAFhNjtm+5QpSgIaAym1XzkMD6SzfJJRiYz2DNQI84G4oAoGCCqGSM49
+AwEHoUQDQgAEvbirIgwcsAiVGc3ygYqRxszZV/yw1SghYTm/YuapJyFw5bei4vq6
+eo3rrZIMfAoJnhi6R4HNOJ3sJIm+mBsg8Q==
+-----END EC PRIVATE KEY-----
+)pem";
 
 // The expected peer identity.
 constexpr char kPeerIdentity[] = R"pb(
@@ -167,7 +151,8 @@ Certificate GetAdditionalRoot() {
   return additional_root;
 }
 
-StatusOr<SgxAgeRemoteAssertionAuthorityConfig> CreateValidConfig() {
+StatusOr<SgxAgeRemoteAssertionAuthorityConfig> CreateValidConfig(
+    bool include_additional_root = true) {
   SgxAgeRemoteAssertionAuthorityConfig config;
 
   *config.mutable_intel_root_certificate() = GetFakeIntelRoot();
@@ -185,7 +170,9 @@ StatusOr<SgxAgeRemoteAssertionAuthorityConfig> CreateValidConfig() {
       *config.mutable_age_identity_expectation()->mutable_expectation(),
       SerializeSgxIdentityExpectation(age_sgx_expectation));
 
-  *config.add_root_ca_certificates() = GetAdditionalRoot();
+  if (include_additional_root) {
+    *config.add_root_ca_certificates() = GetAdditionalRoot();
+  }
 
   return config;
 }
@@ -208,8 +195,7 @@ StatusOr<Assertion> CreateValidAssertion() {
   std::unique_ptr<SigningKey> attestation_key;
   ASYLO_ASSIGN_OR_RETURN(
       attestation_key,
-      EcdsaP256Sha256SigningKey::CreateFromDer(
-          absl::HexStringToBytes(kAttestationSigningKeyDerHex)));
+      EcdsaP256Sha256SigningKey::CreateFromPem(kAttestationSigningKeyPem));
 
   CertificateChain sgx_certificate_chain;
   Certificate *ak_cert = sgx_certificate_chain.add_certificates();
@@ -217,17 +203,9 @@ StatusOr<Assertion> CreateValidAssertion() {
   ak_cert->set_data(absl::HexStringToBytes(kAttestationKeyCertificateDerHex));
   sgx::AppendFakePckCertificateChain(&sgx_certificate_chain);
 
-  CertificateChain additional_certificate_chain;
-  Certificate *additional_user_cert =
-      additional_certificate_chain.add_certificates();
-  additional_user_cert->set_format(Certificate::X509_PEM);
-  additional_user_cert->set_data(kAdditionalUserCertPem);
-  *additional_certificate_chain.add_certificates() = GetAdditionalRoot();
-
-  ASYLO_RETURN_IF_ERROR(sgx::MakeRemoteAssertion(
-      kUserData, peer_identity, *attestation_key,
-      {sgx_certificate_chain, additional_certificate_chain},
-      &remote_assertion));
+  ASYLO_RETURN_IF_ERROR(
+      sgx::MakeRemoteAssertion(kUserData, peer_identity, *attestation_key,
+                               {sgx_certificate_chain}, &remote_assertion));
 
   Assertion assertion;
   SetSgxAgeRemoteAssertionDescription(assertion.mutable_description());
@@ -434,7 +412,8 @@ TEST(SgxAgeRemoteAssertionVerifierTest, VerifyInvalidAssertion) {
 TEST(SgxAgeRemoteAssertionVerifierTest, VerifySuccess) {
   SgxAgeRemoteAssertionVerifier verifier;
   SgxAgeRemoteAssertionAuthorityConfig config;
-  ASYLO_ASSERT_OK_AND_ASSIGN(config, CreateValidConfig());
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      config, CreateValidConfig(/*include_additional_root=*/false));
   ASYLO_ASSERT_OK(verifier.Initialize(config.SerializeAsString()));
 
   SgxIdentity expected_peer_sgx_identity = ParseTextProtoOrDie(kPeerIdentity);

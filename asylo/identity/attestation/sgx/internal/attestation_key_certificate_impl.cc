@@ -229,8 +229,12 @@ Status AttestationKeyCertificateImpl::Verify(
       verifying_key,
       CreateVerifyingKey(issuer_certificate,
                          attestation_key_cert_.signature().signature_scheme()));
+  Report report;
+  ASYLO_ASSIGN_OR_RETURN(report, ConvertReportProtoToHardwareReport(
+                                     attestation_key_cert_.report()));
+
   return verifying_key->Verify(
-      ByteContainerView(attestation_key_cert_.report().value()),
+      ByteContainerView(&report.body, sizeof(report.body)),
       attestation_key_cert_.signature());
 }
 

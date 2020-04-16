@@ -163,7 +163,7 @@ class SgxAgeRemoteServerEnclaveTest : public EnclaveTest {
 };
 
 TEST_F(SgxAgeRemoteServerEnclaveTest,
-       DISABLED_BidirectionalAuthenticatedConnectionSucceeds) {
+       BidirectionalAuthenticatedConnectionSucceeds) {
   constexpr char kMessage[] = "WFH: tired of social distancing";
   EnclaveInput input;
   EnclaveOutput output;
@@ -180,8 +180,7 @@ TEST_F(SgxAgeRemoteServerEnclaveTest,
             test::MessengerServer1::ResponseString(kMessage));
 }
 
-TEST_F(SgxAgeRemoteServerEnclaveTest,
-       DISABLED_ServerAuthenticatedConnectionSucceeds) {
+TEST_F(SgxAgeRemoteServerEnclaveTest, ServerAuthenticatedConnectionSucceeds) {
   constexpr char kMessage[] = "WFH: I miss my desktop";
   const int kConnectionDeadline = absl::Seconds(10) / absl::Microseconds(1);
 
@@ -203,8 +202,7 @@ TEST_F(SgxAgeRemoteServerEnclaveTest,
               IsOkAndHolds(test::MessengerServer1::ResponseString(kMessage)));
 }
 
-TEST_F(SgxAgeRemoteServerEnclaveTest,
-       DISABLED_ClientSideAuthorizationSucceeds) {
+TEST_F(SgxAgeRemoteServerEnclaveTest, ClientSideAuthorizationSucceeds) {
   constexpr char kMessage[] = "WFH: I miss my two monitors";
 
   EnclaveInput input;

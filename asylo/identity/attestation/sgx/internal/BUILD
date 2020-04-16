@@ -349,6 +349,7 @@ cc_test(
         "//asylo/crypto:fake_certificate",
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto:signing_key",
+        "//asylo/crypto:x509_certificate",
         "//asylo/identity:additional_authenticated_data_generator",
         "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning",

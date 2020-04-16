@@ -66,50 +66,49 @@ struct RemoteAssertionInputs {
   IdentityAclPredicate age_expectation;
 };
 
-constexpr char kPckPem[] =
-    R"(-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEIFgHTs6fIAaPujiz3TL+vtdemjxUx80yDU1HykXJ8n1goAoGCCqGSM49
-AwEHoUQDQgAEkJPehmmeOVPzz+MQf2+ICM+CpZvQFq7ANDYVki/ac/jLEgGJKASI
-EtS3O3Zadp0c1nmEh9O6qGHz2HKeJwUEcw==
------END EC PRIVATE KEY-----)";
+constexpr char kPckDerHex[] =
+    "3077020101042058074ece9f20068fba38b3dd32febed75e9a3c54c7cd320d4d47ca45c9f2"
+    "7d60a00a06082a8648ce3d030107a144034200049093de86699e3953f3cfe3107f6f8808cf"
+    "82a59bd016aec0343615922fda73f8cb12018928048812d4b73b765a769d1cd6798487d3ba"
+    "a861f3d8729e27050473";
 
 constexpr char kAttestationKeyCertificateHex[] =
     "0ab3030ab00300000000000000000000000000000000010000000000000000000000000000"
-    "000000000000000000000000000000000027000000000000002700000000000000b0f58825"
-    "c26d5277c20aaaef3b3493aafcef70f36957b3d90712ee2c96b3f652000000000000000000"
-    "0000000000000000000000000000000000000000000000bdf1e39990510cf9429fae5fa64b"
-    "6cd39a67c99958a0103ba9be7948aae7de0c00000000000000000000000000000000000000"
+    "000000000000000000000000000000000035000000000000003f0000000000000093136c09"
+    "7359f6fa329a765cbfed1c47de2bcc2ea85c35c826cff2de9d3860d8000000000000000000"
+    "0000000000000000000000000000000000000000000000c81210c60d3935b097b706111d57"
+    "0661ccf84c95183ae2f02a25feef8c80b00f00000000000000000000000000000000000000"
     "00000000000000000000000000000000000000000000000000000000000000000000000000"
     "00000000000000000000000000000000000000000000000000000000000000000000000000"
-    "0000001e2c389c000000000000000000000000000000000000000000000000000000000000"
-    "000000000000000000000000000000000000000000000000000000000000164dc4494a164c"
-    "30afafb33f4bbbef77506c65b1d48fe4a47729594a86e2affa000000000000000000000000"
+    "00000023bd1205000000000000000000000000000000000000000000000000000000000000"
+    "00000000000000000000000000000000000000000000000000000000000013c28729d2e054"
+    "0c57e401c896babbfd142a607a610c2975b8ae49f89330698f000000000000000000000000"
     "000000004153594c4f205349474e5245504f52540000000000000000000000000000000000"
-    "000000000000000000000000000000e2543dbcb2c76a13001e0a9aa072526912dd010ac401"
+    "000000000000000000000000000000e0ae182f6a886b324127d4d4c1ab5e8712dd010ac401"
     "0a63080210011802225b3059301306072a8648ce3d020106082a8648ce3d03010703420004"
-    "bb69f2e901d926d9d7e7469d690176f904148b96887e890e5bb1b21c6018c85333f65500ca"
-    "2699d4702ec98986cc0c10a0ff13ae37517aae3926328c3f0b82681230417373657274696f"
+    "4ed53c3c04981028bc33cc9dacb34e7e39115c09b20f6fd71af082978e8edd62e9a31f7000"
+    "31d140ace832f33a2683464b51b5acd85654f52602f2b7d8ea8b5d1230417373657274696f"
     "6e2047656e657261746f7220456e636c617665204174746573746174696f6e204b65792076"
     "302e311a2b417373657274696f6e2047656e657261746f7220456e636c6176652041747465"
     "73746174696f6e204b65791214504345205369676e205265706f72742076302e311a480801"
-    "12440a20a6a6e3bf578aa7bb236bae4cf90eb2d69ce703c35354c860826f8a8d424d9b7d12"
-    "20b375ee4ba12e616889ebb0ad47489c73c7977fa053c40476c2ee9852f1279d51";
+    "12440a2044eea6fd8ac2a3776f7e5e2dfb4f20a941a6bf7096fb3eb3e4835112b39301f312"
+    "208f4ed097226251debb3fb38fb3b2130daf3dbcae5702b3dfa1f34d57b9d3284d";
 
 // The SGX identity asserted by the above certificate.
 constexpr char kAttestationKeyCertAssertedIdentity[] = R"pb(
   code_identity {
     mrenclave {
-      hash: "\xb0\xf5\x88\x25\xc2\x6d\x52\x77\xc2\x0a\xaa\xef\x3b\x34\x93\xaa\xfc\xef\x70\xf3\x69\x57\xb3\xd9\x07\x12\xee\x2c\x96\xb3\xf6\x52"
+      hash: "\223\023l\tsY\366\3722\232v\\\277\355\034G\336+\314.\250\\5\310&\317\362\336\2358`\330"
     }
     signer_assigned_identity {
       mrsigner {
-        hash: "\xbd\xf1\xe3\x99\x90\x51\x0c\xf9\x42\x9f\xae\x5f\xa6\x4b\x6c\xd3\x9a\x67\xc9\x99\x58\xa0\x10\x3b\xa9\xbe\x79\x48\xaa\xe7\xde\x0c"
+        hash: "\310\022\020\306\r95\260\227\267\006\021\035W\006a\314\370L\225\030:\342\360*%\376\357\214\200\260\017"
       }
-      isvprodid: 11294
-      isvsvn: 39992
+      isvprodid: 48419
+      isvsvn: 1298
     }
     miscselect: 1
-    attributes { flags: 39 xfrm: 39 }
+    attributes { flags: 53 xfrm: 63 }
   }
   machine_configuration {
     cpu_svn {
@@ -118,12 +117,13 @@ constexpr char kAttestationKeyCertAssertedIdentity[] = R"pb(
   }
 )pb";
 
-constexpr char kAttestationKey[] =
-    R"(-----BEGIN EC PRIVATE KEY-----
-MHcCAQEEIIvKT5v6dQMDZsbNjWtnUxTGxJPHQYaAzboLcKWOopxroAoGCCqGSM49
-AwEHoUQDQgAEu2ny6QHZJtnX50adaQF2+QQUi5aIfokOW7GyHGAYyFMz9lUAyiaZ
-1HAuyYmGzAwQoP8TrjdReq45JjKMPwuCaA==
------END EC PRIVATE KEY-----)";
+constexpr char kAttestationKey[] = R"pem(
+-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIIWJb3g6rMO5aS4hzWJd3H4sLqEDHluQE07xc9asINK3oAoGCCqGSM49
+AwEHoUQDQgAETtU8PASYECi8M8ydrLNOfjkRXAmyD2/XGvCCl46O3WLpox9wADHR
+QKzoMvM6JoNGS1G1rNhWVPUmAvK32OqLXQ==
+-----END EC PRIVATE KEY-----
+)pem";
 
 constexpr char kUserData[] = "User Data";
 
@@ -229,7 +229,8 @@ Status GenerateIntelChain(bool include_pck_cert, CertificateChain *intel_chain,
            absl::HexStringToBytes(kAttestationKeyCertificateHex));
   std::unique_ptr<SigningKey> pck_signing_key;
   ASYLO_ASSIGN_OR_RETURN(pck_signing_key,
-                         EcdsaP256Sha256SigningKey::CreateFromPem(kPckPem));
+                         EcdsaP256Sha256SigningKey::CreateFromDer(
+                             absl::HexStringToBytes(kPckDerHex)));
   std::unique_ptr<VerifyingKey> pck_verifying_key;
   ASYLO_ASSIGN_OR_RETURN(pck_verifying_key, pck_signing_key->GetVerifyingKey());
   std::unique_ptr<SigningKey> intermediate_signing_key;
@@ -468,7 +469,8 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionIntelChainMissingAgeCert) {
   // Reset the Intel chain to have the PCK cert assert the attestation key.
   std::unique_ptr<SigningKey> pck_signing_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(pck_signing_key,
-                             EcdsaP256Sha256SigningKey::CreateFromPem(kPckPem));
+                             EcdsaP256Sha256SigningKey::CreateFromDer(
+                                 absl::HexStringToBytes(kPckDerHex)));
   std::unique_ptr<VerifyingKey> attestation_verifying_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(attestation_verifying_key,
                              inputs.attestation_signing_key->GetVerifyingKey());

@@ -673,7 +673,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, GenerateKeyAndCsrSuccess) {
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest,
-       DISABLED_UpdateCertsWithInvalidCertificateChainFails) {
+       UpdateCertsWithInvalidCertificateChainFails) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
   ASYLO_ASSERT_OK(StartTestUtilEnclave());

@@ -90,7 +90,7 @@ class SgxPlatformInfoExecTester : public experimental::ExecTester {
 TEST(AgeMainTest, FakeCertificationSuccess) {
   experimental::ExecTester tester(
       {absl::GetFlag(FLAGS_loader_path), "--start_age", "--use_fake_pce",
-       absl::StrCat("--age_validate_certificate_chains=false"),
+       absl::StrCat("--age_validate_certificate_chains=true"),
        absl::StrCat("--server_lifetime=",
                     absl::FormatDuration(absl::GetFlag(FLAGS_server_lifetime))),
        absl::StrCat("--is_debuggable_enclave=",
