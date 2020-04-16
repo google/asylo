@@ -474,6 +474,34 @@ cc_test(
 )
 
 cc_library(
+    name = "proto_flag",
+    hdrs = ["proto_flag.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//asylo/util:logging",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "proto_flag_test",
+    srcs = ["proto_flag_test.cc"],
+    args = ["--my_test_flag=\"name: 'foo' value: 'bar'\""],
+    deps = [
+        ":proto_flag",
+        ":proto_parse_util",
+        "//asylo:enclave_cc_proto",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "proto_parse_util",
     hdrs = ["proto_parse_util.h"],
     copts = ASYLO_DEFAULT_COPTS,

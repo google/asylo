@@ -28,6 +28,7 @@
 #include "asylo/examples/secure_grpc/grpc_server_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
+#include "asylo/util/proto_flag.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -45,26 +46,6 @@ ABSL_FLAG(bool, debug, true, "Whether to use a debug enclave");
 
 ABSL_FLAG(asylo::SgxIdentityExpectation, acl, {},
           "The ACL to enforce within the server");
-
-namespace asylo {
-
-bool AbslParseFlag(absl::string_view text, SgxIdentityExpectation *flag,
-                   std::string *error) {
-  if (!google::protobuf::TextFormat::ParseFromString(
-          std::string(text.data(), text.size()), flag)) {
-    *error = "Failed to parse asylo::SgxIdentityExpectation";
-    return false;
-  }
-  return true;
-}
-
-std::string AbslUnparseFlag(const SgxIdentityExpectation &flag) {
-  std::string serialized_flag;
-  CHECK(google::protobuf::TextFormat::PrintToString(flag, &serialized_flag));
-  return serialized_flag;
-}
-
-}  // namespace asylo
 
 int main(int argc, char *argv[]) {
   // Parse command-line arguments.

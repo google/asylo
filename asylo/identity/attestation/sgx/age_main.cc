@@ -48,6 +48,7 @@
 #include "asylo/identity/sgx/sgx_infrastructural_enclave_manager.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/util/cleansing_types.h"
+#include "asylo/util/proto_flag.h"
 #include "asylo/util/proto_parse_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -132,28 +133,6 @@ ABSL_FLAG(
 ABSL_FLAG(bool, print_plaintext_ppid, false,
           "Whether to use a random PPIDEK in order to decrypt and print the "
           "plaintext version of the PPID");
-
-namespace asylo {
-
-template <class T>
-bool AbslParseFlag(absl::string_view text, T *flag, std::string *error) {
-  if (!google::protobuf::TextFormat::ParseFromString(
-          std::string(text.data(), text.size()), flag)) {
-    *error =
-        absl::StrCat("Failed to parse ", flag->GetDescriptor()->full_name());
-    return false;
-  }
-  return true;
-}
-
-template <class T>
-std::string AbslUnparseFlag(const T &flag) {
-  std::string serialized_flag;
-  CHECK(google::protobuf::TextFormat::PrintToString(flag, &serialized_flag));
-  return serialized_flag;
-}
-
-}  // namespace asylo
 
 namespace {
 

@@ -400,6 +400,7 @@ transitions.cc_binary(
         "//asylo/identity/sgx:sgx_infrastructural_enclave_manager",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/util:cleansing_types",
+        "//asylo/util:proto_flag",
         "//asylo/util:proto_parse_util",
         "//asylo/util:status",
         "@com_google_absl//absl/flags:flag",

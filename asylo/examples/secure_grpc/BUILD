@@ -193,6 +193,7 @@ enclave_loader(
         "//asylo:enclave_client",
         "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
         "//asylo/util:logging",
+        "//asylo/util:proto_flag",
         "//asylo/util:status",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",

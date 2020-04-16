@@ -842,8 +842,9 @@ asylo/platform/primitives/untrusted_primitives.h \
 asylo/test/util/exec_tester.h \
 asylo/util/cleansing_types.h \
 asylo/util/error_space.h \
-asylo/util/posix_error_space.h \
 asylo/util/logging.h \
+asylo/util/posix_error_space.h \
+asylo/util/proto_flag.h \
 asylo/util/status.h \
 asylo/util/statusor.h \
 asylo/util/status_macros.h \
