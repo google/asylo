@@ -818,6 +818,9 @@ asylo/identity/attestation/enclave_assertion_verifier.h \
 asylo/identity/attestation/null/null_assertion_generator.h \
 asylo/identity/attestation/null/null_assertion_verifier.h \
 asylo/identity/attestation/null/null_identity_util.h \
+asylo/identity/attestation/sgx/sgx_age_remote_assertion_generator.h \
+asylo/identity/attestation/sgx/sgx_age_remote_assertion_verifier.h \
+asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_generator.h \
 asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_verifier.h \
 asylo/identity/platform/sgx/architecture_bits.h \
 asylo/identity/platform/sgx/attributes_util.h \

@@ -37,6 +37,10 @@
 
 namespace asylo {
 
+/// Implementation of `EnclaveAssertionGenerator` that generates assertions
+/// using the Intel ECDSA quoting enclave. These assertions attest, to a remote
+/// party, properties about both an enclave's code as well as the Intel platform
+/// properties.
 class SgxIntelEcdsaQeRemoteAssertionGenerator
     : public EnclaveAssertionGenerator {
  public:
