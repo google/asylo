@@ -38,8 +38,9 @@ namespace asylo {
 ///     * If `group`.type is `GroupType::NOT`, `group.predicates` must contain
 ///     exactly one predicate.
 ///
-/// Returns a non-OK status if `acl` is malformed or if `matcher.Match()`
-/// returns a non-OK status when invoked with any of `identities`.
+/// Returns a non-OK status if `acl` is malformed or if
+/// `matcher.MatchAndExplain()` returns a non-OK status when invoked with any of
+/// `identities`.
 ///
 /// \param identities A list of identities to match against the ACL.
 /// \param acl An ACL specifying expectations on an identity.

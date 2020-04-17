@@ -35,6 +35,7 @@
 namespace asylo {
 namespace {
 
+using ::testing::Eq;
 using ::testing::IsEmpty;
 using ::testing::Not;
 
@@ -68,12 +69,14 @@ TEST(SgxIdentityExpectationMatcherTest, MatcherPositive) {
               IsOk());
 
   SgxIdentityExpectationMatcher matcher;
-  StatusOr<bool> matcher_result =
-      matcher.Match(expectation.reference_identity(), expectation);
+  std::string explanation;
+  StatusOr<bool> matcher_result = matcher.MatchAndExplain(
+      expectation.reference_identity(), expectation, &explanation);
   ASSERT_THAT(matcher_result, IsOk())
       << sgx::FormatProto(sgx_identity_expectation);
   EXPECT_TRUE(matcher_result.ValueOrDie())
       << sgx::FormatProto(sgx_identity_expectation);
+  EXPECT_THAT(explanation, Eq(""));
 }
 
 // Tests that when an SgxIdentityExpectationMatcher returns false it populates
@@ -116,7 +119,9 @@ TEST(SgxIdentityExpectationMatcherTest, MatchInvalidIdentity) {
                                         &sgx_identity_expectation);
 
   SgxIdentityExpectationMatcher matcher;
-  EXPECT_THAT(matcher.Match(identity, expectation), Not(IsOk()))
+  EXPECT_THAT(
+      matcher.MatchAndExplain(identity, expectation, /*explanation=*/nullptr),
+      Not(IsOk()))
       << sgx::FormatProto(identity)
       << sgx::FormatProto(sgx_identity_expectation);
 }
@@ -132,7 +137,9 @@ TEST(SgxIdentityExpectationMatcherTest, MatchInvalidExpectation) {
   ASSERT_THAT(sgx::SetRandomInvalidGenericExpectation(&expectation), IsOk());
 
   SgxIdentityExpectationMatcher matcher;
-  ASSERT_THAT(matcher.Match(identity, expectation), Not(IsOk()))
+  ASSERT_THAT(
+      matcher.MatchAndExplain(identity, expectation, /*explanation=*/nullptr),
+      Not(IsOk()))
       << sgx::FormatProto(sgx_identity) << sgx::FormatProto(expectation);
 }
 
@@ -146,7 +153,9 @@ TEST(SgxIdentityExpectationMatcherTest, MatchInvalidIdentityExpectation) {
   ASYLO_ASSERT_OK(sgx::SetRandomInvalidGenericExpectation(&expectation));
 
   SgxIdentityExpectationMatcher matcher;
-  EXPECT_THAT(matcher.Match(identity, expectation), Not(IsOk()))
+  EXPECT_THAT(
+      matcher.MatchAndExplain(identity, expectation, /*explanation=*/nullptr),
+      Not(IsOk()))
       << sgx::FormatProto(identity) << sgx::FormatProto(expectation);
 }
 

@@ -28,9 +28,11 @@ namespace asylo {
 
 class MockIdentityExpectationMatcher : public IdentityExpectationMatcher {
  public:
-  MOCK_CONST_METHOD2(
-      Match, StatusOr<bool>(const EnclaveIdentity &identity,
-                            const EnclaveIdentityExpectation &expectation));
+  MOCK_METHOD(StatusOr<bool>, MatchAndExplain,
+              (const EnclaveIdentity &identity,
+               const EnclaveIdentityExpectation &expectation,
+               std::string *explanation),
+              (const));
 };
 
 }  // namespace asylo

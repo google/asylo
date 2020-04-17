@@ -32,6 +32,7 @@ namespace asylo {
 
 namespace {
 
+using ::testing::Eq;
 using ::testing::HasSubstr;
 using ::testing::Not;
 
@@ -76,8 +77,11 @@ TEST_F(NullIdentityExpectationMatcherTest, DescriptionCorrectness) {
 // Tests that null_identity_ matches null_expectation_.
 TEST_F(NullIdentityExpectationMatcherTest, MatchNullIdentityToNullExpectation) {
   NullIdentityExpectationMatcher matcher;
-  EXPECT_THAT(matcher.Match(null_identity_, null_expectation_),
-              IsOkAndHolds(true));
+  std::string explanation;
+  EXPECT_THAT(
+      matcher.MatchAndExplain(null_identity_, null_expectation_, &explanation),
+      IsOkAndHolds(true));
+  EXPECT_THAT(explanation, Eq(""));
 }
 
 // Tests that an identity with the null identity description, but an incorrect
@@ -100,8 +104,11 @@ TEST_F(NullIdentityExpectationMatcherTest,
 TEST_F(NullIdentityExpectationMatcherTest,
        MatchNullIdentityToNonNullExpectation) {
   NullIdentityExpectationMatcher matcher;
-  ASSERT_THAT(matcher.Match(null_identity_, non_null_expectation_),
+  std::string explanation;
+  ASSERT_THAT(matcher.MatchAndExplain(null_identity_, non_null_expectation_,
+                                      &explanation),
               Not(IsOk()));
+  EXPECT_THAT(explanation, Eq(""));
 }
 
 // Tests that an attempt to match non_null_identity_ using
@@ -109,8 +116,11 @@ TEST_F(NullIdentityExpectationMatcherTest,
 TEST_F(NullIdentityExpectationMatcherTest,
        MatchNonNullIdentityNullExpectation) {
   NullIdentityExpectationMatcher matcher;
-  EXPECT_THAT(matcher.Match(non_null_identity_, null_expectation_),
+  std::string explanation;
+  ASSERT_THAT(matcher.MatchAndExplain(null_identity_, non_null_expectation_,
+                                      &explanation),
               Not(IsOk()));
+  EXPECT_THAT(explanation, Eq(""));
 }
 
 }  // namespace

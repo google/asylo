@@ -27,11 +27,11 @@
 
 namespace asylo {
 
-// A DelegatingIdentityExpectationMatcher delegates its Match() calls to an
-// appropriate matcher from a program-wide static map of
+// A DelegatingIdentityExpectationMatcher delegates its MatchAndExplain() calls
+// to an appropriate matcher from a program-wide static map of
 // NamedIdentityExpectationMatchers.
 //
-// The Match() method makes sure that it is able to find a matcher
+// The MatchAndExplain() method makes sure that it is able to find a matcher
 // implementation capable of handling the |identity| and the |expectation|
 // parameters. If any of these matcher libraries are missing, it returns a
 // non-ok status, indicating that |identity| and/or |expectation| is not
@@ -41,11 +41,6 @@ class DelegatingIdentityExpectationMatcher final
     : public IdentityExpectationMatcher {
  public:
   // From the IdentityExpectationMatcher interface.
-
-  StatusOr<bool> Match(
-      const EnclaveIdentity &identity,
-      const EnclaveIdentityExpectation &expectation) const override;
-
   StatusOr<bool> MatchAndExplain(const EnclaveIdentity &identity,
                                  const EnclaveIdentityExpectation &expectation,
                                  std::string *explanation) const override;

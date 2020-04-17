@@ -26,12 +26,6 @@
 
 namespace asylo {
 
-StatusOr<bool> DelegatingIdentityExpectationMatcher::Match(
-    const EnclaveIdentity &identity,
-    const EnclaveIdentityExpectation &expectation) const {
-  return MatchAndExplain(identity, expectation, /*explanation=*/nullptr);
-}
-
 StatusOr<bool> DelegatingIdentityExpectationMatcher::MatchAndExplain(
     const EnclaveIdentity &identity,
     const EnclaveIdentityExpectation &expectation,

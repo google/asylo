@@ -115,9 +115,10 @@ TEST(EnclaveAssertionAuthorityConfigsTest,
   ASYLO_ASSERT_OK_AND_ASSIGN(random_enclave_identity,
                              SerializeSgxIdentity(random_sgx_identity));
   EXPECT_THAT(
-      matcher.Match(
+      matcher.MatchAndExplain(
           random_enclave_identity,
-          sgx_authority_config.age_identity_expectation().expectation()),
+          sgx_authority_config.age_identity_expectation().expectation(),
+          /*explanation=*/nullptr),
       IsOkAndHolds(true));
 }
 

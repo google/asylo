@@ -25,12 +25,6 @@
 
 namespace asylo {
 
-StatusOr<bool> SgxIdentityExpectationMatcher::Match(
-    const EnclaveIdentity &identity,
-    const EnclaveIdentityExpectation &expectation) const {
-  return MatchAndExplain(identity, expectation, /*explanation=*/nullptr);
-}
-
 StatusOr<bool> SgxIdentityExpectationMatcher::MatchAndExplain(
     const EnclaveIdentity &identity,
     const EnclaveIdentityExpectation &expectation,

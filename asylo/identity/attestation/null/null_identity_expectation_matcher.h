@@ -35,11 +35,6 @@ class NullIdentityExpectationMatcher final
   ~NullIdentityExpectationMatcher() override = default;
 
   // From the IdentityExpectationMatcher interface.
-
-  StatusOr<bool> Match(
-      const EnclaveIdentity &identity,
-      const EnclaveIdentityExpectation &expectation) const override;
-
   StatusOr<bool> MatchAndExplain(const EnclaveIdentity &identity,
                                  const EnclaveIdentityExpectation &expectation,
                                  std::string *explanation) const override;

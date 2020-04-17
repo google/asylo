@@ -50,8 +50,8 @@ class NamedIdentityExpectationMatcher : public IdentityExpectationMatcher {
       NamedIdentityExpectationMatcher &&other) = delete;
 
   // Returns the description of the enclave identities/enclave identity
-  // expectations this matcher is able to match. If the Match() method of this
-  // matcher is invoked with an identity or expectation with a different
+  // expectations this matcher is able to match. If the MatchAndExplain() method
+  // of this matcher is invoked with an identity or expectation with a different
   // description, the matcher returns a non-ok status.
   virtual EnclaveIdentityDescription Description() const = 0;
 

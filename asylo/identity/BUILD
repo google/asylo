@@ -236,7 +236,6 @@ cc_library(
     name = "identity_expectation_matcher",
     srcs = [
         "delegating_identity_expectation_matcher.cc",
-        "identity_expectation_matcher.cc",
         "named_identity_expectation_matcher.cc",
     ],
     hdrs = [
@@ -252,6 +251,7 @@ cc_library(
         "//asylo/crypto/util:byte_container_view",
         "//asylo/platform/common:static_map",
         "//asylo/util:status",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
         "@com_google_protobuf//:protobuf",

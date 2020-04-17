@@ -66,12 +66,6 @@ class TestIdentityExpectationMatcher : public NamedIdentityExpectationMatcher {
     return true;
   }
 
-  StatusOr<bool> Match(
-      const EnclaveIdentity &identity,
-      const EnclaveIdentityExpectation &expectation) const override {
-    return MatchAndExplain(identity, expectation, /*explanation=*/nullptr);
-  }
-
   EnclaveIdentityDescription Description() const override {
     EnclaveIdentityDescription description;
     description.set_identity_type(EnclaveIdentityType::CODE_IDENTITY);
