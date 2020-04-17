@@ -136,9 +136,9 @@ bool GetSnapshotKey(CleansingVector<uint8_t> *key) {
 }
 
 // Blocks all enclave entries and waits until all enclave entries have exited
-// the enclave and blocked from re-entry. During blocking the calling thread
-// uses |calling_thread_entry_count| entries, and blocking fails if |timeout|
-// expires.
+// the enclave and are either blocked from re-entry or staying on the untrusted
+// side. During blocking the calling thread uses |calling_thread_entry_count|
+// entries, and blocking fails if |timeout| expires.
 Status BlockAndWaitOnEntries(int calling_thread_entry_count, int timeout) {
   enc_block_entries();
   constexpr uint64_t kNanoSecondsPerSecond = 1000000000;
@@ -154,7 +154,8 @@ Status BlockAndWaitOnEntries(int calling_thread_entry_count, int timeout) {
     nanosleep(&ts, /*rem=*/nullptr);
   }
   if (active_entry_count() >
-      blocked_entry_count() + calling_thread_entry_count) {
+      blocked_entry_count() + active_exit_count() +
+      calling_thread_entry_count) {
     enc_unblock_entries();
     return Status(error::GoogleError::INTERNAL,
                   "Timeout while waiting for other TCS to exit the enclave");
@@ -401,8 +402,8 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
   // which calls fork. If other TCS are running inside the enclave, they may
   // modify data/bss/heap and cause an inconsistent snapshot. In that case wait
   // till all other TCS exit the enclave and get blocked from re-entering.
-  // Timeout at 5 seconds.
-  Status status = BlockAndWaitOnEntries(/*allowed_entries=*/2, /*timeout=*/5);
+  // Timeout at 3 seconds.
+  Status status = BlockAndWaitOnEntries(/*allowed_entries=*/2, /*timeout=*/3);
   if (!status.ok()) {
     return status;
   }

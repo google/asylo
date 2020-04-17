@@ -129,6 +129,10 @@ void enc_get_memory_layout(struct EnclaveMemoryLayout *enclave_memory_layout);
 // Returns the number of total active enclave entries.
 int active_entry_count();
 
+// Returns the number of total enclave exits, which haven't yet reenter the
+// enclave.
+int active_exit_count();
+
 // Returns the number of total entries blocked from entering the enclave.
 int blocked_entry_count();
 

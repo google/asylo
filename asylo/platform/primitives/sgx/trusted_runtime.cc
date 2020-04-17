@@ -125,6 +125,8 @@ void enc_get_memory_layout(struct EnclaveMemoryLayout *enclave_memory_layout) {
 
 int active_entry_count() { return sgx_active_entry_count(); }
 
+int active_exit_count() { return sgx_active_exit_count(); }
+
 int blocked_entry_count() { return sgx_blocked_entry_count(); }
 
 }  //  extern "C"

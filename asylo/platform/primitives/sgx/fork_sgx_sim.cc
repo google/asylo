@@ -58,11 +58,11 @@ pid_t enc_fork(const char *enclave_name) {
   // Block enclave entries while forking to make sure no other threads are
   // holding enclave entry/exit locks during fork().
   enc_block_entries();
-  // Confirm that all other enclave entries are blocked before proceed to
-  // fork(). All other enclave threads need to be blocked now, other than the
-  // calling thread itself.
-  // Timeout at 5 seconds.
-  constexpr int timeout = 5;
+  // Confirm that all other enclave entries are blocked or exited the enclave
+  // before proceed to fork(). All other enclave threads need to be blocked now,
+  // other than the calling thread itself.
+  // Timeout at 3 seconds.
+  constexpr int timeout = 3;
   constexpr uint64_t kNanoSecondsPerSecond = 1000000000;
   // Check for blocked threads every 100 ms.
   constexpr uint64_t kStep = 100000000;
@@ -75,7 +75,7 @@ pid_t enc_fork(const char *enclave_name) {
     nanosleep(&ts, /*rem=*/nullptr);
   }
 
-  if (active_entry_count() > blocked_entry_count() + 1) {
+  if (active_entry_count() > blocked_entry_count() + active_exit_count() + 1) {
     enc_unblock_entries();
     errno = EAGAIN;
     return -1;
