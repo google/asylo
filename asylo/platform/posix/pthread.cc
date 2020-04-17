@@ -124,7 +124,6 @@ int pthread_mutex_lock_internal(pthread_mutex_t *mutex) {
   if (mutex->_owner != PTHREAD_T_NULL) {
     return EBUSY;
   }
-
   mutex->_owner = self;
   mutex->_refcount++;
   if (mutex->_untrusted_wait_queue) {
@@ -552,6 +551,9 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
     return ret;
   }
 
+  const pthread_t self = pthread_self();
+  asylo::pthread_impl::QueueOperations list(mutex);
+
   if (!mutex->_untrusted_wait_queue) {
     LockableGuard lock_guard(mutex);
     // Ensure that the external wait queue is initialized
@@ -568,12 +570,19 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
         return ret;
       }
     }
-
     // Sleep on an untrusted wait queue until woken up. Waiting will
     // be enabled if the lock is held, as the holder of the lock is
     // responsible for enabling and disabling waiting.
     if (mutex->_untrusted_wait_queue) {
+      {
+        LockableGuard lock_guard(mutex);
+        list.Enqueue(self);
+      }
       enc_untrusted_thread_wait(mutex->_untrusted_wait_queue);
+      {
+        LockableGuard lock_guard(mutex);
+        list.Remove(self);
+      }
     }
   }
 }
@@ -596,7 +605,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) {
     return ret;
   }
 
-
+  asylo::pthread_impl::QueueOperations list(mutex);
   LockableGuard lock_guard(mutex);
 
   if (mutex->_owner == PTHREAD_T_NULL) {
@@ -608,11 +617,15 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) {
   }
 
   mutex->_refcount--;
+  // If we change state from locked to unlocked
   if (mutex->_refcount == 0) {
     mutex->_owner = PTHREAD_T_NULL;
     if (mutex->_untrusted_wait_queue) {
       enc_untrusted_disable_waiting(mutex->_untrusted_wait_queue);
-      enc_untrusted_notify(mutex->_untrusted_wait_queue);
+      // Only notify if there is a thread to notify
+      if (!list.Empty()) {
+        enc_untrusted_notify(mutex->_untrusted_wait_queue);
+      }
     }
   }
 
