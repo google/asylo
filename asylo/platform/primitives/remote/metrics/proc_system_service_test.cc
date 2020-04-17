@@ -50,14 +50,13 @@ TEST_F(ProcSystemServiceTest, SuccessfullyBuildsResponse) {
 
   if (pid == 0) {
     // Busy process for testing.
-    int sum = 0;
     const auto end_time = absl::Now() + absl::Seconds(2);
     while (absl::Now() < end_time) {
+      int sum = 0;
       for (int i = 0; i < 10000; i++) {
         sum += i;
       }
     }
-    // LOG(INFO) << "sum=" << sum;
     exit(0);
   }
 
