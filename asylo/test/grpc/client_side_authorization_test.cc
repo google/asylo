@@ -102,9 +102,13 @@ class ClientSideAuthorizationTest : public Test {
 
   void TearDown() override {
     EnclaveFinal enclave_final;
-    ASYLO_EXPECT_OK(manager_->DestroyEnclave(client_enclave_, enclave_final,
-                                             /*skip_finalize=*/false));
+    // Destroy the server enclave before the client enclave. This is due to a
+    // known issue where DestroyEnclave will wait indefinitely for threads
+    // currently outside the enclave, which can lead to this test hanging if
+    // the client is destroyed before the server.
     ASYLO_EXPECT_OK(manager_->DestroyEnclave(server_enclave_, enclave_final,
+                                             /*skip_finalize=*/false));
+    ASYLO_EXPECT_OK(manager_->DestroyEnclave(client_enclave_, enclave_final,
                                              /*skip_finalize=*/false));
   }
 
