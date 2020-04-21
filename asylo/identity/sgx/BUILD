@@ -659,6 +659,7 @@ cc_test(
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity/platform/sgx:architecture_bits",
+        "//asylo/identity/platform/sgx:miscselect_util",
         "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
