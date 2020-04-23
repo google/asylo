@@ -46,9 +46,11 @@ void TrustedMutex::Lock() {
       }
       enc_pause();
     }
-    AtomicIncrement(&number_threads_asleep_);
+    // This increment and decrement can be relaxed, as the thread
+    // count doesn't serve as a lock word for any other data.
+    AtomicIncrement(&number_threads_asleep_, std::memory_order_relaxed);
     enc_untrusted_thread_wait(wait_queue_);
-    AtomicDecrement(&number_threads_asleep_);
+    AtomicDecrement(&number_threads_asleep_, std::memory_order_relaxed);
   }
 }
 

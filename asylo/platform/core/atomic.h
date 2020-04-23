@@ -19,35 +19,63 @@
 #ifndef ASYLO_PLATFORM_CORE_ATOMIC_H_
 #define ASYLO_PLATFORM_CORE_ATOMIC_H_
 
+#include <atomic>
 #include <cstdlib>
 
 namespace asylo {
+namespace internal {
+
+inline int GetGCCMemOrder(std::memory_order order) {
+  switch (order) {
+    case std::memory_order_relaxed:
+      return __ATOMIC_RELAXED;
+    case std::memory_order_consume:
+      return __ATOMIC_CONSUME;
+    case std::memory_order_acquire:
+      return __ATOMIC_ACQUIRE;
+    case std::memory_order_release:
+      return __ATOMIC_RELEASE;
+    case std::memory_order_acq_rel:
+      return __ATOMIC_ACQ_REL;
+    case std::memory_order_seq_cst:
+      return __ATOMIC_SEQ_CST;
+  }
+  return __ATOMIC_SEQ_CST;
+}
+
+}  // namespace internal
 
 // Atomically exchanges value at `location` with `desired`,
 // returning value originally at `location`.
 template <typename T>
-inline T Exchange(volatile T *location, T desired) {
-  return __atomic_exchange_n(location, desired, __ATOMIC_ACQ_REL);
+inline T AtomicExchange(
+    volatile T *location, T desired,
+    std::memory_order memorder = std::memory_order_seq_cst) {
+  return __atomic_exchange_n(location, desired,
+                             internal::GetGCCMemOrder(memorder));
 }
 
 // Atomically increments the value at `location`, returning the value at
 // `location` prior to being incremented.
 template <typename T>
-inline T AtomicIncrement(volatile T *location) {
-  return __atomic_fetch_add(location, 1, __ATOMIC_ACQ_REL);
+inline T AtomicIncrement(volatile T *location, std::memory_order memorder =
+                                                   std::memory_order_seq_cst) {
+  return __atomic_fetch_add(location, 1, internal::GetGCCMemOrder(memorder));
 }
 
 // Atomically decrements the value at `location`, returning the value at
 // `location` prior to being decremented.
 template <typename T>
-inline T AtomicDecrement(volatile T *location) {
-  return __atomic_fetch_sub(location, 1, __ATOMIC_ACQ_REL);
+inline T AtomicDecrement(volatile T *location, std::memory_order memorder =
+                                                   std::memory_order_seq_cst) {
+  return __atomic_fetch_sub(location, 1, internal::GetGCCMemOrder(memorder));
 }
 
-// Sets the value at location to zero using __ATOMIC_RELEASE memory ordering.
+// Sets the value at location to zero.
 template <typename T>
-inline void AtomicRelease(volatile T *location) {
-  __atomic_clear(location, __ATOMIC_RELEASE);
+inline void AtomicClear(volatile T *location, std::memory_order memorder =
+                                                  std::memory_order_seq_cst) {
+  __atomic_clear(location, internal::GetGCCMemOrder(memorder));
 }
 
 // The size of an x86-64 cache line.

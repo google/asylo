@@ -18,6 +18,7 @@
 
 #include "asylo/platform/core/trusted_spin_lock.h"
 
+#include <atomic>
 #include <cstdio>
 #include <cstdlib>
 
@@ -62,7 +63,8 @@ bool TrustedSpinLock::TryLock() {
     return false;
   }
 
-  if (Exchange(&spin_lock_, kLocked) == kUnlocked) {
+  if (AtomicExchange(&spin_lock_, kLocked, std::memory_order_acquire) ==
+      kUnlocked) {
     owner_ = enc_thread_self();
     recursive_lock_count_ = 1;
 
@@ -83,7 +85,7 @@ void TrustedSpinLock::Unlock() {
   recursive_lock_count_--;
   if (recursive_lock_count_ == 0) {
     owner_ = kInvalidThread;
-    AtomicRelease(&spin_lock_);
+    AtomicClear(&spin_lock_, std::memory_order_release);
   }
 }
 

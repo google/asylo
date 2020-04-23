@@ -53,7 +53,8 @@ size_t __pthread_tsd_size = sizeof(void *) * PTHREAD_KEYS_MAX;
 inline int pthread_spin_lock(pthread_spinlock_t *lock) {
   constexpr unsigned int kLocked = 1;
   constexpr unsigned int kUnlocked = 0;
-  while (asylo::Exchange(lock, kLocked) != kUnlocked) {
+  while (asylo::AtomicExchange(lock, kLocked, std::memory_order_acquire) !=
+         kUnlocked) {
     while (*lock) {
       enc_pause();
     }
@@ -62,7 +63,7 @@ inline int pthread_spin_lock(pthread_spinlock_t *lock) {
 }
 
 inline int pthread_spin_unlock(pthread_spinlock_t *lock) {
-  asylo::AtomicRelease(lock);
+  asylo::AtomicClear(lock, std::memory_order_release);
   return 0;
 }
 
