@@ -16,9 +16,8 @@
  *
  */
 
-#include "asylo/platform/posix/include/sys/ioctl.h"
-
 #include <stdarg.h>
+#include <sys/ioctl.h>
 
 #include "asylo/platform/posix/io/io_manager.h"
 

@@ -11212,14 +11212,12 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/ioccom.h
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/ioctl.h ./newlib/libc/sys/enclave/include/sys/ioctl.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/ioctl.h
 +++ ./newlib/libc/sys/enclave/include/sys/ioctl.h
-@@ -0,0 +1,28 @@
+@@ -0,0 +1,26 @@
 +#ifndef _SYS_IOCTL_H_
 +#define _SYS_IOCTL_H_
 +
 +#include <stdint.h>
 +#include <sys/ioccom.h>  // IWYU pragma: export
-+
-+#define ASYLO_TRANSITIONAL_DEFINE_FOR_IOCTL
 +
 +#define TIOCGWINSZ 0x5413
 +
