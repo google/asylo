@@ -608,29 +608,6 @@ cc_test(
     ],
 )
 
-# Library for safe integer casting.
-cc_library(
-    name = "safe_integer_cast",
-    hdrs = ["safe_integer_cast.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
-    deps = ["@com_google_absl//absl/types:optional"],
-)
-
-# Tests for safe integer casting.
-cc_test(
-    name = "safe_integer_cast_test",
-    srcs = ["safe_integer_cast_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "safe_integer_cast_enclave_test",
-    deps = [
-        ":safe_integer_cast",
-        "//asylo/test/util:test_main",
-        "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
 # A library that implements asylo::Thread
 cc_library(
     name = "thread",
