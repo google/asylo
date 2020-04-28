@@ -16,6 +16,12 @@
 
 syntax = "proto2";
 
+// $title: CSR, CRL, Certificate, and Certificate Chain
+// $overview: Certificate-related protos
+// $location: https://asylo.dev/docs/reference/proto/crypto/asylo.certificate.v1.html
+// $front_matter: redirect_from: /docs/reference/proto/crypto/certificate.html
+
+// This package defines certificate-related messages.
 package asylo;
 
 // A certificate signing request (CSR) for a public key.
