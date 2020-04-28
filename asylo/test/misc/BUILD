@@ -292,7 +292,7 @@ enclave_test(
 
 sgx.enclave_configuration(
     name = "threaded_test_config",
-    tcs_num = "15",
+    tcs_num = "55",
 )
 
 cc_enclave_test(
