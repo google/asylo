@@ -446,10 +446,18 @@ cc_enclave_test(
     ],
 )
 
+sgx.enclave_configuration(
+    name = "condvar_test_config",
+    # Condvar tests use 8 threads each, so bump the TCS to ensure we never
+    # run too close to the default limit.
+    tcs_num = "20",
+)
+
 cc_enclave_test(
     name = "condvar_test",
     srcs = ["condvar_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    enclave_config = ":condvar_test_config",
     deps = [
         "//asylo/platform/common:time_util",
         "//asylo/test/util:pthread_test_util",
