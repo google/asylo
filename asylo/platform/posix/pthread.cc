@@ -67,6 +67,16 @@ inline int pthread_spin_unlock(pthread_spinlock_t *lock) {
   return 0;
 }
 
+// Initializes an untrusted wait queue. Will do nothing if enclave is not yet
+// running, if called during enclave startup.
+inline void initialize_wait_queue(int32_t **wait_queue_ptr) {
+  if (wait_queue_ptr && !(*wait_queue_ptr) &&
+      asylo::GetState() == asylo::EnclaveState::kRunning) {
+    *wait_queue_ptr = enc_untrusted_create_wait_queue();
+    CHECK_NE(*wait_queue_ptr, nullptr);
+  }
+}
+
 // An RAII guard object managing exclusive access to a "lockable" object, where
 // a lockable object is an aggregate type with a field "lock_" of type
 // pthread_spinlock_t.
@@ -152,7 +162,9 @@ int pthread_rwlock_tryrdlock_internal(pthread_rwlock_t *rwlock) {
   if (queue.Empty() || queue.Front() == self) {
     queue.Dequeue();
     rwlock->_reader_count++;
-
+    if (rwlock->_untrusted_wait_queue) {
+      enc_untrusted_enable_waiting(rwlock->_untrusted_wait_queue);
+    }
     return 0;
   }
 
@@ -187,7 +199,9 @@ int pthread_rwlock_trywrlock_internal(pthread_rwlock_t *rwlock) {
   if (queue.Empty() || queue.Front() == self) {
     queue.Dequeue();
     rwlock->_write_owner = self;
-
+    if (rwlock->_untrusted_wait_queue) {
+      enc_untrusted_enable_waiting(rwlock->_untrusted_wait_queue);
+    }
     return 0;
   }
 
@@ -229,25 +243,46 @@ int pthread_rwlock_lock(pthread_rwlock_t *rwlock) {
     return ConvertToErrno(EFAULT);
   }
 
-  LockableGuard lock_guard(rwlock);
-  int ret = TryLockFunc(rwlock);
-  if (ret == 0) {
-    return 0;
+  if (!rwlock->_untrusted_wait_queue) {
+    LockableGuard lock_guard(rwlock);
+    initialize_wait_queue(&rwlock->_untrusted_wait_queue);
   }
 
   const pthread_t self = pthread_self();
   asylo::pthread_impl::QueueOperations queue(rwlock);
-  if (queue.Contains(self)) {
-    return EDEADLK;
+  int ret = 0;
+  {
+    LockableGuard lock_guard(rwlock);
+    ret = TryLockFunc(rwlock);
+    if (ret == 0) {
+      return 0;
+    }
+    if (queue.Contains(self)) {
+      return EDEADLK;
+    }
   }
-  queue.Enqueue(self);
 
   while (ret == EBUSY) {
-    lock_guard.Unlock();
-    enc_untrusted_sched_yield();
-    lock_guard.Lock();
-
-    ret = TryLockFunc(rwlock);
+    for (int i = 0; i < kNumSpinLockAttempts; i++) {
+      {
+        LockableGuard lock_guard(rwlock);
+        ret = TryLockFunc(rwlock);
+        if (ret == 0) {
+          return 0;
+        }
+      }
+    }
+    {
+      LockableGuard lock_guard(rwlock);
+      queue.Enqueue(self);
+    }
+    if (rwlock->_untrusted_wait_queue) {
+      enc_untrusted_thread_wait(rwlock->_untrusted_wait_queue);
+    }
+    {
+      LockableGuard lock_guard(rwlock);
+      queue.Remove(self);
+    }
   }
 
   return ret;
@@ -535,16 +570,6 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex) {
   }
 
   return 0;
-}
-
-// Initializes an untrusted wait queue. Will do nothing if enclave is not yet
-// running, i.e. if called during enclave startup.
-inline void initialize_wait_queue(int32_t **wait_queue_ptr) {
-  if (wait_queue_ptr && !(*wait_queue_ptr) &&
-      asylo::GetState() == asylo::EnclaveState::kRunning) {
-    *wait_queue_ptr = enc_untrusted_create_wait_queue();
-    CHECK_NE(*wait_queue_ptr, nullptr);
-  }
 }
 
 // Locks |mutex|.
@@ -977,15 +1002,28 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
     return ConvertToErrno(EFAULT);
   }
 
+  asylo::pthread_impl::QueueOperations list(rwlock);
   LockableGuard lock_guard(rwlock);
 
   const pthread_t self = pthread_self();
   if (rwlock->_write_owner == self) {
     rwlock->_write_owner = PTHREAD_T_NULL;
+    if (rwlock->_untrusted_wait_queue) {
+      enc_untrusted_disable_waiting(rwlock->_untrusted_wait_queue);
+      if (!list.Empty()) {
+        enc_untrusted_notify(rwlock->_untrusted_wait_queue);
+      }
+    }
     return 0;
   }
 
   rwlock->_reader_count--;
+  if (rwlock->_reader_count == 0 && rwlock->_untrusted_wait_queue) {
+    enc_untrusted_disable_waiting(rwlock->_untrusted_wait_queue);
+    if (!list.Empty()) {
+      enc_untrusted_notify(rwlock->_untrusted_wait_queue);
+    }
+  }
   return 0;
 }
 
