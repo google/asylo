@@ -108,7 +108,7 @@ void enc_untrusted_destroy_wait_queue(int32_t *const queue) {
 
 void enc_untrusted_thread_wait(int32_t *const queue,
                                uint64_t timeout_microsec) {
-  enc_untrusted_sys_futex_wait(queue, kWaitQueueEnabled, timeout_microsec);
+  enc_untrusted_thread_wait_value(queue, kWaitQueueEnabled, timeout_microsec);
 }
 
 void enc_untrusted_notify(int32_t *const queue, int32_t num_threads) {
@@ -116,13 +116,20 @@ void enc_untrusted_notify(int32_t *const queue, int32_t num_threads) {
 }
 
 void enc_untrusted_disable_waiting(int32_t *const queue) {
-  TrustedPrimitives::UntrustedLocalMemcpy(queue, &kWaitQueueDisabled,
-                                          sizeof(int32_t));
+  enc_untrusted_wait_queue_set_value(queue, kWaitQueueDisabled);
 }
 
 void enc_untrusted_enable_waiting(int32_t *const queue) {
-  TrustedPrimitives::UntrustedLocalMemcpy(queue, &kWaitQueueEnabled,
-                                          sizeof(int32_t));
+  enc_untrusted_wait_queue_set_value(queue, kWaitQueueEnabled);
+}
+
+void enc_untrusted_wait_queue_set_value(int32_t *const queue, int32_t value) {
+  TrustedPrimitives::UntrustedLocalMemcpy(queue, &value, sizeof(int32_t));
+}
+
+void enc_untrusted_thread_wait_value(int32_t *const queue, int32_t value,
+                                     uint64_t timeout_microsec) {
+  enc_untrusted_sys_futex_wait(queue, value, timeout_microsec);
 }
 
 }  // extern "C"

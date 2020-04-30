@@ -537,6 +537,8 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex) {
   return 0;
 }
 
+// Initializes an untrusted wait queue. Will do nothing if enclave is not yet
+// running, i.e. if called during enclave startup.
 inline void initialize_wait_queue(int32_t **wait_queue_ptr) {
   if (wait_queue_ptr && !(*wait_queue_ptr) &&
       asylo::GetState() == asylo::EnclaveState::kRunning) {
@@ -659,12 +661,6 @@ int pthread_cond_destroy(pthread_cond_t *cond) {
     return EFAULT;
   }
 
-  LockableGuard lock_guard(cond);
-  asylo::pthread_impl::QueueOperations list(cond);
-  if (!list.Empty()) {
-    return EBUSY;
-  }
-
   return 0;
 }
 
@@ -690,11 +686,33 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
     return EFAULT;
   }
 
+  // Get the current thread ID to use as a wait queue value, truncated
+  // to 32 bits to fit in the wait queue state.
   const pthread_t self = pthread_self();
 
+  // Use a global atomic counter to enumerate each thread. This generates a
+  // thread-specific 32 bit unique identifier for each thread, which is not the
+  // address of anything, and thus safer to expose outside the enclave (relative
+  // to some implementations of pthread_self()).
+  static std::atomic<int32_t> thread_counter(1);
+  thread_local int32_t self_32 =
+      thread_counter.fetch_add(1, std::memory_order_relaxed);
+
+  if (!cond->_untrusted_wait_queue) {
+    // initialize wait queue
+    LockableGuard lock_guard(cond);
+    initialize_wait_queue(&cond->_untrusted_wait_queue);
+  }
+
   asylo::pthread_impl::QueueOperations list(cond);
+  // Store a thread-specific unique ID to the wait queue. This allows wait to be
+  // atomic, as any other thread signalling a wakeup will overwrite this value
+  // with a different thread unique ID, disabling this thread from sleeping.
   {
     LockableGuard lock_guard(cond);
+    if (cond->_untrusted_wait_queue) {
+      enc_untrusted_wait_queue_set_value(cond->_untrusted_wait_queue, self_32);
+    }
     list.Enqueue(self);
   }
 
@@ -703,44 +721,60 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
     return ret;
   }
 
-  while (true) {
-    enc_untrusted_sched_yield();
-
-    // If a deadline has been specified, check to see if it has passed.
-    if (deadline) {
-      timespec curr_time;
-      ret = clock_gettime(CLOCK_REALTIME, &curr_time);
-      if (ret != 0) {
-        break;
-      }
-
-      // TimeSpecSubtract returns true if deadline < curr_time.
-      timespec time_left;
-      if (asylo::TimeSpecSubtract(*deadline, curr_time, &time_left)) {
-        ret = ETIMEDOUT;
-        break;
-      }
+  // A wait for 0 microseconds will actually wait indefinitely.
+  uint64_t time_left_micros = 0;
+  if (deadline) {
+    timespec curr_time;
+    ret = clock_gettime(CLOCK_REALTIME, &curr_time);
+    if (ret != 0) {
+      pthread_mutex_lock(mutex);
+      return ret;
     }
 
-    LockableGuard lock_guard(cond);
-    if (!list.Contains(self)) {
-      break;
+    // TimeSpecSubtract returns true if deadline < curr_time.
+    timespec time_left;
+    if (asylo::TimeSpecSubtract(*deadline, curr_time, &time_left)) {
+      pthread_mutex_lock(mutex);
+      return ETIMEDOUT;
     }
+    time_left_micros = asylo::TimeSpecToMicroseconds(&time_left);
+
+    // Timeout if we're exactly at the deadline. Otherwise we'd sleep for 0
+    // microseconds, which is an indefinite sleep.
+    if (time_left_micros == 0) {
+      pthread_mutex_lock(mutex);
+      return ETIMEDOUT;
+    }
+  }
+  // Sleep on the wait queue until either the timeout occurs, or a wakeup
+  // occurs.
+  if (cond->_untrusted_wait_queue) {
+    enc_untrusted_thread_wait_value(cond->_untrusted_wait_queue, self_32,
+                                    time_left_micros);
   }
   {
     LockableGuard lock_guard(cond);
     list.Remove(self);
   }
 
-  // Only set the retval to be the result of re-locking the mutex if there isn't
-  // already another error we're trying to return. Otherwise, we give preference
-  // to returning the pre-existing error and drop the error caused by re-locking
-  // the mutex.
-  int relock_ret = pthread_mutex_lock(mutex);
-  if (ret != 0) {
-    return ret;
+  if (deadline) {
+    // Check if awoken up due to timeout.
+    timespec curr_time;
+    ret = clock_gettime(CLOCK_REALTIME, &curr_time);
+    if (ret != 0) {
+      pthread_mutex_lock(mutex);
+      return ret;
+    }
+
+    // TimeSpecSubtract returns true if deadline < curr_time.
+    timespec time_left;
+    if (asylo::TimeSpecSubtract(*deadline, curr_time, &time_left)) {
+      pthread_mutex_lock(mutex);
+      return ETIMEDOUT;
+    }
   }
-  return relock_ret;
+
+  return pthread_mutex_lock(mutex);
 }
 
 // Blocks until the given |cond| is signaled or broadcasted. |mutex| must  be
@@ -753,36 +787,34 @@ int pthread_condattr_init(pthread_condattr_t *attr) { return 0; }
 
 int pthread_condattr_destroy(pthread_condattr_t *attr) { return 0; }
 
-// Wakes the first waiting thread on |cond|.
-int pthread_cond_signal(pthread_cond_t *cond) {
+// Wakes |num_threads| waiting on |cond|.
+int pthread_cond_notify_internal(pthread_cond_t *cond, int num_threads) {
   if (!asylo::primitives::IsValidEnclaveAddress<pthread_cond_t>(cond)) {
     return EFAULT;
   }
 
-  LockableGuard lock_guard(cond);
-  asylo::pthread_impl::QueueOperations list(cond);
-  if (list.Empty()) {
-    return 0;
+  // If there is no queue, there is no way for other threads to be asleep on
+  // that queue, and thus there is nothing to do.
+  if (cond->_untrusted_wait_queue != nullptr) {
+    asylo::pthread_impl::QueueOperations list(cond);
+    const int32_t self = static_cast<int32_t>(pthread_self());
+    LockableGuard lock_guard(cond);
+    enc_untrusted_wait_queue_set_value(cond->_untrusted_wait_queue, self);
+    if (!list.Empty()) {
+      enc_untrusted_notify(cond->_untrusted_wait_queue, num_threads);
+    }
   }
-
-  list.Dequeue();
-
   return 0;
+}
+
+// Wakes the first waiting thread on |cond|.
+int pthread_cond_signal(pthread_cond_t *cond) {
+  return pthread_cond_notify_internal(cond, 1);
 }
 
 // Wakes all the waiting threads on |cond|.
 int pthread_cond_broadcast(pthread_cond_t *cond) {
-  if (!asylo::primitives::IsValidEnclaveAddress<pthread_cond_t>(cond)) {
-    return EFAULT;
-  }
-
-  asylo::pthread_impl::QueueOperations list(cond);
-  {
-    LockableGuard lock_guard(cond);
-    list.Clear();
-  }
-
-  return 0;
+  return pthread_cond_notify_internal(cond, INT_MAX);
 }
 
 // Initialize |sem| with an initial semaphore value of |value|. |pshared| must
