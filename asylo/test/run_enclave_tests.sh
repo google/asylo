@@ -93,7 +93,7 @@ if [[ " ${TO_TEST[@]} " =~ " sgx-sim " ]]; then
 fi
 
 if [[ " ${TO_TEST[@]} " =~ " sgx " ]]; then
-  ${BAZEL} test --test_strategy=local "${SGX_HW_REGRESSION_TESTS[@]}"
+  ${BAZEL} test "${SGX_HW_REGRESSION_TESTS[@]}"
   STAT=$((${STAT} || $?))
 fi
 
