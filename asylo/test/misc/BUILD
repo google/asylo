@@ -683,6 +683,7 @@ sgx_enclave_test(
 transitions.cc_binary(
     name = "exception_app",
     testonly = 1,
+    linkstatic = 1,
     srcs = ["exception_app.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
