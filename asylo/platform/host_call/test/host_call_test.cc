@@ -32,6 +32,8 @@
 #include <utime.h>
 
 #include <algorithm>
+#include <cstddef>
+#include <ostream>
 #include <string>
 #include <thread>
 
@@ -85,6 +87,21 @@ class HostCallTest : public ::testing::Test {
     ASYLO_EXPECT_OK(
         AddHostCallHandlersToExitCallProvider(client_->exit_call_provider()));
     ASSERT_FALSE(client_->IsClosed());
+
+    // Check if IPv4 and IPv6 are supported on this system
+    addrinfo *result;
+    ASSERT_EQ(getaddrinfo("localhost", nullptr, nullptr, &result), 0)
+        << strerror(errno);
+    ipv4_supported_ = false;
+    ipv6_supported_ = false;
+    for (addrinfo *current = result; current; current = current->ai_next) {
+      if (current->ai_family == AF_INET)
+        ipv4_supported_ = true;
+      else if (current->ai_family == AF_INET6)
+        ipv6_supported_ = true;
+    }
+    freeaddrinfo(result);
+    ASSERT_TRUE(ipv4_supported_ || ipv6_supported_);
   }
 
   void TearDown() override {
@@ -191,7 +208,30 @@ class HostCallTest : public ::testing::Test {
   }
 
   std::shared_ptr<primitives::Client> client_;
+  bool ipv4_supported_;
+  bool ipv6_supported_;
 };
+
+class AddressFamily {
+ public:
+  explicit AddressFamily(int af) : family_(af) {}
+
+  absl::string_view getString() const {
+    switch (family_) {
+      case AF_INET:
+        return "(IPv4)";
+      case AF_INET6:
+        return "(IPv6)";
+      default:
+        return "(unknown)";
+    }
+  }
+ private:
+  int family_;
+};
+std::ostream& operator<<(std::ostream &stream, const AddressFamily &family) {
+  return stream << family.getString();
+}
 
 // Tests enc_untrusted_access() by creating a file and calling
 // enc_untrusted_access() from inside the enclave and verifying its return
@@ -953,19 +993,27 @@ TEST_F(HostCallTest, TestPipe2) {
 // Tests enc_untrusted_socket() by trying to obtain a valid (greater than 0)
 // socket file descriptor when the method is called from inside the enclave.
 TEST_F(HostCallTest, TestSocket) {
-  MessageWriter in;
-  // Setup bidirectional IPv6 socket.
-  in.Push<int>(/*value=domain=*/AF_INET6);
-  in.Push<int>(/*value=type=*/SOCK_STREAM);
-  in.Push<int>(/*value=protocol=*/0);
+  for (int family : {AF_INET, AF_INET6}) {
+    if ((family == AF_INET && !ipv4_supported_) ||
+        (family == AF_INET6 && !ipv6_supported_)) {
+      continue;
+    }
 
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSocket, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
-  EXPECT_THAT(out.next<int>(), Gt(0));
+    // Set up bidirectional IP socket.
+    MessageWriter in;
+    in.Push<int>(/*value=domain=*/family);
+    in.Push<int>(/*value=type=*/SOCK_STREAM);
+    in.Push<int>(/*value=protocol=*/0);
 
-  // Setup socket for local bidirectional communication between two processes on
-  // the host.
+    MessageReader out;
+    ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSocket, &in, &out))
+        << AddressFamily(family);
+    // Should only contain return value.
+    ASSERT_THAT(out, SizeIs(1)) << AddressFamily(family);
+    EXPECT_THAT(out.next<int>(), Gt(0)) << AddressFamily(family);
+  }
+
+  // Set up bidirectional unix domain socket.
   MessageWriter in2;
   in2.Push<int>(/*value=domain=*/AF_UNIX);
   in2.Push<int>(/*value=type=*/SOCK_STREAM);
@@ -975,17 +1023,6 @@ TEST_F(HostCallTest, TestSocket) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSocket, &in2, &out2));
   ASSERT_THAT(out2, SizeIs(1));  // Should only contain return value.
   EXPECT_THAT(out2.next<int>(), Gt(0));
-
-  // Setup bidirectional IPv4 socket.
-  MessageWriter in3;
-  in3.Push<int>(/*value=domain=*/AF_INET);
-  in3.Push<int>(/*value=type=*/SOCK_STREAM);
-  in3.Push<int>(/*value=protocol=*/0);
-
-  MessageReader out3;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSocket, &in3, &out3));
-  ASSERT_THAT(out3, SizeIs(1));  // Should only contain return value.
-  EXPECT_THAT(out3.next<int>(), Gt(0));
 }
 
 // Tests enc_untrusted_listen() by creating a local socket and calling
@@ -1180,35 +1217,57 @@ TEST_F(HostCallTest, TestFChown) {
 // value obtained from the host call to confirm that the new options have been
 // set.
 TEST_F(HostCallTest, TestSetSockOpt) {
-  // Create a TCP socket (SOCK_STREAM) with Internet Protocol Family AF_INET6.
-  int socket_fd = socket(AF_INET6, SOCK_STREAM, 0);
-  ASSERT_THAT(socket_fd, Gt(0));
+  sockaddr_storage sas;
+  for (int family : {AF_INET, AF_INET6}) {
+    if ((family == AF_INET && !ipv4_supported_) ||
+        (family == AF_INET6 && !ipv6_supported_)) {
+      continue;
+    }
 
-  // Bind the TCP socket to port 0 for any IP address. Once bind is successful
-  // for UDP sockets application can operate on the socket descriptor for
-  // sending or receiving data.
-  struct sockaddr_in6 sa;
-  memset(&sa, 0, sizeof(sa));
-  sa.sin6_family = AF_INET6;
-  sa.sin6_flowinfo = 0;
-  sa.sin6_addr = in6addr_any;
-  sa.sin6_port = htons(0);
-  EXPECT_THAT(
-      bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sa), sizeof(sa)),
-      Not(Eq(-1)));
+    int socket_fd = socket(family, SOCK_STREAM, 0);
+    ASSERT_THAT(socket_fd, Gt(0));
 
-  MessageWriter in;
-  in.Push<int>(/*value=sockfd=*/socket_fd);
-  in.Push<int>(/*value=level=*/SOL_SOCKET);
-  in.Push<int>(/*value=optname=*/SO_REUSEADDR);
-  in.Push<int>(/*value=option=*/1);
+    // Bind the TCP socket to port 0 for any IP address. Once bind is successful
+    // for UDP sockets application can operate on the socket descriptor for
+    // sending or receiving data.
+    memset(&sas, 0, sizeof(sockaddr_storage));
+    switch (family) {
+      case AF_INET:
+        {
+          sockaddr_in *sa = reinterpret_cast<sockaddr_in *>(&sas);
+          sa->sin_family = AF_INET;
+          sa->sin_addr.s_addr = htonl(INADDR_ANY);
+          sa->sin_port = htons(0);
+        }
+        break;
+      case AF_INET6:
+        {
+          sockaddr_in6 *sa = reinterpret_cast<sockaddr_in6 *>(&sas);
+          sa->sin6_family = AF_INET6;
+          sa->sin6_flowinfo = 0;
+          sa->sin6_addr = in6addr_any;
+          sa->sin6_port = htons(0);
+        }
+        break;
+    }
+    EXPECT_THAT(
+        bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sas), sizeof(sas)),
+        Not(Eq(-1))) << strerror(errno) << AddressFamily(family);
 
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSetSockOpt, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
-  EXPECT_THAT(out.next<int>(), Gt(-1));
+    MessageWriter in;
+    in.Push<int>(/*value=sockfd=*/socket_fd);
+    in.Push<int>(/*value=level=*/SOL_SOCKET);
+    in.Push<int>(/*value=optname=*/SO_REUSEADDR);
+    in.Push<int>(/*value=option=*/1);
 
-  close(socket_fd);
+    MessageReader out;
+    ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSetSockOpt, &in, &out))
+        << AddressFamily(family);
+    ASSERT_THAT(out, SizeIs(1)) << AddressFamily(family);
+    EXPECT_THAT(out.next<int>(), Gt(-1)) << AddressFamily(family);
+
+    close(socket_fd);
+  }
 }
 
 // Tests enc_untrusted_flock() by trying to acquire an exclusive lock on a valid
@@ -2231,29 +2290,38 @@ TEST_F(HostCallTest, TestFsync) {
 // Tests enc_untrusted_getsockopt() by comparing the return and optval values
 // from enc_untrusted_getsockopt() and getsockopt() on the host.
 TEST_F(HostCallTest, TestGetSockOpt) {
-  // Create a TCP socket (SOCK_STREAM) with Internet Protocol Family AF_INET6.
-  int socket_fd = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
-  ASSERT_THAT(socket_fd, Gt(0));
+  for (int family : {AF_INET, AF_INET6}) {
+    if ((family == AF_INET && !ipv4_supported_) ||
+        (family == AF_INET6 && !ipv6_supported_)) {
+      continue;
+    }
 
-  int optval_expected = -1;
-  socklen_t optlen_expected = sizeof(optval_expected);
-  EXPECT_THAT(getsockopt(socket_fd, SOL_SOCKET, SO_KEEPALIVE, &optval_expected,
-                         &optlen_expected),
-              Eq(0));
+    // Create a TCP socket (SOCK_STREAM) with specified IP Family.
+    int socket_fd = socket(family, SOCK_STREAM, IPPROTO_TCP);
+    ASSERT_THAT(socket_fd, Gt(0)) << strerror(errno) << AddressFamily(family);
 
-  MessageWriter in;
-  in.Push<int>(socket_fd);
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetSockOpt, &in, &out));
-  ASSERT_THAT(out, SizeIs(2));  // Should contain return value and optval.
-  EXPECT_THAT(out.next<int>(), Eq(0));
-  EXPECT_THAT(out.next<int>(), Eq(optval_expected));
+    int optval_expected = -1;
+    socklen_t optlen_expected = sizeof(optval_expected);
+    EXPECT_THAT(getsockopt(socket_fd, SOL_SOCKET, SO_KEEPALIVE,
+                           &optval_expected, &optlen_expected),
+                Eq(0)) << strerror(errno) << AddressFamily(family);
+
+    MessageWriter in;
+    in.Push<int>(socket_fd);
+    MessageReader out;
+    ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetSockOpt, &in, &out))
+        << AddressFamily(family);
+    // Should contain return value and optval.
+    ASSERT_THAT(out, SizeIs(2)) << AddressFamily(family);
+    EXPECT_THAT(out.next<int>(), Eq(0)) << AddressFamily(family);
+    EXPECT_THAT(out.next<int>(), Eq(optval_expected)) << AddressFamily(family);
+  }
 }
 
 // Tests enc_untrusted_getaddrinfo() by calling the method inside the enclave
 // and getaddrinfo() on the host and comparing the values of hostnames obtained.
 TEST_F(HostCallTest, TestGetAddrInfo) {
-  std::string node("127.0.0.1");  // We can't have something like www.google.com
+  std::string node("localhost");  // We can't have something like www.google.com
                                   // here as that could resolve to different
                                   // lookups in addrinfo each time.
   std::vector<std::string> expected_hostnames, actual_hostnames;
