@@ -46,7 +46,7 @@ constexpr char kLocalhostAddress[] = "[::1]";
 const int64_t kDeadlineMicros = absl::Seconds(10) / absl::Microseconds(1);
 
 // Duration to wait before calling Shutdown() method of the GrpcServerLauncher.
-constexpr absl::Duration kPreShutdownWait = absl::Milliseconds(100);
+constexpr absl::Duration kPreShutdownWait = absl::Milliseconds(250);
 
 // AsyncDelayedShutdownInvoker invokes the Shutdown() method of a
 // GrpcServerLauncher from a separate thread after kPreShutdownWait duration.
