@@ -22,6 +22,7 @@
 #include <sys/mman.h>
 
 #include <algorithm>
+#include <atomic>
 #include <cstdlib>
 #include <memory>
 
@@ -69,7 +70,9 @@ void ThreadManager::Thread::Run() {
 
 void *ThreadManager::Thread::GetReturnValue() const { return ret_; }
 
-bool ThreadManager::Thread::detached() const { return detached_; }
+bool ThreadManager::Thread::detached() const {
+  return detached_.load(std::memory_order_relaxed);
+}
 
 void ThreadManager::Thread::UpdateThreadId(const pthread_t thread_id) {
   PthreadMutexLock lock(&lock_);
@@ -126,10 +129,11 @@ void ThreadManager::Thread::SignalStateWaiters() {
 }
 
 void ThreadManager::Thread::Detach() {
+  detached_.store(true, std::memory_order_relaxed);
+
   PthreadMutexLock lock(&lock_);
   int ret = pthread_cond_broadcast(&state_change_cond_);
   CHECK_EQ(ret, 0);
-  detached_ = true;
 }
 
 void ThreadManager::Thread::PushCleanupRoutine(

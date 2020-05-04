@@ -170,7 +170,7 @@ class ThreadManager {
     pthread_mutex_t lock_ = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t state_change_cond_ = PTHREAD_COND_INITIALIZER;
     ThreadState state_ = ThreadState::QUEUED;
-    bool detached_ = false;
+    std::atomic<bool> detached_ = false;
 
     // The pthread TLS address that saves the thread info.
     void *tls_;
