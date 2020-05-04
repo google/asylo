@@ -37,25 +37,12 @@ GREEN='\e[1;32m'
 RESET='\e[0m'
 
 # Asylo Build Flags
+BUILD_EVENT_FILE="/home/${USER}/build_events.json"
 ASYLO_EXTRA_BAZEL_FLAGS="build --noshow_progress --verbose_failures \
 --announce_rc --test_output=summary --test_summary=short \
---color=yes"
+--color=yes --build_event_json_file=\"${BUILD_EVENT_FILE}\""
 
-# Build Events for each test run
-BUILD_EVENT_DIR=/home/${USER}
-BUILD_HOST_BEP="build --build_event_json_file=${BUILD_EVENT_DIR}/host.json"
-BUILD_SGX_SIM_BEP="build:sgx-sim --build_event_json_file=${BUILD_EVENT_DIR}/sgx-sim.json"
-BUILD_SGX_BEP="build:sgx --build_event_json_file=${BUILD_EVENT_DIR}/sgx.json"
-BUILD_DLOPEN_BEP="build:asylo-dlopen --build_event_json_file=${BUILD_EVENT_DIR}/dlopen.json"
-
-# Final/Combined Bazel Flags
-ASYLO_EXTRA_BAZEL_FLAGS=$"${ASYLO_EXTRA_BAZEL_FLAGS}
-${BUILD_HOST_BEP}
-${BUILD_SGX_SIM_BEP}
-${BUILD_SGX_BEP}
-${BUILD_DLOPEN_BEP}"
-
-ASYLO_BUILD_ROOT=/var/tmp/asylo-build
+: ${ASYLO_BUILD_ROOT:=/var/tmp/asylo-build}
 # We check that ${ASYLO_BUILD_ROOT} is already writable by ${USER}.
 if [ -w "${ASYLO_BUILD_ROOT}" ]; then
   echo "${ASYLO_BUILD_ROOT} is writable. Proceeding;"
@@ -69,7 +56,6 @@ mkdir -p ${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}
 mkdir -p ${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}/${BUILDKITE_STEP_ID}
 # We will collect build artifacts here
 mkdir -p ${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}/${BUILDKITE_STEP_ID}/artifacts/
-
 
 # Generate random container name
 CONTAINER_NAME=asylo${RANDOM}
@@ -94,8 +80,8 @@ else
 fi
 
 # Pull the latest Asylo image
-ASYLO_IMAGE="gcr.io/asylo-framework/asylo"
-docker pull ${ASYLO_IMAGE}
+: ${ASYLO_DOCKER_IMAGE:=gcr.io/asylo-framework/asylo}
+docker pull ${ASYLO_DOCKER_IMAGE}
 
 # Start Asylo Docker Container
 # Note how we map home directory for the user to tmpfs to speed up build time.
@@ -111,7 +97,7 @@ docker run \
     --rm \
     --name ${CONTAINER_NAME} \
     --detach \
-    ${ASYLO_IMAGE}
+    ${ASYLO_DOCKER_IMAGE}
 
 # Stop container on EXIT or on SIGNIT no matter what happens
 trap 'docker stop ${CONTAINER_NAME} >/dev/null' EXIT SIGINT
@@ -148,13 +134,10 @@ STAT=$(($STAT || $?))
 # ${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}/${BUILDKITE_STEP_ID}/artifacts.
 # Our intent to use them as BuildKite artifacts
 # (see https://buildkite.com/docs/pipelines/artifacts)
-echo "--- :package: Collecting Test Artifcats"
-for t in "host" "dlopen" "sgx-sim" "sgx"
-do
-  ${DOCKER} python3 buildkite/collect_artifacts.py \
-            --build-events=/home/${USER}/$t.json \
+echo "--- :package: Collecting Test Artifacts"
+${DOCKER} python3 buildkite/collect_artifacts.py \
+            --build-events=${BUILD_EVENT_FILE} \
             --destination=/artifacts
-done
 
 # Uploading Test Artifacts to Buildkite
 if [ -x "$(command -v buildkite-agent)" ]; then
