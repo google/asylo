@@ -27,6 +27,7 @@
 #include <queue>
 #include <stack>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 namespace asylo {
@@ -136,6 +137,11 @@ class ThreadManager {
     // Blocks until this thread is not in |state|.
     void WaitForThreadToExitState(const ThreadState &state);
 
+    // Signals any state waiters, in case their predicates may have changed.
+    // This allows for predicates to WaitForThreadToEnterState to have
+    // conditions that do not necessarily change when the Thread state changes.
+    void SignalStateWaiters();
+
     // Detaches the thread if joinable.
     void Detach();
 
@@ -203,6 +209,16 @@ class ThreadManager {
   // available; avoid using absl based containers which may perform system
   // calls.
   std::unordered_map<pthread_t, std::shared_ptr<Thread>> threads_;
+
+  // Set of thread ids that completed during finalize, but were not joined. Keep
+  // track of these in case join is called on the thread after it finishes.
+  std::unordered_set<pthread_t> zombie_threads_;
+
+  // Track whether or not we're finalizing the ThreadManager. Once we enter
+  // finalize, cleanup/join behavior changes slightly to account for enclaves
+  // that don't join all their threads. While finalizing, join becomes a noop
+  // and threads are treated as detached as they complete.
+  std::atomic<bool> finalizing_{false};
 };
 
 }  // namespace asylo

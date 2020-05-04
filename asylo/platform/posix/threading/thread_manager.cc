@@ -119,6 +119,12 @@ void ThreadManager::Thread::WaitForThreadToExitState(
           &state_change_cond_, &lock_);
 }
 
+void ThreadManager::Thread::SignalStateWaiters() {
+  PthreadMutexLock lock(&lock_);
+  int ret = pthread_cond_broadcast(&state_change_cond_);
+  CHECK_EQ(ret, 0);
+}
+
 void ThreadManager::Thread::Detach() {
   PthreadMutexLock lock(&lock_);
   int ret = pthread_cond_broadcast(&state_change_cond_);
@@ -234,11 +240,31 @@ int ThreadManager::StartThread(pid_t tid) {
 
   // Wait for the caller to join before releasing the thread if the thread is
   // joinable.
-  thread->WaitForThreadToEnterState(Thread::ThreadState::JOINED,
-                                    std::bind(&Thread::detached, thread));
+  bool skipped_join = false;
+  thread->WaitForThreadToEnterState(
+      Thread::ThreadState::JOINED, [&thread, this, &skipped_join]() {
+        // Not joinable. Bail without waiting.
+        if (thread->detached()) {
+          return true;
+        }
+
+        // If we're finalizing, don't wait because this will cause a hang if an
+        // enclave forgets to join a thread.
+        if (finalizing_.load()) {
+          skipped_join = true;
+          return true;
+        }
+
+        return false;
+      });
 
   {
     PthreadMutexLock threads_lock(&threads_lock_);
+    // Remember that this thread should have been joined, in case that join is
+    // called later on this thread.
+    if (skipped_join) {
+      zombie_threads_.insert(pthread_self());
+    }
     threads_.erase(pthread_self());
     pthread_cond_broadcast(&threads_cond_);
   }
@@ -260,6 +286,14 @@ int ThreadManager::JoinThread(const pthread_t thread_id,
                               void **return_value_out) {
   std::shared_ptr<Thread> thread = GetThread(thread_id);
   if (thread == nullptr) {
+    // If we're finalizing, check to see if the thread was previously finished
+    // without being joined.
+    if (finalizing_.load()) {
+      PthreadMutexLock threads_lock(&threads_lock_);
+      if (zombie_threads_.erase(thread_id)) {
+        return 0;
+      }
+    }
     return ESRCH;
   }
 
@@ -328,9 +362,17 @@ void ThreadManager::PopCleanupRoutine(bool execute) {
 }
 
 void ThreadManager::Finalize() {
+  finalizing_.store(true);
+  PthreadMutexLock lock(&threads_lock_);
+
+  // In case any threads are waiting to be joined, let's signal them now so they
+  // stop waiting while we finalize.
+  for (auto &thread : threads_) {
+    thread.second->SignalStateWaiters();
+  }
+
   // Wait for any expected threads to be donated and all threads to return from
   // start_routine.
-  PthreadMutexLock lock(&threads_lock_);
   WaitFor([this]() { return queued_threads_.empty() && threads_.empty(); },
           &threads_cond_, &threads_lock_);
 }
