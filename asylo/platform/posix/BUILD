@@ -96,6 +96,7 @@ cc_library(
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         "//asylo/platform/common:time_util",
+        "//asylo/platform/core:atomic",
         "//asylo/platform/host_call",
         "//asylo/platform/posix/sockets:backend_agnostic_sockets",
         "//asylo/platform/primitives:trusted_backend",

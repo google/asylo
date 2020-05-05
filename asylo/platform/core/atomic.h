@@ -55,6 +55,19 @@ inline T AtomicExchange(
                              internal::GetGCCMemOrder(memorder));
 }
 
+// Atomically compare value at `location` with `expected`, and equal, exchange
+// value at `location` with `desired`.
+template <typename T>
+inline bool AtomicCompareExchange(
+    volatile T *location, T *expected, T desired, bool weak,
+    std::memory_order success_memorder = std::memory_order_seq_cst,
+    std::memory_order failure_memorder = std::memory_order_seq_cst) {
+  return __atomic_compare_exchange_n(
+      location, expected, desired, weak,
+      internal::GetGCCMemOrder(success_memorder),
+      internal::GetGCCMemOrder(failure_memorder));
+}
+
 // Atomically increments the value at `location`, returning the value at
 // `location` prior to being incremented.
 template <typename T>
@@ -76,6 +89,14 @@ template <typename T>
 inline void AtomicClear(volatile T *location, std::memory_order memorder =
                                                   std::memory_order_seq_cst) {
   __atomic_clear(location, internal::GetGCCMemOrder(memorder));
+}
+
+// Sets the value at `location` to `value`.
+template <typename T>
+inline void AtomicStore(
+    volatile T *location, T value,
+    std::memory_order memorder = std::memory_order_seq_cst) {
+  __atomic_store_n(location, value, internal::GetGCCMemOrder(memorder));
 }
 
 // The size of an x86-64 cache line.
