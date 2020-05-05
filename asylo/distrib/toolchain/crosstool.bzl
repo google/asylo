@@ -658,7 +658,6 @@ def _impl(ctx):
                     flag_group(
                         flags = [
                             "-g0",
-                            "-fdebug-types-section",
                             "-O2",
                             "-DNDEBUG",
                             "-ffunction-sections",
