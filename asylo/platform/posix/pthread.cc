@@ -144,38 +144,25 @@ int pthread_mutex_lock_internal(pthread_mutex_t *mutex) {
 }
 
 // Read locks the given |rwlock| if possible and returns 0. On success,
-// pthread_self() is removed from |rwlock|._queue and |rwlock|._readers is
-// incremented. Returns EBUSY if the |rwlock| is write locked or pthread_self()
-// is not the front of |rwlock|._queue. |rwlock|._lock must be locked by the
-// caller.
+// |rwlock|._readers is incremented. Returns EBUSY if the |rwlock| is write
+// locked. |rwlock|._lock must be locked by the caller.
 int pthread_rwlock_tryrdlock_internal(pthread_rwlock_t *rwlock) {
   // If |rwlock| is owned by a writer it is not read lockable.
   if (rwlock->_write_owner != PTHREAD_T_NULL) {
     return EBUSY;
   }
 
-  asylo::pthread_impl::QueueOperations queue(rwlock);
-  const pthread_t self = pthread_self();
-
-  // If the current thread is at the front of the queue or the queue is empty
-  // |rwlock| is read lockable.
-  if (queue.Empty() || queue.Front() == self) {
-    queue.Dequeue();
-    rwlock->_reader_count++;
-    if (rwlock->_untrusted_wait_queue) {
-      enc_untrusted_enable_waiting(rwlock->_untrusted_wait_queue);
-    }
-    return 0;
+  rwlock->_reader_count++;
+  if (rwlock->_untrusted_wait_queue) {
+    enc_untrusted_enable_waiting(rwlock->_untrusted_wait_queue);
   }
-
-  return EBUSY;
+  return 0;
 }
 
 // Write locks the given |rwlock| if possible and returns 0. On success,
-// pthread_self() is removed from |rwlock|._queue and added to
-// |rwlock|._write_owner. Returns EBUSY if the |rwlock| is write locked, read
-// locked, or pthread_self() is not the front of |rwlock|._queue. |rwlock|._lock
-// must be locked by the caller.
+// |rwlock|._write_owner is set to pthread_self().  Returns EBUSY if the
+// |rwlock| is write locked or read locked. |rwlock|._lock must be locked by the
+// caller.
 int pthread_rwlock_trywrlock_internal(pthread_rwlock_t *rwlock) {
   // If |rwlock| is owned by a reader it is not write lockable.
   if (rwlock->_reader_count != 0) {
@@ -193,19 +180,11 @@ int pthread_rwlock_trywrlock_internal(pthread_rwlock_t *rwlock) {
     return EBUSY;
   }
 
-  // If the current thread is at the front of the queue or the queue is empty
-  // |rwlock| is write lockable.
-  asylo::pthread_impl::QueueOperations queue(rwlock);
-  if (queue.Empty() || queue.Front() == self) {
-    queue.Dequeue();
-    rwlock->_write_owner = self;
-    if (rwlock->_untrusted_wait_queue) {
-      enc_untrusted_enable_waiting(rwlock->_untrusted_wait_queue);
-    }
-    return 0;
+  rwlock->_write_owner = self;
+  if (rwlock->_untrusted_wait_queue) {
+    enc_untrusted_enable_waiting(rwlock->_untrusted_wait_queue);
   }
-
-  return EBUSY;
+  return 0;
 }
 
 // Small utility function to "convert" a return value into an errno value. The
