@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/error_codes.h"  // IWYU pragma: export
