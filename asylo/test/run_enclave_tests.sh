@@ -1,20 +1,11 @@
 #!/bin/bash
 
-# Set up cleanup hook for when script exits.
-CLEANUP_FUNCS=()
-cleanup() {
-  for func in "${CLEANUP_FUNCS[@]}"; do
-    ${func}
-  done
-}
-trap cleanup EXIT
-
 # Allow the caller to provide additional Bazel flags.
 BAZELRC="$(mktemp)"
 cat > "${BAZELRC}" <<< "${ASYLO_EXTRA_BAZEL_FLAGS}"
-BAZEL="bazel --bazelrc=${BAZELRC}"
+BAZEL="${BAZEL:-bazel} --bazelrc=${BAZELRC}"
 delete_bazelrc() { rm "${BAZELRC}"; }
-CLEANUP_FUNCS+=(delete_bazelrc)
+trap delete_bazelrc EXIT
 
 read -r -a TO_TEST <<< "${ASYLO_TO_TEST}"
 readonly ALL_UNSPECIALIZED_TESTS=("host" "dlopen" "sgx-sim")
@@ -38,28 +29,30 @@ if [[ ${#TO_TEST[@]} -eq 0 ]]; then
   TO_TEST=("${ALL_UNSPECIALIZED_TESTS[@]}")
 fi
 
-PKG="//asylo"
+# Make queries quieter.
+echo "query --noshow_progress" >> "${BAZELRC}"
 
 # Query for all of the tests marked as regression tests excluding tests in
 # platform/primitives.
-ASYLO_TESTS="tests(${PKG}/...)"
-ASYLO_SGX_HW_TESTS="attr(tags, \"asylo-sgx-hw\", tests(${PKG}/...))"
-ASYLO_SGX_SIM_TESTS="attr(tags, \"asylo-sgx-sim\", tests(${PKG}/...))"
-ASYLO_DLOPEN_TESTS="attr(tags, \"asylo-dlopen\", tests(${PKG}/...))"
-ASYLO_REMOTE_TESTS="attr(tags, \"asylo-remote\", tests(${PKG}/...))"
-ASYLO_PERF_TESTS="attr(tags, \"perf\", tests(${PKG}/...))"
+ASYLO_TESTS="tests(//asylo/...)"
+ASYLO_SGX_HW_TESTS="attr(tags, \"asylo-sgx-hw\", tests(//asylo/...))"
+ASYLO_SGX_SIM_TESTS="attr(tags, \"asylo-sgx-sim\", tests(//asylo/...))"
+ASYLO_DLOPEN_TESTS="attr(tags, \"asylo-dlopen\", tests(//asylo/...))"
+ASYLO_REMOTE_TESTS="attr(tags, \"asylo-remote\", tests(//asylo/...))"
+ASYLO_PERF_TESTS="attr(tags, \"perf\", tests(//asylo/...))"
 # Use the Bazel configuration transitions backend-switching strategy:
-ASYLO_TRANSITION_TESTS="attr(tags, \"asylo-transition\", tests(${PKG}/...))"
-ENCLAVE_TESTS="attr(tags, \"enclave_test\", tests(${PKG}/...))"
+ASYLO_TRANSITION_TESTS="attr(tags, \"asylo-transition\", tests(//asylo/...))"
+ENCLAVE_TESTS="attr(tags, \"enclave_test\", tests(//asylo/...))"
 
-ASYLO_PRIMITIVES="tests(${PKG}/platform/primitives/...)"
+ASYLO_PRIMITIVES="tests(//asylo/platform/primitives/...)"
 NOREGRESSION_TESTS="attr(tags, noregression, ${ASYLO_TESTS})"
 IGNORE_TESTS="${NOREGRESSION_TESTS} union ${ASYLO_PERF_TESTS}"
 HOST_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_TESTS} except
   (${IGNORE_TESTS} union ${ENCLAVE_TESTS})")
 )
 UNTAGGED_TESTS=($(${BAZEL} query "${ENCLAVE_TESTS} except
-  (${IGNORE_TESTS} union ${ASYLO_DLOPEN_TESTS} union ${ASYLO_SGX_HW_TESTS} union ${ASYLO_SGX_SIM_TESTS})"))
+  (${IGNORE_TESTS} union ${ASYLO_DLOPEN_TESTS} union ${ASYLO_SGX_HW_TESTS} union ${ASYLO_SGX_SIM_TESTS})" \
+  2> >(grep -v 'Empty results' >&2))) # Filter warning, since we expect empty.
 SGX_HW_REGRESSION_TESTS=($(${BAZEL} query "(${ASYLO_SGX_HW_TESTS} except
   (${IGNORE_TESTS} union ${ASYLO_REMOTE_TESTS})) intersect ${ASYLO_TESTS}")
 )
@@ -77,29 +70,52 @@ if [[ "${#UNTAGGED_TESTS[@]}" -ne 0 ]]; then
   echo "${UNTAGGED_TESTS[@]}"
 fi
 
+ALL_SELECTED_TESTS=()
 if [[ " ${TO_TEST[@]} " =~ " host " ]]; then
-  # Separately run the host and enclave tests, with different configs.
-  # The "enclave_test" tag can be used to separate them, and "build_tests_only"
-  # has it only build that filtered set of tests instead of all provided
-  # targets.
-  ${BAZEL} test --test_tag_filters=-enclave_test --build_tests_only \
-    "${HOST_REGRESSION_TESTS[@]}"
-  STAT=$(($STAT || $?))
+  if [[ ${#HOST_REGRESSION_TESTS[@]} > 0 ]]; then
+    echo "Host regression Tests Found:"
+    printf "  %s\n" "${HOST_REGRESSION_TESTS[@]}" | sort
+    ALL_SELECTED_TESTS+=("${HOST_REGRESSION_TESTS[@]}")
+  else
+    STAT=1
+    echo "ERROR: Host tests specified, but none found"
+  fi
 fi
-
-if [[ " ${TO_TEST[@]} " =~ " sgx-sim " ]]; then
-  ${BAZEL} test "${SGX_SIM_REGRESSION_TESTS[@]}"
-  STAT=$((${STAT} || $?))
-fi
-
 if [[ " ${TO_TEST[@]} " =~ " sgx " ]]; then
-  ${BAZEL} test "${SGX_HW_REGRESSION_TESTS[@]}"
-  STAT=$((${STAT} || $?))
+  if [[ ${#SGX_HW_REGRESSION_TESTS[@]} > 0 ]]; then
+    echo "SGX hardware regression Tests Found:"
+    printf "  %s\n" "${SGX_HW_REGRESSION_TESTS[@]}" | sort
+    ALL_SELECTED_TESTS+=("${SGX_HW_REGRESSION_TESTS[@]}")
+  else
+    STAT=1
+    echo "ERROR: SGX tests specified, but none found"
+  fi
+fi
+if [[ " ${TO_TEST[@]} " =~ " sgx-sim " ]]; then
+  if [[ ${#SGX_SIM_REGRESSION_TESTS[@]} > 0 ]]; then
+    echo "SGX simulation regression Tests Found:"
+    printf "  %s\n" "${SGX_SIM_REGRESSION_TESTS[@]}" | sort
+    ALL_SELECTED_TESTS+=("${SGX_SIM_REGRESSION_TESTS[@]}")
+  else
+    STAT=1
+    echo "ERROR: SGX sim tests specified, but none found"
+  fi
+fi
+if [[ " ${TO_TEST[@]} " =~ " dlopen " ]]; then
+  if [[ ${#DLOPEN_REGRESSION_TESTS[@]} > 0 ]]; then
+    echo "Dlopen regression Tests Found:"
+    printf "  %s\n" "${DLOPEN_REGRESSION_TESTS[@]}" | sort
+    ALL_SELECTED_TESTS+=("${DLOPEN_REGRESSION_TESTS[@]}")
+  else
+    STAT=1
+    echo "ERROR: Dlopen tests specified, but none found"
+  fi
 fi
 
-if [[ " ${TO_TEST[@]} " =~ " dlopen " ]]; then
-  ${BAZEL} test "${DLOPEN_REGRESSION_TESTS[@]}"
-  STAT=$((${STAT} || $?))
+if [[ ${#ALL_SELECTED_TESTS[@]} > 0 ]]; then
+  # Now, actually run the tests
+  ${BAZEL} test "${ALL_SELECTED_TESTS[@]}"
+  STAT=$(($STAT || $?))
 fi
 
 RED='\e[1;31m'
