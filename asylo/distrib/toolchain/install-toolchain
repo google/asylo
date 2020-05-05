@@ -320,6 +320,7 @@ if [[ -z "${binutils}" ]]; then
   if [[ -f "${binutils_default}" ]]; then
     verify_sha "${binutils_default}" "${binutils_default_sha}"
     set_directory binutils "${binutils_default}"
+    patch -u "${srcs_root}/${binutils}/gas/config/tc-i386.c" -i "${toolchain_root}/binutils-lvi.patch"
   else
     echo "Missing ${binutils_default%.tar.gz} dependency."
     exit 1

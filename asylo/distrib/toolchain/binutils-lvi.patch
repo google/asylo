@@ -1,0 +1,444 @@
+This patch contains cherry-picked parts of the following commit:
+- https://github.com/bminor/binutils-gdb/commit/ae531041c7c5956672342f89c486a011c84f027f
+
+--- gas/config/tc-i386.c
++++ gas/config/tc-i386.c
+@@ -623,6 +623,43 @@ unsigned int x86_dwarf2_return_column;
+ /* The dwarf2 data alignment, adjusted for 32 or 64 bit.  */
+ int x86_cie_data_alignment;
+ 
++/* 1 if lfence should be inserted after every load.  */
++static int lfence_after_load = 0;
++
++/* Non-zero if lfence should be inserted before indirect branch.  */
++static enum lfence_before_indirect_branch_kind
++  {
++    lfence_branch_none = 0,
++    lfence_branch_register,
++    lfence_branch_memory,
++    lfence_branch_all
++  }
++lfence_before_indirect_branch;
++
++/* Non-zero if lfence should be inserted before ret.  */
++static enum lfence_before_ret_kind
++  {
++    lfence_before_ret_none = 0,
++    lfence_before_ret_not,
++    lfence_before_ret_or
++  }
++lfence_before_ret;
++
++/* Types of previous instruction is .byte or prefix.  */
++static struct
++  {
++    segT seg;
++    const char *file;
++    const char *name;
++    unsigned int line;
++    enum last_insn_kind
++      {
++	last_insn_other = 0,
++	last_insn_directive,
++	last_insn_prefix
++      } kind;
++  } last_insn;
++
+ /* Interface to relax_segment.
+    There are 3 major relax states for 386 jump insns because the
+    different types of jumps add different sizes to frags when we're
+@@ -3164,6 +3201,21 @@ build_vex_prefix (const insn_template *t)
+     }
+ }
+ 
++static INLINE bfd_boolean
++is_evex_encoding (const insn_template *t)
++{
++  return t->opcode_modifier.evex || t->opcode_modifier.disp8memshift
++   || t->opcode_modifier.broadcast || t->opcode_modifier.masking
++   || t->opcode_modifier.sae;
++}
++
++static INLINE bfd_boolean
++is_any_vex_encoding (const insn_template *t)
++{
++  return t->opcode_modifier.vex || t->opcode_modifier.vexopcode
++   || is_evex_encoding (t);
++}
++
+ /* Build the EVEX prefix.  */
+ 
+ static void
+@@ -3416,6 +3468,269 @@ check_hle (void)
+     }
+ }
+ 
++/* Return non-zero for load instruction.  */
++
++static int
++load_insn_p (void)
++{
++  unsigned int dest;
++  int any_vex_p = is_any_vex_encoding (&i.tm);
++  unsigned int base_opcode = i.tm.base_opcode | 1;
++
++  if (!any_vex_p)
++    {
++      /* lea  */
++      if (i.tm.base_opcode == 0x8d)
++	return 0;
++
++      /* pop  */
++      if ((i.tm.base_opcode & ~7) == 0x58
++	  || (i.tm.base_opcode == 0x8f && i.tm.extension_opcode == 0))
++	return 1;
++
++      /* movs, cmps, lods, scas.  */
++      if ((i.tm.base_opcode | 0xb) == 0xaf)
++	return 1;
++
++      /* outs */
++      if (base_opcode == 0x6f)
++	return 1;
++    }
++
++  /* No memory operand.  */
++  if (!i.mem_operands)
++    return 0;
++
++  if (any_vex_p)
++    {
++      /* vldmxcsr.  */
++      if (i.tm.base_opcode == 0xae
++	  && i.tm.opcode_modifier.vex
++	  && i.tm.opcode_modifier.vexopcode == VEX0F
++	  && i.tm.extension_opcode == 2)
++	return 1;
++    }
++  else
++    {
++      /* test, not, neg, mul, imul, div, idiv.  */
++      if ((i.tm.base_opcode == 0xf6 || i.tm.base_opcode == 0xf7)
++	  && i.tm.extension_opcode != 1)
++	return 1;
++
++      /* inc, dec.  */
++      if (base_opcode == 0xff && i.tm.extension_opcode <= 1)
++	return 1;
++
++      /* add, or, adc, sbb, and, sub, xor, cmp.  */
++      if (i.tm.base_opcode >= 0x80 && i.tm.base_opcode <= 0x83)
++	return 1;
++
++      /* bt, bts, btr, btc.  */
++      if (i.tm.base_opcode == 0xfba
++	  && (i.tm.extension_opcode >= 4 && i.tm.extension_opcode <= 7))
++	return 1;
++
++      /* rol, ror, rcl, rcr, shl/sal, shr, sar. */
++      if ((base_opcode == 0xc1
++	   || (i.tm.base_opcode >= 0xd0 && i.tm.base_opcode <= 0xd3))
++	  && i.tm.extension_opcode != 6)
++	return 1;
++
++      /* cmpxchg8b, cmpxchg16b, xrstors.  */
++      if (i.tm.base_opcode == 0xfc7
++	  && (i.tm.extension_opcode == 1 || i.tm.extension_opcode == 3))
++	return 1;
++
++      /* fxrstor, ldmxcsr, xrstor.  */
++      if (i.tm.base_opcode == 0xfae
++	  && (i.tm.extension_opcode == 1
++	      || i.tm.extension_opcode == 2
++	      || i.tm.extension_opcode == 5))
++	return 1;
++
++      /* lgdt, lidt, lmsw.  */
++      if (i.tm.base_opcode == 0xf01
++	  && (i.tm.extension_opcode == 2
++	      || i.tm.extension_opcode == 3
++	      || i.tm.extension_opcode == 6))
++	return 1;
++
++      /* vmptrld */
++      if (i.tm.base_opcode == 0xfc7
++	  && i.tm.extension_opcode == 6)
++	return 1;
++
++      /* Check for x87 instructions.  */
++      if (i.tm.base_opcode >= 0xd8 && i.tm.base_opcode <= 0xdf)
++	{
++	  /* Skip fst, fstp, fstenv, fstcw.  */
++	  if (i.tm.base_opcode == 0xd9
++	      && (i.tm.extension_opcode == 2
++		  || i.tm.extension_opcode == 3
++		  || i.tm.extension_opcode == 6
++		  || i.tm.extension_opcode == 7))
++	    return 0;
++
++	  /* Skip fisttp, fist, fistp, fstp.  */
++	  if (i.tm.base_opcode == 0xdb
++	      && (i.tm.extension_opcode == 1
++		  || i.tm.extension_opcode == 2
++		  || i.tm.extension_opcode == 3
++		  || i.tm.extension_opcode == 7))
++	    return 0;
++
++	  /* Skip fisttp, fst, fstp, fsave, fstsw.  */
++	  if (i.tm.base_opcode == 0xdd
++	      && (i.tm.extension_opcode == 1
++		  || i.tm.extension_opcode == 2
++		  || i.tm.extension_opcode == 3
++		  || i.tm.extension_opcode == 6
++		  || i.tm.extension_opcode == 7))
++	    return 0;
++
++	  /* Skip fisttp, fist, fistp, fbstp, fistp.  */
++	  if (i.tm.base_opcode == 0xdf
++	      && (i.tm.extension_opcode == 1
++		  || i.tm.extension_opcode == 2
++		  || i.tm.extension_opcode == 3
++		  || i.tm.extension_opcode == 6
++		  || i.tm.extension_opcode == 7))
++	    return 0;
++
++	  return 1;
++	}
++    }
++
++  dest = i.operands - 1;
++
++  /* Check fake imm8 operand and 3 source operands.  */
++  if ((i.tm.opcode_modifier.immext
++       || i.tm.opcode_modifier.vexsources == VEX3SOURCES)
++      && i.types[dest].bitfield.imm8)
++    dest--;
++
++  /* add, or, adc, sbb, and, sub, xor, cmp, test, xchg, xadd  */
++  if (!any_vex_p
++      && (base_opcode == 0x1
++	  || base_opcode == 0x9
++	  || base_opcode == 0x11
++	  || base_opcode == 0x19
++	  || base_opcode == 0x21
++	  || base_opcode == 0x29
++	  || base_opcode == 0x31
++	  || base_opcode == 0x39
++	  || (i.tm.base_opcode >= 0x84 && i.tm.base_opcode <= 0x87)
++	  || base_opcode == 0xfc1))
++    return 1;
++
++  /* Check for load instruction.  */
++  return 1;
++  /*
++  return (i.types[dest].bitfield.class != ClassNone
++	  || i.types[dest].bitfield.instance == Accum);
++  */
++}
++
++/* Output lfence, 0xfaee8, after instruction.  */
++
++static void
++insert_lfence_after (void)
++{
++  if (lfence_after_load && load_insn_p ())
++    {
++      char *p = frag_more (3);
++      *p++ = 0xf;
++      *p++ = 0xae;
++      *p = 0xe8;
++    }
++}
++
++/* Output lfence, 0xfaee8, before instruction.  */
++
++static void
++insert_lfence_before (void)
++{
++  char *p;
++
++  if (is_any_vex_encoding (&i.tm))
++    return;
++
++  if (i.tm.base_opcode == 0xff &&
++      (i.tm.extension_opcode == 2 || i.tm.extension_opcode == 4)) {
++    /* Insert lfence before indirect branch if needed.  */
++
++    if (lfence_before_indirect_branch == lfence_branch_none) return;
++
++    if (i.operands != 1) abort();
++
++    if (i.reg_operands == 1) {
++      /* Indirect branch via register.  Don't insert lfence with
++      -mlfence-after-load=yes.  */
++      if (lfence_after_load ||
++          lfence_before_indirect_branch == lfence_branch_memory)
++        return;
++    } else if (i.mem_operands == 1 &&
++               lfence_before_indirect_branch != lfence_branch_register) {
++      as_warn(_("indirect `%s` with memory operand should be avoided"),
++              i.tm.name);
++      return;
++    } else
++      return;
++
++    if (last_insn.kind != last_insn_other && last_insn.seg == now_seg) {
++      as_warn_where(last_insn.file, last_insn.line,
++                    _("`%s` skips -mlfence-before-indirect-branch on `%s`"),
++                    last_insn.name, i.tm.name);
++      return;
++    }
++
++    p = frag_more(3);
++    *p++ = 0xf;
++    *p++ = 0xae;
++    *p = 0xe8;
++    return;
++  }
++
++  /* Output or/not and lfence before ret.  */
++  if (lfence_before_ret != lfence_before_ret_none
++      && (i.tm.base_opcode == 0xc2
++	  || i.tm.base_opcode == 0xc3
++	  || i.tm.base_opcode == 0xca
++	  || i.tm.base_opcode == 0xcb))
++    {
++    if (last_insn.kind != last_insn_other && last_insn.seg == now_seg) {
++      as_warn_where(last_insn.file, last_insn.line,
++                    _("`%s` skips -mlfence-before-ret on `%s`"), last_insn.name,
++                    i.tm.name);
++      return;
++    }
++    if (lfence_before_ret == lfence_before_ret_or) {
++      /* orl: 0x830c2400.  */
++      p = frag_more((flag_code == CODE_64BIT ? 1 : 0) + 4 + 3);
++      if (flag_code == CODE_64BIT) *p++ = 0x48;
++      *p++ = 0x83;
++      *p++ = 0xc;
++      *p++ = 0x24;
++      *p++ = 0x0;
++    } else {
++      p = frag_more((flag_code == CODE_64BIT ? 2 : 0) + 6 + 3);
++      /* notl: 0xf71424.  */
++      if (flag_code == CODE_64BIT) *p++ = 0x48;
++      *p++ = 0xf7;
++      *p++ = 0x14;
++      *p++ = 0x24;
++      /* notl: 0xf71424.  */
++      if (flag_code == CODE_64BIT) *p++ = 0x48;
++      *p++ = 0xf7;
++      *p++ = 0x14;
++      *p++ = 0x24;
++    }
++      *p++ = 0xf;
++      *p++ = 0xae;
++      *p = 0xe8;
++    }
++}
++
+ /* This is the guts of the machine-dependent assembler.  LINE points to a
+    machine dependent instruction.  This function is supposed to emit
+    the frags/bytes it assembles to.  */
+@@ -3682,8 +3997,23 @@ md_assemble (char *line)
+   if (i.rex != 0)
+     add_prefix (REX_OPCODE | i.rex);
+ 
++  insert_lfence_before ();
++
+   /* We are ready to output the insn.  */
+   output_insn ();
++
++  insert_lfence_after ();
++
++  last_insn.seg = now_seg;
++
++  if (i.tm.opcode_modifier.isprefix)
++    {
++      last_insn.kind = last_insn_prefix;
++      last_insn.name = i.tm.name;
++      as_where (&last_insn.file, &last_insn.line);
++    }
++  else
++    last_insn.kind = last_insn_other;
+ }
+ 
+ static char *
+@@ -9483,6 +9813,9 @@ const char *md_shortopts = "qn";
+ #define OPTION_MADD_BND_PREFIX (OPTION_MD_BASE + 15)
+ #define OPTION_MEVEXLIG (OPTION_MD_BASE + 16)
+ #define OPTION_MEVEXWIG (OPTION_MD_BASE + 17)
++#define OPTION_MLFENCE_AFTER_LOAD (OPTION_MD_BASE + 31)
++#define OPTION_MLFENCE_BEFORE_INDIRECT_BRANCH (OPTION_MD_BASE + 32)
++#define OPTION_MLFENCE_BEFORE_RET (OPTION_MD_BASE + 33)
+ 
+ struct option md_longopts[] =
+ {
+@@ -9509,6 +9842,10 @@ struct option md_longopts[] =
+   {"madd-bnd-prefix", no_argument, NULL, OPTION_MADD_BND_PREFIX},
+   {"mevexlig", required_argument, NULL, OPTION_MEVEXLIG},
+   {"mevexwig", required_argument, NULL, OPTION_MEVEXWIG},
++  {"mlfence-after-load", required_argument, NULL, OPTION_MLFENCE_AFTER_LOAD},
++  {"mlfence-before-indirect-branch", required_argument, NULL,
++   OPTION_MLFENCE_BEFORE_INDIRECT_BRANCH},
++  {"mlfence-before-ret", required_argument, NULL, OPTION_MLFENCE_BEFORE_RET},
+   {NULL, no_argument, NULL, 0}
+ };
+ size_t md_longopts_size = sizeof (md_longopts);
+@@ -9790,6 +10127,41 @@ md_parse_option (int c, char *arg)
+ 	as_fatal (_("invalid -mevexwig= option: `%s'"), arg);
+       break;
+ 
++    case OPTION_MLFENCE_AFTER_LOAD:
++      if (strcasecmp (arg, "yes") == 0)
++	lfence_after_load = 1;
++      else if (strcasecmp (arg, "no") == 0)
++	lfence_after_load = 0;
++      else
++        as_fatal (_("invalid -mlfence-after-load= option: `%s'"), arg);
++      break;
++
++    case OPTION_MLFENCE_BEFORE_INDIRECT_BRANCH:
++      if (strcasecmp (arg, "all") == 0)
++	lfence_before_indirect_branch = lfence_branch_all;
++      else if (strcasecmp (arg, "memory") == 0)
++	lfence_before_indirect_branch = lfence_branch_memory;
++      else if (strcasecmp (arg, "register") == 0)
++	lfence_before_indirect_branch = lfence_branch_register;
++      else if (strcasecmp (arg, "none") == 0)
++	lfence_before_indirect_branch = lfence_branch_none;
++      else
++        as_fatal (_("invalid -mlfence-before-indirect-branch= option: `%s'"),
++		  arg);
++      break;
++
++    case OPTION_MLFENCE_BEFORE_RET:
++      if (strcasecmp (arg, "or") == 0)
++	lfence_before_ret = lfence_before_ret_or;
++      else if (strcasecmp (arg, "not") == 0)
++	lfence_before_ret = lfence_before_ret_not;
++      else if (strcasecmp (arg, "none") == 0)
++	lfence_before_ret = lfence_before_ret_none;
++      else
++        as_fatal (_("invalid -mlfence-before-ret= option: `%s'"),
++		  arg);
++      break;
++
+     default:
+       return 0;
+     }
+@@ -9942,6 +10314,15 @@ md_show_usage (FILE *stream)
+   -mold-gcc               support old (<= 2.8.1) versions of gcc\n"));
+   fprintf (stream, _("\
+   -madd-bnd-prefix        add BND prefix for all valid branches\n"));
++  fprintf (stream, _("\
++  -mlfence-after-load=[no|yes] (default: no)\n\
++                          generate lfence after load\n"));
++  fprintf (stream, _("\
++  -mlfence-before-indirect-branch=[none|all|register|memory] (default: none)\n\
++                          generate lfence before indirect near branch\n"));
++  fprintf (stream, _("\
++  -mlfence-before-ret=[none|or|not] (default: none)\n\
++                          generate lfence before ret\n"));
+ }
+ 
+ #if ((defined (OBJ_MAYBE_COFF) && defined (OBJ_MAYBE_AOUT)) \
