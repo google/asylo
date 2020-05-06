@@ -117,12 +117,12 @@ def asylo_testonly_deps():
     if not native.existing_rule("com_google_googletest"):
         http_archive(
             name = "com_google_googletest",
-            # Commit from 2020 April 16
+            # Commit from 2020 May 01
             urls = [
-                "https://github.com/google/googletest/archive/dcc92d0ab6c4ce022162a23566d44f673251eee4.tar.gz",
+                "https://github.com/google/googletest/archive/0eea2e9fc63461761dea5f2f517bd6af2ca024fa.tar.gz",
             ],
-            sha256 = "39275312b3f169fd0fbdccb7c74e3ba0b2ca78c54ca69909d774da9bcb96e2ae",
-            strip_prefix = "googletest-dcc92d0ab6c4ce022162a23566d44f673251eee4",
+            sha256 = "552f1b59b8332195ae257b01182101dc93a3a16c3f808e763af9a1c3e4b1756a",
+            strip_prefix = "googletest-0eea2e9fc63461761dea5f2f517bd6af2ca024fa",
         )
 
     # Redis example dependency, only needed if running Redis test with Asylo.
