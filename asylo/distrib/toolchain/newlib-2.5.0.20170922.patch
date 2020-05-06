@@ -11332,7 +11332,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/poll.h .
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 +++ ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
-@@ -0,0 +1,128 @@
+@@ -0,0 +1,130 @@
 +#ifndef _SYS__PTHREADTYPES_H
 +#define _SYS__PTHREADTYPES_H
 +
@@ -11371,6 +11371,8 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthread
 +} pthread_mutex_t;
 +
 +#define _ASYLO_PTHREAD_MUTEX_TRANSITIONAL_FLAG 1
++#define _ASYLO_PTHREAD_COND_TRANSITIONAL_FLAG 1
++#define _ASYLO_PTHREAD_RWLOCK_TRANSITIONAL_FLAG 1
 +#define PTHREAD_T_NULL ((pthread_t)(NULL))
 +#define PTHREAD_LIST_INITIALIZER \
 +  { NULL }
