@@ -153,9 +153,11 @@ int pthread_rwlock_tryrdlock_internal(pthread_rwlock_t *rwlock) {
   }
 
   rwlock->_reader_count++;
+#ifdef _ASYLO_PTHREAD_RWLOCK_TRANSITIONAL_FLAG
   if (rwlock->_untrusted_wait_queue) {
     enc_untrusted_enable_waiting(rwlock->_untrusted_wait_queue);
   }
+#endif
   return 0;
 }
 
@@ -181,9 +183,11 @@ int pthread_rwlock_trywrlock_internal(pthread_rwlock_t *rwlock) {
   }
 
   rwlock->_write_owner = self;
+#ifdef _ASYLO_PTHREAD_RWLOCK_TRANSITIONAL_FLAG
   if (rwlock->_untrusted_wait_queue) {
     enc_untrusted_enable_waiting(rwlock->_untrusted_wait_queue);
   }
+#endif
   return 0;
 }
 
@@ -222,10 +226,12 @@ int pthread_rwlock_lock(pthread_rwlock_t *rwlock) {
     return ConvertToErrno(EFAULT);
   }
 
+#ifdef _ASYLO_PTHREAD_RWLOCK_TRANSITIONAL_FLAG
   if (!rwlock->_untrusted_wait_queue) {
     LockableGuard lock_guard(rwlock);
     initialize_wait_queue(&rwlock->_untrusted_wait_queue);
   }
+#endif
 
   const pthread_t self = pthread_self();
   asylo::pthread_impl::QueueOperations queue(rwlock);
@@ -255,9 +261,13 @@ int pthread_rwlock_lock(pthread_rwlock_t *rwlock) {
       LockableGuard lock_guard(rwlock);
       queue.Enqueue(self);
     }
+#ifdef _ASYLO_PTHREAD_RWLOCK_TRANSITIONAL_FLAG
     if (rwlock->_untrusted_wait_queue) {
       enc_untrusted_thread_wait(rwlock->_untrusted_wait_queue);
     }
+#else
+    enc_pause();
+#endif
     {
       LockableGuard lock_guard(rwlock);
       queue.Remove(self);
@@ -694,6 +704,7 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
   // to 32 bits to fit in the wait queue state.
   const pthread_t self = pthread_self();
 
+#ifdef _ASYLO_PTHREAD_COND_TRANSITIONAL_FLAG
   // Use a global atomic counter to enumerate each thread. This generates a
   // thread-specific 32 bit unique identifier for each thread, which is not the
   // address of anything, and thus safer to expose outside the enclave (relative
@@ -707,6 +718,7 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
     LockableGuard lock_guard(cond);
     initialize_wait_queue(&cond->_untrusted_wait_queue);
   }
+#endif
 
   asylo::pthread_impl::QueueOperations list(cond);
   // Store a thread-specific unique ID to the wait queue. This allows wait to be
@@ -714,9 +726,11 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
   // with a different thread unique ID, disabling this thread from sleeping.
   {
     LockableGuard lock_guard(cond);
+#ifdef _ASYLO_PTHREAD_COND_TRANSITIONAL_FLAG
     if (cond->_untrusted_wait_queue) {
       enc_untrusted_wait_queue_set_value(cond->_untrusted_wait_queue, self_32);
     }
+#endif
     list.Enqueue(self);
   }
 
@@ -725,6 +739,7 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
     return ret;
   }
 
+#ifdef _ASYLO_PTHREAD_COND_TRANSITIONAL_FLAG
   // A wait for 0 microseconds will actually wait indefinitely.
   uint64_t time_left_micros = 0;
   if (deadline) {
@@ -779,6 +794,47 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
   }
 
   return pthread_mutex_lock(mutex);
+#else
+  while (true) {
+    enc_untrusted_sched_yield();
+
+    // If a deadline has been specified, check to see if it has passed.
+    if (deadline) {
+      timespec curr_time;
+      ret = clock_gettime(CLOCK_REALTIME, &curr_time);
+      if (ret != 0) {
+        break;
+      }
+
+      // TimeSpecSubtract returns true if deadline < curr_time.
+      timespec time_left;
+      if (asylo::TimeSpecSubtract(*deadline, curr_time, &time_left)) {
+        ret = ETIMEDOUT;
+        break;
+      }
+    }
+
+    LockableGuard lock_guard(cond);
+    if (!list.Contains(self)) {
+      break;
+    }
+  }
+
+  {
+    LockableGuard lock_guard(cond);
+    list.Remove(self);
+  }
+
+  // Only set the retval to be the result of re-locking the mutex if there isn't
+  // already another error we're trying to return. Otherwise, we give preference
+  // to returning the pre-existing error and drop the error caused by re-locking
+  // the mutex.
+  int relock_ret = pthread_mutex_lock(mutex);
+  if (ret != 0) {
+    return ret;
+  }
+  return relock_ret;
+#endif
 }
 
 // Blocks until the given |cond| is signaled or broadcasted. |mutex| must  be
@@ -797,6 +853,7 @@ int pthread_cond_notify_internal(pthread_cond_t *cond, int num_threads) {
     return EFAULT;
   }
 
+#ifdef _ASYLO_PTHREAD_COND_TRANSITIONAL_FLAG
   // If there is no queue, there is no way for other threads to be asleep on
   // that queue, and thus there is nothing to do.
   if (cond->_untrusted_wait_queue != nullptr) {
@@ -808,6 +865,16 @@ int pthread_cond_notify_internal(pthread_cond_t *cond, int num_threads) {
       enc_untrusted_notify(cond->_untrusted_wait_queue, num_threads);
     }
   }
+#else
+  LockableGuard lock_guard(cond);
+  asylo::pthread_impl::QueueOperations list(cond);
+  if (num_threads == 1 && !list.Empty()) {
+    list.Dequeue();
+  } else {
+    // only called with 1 and INT_MAX
+    list.Clear();
+  }
+#endif
   return 0;
 }
 
@@ -987,22 +1054,26 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
   const pthread_t self = pthread_self();
   if (rwlock->_write_owner == self) {
     rwlock->_write_owner = PTHREAD_T_NULL;
+#ifdef _ASYLO_PTHREAD_RWLOCK_TRANSITIONAL_FLAG
     if (rwlock->_untrusted_wait_queue) {
       enc_untrusted_disable_waiting(rwlock->_untrusted_wait_queue);
       if (!list.Empty()) {
         enc_untrusted_notify(rwlock->_untrusted_wait_queue);
       }
     }
+#endif
     return 0;
   }
 
   rwlock->_reader_count--;
+#ifdef _ASYLO_PTHREAD_RWLOCK_TRANSITIONAL_FLAG
   if (rwlock->_reader_count == 0 && rwlock->_untrusted_wait_queue) {
     enc_untrusted_disable_waiting(rwlock->_untrusted_wait_queue);
     if (!list.Empty()) {
       enc_untrusted_notify(rwlock->_untrusted_wait_queue);
     }
   }
+#endif
   return 0;
 }
 
