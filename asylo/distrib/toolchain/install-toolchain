@@ -321,6 +321,7 @@ if [[ -z "${binutils}" ]]; then
     verify_sha "${binutils_default}" "${binutils_default_sha}"
     set_directory binutils "${binutils_default}"
     patch -u "${srcs_root}/${binutils}/gas/config/tc-i386.c" -i "${toolchain_root}/binutils-lvi.patch"
+    patch -u "${srcs_root}/${binutils}/binutils/objcopy.c" -i "${toolchain_root}/objcopy-alignment.patch"
   else
     echo "Missing ${binutils_default%.tar.gz} dependency."
     exit 1

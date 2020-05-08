@@ -1,0 +1,155 @@
+This patch incorporates the changes made in the following commits to objcopy:
+- https://github.com/bminor/binutils-gdb/commit/fa463e9fc644e7a3bad39aa73bf6be72ea865805
+- https://github.com/bminor/binutils-gdb/commit/de4859eacb74a440d9fd61e4a0f051e3737a05dd
+
+--- binutils/objcopy.c
++++ binutils/objcopy.c
+@@ -129,10 +129,12 @@ struct section_list
+ #define SECTION_CONTEXT_SET_LMA   (1 << 4) /* Set the sections' LMA address.  */
+ #define SECTION_CONTEXT_ALTER_LMA (1 << 5) /* Increment or decrement the section's LMA address.  */
+ #define SECTION_CONTEXT_SET_FLAGS (1 << 6) /* Set the section's flags.  */
++#define SECTION_CONTEXT_SET_ALIGNMENT (1 << 8) /* Set alignment for section.  */
+ 
+   bfd_vma		vma_val;   /* Amount to change by or set to.  */
+   bfd_vma		lma_val;   /* Amount to change by or set to.  */
+   flagword		flags;	   /* What to set the section flags to.	 */
++  unsigned int	        alignment; /* Alignment of output section.  */
+ };
+ 
+ static struct section_list *change_sections;
+@@ -274,6 +276,7 @@ enum command_line_switch
+     OPTION_PAD_TO,
+     OPTION_REMOVE_LEADING_CHAR,
+     OPTION_SET_SECTION_FLAGS,
++    OPTION_SET_SECTION_ALIGNMENT,
+     OPTION_SET_START,
+     OPTION_STRIP_UNNEEDED,
+     OPTION_WEAKEN,
+@@ -310,7 +313,7 @@ enum command_line_switch
+     OPTION_FILE_ALIGNMENT,
+     OPTION_HEAP,
+     OPTION_IMAGE_BASE,
+-    OPTION_SECTION_ALIGNMENT,
++    OPTION_PE_SECTION_ALIGNMENT,
+     OPTION_STACK,
+     OPTION_INTERLEAVE_WIDTH,
+     OPTION_SUBSYSTEM,
+@@ -420,6 +423,7 @@ static struct option copy_options[] =
+   {"rename-section", required_argument, 0, OPTION_RENAME_SECTION},
+   {"reverse-bytes", required_argument, 0, OPTION_REVERSE_BYTES},
+   {"set-section-flags", required_argument, 0, OPTION_SET_SECTION_FLAGS},
++  {"set-section-alignment", required_argument, 0, OPTION_SET_SECTION_ALIGNMENT},
+   {"set-start", required_argument, 0, OPTION_SET_START},
+   {"srec-len", required_argument, 0, OPTION_SREC_LEN},
+   {"srec-forceS3", no_argument, 0, OPTION_SREC_FORCES3},
+@@ -442,7 +446,7 @@ static struct option copy_options[] =
+   {"file-alignment", required_argument, 0, OPTION_FILE_ALIGNMENT},
+   {"heap", required_argument, 0, OPTION_HEAP},
+   {"image-base", required_argument, 0 , OPTION_IMAGE_BASE},
+-  {"section-alignment", required_argument, 0, OPTION_SECTION_ALIGNMENT},
++  {"section-alignment", required_argument, 0, OPTION_PE_SECTION_ALIGNMENT},
+   {"stack", required_argument, 0, OPTION_STACK},
+   {"subsystem", required_argument, 0, OPTION_SUBSYSTEM},
+   {0, no_argument, 0, 0}
+@@ -547,6 +551,8 @@ copy_usage (FILE *stream, int exit_status)
+                                    Warn if a named section does not exist\n\
+      --set-section-flags <name>=<flags>\n\
+                                    Set section <name>'s properties to <flags>\n\
++     --set-section-alignment <name>=<align>\n\
++                                   Set section <name>'s alignment to <align> bytes\n\
+      --add-section <name>=<file>   Add section <name> found in <file> to output\n\
+      --rename-section <old>=<new>[,<flags>] Rename section <old> to <new>\n\
+      --long-section-names {enable|disable|keep}\n\
+@@ -796,6 +802,7 @@ find_section_list (const char *name, bfd_boolean add, unsigned int context)
+   p->vma_val = 0;
+   p->lma_val = 0;
+   p->flags = 0;
++  p->alignment = 0;
+   p->next = change_sections;
+   change_sections = p;
+ 
+@@ -2592,6 +2599,7 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
+   const char * name;
+   char *prefix = NULL;
+   bfd_boolean make_nobits;
++  unsigned int alignment;
+ 
+   if (is_strip_section (ibfd, isection))
+     return;
+@@ -2696,11 +2704,18 @@ setup_section (bfd *ibfd, sec_ptr isection, void *obfdarg)
+ 
+   osection->lma = lma;
+ 
++  p = find_section_list (bfd_section_name (ibfd, isection), FALSE,
++			 SECTION_CONTEXT_SET_ALIGNMENT);
++  if (p != NULL)
++    alignment = p->alignment;
++  else
++    alignment = bfd_section_alignment (ibfd, isection);
++
+   /* FIXME: This is probably not enough.  If we change the LMA we
+      may have to recompute the header for the file as well.  */
+   if (!bfd_set_section_alignment (obfd,
+ 				  osection,
+-				  bfd_section_alignment (ibfd, isection)))
++				  alignment))
+     {
+       err = _("failed to set alignment");
+       goto loser;
+@@ -3854,6 +3869,47 @@ copy_main (int argc, char *argv[])
+ 	  }
+ 	  break;
+ 
++  case OPTION_SET_SECTION_ALIGNMENT:
++	  {
++	    struct section_list *p;
++	    const char *s;
++	    int len;
++	    char *name;
++	    int palign, align;
++
++	    s = strchr (optarg, '=');
++	    if (s == NULL)
++	      fatal (_("bad format for --set-section-alignment: argument needed"));
++
++	    align = atoi (s + 1);
++	    if (align <= 0)
++        fatal (_("bad format for --set-section-alignment: numeric argument needed"));
++
++      /* Convert integer alignment into a power-of-two alignment.  */
++	    palign = 0;
++	    while ((align & 1) == 0)
++	      {
++	    	align >>= 1;
++	    	++palign;
++	      }
++
++	    if (align != 1)
++	      /* Number has more than on 1, i.e. wasn't a power of 2.  */
++	      fatal (_("bad format for --set-section-alignment: alignment is not a power of two"));
++
++	    /* Add the alignment setting to the section list.  */
++	    len = s - optarg;
++	    name = (char *) xmalloc (len + 1);
++	    strncpy (name, optarg, len);
++	    name[len] = '\0';
++
++	    p = find_section_list (name, TRUE, SECTION_CONTEXT_SET_ALIGNMENT);
++
++      if (p)
++        p->alignment = palign;
++	  }
++	  break;
++
+ 	case OPTION_RENAME_SECTION:
+ 	  {
+ 	    flagword flags;
+@@ -4040,7 +4096,7 @@ copy_main (int argc, char *argv[])
+ 	  pe_image_base = parse_vma (optarg, "--image-base");
+ 	  break;
+ 
+-	case OPTION_SECTION_ALIGNMENT:
++	case OPTION_PE_SECTION_ALIGNMENT:
+ 	  pe_section_alignment = parse_vma (optarg,
+ 					    "--section-alignment");
+ 	  break;
