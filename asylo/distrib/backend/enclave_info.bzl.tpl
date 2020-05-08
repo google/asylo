@@ -95,6 +95,45 @@ def backend_label_struct(
         order = order if order != None else base.order,
     )
 
+def _lvi_all_loads_to_features(transitive_features = [], settings_features = []):
+    """Adds `lvi_all_loads_mitigation` to a feature list of no other mitigation is specified.
+
+    If either transitive_features or settings_features contains an LVI mitigation, the
+    one specified under settings_features (ie. the top-level feature) takes precedence.
+    """
+    default_lvi = ["lvi_all_loads_mitigation"]
+    transitive_lvi = [f for f in transitive_features if f.startswith("lvi_")]
+    settings_lvi = [f for f in settings_features if f.startswith("lvi_")]
+
+    all_features = transitive_features + settings_features
+    non_lvi_features = [f for f in all_features if not f.startswith("lvi_")]
+
+    return non_lvi_features + (settings_lvi or transitive_lvi or default_lvi)
+
+def _identity_features(transitive_features = [], settings_features = []):
+    """Does nothing to a given list of transitive and settings features."""
+    return transitive_features + settings_features
+
+def transitive_features_transform(backend):
+    """Given a backend, returns a function manipulating transitive features.
+
+    A limitation of not being able to access the backend provider in the
+    transition implementation in `transitions.bzl` means that user-defined
+    backends cannot implement a custom transtiive feature transformation.
+
+    Args:
+        backend: The name of a backend.
+
+    Returns:
+        A function that takes a list of transitive features, a list of settings
+        features, and returns a possibly modified concatenation of the two.
+    """
+    canonical_dict = _canonical_backend_dict(ALL_BACKEND_LABELS)
+    if backend in canonical_dict:
+        if hasattr(canonical_dict[backend], "transitive_features_transform"):
+            return canonical_dict[backend].transitive_features_transform
+    return _identity_features
+
 # When a backend is unspecified, target all of the following backends.
 # The value type for this dictionary is named a "backend label struct"
 _sgx_hw_backend = "@linux_sgx//:asylo_sgx_hw"
@@ -123,6 +162,7 @@ ALL_BACKEND_LABELS = {
         debug_private_key = "@linux_sgx//:enclave_test_private.pem",
         debug_default_config = "@linux_sgx//:enclave_debug_config",
         order = 1,
+        transitive_features_transform = _lvi_all_loads_to_features,
     ),
     _sgx_hw_backend: struct(
         config_settings = ["@linux_sgx//:sgx_hw"],
@@ -135,6 +175,7 @@ ALL_BACKEND_LABELS = {
         debug_private_key = "@linux_sgx//:enclave_test_private.pem",
         debug_default_config = "@linux_sgx//:enclave_debug_config",
         order = 2,
+        transitive_features_transform = _lvi_all_loads_to_features,
     ),
 }
 
@@ -223,6 +264,7 @@ def _cc_binary_attrs(
             doc = "Version scripts to pass to the linker.",
         ),
         "_cc_toolchain": attr.label(default = toolchain),
+        "transitive_features": attr.string_list(doc = "Bazel features to propagate to all dependencies"),
     }
 
 def merge_dicts(base, *extensions):
@@ -558,4 +600,5 @@ backend_tools = struct(
     merge_dicts = merge_dicts,
     malloc_label = DEFAULT_MALLOC,
     asylo_toolchain_label = ASYLO_TOOLCHAIN,
+    transitive_features_transform = transitive_features_transform,
 )

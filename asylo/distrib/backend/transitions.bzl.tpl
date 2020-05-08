@@ -23,23 +23,33 @@ empty_transition = transition(
 
 def _asylo_toolchain_and_backend_transition_impl(settings, attr):
     """Returns the configuration to use the Asylo toolchain."""
+    backend = attr.backend or settings[BACKEND_LABEL]
+
+    # Transitive feature transform functions are keyed by str, not Label object.
+    transitive_features_transform = backend_tools.transitive_features_transform(str(backend))
+
     result = {
         "//command_line_option:crosstool_top": "@com_google_asylo_toolchain//toolchain:crosstool",
         "//command_line_option:custom_malloc": "@com_google_asylo_toolchain//toolchain:malloc",
         "//command_line_option:dynamic_mode": "off",
+        "//command_line_option:features": transitive_features_transform(
+            attr.transitive_features,
+            settings["//command_line_option:features"],
+        ),
         "//command_line_option:host_crosstool_top": "@bazel_tools//tools/cpp:toolchain",
         GRPC_ARES_LABEL: False,
-        BACKEND_LABEL: attr.backend or settings[BACKEND_LABEL],
+        BACKEND_LABEL: backend,
     }
     return result
 
 asylo_toolchain_transition = transition(
     implementation = _asylo_toolchain_and_backend_transition_impl,
-    inputs = [BACKEND_LABEL],
+    inputs = [BACKEND_LABEL, "//command_line_option:features"],
     outputs = [
         "//command_line_option:crosstool_top",
         "//command_line_option:custom_malloc",
         "//command_line_option:dynamic_mode",
+        "//command_line_option:features",
         "//command_line_option:host_crosstool_top",
         GRPC_ARES_LABEL,
         BACKEND_LABEL,

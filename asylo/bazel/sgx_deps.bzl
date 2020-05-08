@@ -37,7 +37,17 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # {% include home.html %}
 
 def sgx_deps():
-    """Macro to include Asylo's SGX backend dependencies in a WORKSPACE."""
+    """Macro to include Asylo's SGX backend dependencies in a WORKSPACE.
+
+    SGX backend dependencies have Intel's highest level of LVI mitigation
+    ("All-Loads-Mitigation") applied automatically [1]. This can be customized
+    on a per-target basis by specifying one of "lvi_all_loads_mitigation",
+    "lvi_control_flow_mitigation", or "lvi_no_auto_mitigation" in the list of
+    `transitive_features` on the corresponding unsigned enclave target, or with
+    a top-level `--features=lvi_*_mitigation` flag passed to Bazel.
+
+    [1]: https://software.intel.com/security-software-guidance/insights/deep-dive-load-value-injection
+    """
 
     # Intel's SGX SDK with patches to make it fit our toolchain.
     if not native.existing_rule("linux_sgx"):
