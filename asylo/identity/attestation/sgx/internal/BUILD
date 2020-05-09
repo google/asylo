@@ -120,7 +120,6 @@ proto_library(
 
 cc_proto_library(
     name = "attestation_key_cc_proto",
-    visibility = ["//asylo:implementation"],
     deps = [":attestation_key_proto"],
 )
 
