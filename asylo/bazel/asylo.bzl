@@ -787,13 +787,6 @@ def cc_test(
         targets. See enclave_info.bzl:all_backends documentation for details.
       **kwargs: cc_test arguments.
     """
-    native_cc_test(
-        name = name,
-        srcs = srcs,
-        deps = deps,
-        **kwargs
-    )
-
     if enclave_test_name:
         cc_enclave_test(
             name = enclave_test_name,
@@ -805,6 +798,16 @@ def cc_test(
             deps = deps,
             **kwargs
         )
+
+    # Don't pass transitive_features to the native cc_test.
+    kwargs.pop("transitive_features", None)
+
+    native_cc_test(
+        name = name,
+        srcs = srcs,
+        deps = deps,
+        **kwargs
+    )
 
 def cc_test_and_cc_enclave_test(
         name,
