@@ -16,6 +16,7 @@
  *
  */
 
+#include <string>
 #include <utility>
 
 #include "asylo/grpc/auth/core/enclave_credentials.h"
@@ -46,7 +47,7 @@ constexpr char kAddress[] = "[::1]";
 
 struct EnclaveFullStackFixtureData {
   // The address of the server.
-  char *local_address;
+  std::string local_address;
 
   // True if the |local_address| has been updated to contain the server's final
   // port.
@@ -77,15 +78,11 @@ grpc_end2end_test_fixture CreateFixtureSecureFullstack(
     grpc_channel_args *client_args, grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
 
-  EnclaveFullStackFixtureData *fixture_data =
-      static_cast<EnclaveFullStackFixtureData *>(
-          gpr_zalloc(sizeof(*fixture_data)));
+  EnclaveFullStackFixtureData *fixture_data = new EnclaveFullStackFixtureData;
 
   // A port of indicates that gRPC should auto-select a port for use. This
   // address is updated with the final port after server initialization.
-  grpc_core::UniquePtr<char> addr;
-  grpc_core::JoinHostPort(&addr, kAddress, 0);
-  fixture_data->local_address = addr.release();
+  fixture_data->local_address = absl::StrFormat("%s:%d", kAddress, 0);
   f.fixture_data = fixture_data;
 
   // Create a completion queue for the server.
@@ -125,9 +122,9 @@ void InitClientChannel(EnclaveCredentialsOptions options,
       static_cast<EnclaveFullStackFixtureData *>(f->fixture_data);
   GPR_ASSERT(fixture_data->port_set);
 
-  f->client =
-      grpc_secure_channel_create(creds.get(), fixture_data->local_address,
-                                 client_args, /*reserved=*/nullptr);
+  f->client = grpc_secure_channel_create(creds.get(),
+                                         fixture_data->local_address.c_str(),
+                                         client_args, /*reserved=*/nullptr);
   GPR_ASSERT(f->client != nullptr);
 }
 
@@ -208,12 +205,9 @@ void InitServer(EnclaveCredentialsOptions options, grpc_end2end_test_fixture *f,
   // Bind the server to the temporary address and update the address with the
   // auto-selected port chosen by the system.
   int port = grpc_server_add_secure_http2_port(
-      f->server, fixture_data->local_address, creds.get());
+      f->server, fixture_data->local_address.c_str(), creds.get());
   GPR_ASSERT(port != 0);
-  gpr_free(fixture_data->local_address);
-  grpc_core::UniquePtr<char> addr;
-  grpc_core::JoinHostPort(&addr, kAddress, port);
-  fixture_data->local_address = addr.release();
+  fixture_data->local_address = absl::StrFormat("%s:%d", kAddress, port);
   fixture_data->port_set = true;
   grpc_server_start(f->server);
 }
@@ -287,8 +281,7 @@ void InitServerEnclaveBidirectionalNullAndSgxLocalCredentials(
 void TearDownSecureFullstack(grpc_end2end_test_fixture *f) {
   EnclaveFullStackFixtureData *fixture_data =
       static_cast<EnclaveFullStackFixtureData *>(f->fixture_data);
-  gpr_free(fixture_data->local_address);
-  gpr_free(fixture_data);
+  delete fixture_data;
 }
 
 // All test configurations for the enclave gRPC stack.
