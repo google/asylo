@@ -164,7 +164,6 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = [
         "//asylo/identity/attestation/sgx:__pkg__",
-        "//asylo/identity/sgx:__pkg__",
         "//asylo/test/grpc:__pkg__",
     ],
     deps = [
