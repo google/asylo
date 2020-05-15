@@ -256,6 +256,7 @@ cc_library(
     ]] + ["release.h"],
     copts = [
         "-std=c99",
+        "-D_GNU_SOURCE",
     ] + select({
         "@com_google_asylo//asylo": [
 	    # "llroundl" is used in "src/hyperloglog.c", but the arguments are
@@ -268,7 +269,6 @@ cc_library(
 	    # Asylo toolchain.
 	    "-DSYNC_FILE_RANGE_WAIT_BEFORE=1",
 	    "-DSYNC_FILE_RANGE_WRITE=2",
-	    "-D_GNU_SOURCE",
 	],
     }) + ZCALLOC_COPT,
     linkopts = select({
