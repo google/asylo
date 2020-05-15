@@ -27,7 +27,7 @@
 #include "asylo/crypto/signing_key.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
-#include "asylo/identity/sgx/sgx_remote_assertion_generator_impl.h"
+#include "asylo/identity/attestation/sgx/internal/sgx_remote_assertion_generator_impl.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/mutex_guarded.h"
 #include "asylo/util/status.h"

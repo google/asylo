@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/pce_util.h"
+#include "asylo/identity/attestation/sgx/internal/pce_util.h"
 
 #include <openssl/bn.h>
 

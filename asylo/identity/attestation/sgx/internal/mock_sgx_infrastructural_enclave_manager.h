@@ -16,16 +16,16 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_MOCK_SGX_INFRASTRUCTURAL_ENCLAVE_MANAGER_H_
-#define ASYLO_IDENTITY_SGX_MOCK_SGX_INFRASTRUCTURAL_ENCLAVE_MANAGER_H_
+#ifndef ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_MOCK_SGX_INFRASTRUCTURAL_ENCLAVE_MANAGER_H_
+#define ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_MOCK_SGX_INFRASTRUCTURAL_ENCLAVE_MANAGER_H_
 
 #include <gmock/gmock.h>
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
+#include "asylo/identity/attestation/sgx/internal/sgx_infrastructural_enclave_manager.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
-#include "asylo/identity/sgx/sgx_infrastructural_enclave_manager.h"
 
 namespace asylo {
 
@@ -57,4 +57,4 @@ class MockSgxInfrastructuralEnclaveManager
 
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_MOCK_SGX_INFRASTRUCTURAL_ENCLAVE_MANAGER_H_
+#endif  // ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_MOCK_SGX_INFRASTRUCTURAL_ENCLAVE_MANAGER_H_

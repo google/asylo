@@ -16,15 +16,15 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_SGX_REMOTE_ASSERTION_GENERATOR_IMPL_H_
-#define ASYLO_IDENTITY_SGX_SGX_REMOTE_ASSERTION_GENERATOR_IMPL_H_
+#ifndef ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_SGX_REMOTE_ASSERTION_GENERATOR_IMPL_H_
+#define ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_SGX_REMOTE_ASSERTION_GENERATOR_IMPL_H_
 
 #include <memory>
 #include <vector>
 
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/signing_key.h"
-#include "asylo/identity/sgx/sgx_remote_assertion_generator.grpc.pb.h"
+#include "asylo/identity/attestation/sgx/internal/sgx_remote_assertion_generator.grpc.pb.h"
 #include "asylo/util/mutex_guarded.h"
 #include "asylo/util/status.h"
 #include "include/grpcpp/server_context.h"
@@ -75,4 +75,4 @@ class SgxRemoteAssertionGeneratorImpl
 
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_SGX_REMOTE_ASSERTION_GENERATOR_IMPL_H_
+#endif  // ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_SGX_REMOTE_ASSERTION_GENERATOR_IMPL_H_

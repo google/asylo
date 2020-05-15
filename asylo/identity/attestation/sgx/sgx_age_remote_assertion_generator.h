@@ -24,8 +24,8 @@
 
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/identity/attestation/enclave_assertion_generator.h"
+#include "asylo/identity/attestation/sgx/internal/sgx_remote_assertion_generator_client.h"
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/sgx/sgx_remote_assertion_generator_client.h"
 #include "asylo/util/mutex_guarded.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"

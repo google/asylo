@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_remote_assertion_generator_client.h"
+#include "asylo/identity/attestation/sgx/internal/sgx_remote_assertion_generator_client.h"
 
 #include "asylo/util/status.h"
 #include "include/grpcpp/client_context.h"

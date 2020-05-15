@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_infrastructural_enclave_manager.h"
+#include "asylo/identity/attestation/sgx/internal/sgx_infrastructural_enclave_manager.h"
 
 #include <utility>
 
@@ -26,11 +26,11 @@
 #include "asylo/enclave_manager.h"
 #include "asylo/identity/attestation/sgx/internal/attestation_key_certificate_impl.h"
 #include "asylo/identity/attestation/sgx/internal/intel_architectural_enclave_interface.h"
+#include "asylo/identity/attestation/sgx/internal/pce_util.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
 #include "asylo/identity/sealing/sealed_secret.pb.h"
-#include "asylo/identity/sgx/pce_util.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/util/status_macros.h"
 

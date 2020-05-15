@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_remote_assertion_generator_impl.h"
+#include "asylo/identity/attestation/sgx/internal/sgx_remote_assertion_generator_impl.h"
 
 #include <memory>
 #include <string>
@@ -39,12 +39,12 @@
 #include "asylo/grpc/auth/null_credentials_options.h"
 #include "asylo/grpc/auth/sgx_local_credentials_options.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion.pb.h"
+#include "asylo/identity/attestation/sgx/internal/sgx_remote_assertion_generator_client.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/init.h"
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/self_identity.h"
-#include "asylo/identity/sgx/sgx_remote_assertion_generator_client.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"

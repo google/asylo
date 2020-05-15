@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_PCE_UTIL_H_
-#define ASYLO_IDENTITY_SGX_PCE_UTIL_H_
+#ifndef ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_PCE_UTIL_H_
+#define ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_PCE_UTIL_H_
 
 #include <openssl/base.h>
 #include <openssl/rsa.h>
@@ -116,4 +116,4 @@ StatusOr<Reportdata> CreateReportdataForGetPceInfo(
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_PCE_UTIL_H_
+#endif  // ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_PCE_UTIL_H_

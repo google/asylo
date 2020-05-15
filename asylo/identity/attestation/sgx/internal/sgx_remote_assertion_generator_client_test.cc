@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_remote_assertion_generator_client.h"
+#include "asylo/identity/attestation/sgx/internal/sgx_remote_assertion_generator_client.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -25,7 +25,7 @@
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion.pb.h"
-#include "asylo/identity/sgx/sgx_remote_assertion_generator_mock.grpc.pb.h"
+#include "asylo/identity/attestation/sgx/internal/sgx_remote_assertion_generator_mock.grpc.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/statusor.h"

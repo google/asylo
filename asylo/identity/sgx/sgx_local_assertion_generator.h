@@ -20,7 +20,7 @@
 #define ASYLO_IDENTITY_SGX_SGX_LOCAL_ASSERTION_GENERATOR_H_
 
 #include "asylo/identity/attestation/enclave_assertion_generator.h"
-#include "asylo/identity/sgx/local_assertion.pb.h"
+#include "asylo/identity/attestation/sgx/internal/local_assertion.pb.h"
 #include "asylo/util/mutex_guarded.h"
 
 namespace asylo {

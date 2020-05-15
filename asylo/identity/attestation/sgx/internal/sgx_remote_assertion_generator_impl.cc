@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_remote_assertion_generator_impl.h"
+#include "asylo/identity/attestation/sgx/internal/sgx_remote_assertion_generator_impl.h"
 
 #include <memory>
 #include <vector>

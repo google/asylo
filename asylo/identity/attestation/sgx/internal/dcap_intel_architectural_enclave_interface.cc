@@ -26,7 +26,7 @@
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/identity/attestation/sgx/internal/dcap_library_interface.h"
 #include "asylo/identity/attestation/sgx/internal/intel_architectural_enclave_interface.h"
-#include "asylo/identity/sgx/pce_util.h"
+#include "asylo/identity/attestation/sgx/internal/pce_util.h"
 #include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
