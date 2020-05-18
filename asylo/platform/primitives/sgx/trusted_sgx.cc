@@ -47,24 +47,20 @@
 #include "asylo/util/status_macros.h"
 #include "include/sgx_trts.h"
 
-namespace asylo {
-namespace primitives {
-
-namespace {
-
-#define CHECK_OCALL(status_)                                                 \
-  do {                                                                       \
-    sgx_status_t status##__COUNTER__ = status_;                              \
-    if (status##__COUNTER__ != SGX_SUCCESS) {                                \
-      TrustedPrimitives::BestEffortAbort(                                    \
-          absl::StrCat(                                                      \
-              __FILE__, ":", __LINE__, ": ",                                 \
-              asylo::Status(status##__COUNTER__, "ocall failed").ToString()) \
-              .c_str());                                                     \
-    }                                                                        \
+#define CHECK_OCALL(status)                                         \
+  do {                                                              \
+    sgx_status_t sgx_status = status;                               \
+    if (sgx_status != SGX_SUCCESS) {                                \
+      TrustedPrimitives::BestEffortAbort(                           \
+          absl::StrCat(                                             \
+              __FILE__, ":", __LINE__, ": ",                        \
+              asylo::Status(sgx_status, "ocall failed").ToString()) \
+              .c_str());                                            \
+    }                                                               \
   } while (0)
 
-}  // namespace
+namespace asylo {
+namespace primitives {
 
 int RegisterSignalHandler(int signum,
                           void (*klinux_sigaction)(int, klinux_siginfo_t *,
