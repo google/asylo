@@ -319,7 +319,7 @@ cc_library(
         "//asylo/identity/platform/sgx:attributes_cc_proto",
         "//asylo/identity/platform/sgx:code_identity_cc_proto",
         "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
-        "//asylo/identity/sgx:hardware_types",
+        "//asylo/identity/platform/sgx/internal:hardware_types",
         "//asylo/identity/sgx:sgx_identity_util",
         "//asylo/util:proto_parse_util",
         "//asylo/util:status",

@@ -32,7 +32,7 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/attestation/sgx/internal/dcap_library_interface.h"
 #include "asylo/identity/attestation/sgx/internal/pce_util.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"

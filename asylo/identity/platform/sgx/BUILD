@@ -155,7 +155,7 @@ cc_test_and_cc_enclave_test(
         ":architecture_bits",
         ":miscselect_cc_proto",
         ":miscselect_util",
-        "//asylo/identity/sgx:hardware_types",
+        "//asylo/identity/platform/sgx/internal:hardware_types",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",

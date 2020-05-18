@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_SGX_IDENTITY_TEST_UTIL_H_
-#define ASYLO_IDENTITY_SGX_SGX_IDENTITY_TEST_UTIL_H_
+#ifndef ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SGX_IDENTITY_TEST_UTIL_H_
+#define ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SGX_IDENTITY_TEST_UTIL_H_
 
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
@@ -94,4 +94,4 @@ Status SetRandomInvalidGenericExpectation(
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_SGX_IDENTITY_TEST_UTIL_H_
+#endif  // ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SGX_IDENTITY_TEST_UTIL_H_

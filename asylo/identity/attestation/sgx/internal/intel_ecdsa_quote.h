@@ -26,7 +26,7 @@
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/util/statusor.h"
 
 // This file defines various structures used by the Intel ECDSA Quoting Enclave

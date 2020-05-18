@@ -27,7 +27,7 @@
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/sgx/code_identity_constants.h"
+#include "asylo/identity/platform/sgx/internal/code_identity_constants.h"
 #include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 

@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/proto_format.h"
+#include "asylo/identity/platform/sgx/internal/proto_format.h"
 
 #include <memory>
 #include <vector>

@@ -16,14 +16,14 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_MOCK_HARDWARE_INTERFACE_H_
-#define ASYLO_IDENTITY_SGX_MOCK_HARDWARE_INTERFACE_H_
+#ifndef ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_MOCK_HARDWARE_INTERFACE_H_
+#define ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_MOCK_HARDWARE_INTERFACE_H_
 
 #include <cstdint>
 
 #include <gmock/gmock.h>
-#include "asylo/identity/sgx/hardware_interface.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/platform/sgx/internal/hardware_interface.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -42,4 +42,4 @@ class MockHardwareInterface : public HardwareInterface {
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_MOCK_HARDWARE_INTERFACE_H_
+#endif  // ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_MOCK_HARDWARE_INTERFACE_H_

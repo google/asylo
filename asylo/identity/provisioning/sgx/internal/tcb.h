@@ -22,8 +22,8 @@
 #include <cstddef>
 
 #include "absl/base/attributes.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 

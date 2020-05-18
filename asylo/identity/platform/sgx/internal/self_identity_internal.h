@@ -16,18 +16,18 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_SELF_IDENTITY_INTERNAL_H_
-#define ASYLO_IDENTITY_SGX_SELF_IDENTITY_INTERNAL_H_
+#ifndef ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SELF_IDENTITY_INTERNAL_H_
+#define ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SELF_IDENTITY_INTERNAL_H_
 
 // Note: This is an internal header; it must not be included in any files other
 // than self_identity.cc and fake_self_identity.cc.
 
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
-#include "asylo/identity/sgx/hardware_interface.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/identity/sgx/self_identity.h"
-#include "asylo/identity/sgx/sgx_identity_util_internal.h"
+#include "asylo/identity/platform/sgx/internal/hardware_interface.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
+#include "asylo/identity/platform/sgx/internal/self_identity.h"
+#include "asylo/identity/platform/sgx/internal/sgx_identity_util_internal.h"
 
 namespace asylo {
 namespace sgx {
@@ -59,4 +59,4 @@ SelfIdentity::SelfIdentity() {
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_SELF_IDENTITY_INTERNAL_H_
+#endif  // ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SELF_IDENTITY_INTERNAL_H_

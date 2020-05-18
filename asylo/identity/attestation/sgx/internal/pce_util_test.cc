@@ -39,7 +39,7 @@
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/proto_enum_util.h"

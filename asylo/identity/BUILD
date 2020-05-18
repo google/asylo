@@ -107,7 +107,7 @@ cc_library(
     deps = [
         ":identity_cc_proto",
         "//asylo/identity/attestation/null/internal:null_identity_constants",
-        "//asylo/identity/sgx:code_identity_constants",
+        "//asylo/identity/platform/sgx/internal:code_identity_constants",
     ],
 )
 

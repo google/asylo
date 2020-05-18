@@ -16,12 +16,12 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_SELF_IDENTITY_H_
-#define ASYLO_IDENTITY_SGX_SELF_IDENTITY_H_
+#ifndef ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SELF_IDENTITY_H_
+#define ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SELF_IDENTITY_H_
 
 #include "asylo/crypto/util/bytes.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
 
 namespace asylo {
 namespace sgx {
@@ -50,4 +50,4 @@ const SelfIdentity *GetSelfIdentity();
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_SELF_IDENTITY_H_
+#endif  // ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SELF_IDENTITY_H_

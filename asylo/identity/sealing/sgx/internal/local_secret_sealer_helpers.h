@@ -24,9 +24,9 @@
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sealing/sealed_secret.pb.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 

@@ -32,7 +32,7 @@
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"

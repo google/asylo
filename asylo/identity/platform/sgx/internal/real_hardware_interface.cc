@@ -17,8 +17,8 @@
  */
 
 #include "absl/memory/memory.h"
-#include "asylo/identity/sgx/hardware_interface.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/platform/sgx/internal/hardware_interface.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "include/sgx.h"
 

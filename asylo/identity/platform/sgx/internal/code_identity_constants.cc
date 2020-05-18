@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 Asylo authors
+ * Copyright 2018 Asylo authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,21 @@
  *
  */
 
-#include "asylo/identity/sgx/self_identity.h"
-
-#include "asylo/identity/sgx/self_identity_internal.h"
+#include "asylo/identity/platform/sgx/internal/code_identity_constants.h"
 
 namespace asylo {
 namespace sgx {
 
-const SelfIdentity *GetSelfIdentity() {
-  static SelfIdentity *self_identity = new SelfIdentity();
-  return self_identity;
-}
+const char *const kSgxLocalAssertionAuthority = "SGX Local";
+
+const char *const kSgxAgeRemoteAssertionAuthority = "SGX AGE";
+
+const char *const kSgxIntelEcdsaQeRemoteAssertionAuthority =
+    "SGX Intel ECDSA QE";
+
+const char *const kSgxAuthorizationAuthority = "SGX";
+
+const char *const kSgxIdentityVersionString = "SgxIdentity v0.1";
 
 }  // namespace sgx
 }  // namespace asylo

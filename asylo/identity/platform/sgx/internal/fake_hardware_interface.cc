@@ -17,9 +17,9 @@
  */
 
 #include "absl/memory/memory.h"
-#include "asylo/identity/sgx/fake_enclave.h"
-#include "asylo/identity/sgx/hardware_interface.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/platform/sgx/internal/fake_enclave.h"
+#include "asylo/identity/platform/sgx/internal/hardware_interface.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 
 #ifdef __ASYLO__
 #error "Must not use the fake hardware interface inside an enclave"

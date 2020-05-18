@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_SECS_ATTRIBUTES_H_
-#define ASYLO_IDENTITY_SGX_SECS_ATTRIBUTES_H_
+#ifndef ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SECS_ATTRIBUTES_H_
+#define ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SECS_ATTRIBUTES_H_
 
 #include <cstdint>
 #include <cstring>
@@ -119,4 +119,4 @@ bool operator!=(const SecsAttributeSet &lhs, const SecsAttributeSet &rhs);
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_SECS_ATTRIBUTES_H_
+#endif  // ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SECS_ATTRIBUTES_H_

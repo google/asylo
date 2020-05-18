@@ -43,7 +43,7 @@ cc_binary(
         "//asylo/identity:identity_acl_cc_proto",
         "//asylo/identity:init",
         "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
-        "//asylo/identity/sgx:fake_enclave",
+        "//asylo/identity/platform/sgx/internal:fake_enclave",
         "//asylo/identity/sgx:sgx_identity_util",
         "//asylo/test/util:enclave_assertion_authority_configs",
         "@com_github_grpc_grpc//:gpr_base",

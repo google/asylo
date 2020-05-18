@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_identity_util_internal.h"
+#include "asylo/identity/platform/sgx/internal/sgx_identity_util_internal.h"
 
 #include <memory>
 #include <string>
@@ -34,16 +34,16 @@
 #include "asylo/identity/platform/sgx/attributes.pb.h"
 #include "asylo/identity/platform/sgx/attributes_util.h"
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
+#include "asylo/identity/platform/sgx/internal/code_identity_constants.h"
+#include "asylo/identity/platform/sgx/internal/fake_enclave.h"
+#include "asylo/identity/platform/sgx/internal/hardware_interface.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
+#include "asylo/identity/platform/sgx/internal/proto_format.h"
+#include "asylo/identity/platform/sgx/internal/secs_attributes.h"
+#include "asylo/identity/platform/sgx/internal/self_identity.h"
+#include "asylo/identity/platform/sgx/internal/sgx_identity_test_util.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
-#include "asylo/identity/sgx/code_identity_constants.h"
-#include "asylo/identity/sgx/fake_enclave.h"
-#include "asylo/identity/sgx/hardware_interface.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/identity/sgx/proto_format.h"
-#include "asylo/identity/sgx/secs_attributes.h"
-#include "asylo/identity/sgx/self_identity.h"
-#include "asylo/identity/sgx/sgx_identity_test_util.h"
 #include "asylo/platform/common/singleton.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"

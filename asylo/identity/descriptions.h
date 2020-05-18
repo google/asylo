@@ -21,7 +21,7 @@
 
 #include "asylo/identity/attestation/null/internal/null_identity_constants.h"
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/sgx/code_identity_constants.h"
+#include "asylo/identity/platform/sgx/internal/code_identity_constants.h"
 
 namespace asylo {
 

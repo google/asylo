@@ -32,7 +32,7 @@
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/util/byte_container_view.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {

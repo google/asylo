@@ -20,8 +20,8 @@
 
 #include "absl/strings/str_cat.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/platform/sgx/internal/sgx_identity_util_internal.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
-#include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {

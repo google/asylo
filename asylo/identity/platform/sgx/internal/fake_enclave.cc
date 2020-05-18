@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/fake_enclave.h"
+#include "asylo/identity/platform/sgx/internal/fake_enclave.h"
 
 #include <openssl/cmac.h>
 #include <openssl/rand.h>
@@ -35,9 +35,9 @@
 #include "asylo/util/logging.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/platform/sgx/attributes.pb.h"
+#include "asylo/identity/platform/sgx/internal/proto_format.h"
+#include "asylo/identity/platform/sgx/internal/secs_attributes.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
-#include "asylo/identity/sgx/proto_format.h"
-#include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 
 namespace asylo {

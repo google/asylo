@@ -31,11 +31,11 @@
 #include "asylo/identity/attestation/sgx/internal/pce_util.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave_util.h"
+#include "asylo/identity/platform/sgx/internal/hardware_interface.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
+#include "asylo/identity/platform/sgx/internal/self_identity.h"
+#include "asylo/identity/platform/sgx/internal/sgx_identity_util_internal.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
-#include "asylo/identity/sgx/hardware_interface.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/identity/sgx/self_identity.h"
-#include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {

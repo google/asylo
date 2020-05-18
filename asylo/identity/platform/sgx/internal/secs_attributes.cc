@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/secs_attributes.h"
+#include "asylo/identity/platform/sgx/internal/secs_attributes.h"
 
 #include <cstdint>
 #include <cstring>

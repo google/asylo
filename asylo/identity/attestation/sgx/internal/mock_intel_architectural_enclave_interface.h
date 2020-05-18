@@ -27,7 +27,7 @@
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/attestation/sgx/internal/intel_architectural_enclave_interface.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/util/status.h"
 
 namespace asylo {

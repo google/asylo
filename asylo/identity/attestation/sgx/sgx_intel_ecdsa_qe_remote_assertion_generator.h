@@ -30,7 +30,7 @@
 #include "asylo/identity/attestation/sgx/internal/intel_architectural_enclave_interface.h"
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/sgx/hardware_interface.h"
+#include "asylo/identity/platform/sgx/internal/hardware_interface.h"
 #include "asylo/util/mutex_guarded.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"

@@ -16,16 +16,16 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_SGX_IDENTITY_UTIL_INTERNAL_H_
-#define ASYLO_IDENTITY_SGX_SGX_IDENTITY_UTIL_INTERNAL_H_
+#ifndef ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SGX_IDENTITY_UTIL_INTERNAL_H_
+#define ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SGX_IDENTITY_UTIL_INTERNAL_H_
 
 #include <string>
 
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
+#include "asylo/identity/platform/sgx/internal/code_identity_constants.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
-#include "asylo/identity/sgx/code_identity_constants.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -141,4 +141,4 @@ Status VerifyHardwareReport(const Report &report);
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_SGX_IDENTITY_UTIL_INTERNAL_H_
+#endif  // ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SGX_IDENTITY_UTIL_INTERNAL_H_

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_PROTO_FORMAT_H_
-#define ASYLO_IDENTITY_SGX_PROTO_FORMAT_H_
+#ifndef ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_PROTO_FORMAT_H_
+#define ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_PROTO_FORMAT_H_
 
 #include <string>
 
@@ -38,4 +38,4 @@ std::string FormatProto(const google::protobuf::Message &message);
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_PROTO_FORMAT_H_
+#endif  // ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_PROTO_FORMAT_H_

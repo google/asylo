@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_
-#define ASYLO_IDENTITY_SGX_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_
+#ifndef ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_
+#define ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_
 
 #include <openssl/aes.h>
 #include <openssl/sha.h>
@@ -27,7 +27,7 @@
 #include "absl/base/attributes.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
-#include "asylo/identity/sgx/secs_attributes.h"
+#include "asylo/identity/platform/sgx/internal/secs_attributes.h"
 #include "asylo/util/aligned_object_ptr.h"
 
 // This file defines SGX architectural structures that pertain to the identity
@@ -386,4 +386,4 @@ static_assert(std::is_trivial<Report>::value, "Report is not a trivial type");
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_
+#endif  // ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_

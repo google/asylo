@@ -16,13 +16,13 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_HARDWARE_INTERFACE_H_
-#define ASYLO_IDENTITY_SGX_HARDWARE_INTERFACE_H_
+#ifndef ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_HARDWARE_INTERFACE_H_
+#define ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_HARDWARE_INTERFACE_H_
 
 #include <cstdint>
 #include <memory>
 
-#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -61,4 +61,4 @@ class HardwareInterface {
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_HARDWARE_INTERFACE_H_
+#endif  // ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_HARDWARE_INTERFACE_H_
