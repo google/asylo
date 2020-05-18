@@ -16,16 +16,16 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_PCK_CERTIFICATE_UTIL_H_
-#define ASYLO_IDENTITY_SGX_PCK_CERTIFICATE_UTIL_H_
+#ifndef ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PCK_CERTIFICATE_UTIL_H_
+#define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PCK_CERTIFICATE_UTIL_H_
 
 #include "absl/types/optional.h"
 #include "asylo/crypto/asn1.h"
 #include "asylo/crypto/certificate_interface.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certificates.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
-#include "asylo/identity/sgx/pck_certificates.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -97,4 +97,4 @@ StatusOr<PceSvn> ExtractPceSvnFromPckCert(const Certificate &pck_certificate);
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_PCK_CERTIFICATE_UTIL_H_
+#endif  // ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PCK_CERTIFICATE_UTIL_H_

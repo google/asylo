@@ -16,12 +16,12 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_PCK_CERTS_FROM_JSON_H_
-#define ASYLO_IDENTITY_SGX_PCK_CERTS_FROM_JSON_H_
+#ifndef ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PCK_CERTS_FROM_JSON_H_
+#define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PCK_CERTS_FROM_JSON_H_
 
 #include <string>
 
-#include "asylo/identity/sgx/pck_certificates.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certificates.pb.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -40,4 +40,4 @@ StatusOr<PckCertificates> PckCertificatesFromJson(const std::string &json_str);
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_PCK_CERTS_FROM_JSON_H_
+#endif  // ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PCK_CERTS_FROM_JSON_H_

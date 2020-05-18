@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/pck_certificate_util.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certificate_util.h"
 
 #include <endian.h>
 

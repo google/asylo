@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/pck_certs_from_json.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certs_from_json.h"
 
 #include <endian.h>
 

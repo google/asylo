@@ -32,11 +32,11 @@
 #include "asylo/crypto/x509_certificate.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/container_util.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certificate_util.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
-#include "asylo/identity/sgx/pck_certificate_util.h"
 #include "asylo/util/mutex_guarded.h"
 #include "asylo/util/statusor.h"
 

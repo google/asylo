@@ -55,7 +55,7 @@
 #include "asylo/identity/platform/sgx/internal/sgx_identity_util_internal.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
-#include "asylo/identity/sgx/pck_certificate_util.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certificate_util.h"
 #include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/platform/common/static_map.h"

@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/pck_certificate_util.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certificate_util.h"
 
 #include <algorithm>
 #include <bitset>
@@ -46,7 +46,7 @@
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
-#include "asylo/identity/sgx/pck_certificates.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certificates.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/proto_enum_util.h"

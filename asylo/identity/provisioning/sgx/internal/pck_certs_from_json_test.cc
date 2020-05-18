@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/pck_certs_from_json.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certs_from_json.h"
 
 #include <memory>
 
@@ -26,7 +26,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
-#include "asylo/identity/sgx/pck_certificates.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certificates.pb.h"
 #include "asylo/test/util/output_collector.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"

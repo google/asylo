@@ -25,9 +25,9 @@
 #include "absl/hash/hash.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/container_util.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certificates.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
-#include "asylo/identity/sgx/pck_certificates.pb.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
