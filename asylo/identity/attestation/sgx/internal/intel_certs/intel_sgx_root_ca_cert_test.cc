@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/intel_certs/intel_sgx_root_ca_cert.h"
+#include "asylo/identity/attestation/sgx/internal/intel_certs/intel_sgx_root_ca_cert.h"
 
 #include <memory>
 

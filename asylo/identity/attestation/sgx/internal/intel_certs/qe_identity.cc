@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/intel_certs/qe_identity.h"
+#include "asylo/identity/attestation/sgx/internal/intel_certs/qe_identity.h"
 
 namespace asylo {
 namespace sgx {
