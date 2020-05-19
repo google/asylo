@@ -21,7 +21,7 @@
 
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
-#include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
+#include "asylo/identity/attestation/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/util/status.h"
 
 namespace asylo {

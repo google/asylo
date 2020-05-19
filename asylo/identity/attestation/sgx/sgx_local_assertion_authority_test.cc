@@ -18,14 +18,14 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/identity/attestation/sgx/sgx_local_assertion_generator.h"
+#include "asylo/identity/attestation/sgx/sgx_local_assertion_verifier.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/platform/sgx/internal/fake_enclave.h"
 #include "asylo/identity/platform/sgx/internal/proto_format.h"
 #include "asylo/identity/platform/sgx/internal/self_identity.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
-#include "asylo/identity/sgx/sgx_local_assertion_generator.h"
-#include "asylo/identity/sgx/sgx_local_assertion_verifier.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"

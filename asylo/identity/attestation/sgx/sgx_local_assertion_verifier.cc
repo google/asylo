@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_local_assertion_verifier.h"
+#include "asylo/identity/attestation/sgx/sgx_local_assertion_verifier.h"
 
 #include <cstdint>
 #include <string>
@@ -27,11 +27,11 @@
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/attestation/sgx/internal/local_assertion.pb.h"
+#include "asylo/identity/attestation/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/platform/sgx/internal/code_identity_constants.h"
 #include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/identity/platform/sgx/internal/sgx_identity_util_internal.h"
-#include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {

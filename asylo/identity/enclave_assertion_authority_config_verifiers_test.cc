@@ -24,8 +24,8 @@
 #include <gtest/gtest.h>
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
+#include "asylo/identity/attestation/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
-#include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/error_codes.h"
 #include "asylo/util/proto_enum_util.h"

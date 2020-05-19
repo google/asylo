@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_SGX_LOCAL_ASSERTION_GENERATOR_H_
-#define ASYLO_IDENTITY_SGX_SGX_LOCAL_ASSERTION_GENERATOR_H_
+#ifndef ASYLO_IDENTITY_ATTESTATION_SGX_SGX_LOCAL_ASSERTION_GENERATOR_H_
+#define ASYLO_IDENTITY_ATTESTATION_SGX_SGX_LOCAL_ASSERTION_GENERATOR_H_
 
 #include "asylo/identity/attestation/enclave_assertion_generator.h"
 #include "asylo/identity/attestation/sgx/internal/local_assertion.pb.h"
@@ -91,4 +91,4 @@ class SgxLocalAssertionGenerator final : public EnclaveAssertionGenerator {
 
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_SGX_LOCAL_ASSERTION_GENERATOR_H_
+#endif  // ASYLO_IDENTITY_ATTESTATION_SGX_SGX_LOCAL_ASSERTION_GENERATOR_H_

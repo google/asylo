@@ -36,7 +36,7 @@ cc_library(
         "//asylo:enclave_cc_proto",
         "//asylo/identity:descriptions",
         "//asylo/identity:enclave_assertion_authority_config_cc_proto",
-        "//asylo/identity/sgx:sgx_local_assertion_authority_config_cc_proto",
+        "//asylo/identity/attestation/sgx:sgx_local_assertion_authority_config_cc_proto",
         "//asylo/util:logging",
     ],
 )

@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_local_assertion_verifier.h"
+#include "asylo/identity/attestation/sgx/sgx_local_assertion_verifier.h"
 
 #include <cstdint>
 #include <memory>
@@ -30,6 +30,7 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/attestation/enclave_assertion_verifier.h"
 #include "asylo/identity/attestation/sgx/internal/local_assertion.pb.h"
+#include "asylo/identity/attestation/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/identity/enclave_assertion_authority.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/platform/sgx/internal/code_identity_constants.h"
@@ -39,7 +40,6 @@
 #include "asylo/identity/platform/sgx/internal/self_identity.h"
 #include "asylo/identity/platform/sgx/internal/sgx_identity_util_internal.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
-#include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 

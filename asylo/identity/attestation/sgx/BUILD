@@ -17,8 +17,8 @@
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_enclave_test",
+    "cc_test_and_cc_enclave_test",
     "enclave_test",
-    cc_test = "cc_test_and_cc_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
@@ -29,6 +29,7 @@ load(
 )
 load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
 load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
@@ -64,6 +65,18 @@ cc_proto_library(
     name = "sgx_intel_ecdsa_qe_remote_assertion_authority_config_cc_proto",
     visibility = ["//asylo:implementation"],
     deps = ["sgx_intel_ecdsa_qe_remote_assertion_authority_config_proto"],
+)
+
+proto_library(
+    name = "sgx_local_assertion_authority_config_proto",
+    srcs = ["sgx_local_assertion_authority_config.proto"],
+    visibility = ["//visibility:public"],
+)
+
+cc_proto_library(
+    name = "sgx_local_assertion_authority_config_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = ["sgx_local_assertion_authority_config_proto"],
 )
 
 proto_library(
@@ -237,7 +250,7 @@ cc_library(
     alwayslink = 1,
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "sgx_age_remote_assertion_verifier_test",
     srcs = ["sgx_age_remote_assertion_verifier_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -375,6 +388,156 @@ enclave_test(
     ],
 )
 
+cc_library(
+    name = "sgx_local_assertion_generator",
+    srcs = [
+        "sgx_local_assertion_generator.cc",
+        "sgx_local_assertion_generator.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":sgx_local_assertion_authority_config_cc_proto",
+        "//asylo/crypto:sha256_hash",
+        "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity/attestation:enclave_assertion_generator",
+        "//asylo/identity/attestation/sgx/internal:local_assertion_cc_proto",
+        "//asylo/identity/platform/sgx/internal:code_identity_constants",
+        "//asylo/identity/platform/sgx/internal:hardware_interface",
+        "//asylo/identity/platform/sgx/internal:hardware_types",
+        "//asylo/util:mutex_guarded",
+        "//asylo/util:status",
+    ],
+    alwayslink = 1,
+)
+
+cc_test_and_cc_enclave_test(
+    name = "sgx_local_assertion_generator_test",
+    srcs = [
+        "sgx_local_assertion_generator.h",
+        "sgx_local_assertion_generator_test.cc",
+    ],
+    backends = sgx.backend_labels,
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":sgx_local_assertion_authority_config_cc_proto",
+        ":sgx_local_assertion_generator",
+        "//asylo/crypto:sha256_hash",
+        "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity:enclave_assertion_authority",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/attestation:enclave_assertion_generator",
+        "//asylo/identity/attestation/sgx/internal:local_assertion_cc_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/platform/sgx/internal:code_identity_constants",
+        "//asylo/identity/platform/sgx/internal:hardware_types",
+        "//asylo/identity/platform/sgx/internal:sgx_identity_util_internal",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:mutex_guarded",
+        "//asylo/util:thread",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_library(
+    name = "sgx_local_assertion_verifier",
+    srcs = [
+        "sgx_local_assertion_verifier.cc",
+        "sgx_local_assertion_verifier.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":sgx_local_assertion_authority_config_cc_proto",
+        "//asylo/crypto:sha256_hash",
+        "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity:descriptions",
+        "//asylo/identity/attestation:enclave_assertion_verifier",
+        "//asylo/identity/attestation/sgx/internal:local_assertion_cc_proto",
+        "//asylo/identity/platform/sgx/internal:code_identity_constants",
+        "//asylo/identity/platform/sgx/internal:hardware_types",
+        "//asylo/identity/platform/sgx/internal:sgx_identity_util_internal",
+        "//asylo/util:status",
+        "@com_google_absl//absl/synchronization",
+    ],
+    alwayslink = 1,
+)
+
+cc_test_and_cc_enclave_test(
+    name = "sgx_local_assertion_verifier_test",
+    srcs = [
+        "sgx_local_assertion_verifier.h",
+        "sgx_local_assertion_verifier_test.cc",
+    ],
+    backends = sgx.backend_labels,
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":sgx_local_assertion_authority_config_cc_proto",
+        ":sgx_local_assertion_verifier",
+        "//asylo/crypto:sha256_hash",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity:enclave_assertion_authority",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/attestation:enclave_assertion_verifier",
+        "//asylo/identity/attestation/sgx/internal:local_assertion_cc_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/platform/sgx/internal:code_identity_constants",
+        "//asylo/identity/platform/sgx/internal:hardware_interface",
+        "//asylo/identity/platform/sgx/internal:hardware_types",
+        "//asylo/identity/platform/sgx/internal:proto_format",
+        "//asylo/identity/platform/sgx/internal:sgx_identity_util_internal",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+# This test uses FakeEnclave to simulate different enclaves. Since FakeEnclave
+# should not be used inside a real enclave, this test is not a
+# "cc_test_and_cc_enclave_test" target.
+cc_test(
+    name = "sgx_local_assertion_authority_test",
+    srcs = [
+        "sgx_local_assertion_authority_test.cc",
+        "sgx_local_assertion_generator.h",
+        "sgx_local_assertion_verifier.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":sgx_local_assertion_generator",
+        ":sgx_local_assertion_verifier",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/attestation:enclave_assertion_generator",
+        "//asylo/identity/attestation:enclave_assertion_verifier",
+        "//asylo/identity/attestation/sgx/internal:local_assertion_cc_proto",
+        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/platform/sgx/internal:fake_enclave",
+        "//asylo/identity/platform/sgx/internal:proto_format",
+        "//asylo/identity/platform/sgx/internal:sgx_identity_util_internal",
+        "//asylo/identity/sgx:sgx_identity_util",
+        "//asylo/test/util:enclave_assertion_authority_configs",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:mutex_guarded",
+        "//asylo/util:status_macros",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 transitions.cc_binary(
     name = "age_main",
     testonly = 1,
@@ -484,7 +647,7 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "sgx_intel_ecdsa_qe_remote_assertion_verifier_test",
     srcs = ["sgx_intel_ecdsa_qe_remote_assertion_verifier_test.cc"],
     backends = sgx.backend_labels,
