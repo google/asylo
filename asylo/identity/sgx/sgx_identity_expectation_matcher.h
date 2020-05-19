@@ -19,31 +19,6 @@
 #ifndef ASYLO_IDENTITY_SGX_SGX_IDENTITY_EXPECTATION_MATCHER_H_
 #define ASYLO_IDENTITY_SGX_SGX_IDENTITY_EXPECTATION_MATCHER_H_
 
-#include <string>
-
-#include "asylo/identity/identity.pb.h"
-#include "asylo/identity/named_identity_expectation_matcher.h"
-#include "asylo/util/statusor.h"
-
-namespace asylo {
-
-// SgxIdentityExpectationMatcher is capable of matching SGX identities with SGX
-// identity expectations.
-class SgxIdentityExpectationMatcher final
-    : public NamedIdentityExpectationMatcher {
- public:
-  SgxIdentityExpectationMatcher() = default;
-  ~SgxIdentityExpectationMatcher() override = default;
-
-  // From the IdentityExpectationMatcher interface.
-  StatusOr<bool> MatchAndExplain(const EnclaveIdentity &identity,
-                                 const EnclaveIdentityExpectation &expectation,
-                                 std::string *explanation) const override;
-
-  // From the NamedIdentityExpectationMatcher interface.
-  EnclaveIdentityDescription Description() const override;
-};
-
-}  // namespace asylo
+#include "asylo/identity/platform/sgx/sgx_identity_expectation_matcher.h"  // IWYU pragma: export
 
 #endif  // ASYLO_IDENTITY_SGX_SGX_IDENTITY_EXPECTATION_MATCHER_H_

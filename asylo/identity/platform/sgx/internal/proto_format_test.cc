@@ -31,7 +31,7 @@
 #include "asylo/identity/platform/sgx/miscselect.pb.h"
 #include "asylo/identity/platform/sgx/miscselect_util.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
-#include "asylo/identity/sgx/sgx_identity_util.h"
+#include "asylo/identity/platform/sgx/sgx_identity_util.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {

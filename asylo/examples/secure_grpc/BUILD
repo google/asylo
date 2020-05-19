@@ -84,8 +84,8 @@ cc_proto_library(
 
 _grpc_server_sgx_deps = [
     "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
-    "//asylo/identity/sgx:sgx_identity_expectation_matcher",
-    "//asylo/identity/sgx:sgx_identity_util",
+    "//asylo/identity/platform/sgx:sgx_identity_expectation_matcher",
+    "//asylo/identity/platform/sgx:sgx_identity_util",
 ]
 
 # The enclave hosting the translation server.

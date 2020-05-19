@@ -25,7 +25,7 @@
 #include "asylo/identity/platform/sgx/internal/proto_format.h"
 #include "asylo/identity/platform/sgx/internal/self_identity.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
-#include "asylo/identity/sgx/sgx_identity_util.h"
+#include "asylo/identity/platform/sgx/sgx_identity_util.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"

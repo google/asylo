@@ -32,7 +32,7 @@
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/platform/sgx/internal/code_identity_constants.h"
-#include "asylo/identity/sgx/sgx_identity_util.h"
+#include "asylo/identity/platform/sgx/sgx_identity_util.h"
 #include "asylo/util/cleanup.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"

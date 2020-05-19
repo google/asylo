@@ -27,8 +27,8 @@
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
 #include "asylo/identity/platform/sgx/internal/secs_attributes.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity_util.h"
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
-#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/util/proto_parse_util.h"
 #include "debug_key_mrsigner.h"
 

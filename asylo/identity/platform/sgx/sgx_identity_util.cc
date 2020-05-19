@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_identity_util.h"
+#include "asylo/identity/platform/sgx/sgx_identity_util.h"
 
 #include "absl/strings/str_cat.h"
 #include "asylo/identity/identity.pb.h"

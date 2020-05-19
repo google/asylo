@@ -34,8 +34,8 @@
 #include "asylo/identity/attestation/sgx/internal/pce_util.h"
 #include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/identity/platform/sgx/internal/sgx_identity_util_internal.h"
+#include "asylo/identity/platform/sgx/sgx_identity_util.h"
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
-#include "asylo/identity/sgx/sgx_identity_util.h"
 
 namespace asylo {
 namespace sgx {

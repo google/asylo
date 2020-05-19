@@ -14,13 +14,11 @@
 # limitations under the License.
 #
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 # Used to enable gtest tests to run inside an enclave.
-load("//asylo/bazel:asylo.bzl", "cc_test_and_cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])
 
@@ -80,80 +78,19 @@ cc_library(
 
 cc_library(
     name = "sgx_identity_util",
-    srcs = ["sgx_identity_util.cc"],
     hdrs = ["sgx_identity_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    deprecation = "Use //asylo/identity/platform/sgx:sgx_identity_util",
     visibility = ["//visibility:public"],
-    deps = [
-        "//asylo/identity:identity_cc_proto",
-        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
-        "//asylo/identity/platform/sgx/internal:sgx_identity_util_internal",
-        "//asylo/util:status",
-        "@com_google_absl//absl/strings",
-    ],
-)
-
-# This test uses FakeEnclave to simulate different enclaves. Since FakeEnclave
-# should not be used inside a real enclave, this test is not a
-# "cc_test_and_cc_enclave_test" target.
-cc_test(
-    name = "sgx_identity_util_test",
-    srcs = ["sgx_identity_util_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":sgx_identity_util",
-        "//asylo/identity:identity_cc_proto",
-        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
-        "//asylo/identity/platform/sgx/internal:fake_enclave",
-        "//asylo/identity/platform/sgx/internal:proto_format",
-        "//asylo/identity/platform/sgx/internal:sgx_identity_test_util",
-        "//asylo/test/util:proto_matchers",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
-    ],
+    deps = ["//asylo/identity/platform/sgx:sgx_identity_util"],
 )
 
 cc_library(
     name = "sgx_identity_expectation_matcher",
-    srcs = ["sgx_identity_expectation_matcher.cc"],
     hdrs = ["sgx_identity_expectation_matcher.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    deprecation = "Use //asylo/identity/platform/sgx:sgx_identity_expectation_matcher",
     visibility = ["//visibility:public"],
-    deps = [
-        "//asylo/identity:descriptions",
-        "//asylo/identity:identity_cc_proto",
-        "//asylo/identity:identity_expectation_matcher",
-        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
-        "//asylo/identity/platform/sgx/internal:sgx_identity_util_internal",
-        "//asylo/util:status",
-    ],
+    deps = ["//asylo/identity/platform/sgx:sgx_identity_expectation_matcher"],
     alwayslink = 1,
-)
-
-cc_test_and_cc_enclave_test(
-    name = "sgx_identity_expectation_matcher_test",
-    srcs = [
-        "sgx_identity_expectation_matcher.h",
-        "sgx_identity_expectation_matcher_test.cc",
-    ],
-    backends = sgx.backend_labels,
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":sgx_identity_expectation_matcher",
-        "//asylo/identity:descriptions",
-        "//asylo/identity:identity_cc_proto",
-        "//asylo/identity:identity_expectation_matcher",
-        "//asylo/identity/platform/sgx:code_identity_cc_proto",
-        "//asylo/identity/platform/sgx:machine_configuration_cc_proto",
-        "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
-        "//asylo/identity/platform/sgx/internal:code_identity_constants",
-        "//asylo/identity/platform/sgx/internal:proto_format",
-        "//asylo/identity/platform/sgx/internal:sgx_identity_test_util",
-        "//asylo/identity/platform/sgx/internal:sgx_identity_util_internal",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "//asylo/util:status",
-        "@com_google_googletest//:gtest",
-    ],
 )

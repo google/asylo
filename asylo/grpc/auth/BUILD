@@ -101,7 +101,7 @@ cc_library(
         "//asylo/identity:descriptions",
         "//asylo/identity/attestation/sgx:sgx_local_assertion_generator",  # alwayslink = 1
         "//asylo/identity/attestation/sgx:sgx_local_assertion_verifier",  # alwayslink = 1
-        "//asylo/identity/sgx:sgx_identity_expectation_matcher",  # alwayslink = 1
+        "//asylo/identity/platform/sgx:sgx_identity_expectation_matcher",  # alwayslink = 1
     ],
 )
 
@@ -117,7 +117,7 @@ cc_library(
         ":grpc++_security_enclave",
         "//asylo/identity:descriptions",
         "//asylo/identity/attestation/sgx:sgx_age_remote_assertion_verifier",  # alwayslink = 1
-        "//asylo/identity/sgx:sgx_identity_expectation_matcher",  # alwayslink = 1
+        "//asylo/identity/platform/sgx:sgx_identity_expectation_matcher",  # alwayslink = 1
     ],
 )
 
@@ -140,7 +140,7 @@ cc_library(
         "//asylo/identity:descriptions",
         "//asylo/identity/attestation/sgx:sgx_age_remote_assertion_generator",  # alwayslink = 1
         "//asylo/identity/attestation/sgx:sgx_age_remote_assertion_verifier",  # alwayslink = 1
-        "//asylo/identity/sgx:sgx_identity_expectation_matcher",  # alwayslink = 1
+        "//asylo/identity/platform/sgx:sgx_identity_expectation_matcher",  # alwayslink = 1
     ],
 )
 

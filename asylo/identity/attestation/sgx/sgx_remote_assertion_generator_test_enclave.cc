@@ -25,7 +25,7 @@
 #include "asylo/identity/attestation/sgx/sgx_remote_assertion_generator_test_enclave.pb.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/platform/sgx/internal/code_identity_constants.h"
-#include "asylo/identity/sgx/sgx_identity_util.h"
+#include "asylo/identity/platform/sgx/sgx_identity_util.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"

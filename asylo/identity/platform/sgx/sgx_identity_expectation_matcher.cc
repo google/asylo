@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
+#include "asylo/identity/platform/sgx/sgx_identity_expectation_matcher.h"
 
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/platform/sgx/internal/sgx_identity_util_internal.h"

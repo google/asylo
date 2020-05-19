@@ -28,7 +28,7 @@
 #include "asylo/identity/init.h"
 #include "asylo/identity/platform/sgx/internal/fake_enclave.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
-#include "asylo/identity/sgx/sgx_identity_util.h"
+#include "asylo/identity/platform/sgx/sgx_identity_util.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "include/grpc/impl/codegen/grpc_types.h"
 #include "include/grpc/support/alloc.h"

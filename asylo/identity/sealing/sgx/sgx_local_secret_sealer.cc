@@ -31,8 +31,8 @@
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
 #include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
+#include "asylo/identity/platform/sgx/sgx_identity_util.h"
 #include "asylo/identity/sealing/sgx/internal/local_secret_sealer_helpers.h"
-#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {

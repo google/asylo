@@ -30,7 +30,7 @@
 #include "asylo/identity/identity_acl.pb.h"
 #include "asylo/identity/platform/sgx/code_identity.pb.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
-#include "asylo/identity/sgx/sgx_identity_util.h"
+#include "asylo/identity/platform/sgx/sgx_identity_util.h"
 #include "asylo/test/grpc/client_enclave.pb.h"
 #include "asylo/test/grpc/client_side_auth_test_constants.h"
 #include "asylo/test/grpc/messenger_server_impl.h"

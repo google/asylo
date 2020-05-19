@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
+#include "asylo/identity/platform/sgx/sgx_identity_expectation_matcher.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
