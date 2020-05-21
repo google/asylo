@@ -813,6 +813,7 @@ asylo/identity/enclave_assertion_authority.h \
 asylo/identity/enclave_assertion_authority_configs.h \
 asylo/identity/identity_acl_evaluator.h \
 asylo/identity/identity_expectation_matcher.h \
+asylo/identity/named_identity_expectation_matcher.h \
 asylo/identity/attestation/enclave_assertion_generator.h \
 asylo/identity/attestation/enclave_assertion_verifier.h \
 asylo/identity/attestation/null/null_assertion_generator.h \
@@ -822,14 +823,15 @@ asylo/identity/attestation/sgx/sgx_age_remote_assertion_generator.h \
 asylo/identity/attestation/sgx/sgx_age_remote_assertion_verifier.h \
 asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_generator.h \
 asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_verifier.h \
+asylo/identity/attestation/sgx/sgx_local_assertion_generator.h \
+asylo/identity/attestation/sgx/sgx_local_assertion_verifier.h \
 asylo/identity/platform/sgx/architecture_bits.h \
 asylo/identity/platform/sgx/attributes_util.h \
 asylo/identity/platform/sgx/miscselect_util.h \
+asylo/identity/platform/sgx/sgx_identity_expectation_matcher.h \
+asylo/identity/platform/sgx/sgx_identity_util.h \
 asylo/identity/sealing/secret_sealer.h \
 asylo/identity/sealing/sgx/sgx_local_secret_sealer.h \
-asylo/identity/sgx/sgx_identity_util.h \
-asylo/identity/sgx/sgx_local_assertion_generator.h \
-asylo/identity/sgx/sgx_local_assertion_verifier.h \
 asylo/platform/core/enclave_client.h \
 asylo/platform/core/enclave_config_util.h \
 asylo/platform/core/enclave_manager.h \

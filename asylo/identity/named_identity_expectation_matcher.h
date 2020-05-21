@@ -28,12 +28,12 @@
 
 namespace asylo {
 
-// A NamedIdentityExpectationMatcher is capable of matching an identity to an
-// expectation if the identity and the expectation's reference identity have the
-// same identity descriptions, and they match the identity description returned
-// by the Description() method of the matcher. A NamedIdentityExpectationMatcher
-// is assigned a name based on the identity description it handles. All
-// subclasses of this class must be marked final.
+/// A `NamedIdentityExpectationMatcher` is capable of matching an identity to an
+/// expectation if the identity and the expectation's reference identity have
+/// the same identity descriptions, and they match the identity description
+/// returned by the `Description()` method of the matcher. A
+/// `NamedIdentityExpectationMatcher` is assigned a name based on the identity
+/// description it handles. All subclasses of this class must be marked `final`.
 class NamedIdentityExpectationMatcher : public IdentityExpectationMatcher {
  public:
   NamedIdentityExpectationMatcher() = default;
@@ -49,15 +49,21 @@ class NamedIdentityExpectationMatcher : public IdentityExpectationMatcher {
   NamedIdentityExpectationMatcher &operator=(
       NamedIdentityExpectationMatcher &&other) = delete;
 
-  // Returns the description of the enclave identities/enclave identity
-  // expectations this matcher is able to match. If the MatchAndExplain() method
-  // of this matcher is invoked with an identity or expectation with a different
-  // description, the matcher returns a non-ok status.
+  /// Returns the description of the enclave identities/enclave identity
+  /// expectations this matcher is able to match. If the `MatchAndExplain()`
+  /// method of this matcher is invoked with an identity or expectation with a
+  /// different description, the matcher returns a non-OK status.
+  ///
+  /// \return A description of the enclave identities/enclave identity
+  ///         expectations this matcher is able to match.
   virtual EnclaveIdentityDescription Description() const = 0;
 
-  // Converts |description| to a name that can be used as a unique identifier
-  // for a NamedIdentityExpectationMatcher that handles identities/expectations
-  // of this description.
+  /// Converts `description` to a name that can be used as a unique identifier
+  /// for a `NamedIdentityExpectationMatcher` that handles
+  /// identities/expectations of this description.
+  ///
+  /// \param description The description to get a name for.
+  /// \return A unique identifying string for `description`.
   static StatusOr<std::string> GetMatcherName(
       const EnclaveIdentityDescription &description);
 };

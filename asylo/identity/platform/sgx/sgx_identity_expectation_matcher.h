@@ -27,20 +27,30 @@
 
 namespace asylo {
 
-// SgxIdentityExpectationMatcher is capable of matching SGX identities with SGX
-// identity expectations.
+/// `SgxIdentityExpectationMatcher` is capable of matching SGX identities with
+/// SGX identity expectations.
 class SgxIdentityExpectationMatcher final
     : public NamedIdentityExpectationMatcher {
  public:
   SgxIdentityExpectationMatcher() = default;
   ~SgxIdentityExpectationMatcher() override = default;
 
-  // From the IdentityExpectationMatcher interface.
+  /// From the `IdentityExpectationMatcher` interface.
+  ///
+  /// \param identity An identity to match.
+  /// \param expectation The identity expectation to match against.
+  /// \param[out] explanation An explanation of why the match failed, if the
+  ///                         return value was false.
+  /// \return A bool indicating whether the match succeeded, or a non-OK Status
+  ///         in the case of invalid arguments.
   StatusOr<bool> MatchAndExplain(const EnclaveIdentity &identity,
                                  const EnclaveIdentityExpectation &expectation,
                                  std::string *explanation) const override;
 
-  // From the NamedIdentityExpectationMatcher interface.
+  /// From the `NamedIdentityExpectationMatcher` interface.
+  ///
+  /// \return A description of the enclave identities/enclave identity
+  ///         expectations this matcher is able to match.
   EnclaveIdentityDescription Description() const override;
 };
 
