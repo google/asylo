@@ -25,7 +25,6 @@
 
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/text_format.h>
-#include <google/protobuf/util/message_differencer.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
@@ -164,13 +163,29 @@ class SgxRemoteAssertionGeneratorImplTest : public testing::Test {
   bool CheckCertificateChainsEqual(
       const std::vector<CertificateChain> &certificate_chains1,
       const google::protobuf::RepeatedPtrField<CertificateChain> &certificate_chains2) {
-    google::protobuf::util::MessageDifferencer message_differencer;
-    for (auto i = 0; i < certificate_chains1.size(); ++i) {
-      if (!message_differencer.Compare(certificate_chains1[i],
-                                       certificate_chains2[i])) {
+    // Optimization: Compare manually instead of using MessageDifferencer, as it
+    // is expensive. Simply comparing format and data is sufficient, and cheaper
+    // by at least an order of magnitude.
+    if (certificate_chains1.size() != certificate_chains2.size()) {
+      return false;
+    }
+
+    for (size_t i = 0; i < certificate_chains1.size(); ++i) {
+      if (certificate_chains1[i].certificates_size() !=
+          certificate_chains2[i].certificates_size()) {
         return false;
       }
+
+      for (size_t j = 0; j < certificate_chains1[i].certificates_size(); ++j) {
+        const auto &certificate1 = certificate_chains1[i].certificates(j);
+        const auto &certificate2 = certificate_chains2[i].certificates(j);
+        if (certificate1.format() != certificate2.format() ||
+            certificate1.data() != certificate2.data()) {
+          return false;
+        }
+      }
     }
+
     return true;
   }
 
@@ -186,6 +201,7 @@ class SgxRemoteAssertionGeneratorImplTest : public testing::Test {
                                       assertion.certificate_chains())) {
         VerifyRemoteAssertion(assertion, certificate_chains,
                               *certs_and_verifying_key_pair.second);
+        break;
       }
     }
   }
