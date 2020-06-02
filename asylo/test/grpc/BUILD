@@ -15,13 +15,12 @@
 #
 
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
-load("//asylo/bazel:asylo.bzl", "cc_test", "cc_unsigned_enclave", "debug_sign_enclave")
-load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@rules_proto//proto:defs.bzl", "proto_library")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
-load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@rules_cc//cc:defs.bzl", "cc_proto_library")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_proto_library")
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("//asylo/bazel:asylo.bzl", "cc_test", "cc_unsigned_enclave", "debug_sign_enclave")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
 
 licenses(["notice"])
 

@@ -14,14 +14,14 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@rules_cc//cc:defs.bzl", "cc_library")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx", "sgx_enclave_configuration")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_enclave_binary",
     "enclave_test",
 )
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])
 

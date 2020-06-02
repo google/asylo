@@ -14,6 +14,10 @@
 # limitations under the License.
 #
 
+load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_proto_library", "cc_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_enclave_test",
@@ -27,11 +31,6 @@ load(
     "sgx_debug_sign_enclave",
     "sgx_enclave_test",
 )
-load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
-load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx")
-load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 licenses(["notice"])
 

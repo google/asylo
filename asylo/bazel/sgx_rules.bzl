@@ -1,7 +1,7 @@
 """SGX-backend-specific build rules for binaries and tests."""
 
-load("//asylo/bazel:asylo.bzl", "cc_unsigned_enclave", "debug_sign_enclave", "enclave_test")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+load("//asylo/bazel:asylo.bzl", "cc_unsigned_enclave", "debug_sign_enclave", "enclave_test")
 
 def sgx_cc_unsigned_enclave(name, **kwargs):
     """Shorthand for cc_unsigned_enclave with only SGX backends.

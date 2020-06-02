@@ -14,10 +14,10 @@
 # limitations under the License.
 #
 
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("//asylo/bazel:asylo.bzl", "cc_test_and_cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 # This packages contains libraries used to implement the platform/sgx libraries.
 

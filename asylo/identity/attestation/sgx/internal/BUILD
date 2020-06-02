@@ -18,6 +18,9 @@
 # attestation.
 
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_proto_library", "cc_test")
+load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//asylo/bazel:asylo.bzl", "cc_test_and_cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
@@ -26,10 +29,6 @@ load(
     "sgx_debug_sign_enclave",
     "sgx_enclave_test",
 )
-load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx")
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
-load("@rules_cc//cc:defs.bzl", "cc_proto_library")
 
 licenses(["notice"])
 

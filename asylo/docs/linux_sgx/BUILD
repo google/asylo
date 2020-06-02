@@ -16,10 +16,10 @@
 
 """Asylo-added starlark rules and macros for linux-sgx."""
 
-licenses(["notice"])
-
-load("@io_bazel_skydoc//stardoc:stardoc.bzl", "stardoc")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@io_bazel_skydoc//stardoc:stardoc.bzl", "stardoc")
+
+licenses(["notice"])
 
 stardoc(
     name = "sgx_sdk_bzl-docs",

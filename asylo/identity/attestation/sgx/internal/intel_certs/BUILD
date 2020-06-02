@@ -16,12 +16,12 @@
 
 # This package contains constants for Intel SGX ECDSA PKI certificates.
 
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@rules_cc//cc:defs.bzl", "cc_library")
 load(
     "//asylo/bazel:asylo.bzl",
     cc_test = "cc_test_and_cc_enclave_test",
 )
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])
 

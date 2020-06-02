@@ -14,9 +14,9 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
 load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])  # Apache v2.0
 

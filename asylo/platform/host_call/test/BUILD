@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+load("@rules_cc//cc:defs.bzl", "cc_library")
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_enclave_test",
@@ -21,10 +23,8 @@ load(
     "debug_sign_enclave",
     "enclave_test",
 )
-load("//asylo/bazel:dlopen_enclave.bzl", "dlopen_enclave_test", "primitives_dlopen_enclave")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@rules_cc//cc:defs.bzl", "cc_library")
+load("//asylo/bazel:dlopen_enclave.bzl", "dlopen_enclave_test", "primitives_dlopen_enclave")
 
 licenses(["notice"])
 

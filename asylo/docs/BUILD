@@ -16,10 +16,10 @@
 
 """Targets for public starlark rule and macro documentation."""
 
-licenses(["notice"])
-
-load("@io_bazel_skydoc//stardoc:stardoc.bzl", "stardoc")
 load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+load("@io_bazel_skydoc//stardoc:stardoc.bzl", "stardoc")
+
+licenses(["notice"])
 
 bzl_library(
     name = "asylo_bzl_internal_dependendency",

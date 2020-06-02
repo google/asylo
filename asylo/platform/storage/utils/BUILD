@@ -16,9 +16,9 @@
 
 # Utility libraries for IO operations.
 
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 
 licenses(["notice"])  # Apache v2.0
 

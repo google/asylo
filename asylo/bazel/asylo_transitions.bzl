@@ -1,8 +1,8 @@
 """Rules that cross toolchain boundaries  by using Bazel transitions."""
 
-load(":asylo_internal.bzl", "internal")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
+load(":asylo_internal.bzl", "internal")
 
 def _cc_backend_unsigned_enclave_impl(ctx):
     return ctx.attr.backend[backend_tools.AsyloBackendInfo].unsigned_enclave_implementation(ctx)

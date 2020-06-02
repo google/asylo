@@ -1,3 +1,5 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
 #
 # Copyright 2019 Asylo authors
 #
@@ -14,7 +16,6 @@
 # limitations under the License.
 #
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@rules_cc//cc:defs.bzl", "cc_library")
 
 licenses(["notice"])
 

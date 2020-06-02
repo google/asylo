@@ -1,7 +1,7 @@
 """Rules that cross toolchain boundaries without using transitions."""
 
-load(":asylo_internal.bzl", "internal")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
+load(":asylo_internal.bzl", "internal")
 
 def _parse_label(label):
     """Parse a label into (package, name).

@@ -14,12 +14,11 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:asylo.bzl", "cc_enclave_test", "cc_test", "embed_enclaves")
-load("//asylo/bazel:dlopen_enclave.bzl", "dlopen_enclave_test")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("@rules_cc//cc:defs.bzl", "cc_library")
-load("@rules_cc//cc:defs.bzl", "cc_proto_library")
+load("//asylo/bazel:asylo.bzl", "cc_enclave_test", "cc_test", "embed_enclaves")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("//asylo/bazel:dlopen_enclave.bzl", "dlopen_enclave_test")
 
 licenses(["notice"])  # Apache v2.0
 

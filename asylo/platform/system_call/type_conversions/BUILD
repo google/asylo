@@ -14,14 +14,14 @@
 # limitations under the License.
 #
 
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
+load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_enclave_test",
     "cc_test_and_cc_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
-load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 
 licenses(["notice"])  # Apache v2.0
 

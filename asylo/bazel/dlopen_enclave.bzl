@@ -16,10 +16,10 @@
 
 """Rule definitions for creating targets for dlopen Asylo enclaves."""
 
-load("//asylo/bazel:asylo.bzl", "enclave_loader", "enclave_test")
-load("//asylo/bazel:asylo_internal.bzl", "internal")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
+load("//asylo/bazel:asylo.bzl", "enclave_loader", "enclave_test")
+load("//asylo/bazel:asylo_internal.bzl", "internal")
 
 # website-docs-metadata
 # ---

@@ -14,10 +14,10 @@
 # limitations under the License.
 #
 
+load("@bazel_skylib//lib:selects.bzl", "selects")
+load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
 load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
-load("@bazel_skylib//lib:selects.bzl", "selects")
 
 licenses(["notice"])
 

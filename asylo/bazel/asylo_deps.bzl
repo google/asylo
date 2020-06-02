@@ -16,8 +16,8 @@
 
 """Repository rule implementations for WORKSPACE to use."""
 
-load("//asylo/bazel:installation_path.bzl", "installation_path")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("//asylo/bazel:installation_path.bzl", "installation_path")
 
 # website-docs-metadata
 # ---

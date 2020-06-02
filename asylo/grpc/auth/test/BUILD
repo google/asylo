@@ -14,9 +14,9 @@
 # limitations under the License.
 #
 
-load(":generate_end2end_tests.bzl", "grpc_end2end_tests")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load(":generate_end2end_tests.bzl", "grpc_end2end_tests")
 
 licenses(["notice"])  # Apache v2.0
 

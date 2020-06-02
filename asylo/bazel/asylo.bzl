@@ -16,7 +16,10 @@
 
 """Macro definitions for Asylo testing."""
 
-load("//asylo/bazel:asylo_internal.bzl", "internal")
+load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
+load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+load("@rules_cc//cc:defs.bzl", "cc_library", native_cc_test = "cc_test")
 load(
     "//asylo/bazel:asylo_copy_from_host.bzl",
     _backend_sign_enclave_with_untrusted_key_old = "backend_sign_enclave_with_untrusted_key",
@@ -27,6 +30,7 @@ load(
     _enclave_runner_script_old = "enclave_runner_script",
     _enclave_runner_test_old = "enclave_runner_test",
 )
+load("//asylo/bazel:asylo_internal.bzl", "internal")
 load(
     "//asylo/bazel:asylo_transitions.bzl",
     _backend_sign_enclave_with_untrusted_key_new = "backend_sign_enclave_with_untrusted_key",
@@ -37,10 +41,6 @@ load(
     _enclave_runner_test_new = "enclave_runner_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
-load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx")
-load("@rules_cc//cc:defs.bzl", "cc_library", native_cc_test = "cc_test")
 
 # website-docs-metadata
 # ---

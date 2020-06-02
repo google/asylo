@@ -14,12 +14,12 @@
 # limitations under the License.
 #
 
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
+
 licenses(["notice"])
 
 # Description: This package provides tools for generating test data for the
 # gRPC security stack implementation.
-
-load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 # Generates test vectors for EKEP secret derivation.
 # Note that the test just makes sure this file builds and runs, but doesn't
