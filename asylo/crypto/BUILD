@@ -731,6 +731,7 @@ cc_test(
     size = "small",
     srcs = ["rsa_oaep_encryption_key_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    transitive_features = ["lvi_no_auto_mitigation"],  # disable LVI mitigation to shorten test time
     deps = [
         ":algorithms_cc_proto",
         ":asymmetric_encryption_key",
