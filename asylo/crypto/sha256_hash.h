@@ -19,7 +19,7 @@
 #ifndef ASYLO_CRYPTO_SHA256_HASH_H_
 #define ASYLO_CRYPTO_SHA256_HASH_H_
 
-#include <openssl/sha.h>
+#include <openssl/base.h>
 
 #include <vector>
 
@@ -33,6 +33,7 @@ namespace asylo {
 class Sha256Hash final : public HashInterface {
  public:
   Sha256Hash();
+  ~Sha256Hash() override;
 
   // From HashInterface.
   HashAlgorithm GetHashAlgorithm() const override;
@@ -42,7 +43,7 @@ class Sha256Hash final : public HashInterface {
   Status CumulativeHash(std::vector<uint8_t> *digest) const override;
 
  private:
-  SHA256_CTX context_;
+  EVP_MD_CTX *context_;
 };
 
 }  // namespace asylo

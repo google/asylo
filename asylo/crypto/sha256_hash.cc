@@ -18,34 +18,50 @@
 
 #include "asylo/crypto/sha256_hash.h"
 
-#include <openssl/sha.h>
+#include <openssl/base.h>
+#include <openssl/digest.h>
 
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
 
 namespace asylo {
 
-Sha256Hash::Sha256Hash() { Init(); }
+Sha256Hash::Sha256Hash() : context_(CHECK_NOTNULL(EVP_MD_CTX_new())) { Init(); }
+
+Sha256Hash::~Sha256Hash() { EVP_MD_CTX_free(context_); }
 
 HashAlgorithm Sha256Hash::GetHashAlgorithm() const {
   return HashAlgorithm::SHA256;
 }
 
-size_t Sha256Hash::DigestSize() const { return SHA256_DIGEST_LENGTH; }
+size_t Sha256Hash::DigestSize() const { return EVP_MD_size(EVP_sha256()); }
 
-void Sha256Hash::Init() { SHA256_Init(&context_); }
+void Sha256Hash::Init() {
+  EVP_MD_CTX_cleanup(context_);
+  EVP_DigestInit(context_, EVP_sha256());
+}
 
 void Sha256Hash::Update(ByteContainerView data) {
-  SHA256_Update(&context_, data.data(), data.size());
+  EVP_DigestUpdate(context_, data.data(), data.size());
 }
 
 Status Sha256Hash::CumulativeHash(std::vector<uint8_t> *digest) const {
   // Do not finalize the internally stored hash context. Instead, finalize a
   // copy of the current context so that the current context can be updated in
   // future calls to Update.
-  SHA256_CTX context_snapshot = context_;
-  digest->resize(SHA256_DIGEST_LENGTH);
-  if (SHA256_Final(digest->data(), &context_snapshot) != 1) {
+  bssl::UniquePtr<EVP_MD_CTX> context_snapshot(EVP_MD_CTX_new());
+  if (context_snapshot == nullptr) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  EVP_MD_CTX_init(context_snapshot.get());
+  if (EVP_MD_CTX_copy_ex(context_snapshot.get(), context_) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  digest->resize(DigestSize());
+  unsigned int digest_len;
+  if (EVP_DigestFinal(context_snapshot.get(), digest->data(), &digest_len) !=
+          1 ||
+      digest_len != DigestSize()) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
   return Status::OkStatus();
