@@ -334,14 +334,16 @@ class SafeBytes final : public Bytes<Size, SafePolicy, SafeBytes<Size>> {
 
   SafeBytes() = default;
 
-  // The following template constructor just forwards all its arguments to the
-  // constructor of the base type. This template construct is safe because none
-  // of the constructors of the base type are marked explicit. As a result,
-  // there is no possibility of this constructor exposing an explicit
-  // constructor of the base class through this implicit constructor.
-  template <typename... Args>
-  SafeBytes(Args &&... args)
-      : base_type(std::forward<Args>(args)...) {}
+  // The following template constructor requires at least one argument
+  // since the 0 argument case is covered by the default constructor. It
+  // forwards all its arguments to the constructor of the base type. This
+  // template construct is safe because none of the constructors of the base
+  // type are marked explicit. As a result, there is no possibility of this
+  // constructor exposing an explicit constructor of the base class through this
+  // implicit constructor.
+  template <typename Arg, typename... Args>
+  SafeBytes(Arg &&arg, Args &&... args)
+      : base_type(std::forward<Arg>(arg), std::forward<Args>(args)...) {}
 
   // The equality operator. Performs a side-channel-resistant comparison of
   // |other| with this object.
@@ -386,14 +388,16 @@ class UnsafeBytes final : public Bytes<Size, UnsafePolicy, UnsafeBytes<Size>> {
   UnsafeBytes &operator=(UnsafeBytes &&) = default;
   ~UnsafeBytes() = default;
 
-  // The following template constructor just forwards all its arguments to the
-  // constructor of the base type. This template construct is safe because none
-  // of the constructors of the base type are marked explicit. As a result,
-  // there is no possibility of this constructor exposing an explicit
-  // constructor of the base class through this implicit constructor.
-  template <typename... Args>
-  UnsafeBytes(Args &&... args)
-      : base_type(std::forward<Args>(args)...) {}
+  // The following template constructor requires at least one argument
+  // since the 0 argument case is covered by the default constructor. It just
+  // forwards all its arguments to the constructor of the base type. This
+  // template construct is safe because none of the constructors of the base
+  // type are marked explicit. As a result, there is no possibility of this
+  // constructor exposing an explicit constructor of the base class through this
+  // implicit constructor.
+  template <typename Arg, typename... Args>
+  UnsafeBytes(Arg &&arg, Args &&... args)
+      : base_type(std::forward<Arg>(arg), std::forward<Args>(args)...) {}
 
   // The equality operator. Since the UnsafeBytes class uses UnsafePolicy to
   // configure its Bytes base class, the Equals method, when invoked on an
