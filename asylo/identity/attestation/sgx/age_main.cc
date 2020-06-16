@@ -42,6 +42,7 @@
 #include "asylo/identity/attestation/sgx/internal/sgx_infrastructural_enclave_manager.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/enclave_assertion_authority_configs.h"
+#include "asylo/identity/platform/sgx/internal/ppid_ek.h"
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
 #include "asylo/identity/provisioning/sgx/internal/pck_certificate_util.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
@@ -107,27 +108,8 @@ ABSL_FLAG(bool, print_sgx_platform_info, false,
           "PCE SVN, PCE ID to STDOUT");
 
 // Required for Option B.
-ABSL_FLAG(
-    asylo::AsymmetricEncryptionKeyProto, ppidek,
-    asylo::ParseTextProto<asylo::AsymmetricEncryptionKeyProto>(
-        R"pb(
-          key_type: ENCRYPTION_KEY
-          encoding: ASYMMETRIC_KEY_PEM
-          encryption_scheme: RSA3072_OAEP
-          key: "-----BEGIN PUBLIC KEY-----\n"
-               "MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA05b5Q0MRABxpRJw7/e6P\n"
-               "OM2Vza10CXyH8adlAkyHwVcwpcmmpMz5HWIYHgCmdCdYWcobHfUxDvLV4Xk3OZQ9\n"
-               "PeJQkxLWA+UZOkjwrgw37uBXJ73sFxsPOYYGVCB0hDS+NPpxb6H1TJpSD8S8LXou\n"
-               "F+Ndog7KOQeYqQUaNPuPYJw6HiYwC/PzSUDZ913L0b9XjeUtzphXNfGTwxkugFU3\n"
-               "q41kCNrm3WS0YoONQ6rSe8Jjqpfe7QmS1ohWhs0IIwMnmnh89DYS9bHmHVSriGn/\n"
-               "GE/ch+40pmixgWe2zgpwFLyz4Y12HHPeAKtBykBRU2MEw2MLymLaqpzlAbfAD34L\n"
-               "sL7p+A2ztmT9zZUXnFeO7MSsizYBXkxtHiFJoB3eBDlrNGhE6gZ24I0fosAmBcyR\n"
-               "vqMXyHVGhRA5FlCOAkOYMXBp2DRxgudIJs3BgtPrb+lY5wZ3EB/fSXYwp2hCsBbX\n"
-               "2pJ11X8udUOsg7Afw5AZzqqU0C5abBNy56a1wEWB41MnAgMBAAE=\n"
-               "-----END PUBLIC KEY-----\n"
-        )pb")
-        .ValueOrDie(),
-    "The RSA-3072 PPID encryption key");
+ABSL_FLAG(asylo::AsymmetricEncryptionKeyProto, ppidek,
+          asylo::sgx::GetPpidEkProto(), "The RSA-3072 PPID encryption key");
 
 // Required for Option B.
 ABSL_FLAG(bool, print_plaintext_ppid, false,

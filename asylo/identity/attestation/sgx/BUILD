@@ -556,6 +556,7 @@ transitions.cc_binary(
         "//asylo/identity/attestation/sgx/internal:host_dcap_library_interface",
         "//asylo/identity/attestation/sgx/internal:intel_architectural_enclave_interface",
         "//asylo/identity/attestation/sgx/internal:sgx_infrastructural_enclave_manager",
+        "//asylo/identity/platform/sgx/internal:ppid_ek",
         "//asylo/identity/provisioning/sgx/internal:fake_sgx_pki",
         "//asylo/identity/provisioning/sgx/internal:pck_certificate_util",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning",

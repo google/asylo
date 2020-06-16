@@ -348,3 +348,29 @@ cc_test_and_cc_enclave_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_library(
+    name = "ppid_ek",
+    srcs = ["ppid_ek.cc"],
+    hdrs = ["ppid_ek.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/util:proto_parse_util",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_test_and_cc_enclave_test(
+    name = "ppid_ek_test",
+    srcs = ["ppid_ek_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":ppid_ek",
+        "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
