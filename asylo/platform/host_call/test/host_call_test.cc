@@ -1968,7 +1968,8 @@ TEST_F(HostCallTest, TestSleep) {
 
   ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
   EXPECT_THAT(out.next<int>(), Eq(0));
-  EXPECT_GE(duration, 1 * kNanosecondsPerSecond);
+  // Allow some inprecision on sleep time inside the enclave call
+  EXPECT_GE(duration, 0.995 * kNanosecondsPerSecond);
   EXPECT_LE(duration,
             1.6 * kNanosecondsPerSecond);  // Allow sufficient time padding for
                                            // EnclaveCall to perform
