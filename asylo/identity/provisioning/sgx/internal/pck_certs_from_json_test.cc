@@ -37,8 +37,6 @@ namespace asylo {
 namespace sgx {
 namespace {
 
-using ::testing::_;
-using ::testing::AnyNumber;
 using ::testing::HasSubstr;
 
 constexpr char kValidPckCertsJson[] =

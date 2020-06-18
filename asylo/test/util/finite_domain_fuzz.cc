@@ -69,7 +69,7 @@ FuzzBitsetTranslationFunction(const std::vector<int64_t>& input,
     out = 0;
     for (int j = 0; j < sizeof(int64_t) * 8; j++) {
       int flag = random_flag();
-      auto found = find(begin, end, flag);
+      auto found = std::find(begin, end, flag);
       size_t index = found - begin;
       // If flag is not in input, then OR it in without a translated
       // output counterpart.

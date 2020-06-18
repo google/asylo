@@ -59,7 +59,6 @@ using ::testing::Ne;
 using ::testing::Not;
 using ::testing::Optional;
 using ::testing::SizeIs;
-using ::testing::StrEq;
 using ::testing::Test;
 using ::testing::Types;
 
