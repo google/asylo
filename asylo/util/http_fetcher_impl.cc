@@ -146,6 +146,10 @@ StatusOr<HttpFetcher::HttpResponse> HttpFetcherImpl::Get(
     absl::string_view url,
     const std::vector<HttpFetcher::HttpHeaderField> &custom_headers) {
   curl_->Reset();
+  if (!ca_cert_filename_.empty()) {
+    ASYLO_RETURN_IF_ERROR(curl_->SetOpt(
+        CURLOPT_CAINFO, const_cast<char *>(ca_cert_filename_.c_str())));
+  }
   ASYLO_RETURN_IF_ERROR(curl_->SetOpt(
       CURLOPT_URL,
       reinterpret_cast<void *>(const_cast<char *>(std::string(url).c_str()))));

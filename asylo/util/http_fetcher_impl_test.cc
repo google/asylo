@@ -26,8 +26,10 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/statusor.h"
+#include <curl/curl.h>
 
 namespace asylo {
 namespace {
@@ -60,6 +62,7 @@ class FakeCurl : public Curl {
   Status SetOpt(CURLoption option, void *value) override;
   void Reset() override;
   const std::string last_url() const { return last_url_; }
+  const absl::optional<std::string> ca_path() const { return ca_path_; }
 
   void set_perform_failure() { perform_failure_ = true; }
   void set_setopt_failure(CURLoption option) {
@@ -70,6 +73,7 @@ class FakeCurl : public Curl {
   std::vector<std::string> headers_;
   std::string body_;
   std::string last_url_;
+  absl::optional<std::string> ca_path_;
   WriteFn write_fn_;
   void *write_data_;
   WriteFn header_fn_;
@@ -107,6 +111,7 @@ Status FakeCurl::Perform() {
 
 void FakeCurl::Reset() {
   last_url_ = "";
+  ca_path_.reset();
   write_fn_ = nullptr;
   write_data_ = nullptr;
   header_fn_ = nullptr;
@@ -133,7 +138,10 @@ Status FakeCurl::SetOpt(CURLoption option, void *value) {
     case CURLOPT_HTTPHEADER:
       break;
     case CURLOPT_URL:
-      last_url_ = reinterpret_cast<char *>(value);
+      last_url_ = static_cast<char *>(value);
+      break;
+    case CURLOPT_CAINFO:
+      ca_path_ = static_cast<char *>(value);
       break;
     default:
       return Status(error::GoogleError::INTERNAL,
@@ -215,11 +223,12 @@ TEST(HttpFetcherImplTest, Success) {
   std::unique_ptr<FakeCurl> curl;
   ASYLO_ASSERT_OK_AND_ASSIGN(curl, FakeCurl::Create(kRawResponse));
   FakeCurl *curlptr = curl.get();
-  HttpFetcherImpl fetcher(std::move(curl));
+  HttpFetcherImpl fetcher(std::move(curl), /*ca_cert_filename=*/"");
   HttpFetcher::HttpResponse response;
   ASYLO_ASSERT_OK_AND_ASSIGN(response, fetcher.Get(kUrl, {}));
 
   EXPECT_THAT(curlptr->last_url(), Eq(kUrl));
+  EXPECT_FALSE(curlptr->ca_path().has_value());
   EXPECT_THAT(response.status_code, 200);
   EXPECT_THAT(response.header,
               ElementsAre(Pair("Content-Type", "text/html; charset=UTF-8"),
@@ -231,6 +240,25 @@ TEST(HttpFetcherImplTest, Success) {
          "h1 { font-size:4cm; text-align: center; color: black;"
          " text-shadow: 0 0 2mm red}</style></head>"
          "<body><h1>Goodbye, world!</h1></body></html>\r\n"));
+}
+
+TEST(HttpFetcherImplTest, ExplicitCaPathConstructor) {
+  constexpr char kCaPath[] = "/path/to/ca/file";
+  constexpr char kRawResponse[] =
+      "HTTP/1.1 200 OK\r\n"
+      "\r\n"
+      "lorem ipsum dolor sit\r\n";
+  std::unique_ptr<FakeCurl> curl;
+  ASYLO_ASSERT_OK_AND_ASSIGN(curl, FakeCurl::Create(kRawResponse));
+  FakeCurl *curlptr = curl.get();
+  HttpFetcherImpl fetcher(std::move(curl), kCaPath);
+  HttpFetcher::HttpResponse response;
+  ASYLO_ASSERT_OK_AND_ASSIGN(response, fetcher.Get("http://lorem.ipsum", {}));
+
+  ASSERT_TRUE(curlptr->ca_path().has_value());
+  EXPECT_THAT(curlptr->ca_path().value(), Eq(kCaPath));
+  EXPECT_THAT(response.status_code, 200);
+  EXPECT_THAT(response.body, Eq("lorem ipsum dolor sit\r\n"));
 }
 
 TEST(HttpFetcherImplTest, Perform_Failure) {
@@ -247,7 +275,7 @@ TEST(HttpFetcherImplTest, Perform_Failure) {
   std::unique_ptr<FakeCurl> curl;
   ASYLO_ASSERT_OK_AND_ASSIGN(curl, FakeCurl::Create(kRawResponse));
   curl->set_perform_failure();
-  HttpFetcherImpl fetcher(std::move(curl));
+  HttpFetcherImpl fetcher(std::move(curl), /*ca_cert_filename=*/"");
   HttpFetcher::HttpResponse response;
   EXPECT_THAT(fetcher.Get(kUrl, {}), StatusIs(error::GoogleError::INTERNAL));
 }
@@ -261,7 +289,7 @@ INSTANTIATE_TEST_SUITE_P(SetOptErrors, HttpFetcherImplSetOptErrorTest,
                          ValuesIn(std::vector<CURLoption>{
                              CURLOPT_URL, CURLOPT_HEADERFUNCTION,
                              CURLOPT_HEADERDATA, CURLOPT_WRITEFUNCTION,
-                             CURLOPT_WRITEDATA}));
+                             CURLOPT_WRITEDATA, CURLOPT_CAINFO}));
 
 TEST_P(HttpFetcherImplSetOptErrorTest, SetOpt_Failure) {
   constexpr char kRawResponse[] =
@@ -277,7 +305,7 @@ TEST_P(HttpFetcherImplSetOptErrorTest, SetOpt_Failure) {
   std::unique_ptr<FakeCurl> curl;
   ASYLO_ASSERT_OK_AND_ASSIGN(curl, FakeCurl::Create(kRawResponse));
   curl->set_setopt_failure(GetParam());
-  HttpFetcherImpl fetcher(std::move(curl));
+  HttpFetcherImpl fetcher(std::move(curl), "/ca/cert/filename");
   HttpFetcher::HttpResponse response;
   EXPECT_THAT(fetcher.Get(kUrl, {}), StatusIs(error::GoogleError::INTERNAL));
 }

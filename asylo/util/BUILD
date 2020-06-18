@@ -711,8 +711,10 @@ cc_test(
         ":status",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "@com_github_curl_curl//:curl",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
         "@com_google_googletest//:gtest",
     ],
 )

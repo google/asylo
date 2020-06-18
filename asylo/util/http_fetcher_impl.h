@@ -57,9 +57,16 @@ size_t ParseHttpHeader(const char *buffer, size_t size, size_t nitems,
 // Implements HttpFetcher using libcurl.
 class HttpFetcherImpl : public HttpFetcher {
  public:
-  HttpFetcherImpl() : curl_(CreateCurl()) {}
-  explicit HttpFetcherImpl(std::unique_ptr<Curl> curl)
-      : curl_(std::move(curl)) {}
+  HttpFetcherImpl() : HttpFetcherImpl("") {}
+
+  // Constructs an HttpFetcherImpl object that will use |ca_cert_filename| as
+  // the trusted root for validating the TLS connection with the remote server.
+  explicit HttpFetcherImpl(absl::string_view ca_cert_filename)
+      : HttpFetcherImpl(CreateCurl(), ca_cert_filename) {}
+
+  explicit HttpFetcherImpl(std::unique_ptr<Curl> curl,
+                           absl::string_view ca_cert_filename)
+      : curl_(std::move(curl)), ca_cert_filename_(ca_cert_filename) {}
   ~HttpFetcherImpl() override {}
 
   StatusOr<HttpFetcher::HttpResponse> Get(
@@ -68,6 +75,7 @@ class HttpFetcherImpl : public HttpFetcher {
 
  private:
   std::unique_ptr<Curl> curl_;
+  std::string ca_cert_filename_;
 };
 
 }  // namespace asylo
