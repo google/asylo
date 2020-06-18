@@ -33,6 +33,7 @@
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -76,6 +77,20 @@ Status CheckHashAlgorithm(HashAlgorithm hash_alg) {
                   "UNKNOWN_HASH_ALGORITHM is not valid for RSA-OAEP hashing.");
   }
   return Status::OkStatus();
+}
+
+Status CheckEncryptionScheme(AsymmetricEncryptionScheme scheme) {
+  switch (scheme) {
+    case AsymmetricEncryptionScheme::RSA2048_OAEP:
+    case AsymmetricEncryptionScheme::RSA3072_OAEP:
+      return Status::OkStatus();
+    case AsymmetricEncryptionScheme::UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME:
+      break;  // Error handled below
+  }
+
+  return Status(
+      error::GoogleError::INVALID_ARGUMENT,
+      absl::StrCat("Invalid encryption scheme: ", ProtoEnumValueName(scheme)));
 }
 
 // Defines a functor which performs RSA crypto with OAEP.
@@ -205,6 +220,43 @@ RsaOaepEncryptionKey::CreateFromPem(ByteContainerView serialized_key,
   ASYLO_RETURN_IF_ERROR(CheckKeySize(RSA_bits(public_key.get())));
 
   return Create(std::move(public_key), hash_alg);
+}
+
+StatusOr<std::unique_ptr<RsaOaepEncryptionKey>>
+RsaOaepEncryptionKey::CreateFromProto(
+    const AsymmetricEncryptionKeyProto &key_proto, HashAlgorithm hash_alg) {
+  if (key_proto.key_type() != AsymmetricEncryptionKeyProto::ENCRYPTION_KEY) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Invalid key type: ",
+                               ProtoEnumValueName(key_proto.key_type())));
+  }
+
+  ASYLO_RETURN_IF_ERROR(CheckEncryptionScheme(key_proto.encryption_scheme()));
+
+  std::unique_ptr<RsaOaepEncryptionKey> key;
+  switch (key_proto.encoding()) {
+    case ASYMMETRIC_KEY_DER:
+      ASYLO_ASSIGN_OR_RETURN(key, CreateFromDer(key_proto.key(), hash_alg));
+      break;
+    case ASYMMETRIC_KEY_PEM:
+      ASYLO_ASSIGN_OR_RETURN(key, CreateFromPem(key_proto.key(), hash_alg));
+      break;
+    default:
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    absl::StrCat("Invalid key encoding: ",
+                                 ProtoEnumValueName(key_proto.encoding())));
+  }
+
+  if (key->GetEncryptionScheme() != key_proto.encryption_scheme()) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrCat(
+            "Mismatched encryption scheme. Expected (based on input): ",
+            ProtoEnumValueName(key_proto.encryption_scheme()),
+            ". Actual: ", ProtoEnumValueName(key->GetEncryptionScheme())));
+  }
+
+  return std::move(key);
 }
 
 StatusOr<std::unique_ptr<RsaOaepEncryptionKey>> RsaOaepEncryptionKey::Create(

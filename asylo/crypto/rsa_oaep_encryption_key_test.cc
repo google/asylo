@@ -33,10 +33,12 @@
 #include "absl/strings/escaping.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/asymmetric_encryption_key.h"
+#include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/cleansing_types.h"
+#include "asylo/util/proto_parse_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
@@ -45,6 +47,8 @@ namespace {
 
 using ::testing::ElementsAreArray;
 using ::testing::Eq;
+using ::testing::HasSubstr;
+using ::testing::IsTrue;
 using ::testing::NotNull;
 using ::testing::Test;
 
@@ -107,6 +111,23 @@ NWavmYjDLWdZJ3w+dlv/F6HgxmsigZoHz1PfesgDfTQ6pZPTGopavgVf0twU93Nd
 I7mFs4MtE8RKDJgiyGm29vGqQ+cX8ubGrQXTM4soVd/TAgMBAAE=
 -----END PUBLIC KEY-----)";
 
+constexpr char kRsa3072PublicKeyPemTextProto[] =
+    R"pb(
+  key_type: ENCRYPTION_KEY
+  encoding: ASYMMETRIC_KEY_PEM
+  encryption_scheme: RSA3072_OAEP
+  key: "-----BEGIN PUBLIC KEY-----\n"
+       "MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzhyEsC43bxgIYmVMYWXq\n"
+       "C0H0D0o9uYR1nw8SeCmj7ywTfTFkPtkeUFFGhd3pmP+/cJdCNcxlJrBAsnUOBMLW\n"
+       "ZO+pVeeuLLt6CAtohH50mm+x0VE7GkKbaA10yNryBWT1EeeblJ3l5SOT+W7pVp2o\n"
+       "q+MaMGMpJOFrMEjUCFMutdt9uCQlnfDpU297ai/luGrdufRet6Y9CPYINqwdizMI\n"
+       "jYwG8medtD9L2i2GlPKn0aeJpoyXp4W9BKj+DlNcue9VBsa85Bw3Fq/P2f/5gizq\n"
+       "wb0+ucQOUNaWNtp2To1t/I/XpCEXbkuYIyjhrjkLEFS5Lo4yvadjHb72Rm/xosJ9\n"
+       "jDaRc+ySlEmp9kiXEQJsEzhxd16+m/7wufsdgNLSHNoRua+y5KK5oP77OIwkgv01\n"
+       "NWavmYjDLWdZJ3w+dlv/F6HgxmsigZoHz1PfesgDfTQ6pZPTGopavgVf0twU93Nd\n"
+       "I7mFs4MtE8RKDJgiyGm29vGqQ+cX8ubGrQXTM4soVd/TAgMBAAE=\n"
+       "-----END PUBLIC KEY-----\n")pb";
+
 constexpr char kRsa3072PublicKeyDer[] =
     "MIIBigKCAYEAzhyEsC43bxgIYmVMYWXqC0H0D0o9uYR1nw8SeCmj7ywTfTFkPtkeUFFGhd3pmP"
     "+/cJdCNcxlJrBAsnUOBMLWZO+pVeeuLLt6CAtohH50mm+x0VE7GkKbaA10yNryBWT1EeeblJ3l"
@@ -116,6 +137,13 @@ constexpr char kRsa3072PublicKeyDer[] =
     "JsEzhxd16+m/7wufsdgNLSHNoRua+y5KK5oP77OIwkgv01NWavmYjDLWdZJ3w+dlv/F6Hgxmsi"
     "gZoHz1PfesgDfTQ6pZPTGopavgVf0twU93NdI7mFs4MtE8RKDJgiyGm29vGqQ+cX8ubGrQXTM4"
     "soVd/TAgMBAAE=";
+
+constexpr char kRsa3072PublicKeyDerTextProto[] =
+    R"pb(
+  key_type: ENCRYPTION_KEY
+  encoding: ASYMMETRIC_KEY_DER
+  encryption_scheme: RSA3072_OAEP
+  key: "0\202\001\212\002\202\001\201\000\316\034\204\260.7o\030\010beLae\352\013A\364\017J=\271\204u\237\017\022x)\243\357,\023}1d>\331\036PQF\205\335\351\230\377\277p\227B5\314e&\260@\262u\016\004\302\326d\357\251U\347\256,\273z\010\013h\204~t\232o\261\321Q;\032B\233h\rt\310\332\362\005d\365\021\347\233\224\235\345\345#\223\371n\351V\235\250\253\343\0320c)$\341k0H\324\010S.\265\333}\270$%\235\360\351So{j/\345\270j\335\271\364^\267\246=\010\366\0106\254\035\2133\010\215\214\006\362g\235\264?K\332-\206\224\362\247\321\247\211\246\214\227\247\205\275\004\250\376\016S\\\271\357U\006\306\274\344\0347\026\257\317\331\377\371\202,\352\301\275>\271\304\016P\326\2266\332vN\215m\374\217\327\244!\027nK\230#(\341\2569\013\020T\271.\2162\275\247c\035\276\366Fo\361\242\302}\2146\221s\354\222\224I\251\366H\227\021\002l\0238qw^\276\233\376\360\271\373\035\200\322\322\034\332\021\271\257\262\344\242\271\240\376\3738\214$\202\37555f\257\231\210\303-gY\'|>v[\377\027\241\340\306k\"\201\232\007\317S\337z\310\003}4:\245\223\323\032\212Z\276\005_\322\334\024\367s]#\271\205\263\203-\023\304J\014\230\"\310i\266\366\361\252C\347\027\362\346\306\255\005\3233\213(U\337\323\002\003\001\000\001")pb";
 
 // This private key corresponds with kRsa3072PublicKeyPem above.
 constexpr char kRsa3072PrivateKeyDerBase64[] =
@@ -402,5 +430,133 @@ TEST(RsaOaepEncryptionKeyTest,
       StatusIs(error::GoogleError::INVALID_ARGUMENT, "Invalid key size: 1024"));
 }
 
+TEST(AsymmetricEncryptionKeyTest, CreateFromProto) {
+  std::unique_ptr<AsymmetricEncryptionKey> encryption_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      encryption_key, RsaOaepEncryptionKey::CreateFromProto(
+                          ParseTextProtoOrDie(kRsa3072PublicKeyPemTextProto),
+                          HashAlgorithm::SHA256));
+
+  static constexpr char kInput[] = "Super secret stuff here";
+  std::vector<uint8_t> ciphertext;
+  ASYLO_ASSERT_OK(encryption_key->Encrypt(kInput, &ciphertext));
+
+  std::string rsa_3072_private_key_der;
+  ASSERT_THAT(absl::Base64Unescape(kRsa3072PrivateKeyDerBase64,
+                                   &rsa_3072_private_key_der),
+              IsTrue());
+  std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      decryption_key, RsaOaepDecryptionKey::CreateFromDer(
+                          rsa_3072_private_key_der, HashAlgorithm::SHA256));
+  CleansingVector<uint8_t> plaintext;
+  ASYLO_ASSERT_OK(decryption_key->Decrypt(ciphertext, &plaintext));
+  EXPECT_THAT(std::string(plaintext.begin(), plaintext.end()), Eq(kInput));
+}
+
+TEST(AsymmetricEncryptionKeyTest, CreateFromDerAndPemProto) {
+  std::unique_ptr<AsymmetricEncryptionKey> pem_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      pem_key, RsaOaepEncryptionKey::CreateFromProto(
+                   ParseTextProtoOrDie(kRsa3072PublicKeyPemTextProto),
+                   HashAlgorithm::SHA256));
+
+  std::unique_ptr<AsymmetricEncryptionKey> der_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      der_key, RsaOaepEncryptionKey::CreateFromProto(
+                   ParseTextProtoOrDie(kRsa3072PublicKeyDerTextProto),
+                   HashAlgorithm::SHA256));
+
+  ASYLO_ASSERT_OK(pem_key->SerializeToDer());
+  ASYLO_ASSERT_OK(der_key->SerializeToDer());
+  EXPECT_THAT(pem_key->SerializeToDer().ValueOrDie(),
+              Eq(der_key->SerializeToDer().ValueOrDie()));
+}
+
+TEST(AsymmetricEncryptionKeyTest, RoundTripProtoConversion) {
+  std::unique_ptr<AsymmetricEncryptionKey> key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      key, RsaOaepEncryptionKey::CreateFromProto(
+               ParseTextProtoOrDie(kRsa3072PublicKeyPemTextProto),
+               HashAlgorithm::SHA256));
+
+  AsymmetricEncryptionKeyProto proto;
+  ASYLO_ASSERT_OK_AND_ASSIGN(proto,
+                             ConvertToAsymmetricEncryptionKeyProto(*key));
+  ASSERT_THAT(proto.encoding(), Eq(ASYMMETRIC_KEY_DER));
+
+  std::unique_ptr<AsymmetricEncryptionKey> key_clone;
+  ASYLO_ASSERT_OK_AND_ASSIGN(key_clone, RsaOaepEncryptionKey::CreateFromProto(
+                                            proto, HashAlgorithm::SHA256));
+
+  // Verify the two keys have the same set of properties
+  std::string key_der;
+  ASYLO_ASSERT_OK_AND_ASSIGN(key_der, key->SerializeToDer());
+
+  std::string key_clone_der;
+  ASYLO_ASSERT_OK_AND_ASSIGN(key_clone_der, key_clone->SerializeToDer());
+
+  EXPECT_THAT(key_clone_der, Eq(key_der));
+}
+
+TEST(AsymmetricEncryptionKeyTest, CreateEncryptionSchemeMismatchFailure) {
+  AsymmetricEncryptionKeyProto proto =
+      ParseTextProtoOrDie(kRsa3072PublicKeyPemTextProto);
+  proto.set_encryption_scheme(AsymmetricEncryptionScheme::RSA2048_OAEP);
+
+  EXPECT_THAT(
+      RsaOaepEncryptionKey::CreateFromProto(proto, HashAlgorithm::SHA256),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("scheme")));
+}
+
+TEST(AsymmetricEncryptionKeyTest, CreateWithInvalidEncryptionSchemeFailure) {
+  AsymmetricEncryptionKeyProto proto =
+      ParseTextProtoOrDie(kRsa3072PublicKeyPemTextProto);
+  proto.set_encryption_scheme(
+      AsymmetricEncryptionScheme::UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME);
+
+  EXPECT_THAT(
+      RsaOaepEncryptionKey::CreateFromProto(proto, HashAlgorithm::SHA256),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("scheme")));
+}
+
+TEST(AsymmetricEncryptionKeyTest, CreateEncryptionKeyTypeMismatchFailure) {
+  AsymmetricEncryptionKeyProto proto =
+      ParseTextProtoOrDie(kRsa3072PublicKeyPemTextProto);
+  proto.set_key_type(AsymmetricEncryptionKeyProto::DECRYPTION_KEY);
+
+  EXPECT_THAT(
+      RsaOaepEncryptionKey::CreateFromProto(proto, HashAlgorithm::SHA256),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("key type")));
+}
+
+TEST(AsymmetricEncryptionKeyTest, CreateInvalidEncodingFailure) {
+  AsymmetricEncryptionKeyProto proto =
+      ParseTextProtoOrDie(kRsa3072PublicKeyPemTextProto);
+  proto.set_encoding(UNKNOWN_ASYMMETRIC_KEY_ENCODING);
+
+  EXPECT_THAT(
+      RsaOaepEncryptionKey::CreateFromProto(proto, HashAlgorithm::SHA256),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("encoding")));
+}
+
+TEST(AsymmetricEncryptionKeyTest, CreateEncodingMismatchFailure) {
+  AsymmetricEncryptionKeyProto proto =
+      ParseTextProtoOrDie(kRsa3072PublicKeyPemTextProto);
+  proto.set_encoding(ASYMMETRIC_KEY_DER);
+
+  EXPECT_THAT(
+      RsaOaepEncryptionKey::CreateFromProto(proto, HashAlgorithm::SHA256),
+      StatusIs(error::GoogleError::INTERNAL, HasSubstr("BAD_ENCODING")));
+}
+
+TEST(AsymmetricEncryptionKeyTest, CreateInvalidHashFailure) {
+  AsymmetricEncryptionKeyProto proto =
+      ParseTextProtoOrDie(kRsa3072PublicKeyPemTextProto);
+  EXPECT_THAT(
+      RsaOaepEncryptionKey::CreateFromProto(
+          proto, HashAlgorithm::UNKNOWN_HASH_ALGORITHM),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("hash")));
+}
 }  // namespace
 }  // namespace asylo

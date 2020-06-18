@@ -62,6 +62,11 @@ class RsaOaepEncryptionKey : public AsymmetricEncryptionKey {
   static StatusOr<std::unique_ptr<RsaOaepEncryptionKey>> CreateFromPem(
       ByteContainerView serialized_key, HashAlgorithm hash_alg);
 
+  // Creates an RSA encryption key from the given protobuf |key_proto|.
+  // Uses |hash_alg| for OAEP padding.
+  static StatusOr<std::unique_ptr<RsaOaepEncryptionKey>> CreateFromProto(
+      const AsymmetricEncryptionKeyProto &key_proto, HashAlgorithm hash_alg);
+
   // Creates a new RSA encryption key from the given |public_key|, using
   // |hash_alg| for OAEP hashing. Uses |hash_alg| for OAEP padding.
   static StatusOr<std::unique_ptr<RsaOaepEncryptionKey>> Create(
