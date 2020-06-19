@@ -29,6 +29,7 @@
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/ascii.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/cleanup.h"
