@@ -21,6 +21,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/platform/primitives/remote/util/proxy_launcher.h"
 #include "asylo/util/remote/provision.h"
