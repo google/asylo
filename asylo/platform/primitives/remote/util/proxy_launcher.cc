@@ -26,6 +26,7 @@
 #include <string>
 
 #include "absl/flags/flag.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/remote/util/grpc_credential_builder.h"
