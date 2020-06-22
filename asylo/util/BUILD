@@ -336,6 +336,7 @@ cc_test(
         "//asylo/test/util:test_main",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf_lite",
     ],
 )
 

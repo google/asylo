@@ -78,7 +78,8 @@ struct status_type_traits {
   template <typename StatusU>
   static auto CheckMinimalApi(StatusU *s, int *i, std::string *str, bool *b)
       -> decltype(StatusU(ErrorCodeHolder(0), ""), *i = s->error_code(),
-                  *str = s->error_message(), *b = s->ok(), std::true_type());
+                  *str = std::string(s->error_message()), *b = s->ok(),
+                  std::true_type());
 
   // Non-restrictive prototype. Objects that do not support the minimal API will
   // match this prototype.

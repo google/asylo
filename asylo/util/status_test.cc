@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include <google/protobuf/stubs/status.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/test/util/status_matchers.h"
@@ -278,6 +279,23 @@ TEST(StatusTest, SaveToRestoreFromEndToEnd) {
   status2.RestoreFrom(status_proto);
 
   EXPECT_EQ(status1, status2);
+}
+
+TEST(StatusTest, ConstructFromProtobufStatusOk) {
+  ::google::protobuf::util::Status protobuf_status;
+  ::asylo::Status status(protobuf_status);
+  EXPECT_THAT(status, IsOk());
+}
+
+TEST(StatusTest, ConstructFromProtobufStatusNonOk) {
+  ::google::protobuf::util::Status protobuf_status(
+      ::google::protobuf::util::error::DATA_LOSS, kErrorMessage1);
+  ::asylo::Status status(protobuf_status);
+
+  EXPECT_THAT(status, Not(IsOk()));
+  EXPECT_EQ(status.error_code(), protobuf_status.error_code());
+  EXPECT_EQ(status.error_message(),
+            std::string(protobuf_status.error_message()));
 }
 
 TEST(StatusTest, ConstructFromGrpcStatusOk) {
