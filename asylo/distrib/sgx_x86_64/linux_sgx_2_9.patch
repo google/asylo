@@ -73,6 +73,10 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
    for a necessary C-preprocessor define.
     - Affected files:
       + `sdk/trts/trts_veh.cpp`
+* [PR530](https://github.com/intel/linux-sgx/pull/530): Changes for kernel sgx
+   patch V29.
+    - Affected files:
+      + `psw/enclave_common/sgx_enclave_common.cpp`
 
 ### Non-upstreamed changes
 * `sdk/trts/init_enclave.cpp`: Moved a memset_s of the enclave heap since
@@ -217,6 +221,8 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
 * Change enclave_initialize in `psw/enclave_common/sgx_enclave_common.cpp` to
   use get_launch_token() instead of get_launch_token_function(), to avoid
   calling dlopen on a file at runtime.
+* Change enclave_create in `psw/enclave_common/sgx_enclave_common.cpp` to use
+  different flags when mmap-ing `enclave_base` in an out-of-kernel driver.
 --
 diff -Nur common/inc/internal/elfheader/elf_common.h common/inc/internal/elfheader/elf_common.h
 --- common/inc/internal/elfheader/elf_common.h
@@ -4915,7 +4921,7 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,999 @@
+@@ -0,0 +1,1004 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
@@ -4990,6 +4996,10 @@ diff -Nur /dev/null sgx_sdk.bzl
 +_sim_backend_label = "@linux_sgx//:asylo_sgx_sim"
 +SGX_BACKEND_LABELS = {
 +    _hw_backend_label: backend_tools.all_labels[_hw_backend_label],
++    _sim_backend_label: backend_tools.all_labels[_sim_backend_label],
++}
++
++SIM_BACKEND_LABELS = {
 +    _sim_backend_label: backend_tools.all_labels[_sim_backend_label],
 +}
 +
@@ -5903,6 +5913,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +# Export all rules and macros in one identifier to load.
 +sgx = struct(
 +    backend_labels = SGX_BACKEND_LABELS,
++    sim_backend_labels = SIM_BACKEND_LABELS,
 +    boringssl_sign_sigstruct = boringssl_sign_sigstruct,
 +    boringssl_sign_enclave_signing_material = boringssl_sign_enclave_signing_material,
 +    debug_enclave = sgx_debug_enclave,
