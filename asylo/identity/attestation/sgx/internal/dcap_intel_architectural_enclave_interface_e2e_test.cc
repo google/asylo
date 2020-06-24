@@ -40,9 +40,8 @@
 #include "asylo/identity/attestation/sgx/internal/host_dcap_library_interface.h"
 #include "asylo/identity/attestation/sgx/internal/intel_ecdsa_quote.h"
 #include "asylo/identity/attestation/sgx/internal/pce_util.h"
-#include "asylo/identity/attestation/sgx/internal/report_oracle_enclave.pb.h"
+#include "asylo/identity/attestation/sgx/internal/report_oracle_enclave_wrapper.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
-#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/identity/platform/sgx/internal/secs_attributes.h"
 #include "asylo/identity/provisioning/sgx/internal/pck_certificate_util.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
@@ -56,8 +55,6 @@
 #include "asylo/util/status_macros.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h"
 #include "QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h"
-
-constexpr char kTestEnclaveName[] = "DCAP Test Enclave";
 
 // These values must be updated along with PCE and QE releases. These are not
 // exposed via any Intel headers.
@@ -85,81 +82,22 @@ class DcapIntelArchitecturalEnclaveInterfaceE2eTest : public ::testing::Test {
  public:
   static void SetUpTestSuite() {
     SetIntelEnclaveDirFromFlags();
-    ASYLO_ASSERT_OK(EnclaveManager::Configure(EnclaveManagerOptions{}));
-    ASYLO_ASSERT_OK_AND_ASSIGN(enclave_manager_, EnclaveManager::Instance());
-  }
-
-  void SetUp() override {
     ASSERT_FALSE(absl::GetFlag(FLAGS_report_oracle_enclave_path).empty());
   }
 
-  void TearDown() override {
-    if (enclave_client_) {
-      ASYLO_EXPECT_OK(enclave_manager_->DestroyEnclave(
-          enclave_client_, EnclaveFinal{}, /*skip_finalize=*/false));
-    }
-  }
-
  protected:
-  StatusOr<EnclaveClient *> GetTestEnclaveClient() {
-    if (enclave_client_) {
-      return enclave_client_;
-    }
-
-    // Create an EnclaveLoadConfig object.
-    EnclaveLoadConfig load_config;
-    load_config.set_name(kTestEnclaveName);
-
-    // Create an SgxLoadConfig object.
-    SgxLoadConfig sgx_config;
-    SgxLoadConfig::FileEnclaveConfig file_enclave_config;
-    file_enclave_config.set_enclave_path(
-        absl::GetFlag(FLAGS_report_oracle_enclave_path));
-    *sgx_config.mutable_file_enclave_config() = file_enclave_config;
-    sgx_config.set_debug(true);
-
-    // Set an SGX message extension to load_config.
-    *load_config.MutableExtension(sgx_load_config) = sgx_config;
-
-    if (!enclave_manager_->LoadEnclave(load_config).ok()) {
-      return nullptr;
-    }
-
-    enclave_client_ = enclave_manager_->GetClient(kTestEnclaveName);
-    return enclave_client_;
-  }
-
-  // Fetches a report from the oracle enclave over |reportdata| and targeted
-  // using |targetinfo|.
   StatusOr<Report> GetEnclaveReport(const Targetinfo &targetinfo,
                                     const Reportdata &reportdata) {
-    EnclaveInput enclave_input;
-    ReportOracleEnclaveInput_GetReport *get_report_input =
-        enclave_input.MutableExtension(report_oracle_enclave_input)
-            ->mutable_get_report();
-    get_report_input->mutable_target_info()->set_value(
-        ConvertTrivialObjectToBinaryString(targetinfo));
-    get_report_input->set_reportdata(
-        ConvertTrivialObjectToBinaryString(reportdata));
+    std::unique_ptr<ReportOracleEnclaveWrapper> report_oracle;
+    ASYLO_ASSIGN_OR_RETURN(
+        report_oracle, ReportOracleEnclaveWrapper::Load(
+                           absl::GetFlag(FLAGS_report_oracle_enclave_path)));
 
-    EnclaveOutput enclave_output;
-    EnclaveClient *client;
-    ASYLO_ASSIGN_OR_RETURN(client, GetTestEnclaveClient());
-    ASYLO_RETURN_IF_ERROR(client->EnterAndRun(enclave_input, &enclave_output));
-
-    return ConvertReportProtoToHardwareReport(
-        enclave_output.GetExtension(report_oracle_enclave_output)
-            .get_report()
-            .report());
+    return report_oracle->GetReport(targetinfo, reportdata);
   }
-
-  static EnclaveManager *enclave_manager_;
 
   DcapIntelArchitecturalEnclaveInterface enclave_interface_{
       absl::make_unique<T>()};
-
- private:
-  EnclaveClient *enclave_client_ = nullptr;
 };
 
 using DcapLibraryInterfacesForTest = ::testing::Types<
@@ -167,11 +105,6 @@ HostDcapLibraryInterface>;
 
 TYPED_TEST_SUITE(DcapIntelArchitecturalEnclaveInterfaceE2eTest,
                  DcapLibraryInterfacesForTest);
-
-template <typename T>
-EnclaveManager
-    *DcapIntelArchitecturalEnclaveInterfaceE2eTest<T>::enclave_manager_ =
-        nullptr;
 
 TYPED_TEST(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceTargetinfo) {
   SecsAttributeSet expected_attributes;
