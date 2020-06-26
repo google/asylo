@@ -51,7 +51,7 @@ std::string RandomName() {
 }  // namespace
 
 StatusOr<std::unique_ptr<ReportOracleEnclaveWrapper>>
-ReportOracleEnclaveWrapper::Load(absl::string_view enclave_path) {
+ReportOracleEnclaveWrapper::LoadFromFile(absl::string_view enclave_path) {
   std::string enclave_name = RandomName();
 
   EnclaveManager *enclave_manager;
@@ -64,6 +64,31 @@ ReportOracleEnclaveWrapper::Load(absl::string_view enclave_path) {
   SgxLoadConfig::FileEnclaveConfig file_enclave_config;
   file_enclave_config.set_enclave_path(std::string(enclave_path));
   *sgx_config.mutable_file_enclave_config() = file_enclave_config;
+  sgx_config.set_debug(true);
+
+  *load_config.MutableExtension(sgx_load_config) = sgx_config;
+
+  ASYLO_RETURN_IF_ERROR(enclave_manager->LoadEnclave(load_config));
+
+  return absl::WrapUnique<ReportOracleEnclaveWrapper>(
+      new ReportOracleEnclaveWrapper(enclave_manager,
+                                     enclave_manager->GetClient(enclave_name)));
+}
+
+StatusOr<std::unique_ptr<ReportOracleEnclaveWrapper>>
+ReportOracleEnclaveWrapper::LoadFromSection(absl::string_view section_name) {
+  std::string enclave_name = RandomName();
+
+  EnclaveManager *enclave_manager;
+  ASYLO_ASSIGN_OR_RETURN(enclave_manager, EnclaveManager::Instance());
+
+  EnclaveLoadConfig load_config;
+  load_config.set_name(enclave_name);
+
+  SgxLoadConfig sgx_config;
+  SgxLoadConfig::EmbeddedEnclaveConfig embedded_enclave_config;
+  embedded_enclave_config.set_section_name(std::string(section_name));
+  *sgx_config.mutable_embedded_enclave_config() = embedded_enclave_config;
   sgx_config.set_debug(true);
 
   *load_config.MutableExtension(sgx_load_config) = sgx_config;

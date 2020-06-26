@@ -35,8 +35,12 @@ namespace sgx {
 class ReportOracleEnclaveWrapper {
  public:
   // Load the report oracle enclave from |enclave_path|
-  static StatusOr<std::unique_ptr<ReportOracleEnclaveWrapper>> Load(
+  static StatusOr<std::unique_ptr<ReportOracleEnclaveWrapper>> LoadFromFile(
       absl::string_view enclave_path);
+
+  // Load the embedded report oracle enclave from ELF section |section_name|.
+  static StatusOr<std::unique_ptr<ReportOracleEnclaveWrapper>> LoadFromSection(
+      absl::string_view section_name);
 
   ~ReportOracleEnclaveWrapper();
 

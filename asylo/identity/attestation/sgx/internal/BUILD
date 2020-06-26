@@ -446,6 +446,7 @@ enclave_test(
     srcs = ["report_oracle_enclave_wrapper_test.cc"],
     backends = sgx.sim_backend_labels,  # Don't require FLC to run the test
     copts = ASYLO_DEFAULT_COPTS,
+    embedded_enclaves = {"report_oracle": ":report_oracle_enclave.so"},
     enclaves = {
         "report_oracle_enclave_path": ":report_oracle_enclave.so",
     },

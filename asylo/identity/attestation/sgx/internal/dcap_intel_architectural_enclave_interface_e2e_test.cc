@@ -90,7 +90,7 @@ class DcapIntelArchitecturalEnclaveInterfaceE2eTest : public ::testing::Test {
                                     const Reportdata &reportdata) {
     std::unique_ptr<ReportOracleEnclaveWrapper> report_oracle;
     ASYLO_ASSIGN_OR_RETURN(
-        report_oracle, ReportOracleEnclaveWrapper::Load(
+        report_oracle, ReportOracleEnclaveWrapper::LoadFromFile(
                            absl::GetFlag(FLAGS_report_oracle_enclave_path)));
 
     return report_oracle->GetReport(targetinfo, reportdata);

@@ -37,16 +37,38 @@ namespace asylo {
 namespace sgx {
 namespace {
 
-TEST(ReportOracleEnclaveWrapperTest, LoadFailsWithInvalidPath) {
-  EXPECT_THAT(ReportOracleEnclaveWrapper::Load("/bad/path"),
+constexpr char kReportOracleSectionName[] = "report_oracle";
+
+TEST(ReportOracleEnclaveWrapperTest, LoadFromFileFailsWithInvalidPath) {
+  EXPECT_THAT(ReportOracleEnclaveWrapper::LoadFromFile("/bad/path"),
               StatusIs(SGX_ERROR_ENCLAVE_FILE_ACCESS));
+}
+
+TEST(ReportOracleEnclaveWrapperTest, LoadFromFileThenGetReport) {
+  std::unique_ptr<ReportOracleEnclaveWrapper> report_oracle;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      report_oracle, ReportOracleEnclaveWrapper::LoadFromFile(
+                         absl::GetFlag(FLAGS_report_oracle_enclave_path)));
+
+  Targetinfo targetinfo = TrivialRandomObject<Targetinfo>();
+  const Reportdata reportdata = TrivialRandomObject<Reportdata>();
+  Report report;
+  ASYLO_ASSERT_OK_AND_ASSIGN(report,
+                             report_oracle->GetReport(targetinfo, reportdata));
+
+  EXPECT_THAT(report.body.reportdata, TrivialObjectEq(reportdata));
+}
+
+TEST(ReportOracleEnclaveWrapperTest, LoadFromSectionFailsWithInvalidPath) {
+  EXPECT_THAT(ReportOracleEnclaveWrapper::LoadFromSection("totally bogus"),
+              StatusIs(error::GoogleError::NOT_FOUND));
 }
 
 TEST(ReportOracleEnclaveWrapperTest, GetReport) {
   std::unique_ptr<ReportOracleEnclaveWrapper> report_oracle;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      report_oracle, ReportOracleEnclaveWrapper::Load(
-                         absl::GetFlag(FLAGS_report_oracle_enclave_path)));
+      report_oracle,
+      ReportOracleEnclaveWrapper::LoadFromSection(kReportOracleSectionName));
 
   Targetinfo targetinfo = TrivialRandomObject<Targetinfo>();
   const Reportdata reportdata = TrivialRandomObject<Reportdata>();
