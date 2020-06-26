@@ -26,6 +26,7 @@
 #include <cstdlib>
 #include <fstream>
 #include <string>
+#include <vector>
 
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include "absl/base/call_once.h"
@@ -39,12 +40,18 @@
 #include "asylo/crypto/rsa_oaep_encryption_key.h"
 #include "asylo/crypto/x509_certificate.h"
 #include "asylo/util/logging.h"
+#include "asylo/identity/attestation/sgx/internal/dcap_intel_architectural_enclave_interface.h"
+#include "asylo/identity/attestation/sgx/internal/host_dcap_library_interface.h"
+#include "asylo/identity/attestation/sgx/internal/pce_util.h"
+#include "asylo/identity/attestation/sgx/internal/report_oracle_enclave_wrapper.h"
+#include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/identity/platform/sgx/internal/ppid_ek.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client_impl.h"
+#include "asylo/util/cleansing_types.h"
 #include "asylo/util/http_fetcher_impl.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/proto_parse_util.h"
@@ -204,37 +211,107 @@ Status WriteTextProtoOutput(asylo::sgx::GetPckCertificateResult cert_result,
 
 }  // namespace
 
+void PlatformInfo::FillEmptyFields(const PlatformInfo &info) {
+  if (!ppid.has_value()) {
+    ppid = info.ppid;
+  }
+
+  if (!cpu_svn.has_value()) {
+    cpu_svn = info.cpu_svn;
+  }
+
+  if (!pce_svn.has_value()) {
+    pce_svn = info.pce_svn;
+  }
+
+  if (!pce_id.has_value()) {
+    pce_id = info.pce_id;
+  }
+}
+
 StatusOr<PlatformInfo> GetPlatformInfoFromFlags() {
+  PlatformInfo info;
+
   std::string ppid_input = absl::GetFlag(FLAGS_ppid);
-  if (ppid_input.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat(FLAGS_ppid.Name(), " must be specified"));
+  if (!ppid_input.empty()) {
+    info.ppid.set_value(absl::HexStringToBytes(ppid_input));
+    ASYLO_RETURN_IF_ERROR(ValidatePpid(info.ppid));
   }
 
   std::string cpu_svn_input = absl::GetFlag(FLAGS_cpu_svn);
-  if (cpu_svn_input.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat(FLAGS_cpu_svn.Name(), " must be specified"));
+  if (!cpu_svn_input.empty()) {
+    info.cpu_svn.set_value(absl::HexStringToBytes(cpu_svn_input));
+    ASYLO_RETURN_IF_ERROR(ValidateCpuSvn(info.cpu_svn));
   }
 
   int pce_svn_input = absl::GetFlag(FLAGS_pce_svn);
-  if (pce_svn_input == kInvalidPceSvn) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat(FLAGS_pce_svn.Name(), " must be specified"));
+  if (pce_svn_input != kInvalidPceSvn) {
+    info.pce_svn.set_value(pce_svn_input);
+    ASYLO_RETURN_IF_ERROR(ValidatePceSvn(info.pce_svn));
   }
 
-  PlatformInfo info;
-
-  info.ppid.set_value(absl::HexStringToBytes(ppid_input));
-  ASYLO_RETURN_IF_ERROR(ValidatePpid(info.ppid));
-
-  info.cpu_svn.set_value(absl::HexStringToBytes(cpu_svn_input));
-  ASYLO_RETURN_IF_ERROR(ValidateCpuSvn(info.cpu_svn));
-
-  info.pce_svn.set_value(pce_svn_input);
-  ASYLO_RETURN_IF_ERROR(ValidatePceSvn(info.pce_svn));
-
   info.pce_id.set_value(asylo::sgx::kSupportedPceId);
+  return info;
+}
+
+StatusOr<PlatformInfo> GetPlatformInfoFromDcap(
+    absl::string_view report_oracle_enclave_section_name) {
+  std::unique_ptr<ReportOracleEnclaveWrapper> report_oracle;
+  ASYLO_ASSIGN_OR_RETURN(report_oracle,
+                         ReportOracleEnclaveWrapper::LoadFromSection(
+                             report_oracle_enclave_section_name));
+
+  // Get the info for targeting the PCE.
+  DcapIntelArchitecturalEnclaveInterface dcap(
+      absl::make_unique<HostDcapLibraryInterface>());
+  Targetinfo targetinfo;
+  uint16_t pce_svn;
+  ASYLO_RETURN_IF_ERROR(dcap.GetPceTargetinfo(&targetinfo, &pce_svn));
+
+  // Generate a key, the ask the oracle to build a report for it.
+  std::unique_ptr<AsymmetricDecryptionKey> ppid_decryption_key;
+  ASYLO_ASSIGN_OR_RETURN(ppid_decryption_key,
+                         RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey(
+                             HashAlgorithm::SHA256));
+
+  std::unique_ptr<AsymmetricEncryptionKey> ppid_encryption_key;
+  ASYLO_ASSIGN_OR_RETURN(ppid_encryption_key,
+                         ppid_decryption_key->GetEncryptionKey());
+
+  AsymmetricEncryptionKeyProto ppid_encryption_key_proto;
+  ASYLO_ASSIGN_OR_RETURN(
+      ppid_encryption_key_proto,
+      ConvertToAsymmetricEncryptionKeyProto(*ppid_encryption_key));
+
+  Reportdata reportdata;
+  ASYLO_ASSIGN_OR_RETURN(
+      reportdata, CreateReportdataForGetPceInfo(ppid_encryption_key_proto));
+
+  Report report;
+  ASYLO_ASSIGN_OR_RETURN(report,
+                         report_oracle->GetReport(targetinfo, reportdata));
+
+  // Send the report to the PCE, which will encrypt the PPID to the key that's
+  // in the report data.
+  std::vector<uint8_t> serialized_ppidek;
+  ASYLO_ASSIGN_OR_RETURN(serialized_ppidek,
+                         SerializePpidek(ppid_encryption_key_proto));
+
+  std::string ppid_encrypted;
+  uint16_t pce_id;
+  SignatureScheme signature_scheme;
+  ASYLO_RETURN_IF_ERROR(dcap.GetPceInfo(
+      report, serialized_ppidek, ppid_decryption_key->GetEncryptionScheme(),
+      &ppid_encrypted, &pce_svn, &pce_id, &signature_scheme));
+
+  CleansingVector<uint8_t> ppid;
+  ASYLO_RETURN_IF_ERROR(ppid_decryption_key->Decrypt(ppid_encrypted, &ppid));
+
+  PlatformInfo info;
+  info.pce_svn.set_value(pce_svn);
+  info.pce_id.set_value(pce_id);
+  info.cpu_svn.set_value(report.body.cpusvn.data(), report.body.cpusvn.size());
+  info.ppid.set_value(ppid.data(), ppid.size());
   return info;
 }
 
@@ -259,7 +336,8 @@ StatusOr<std::unique_ptr<SgxPcsClient>> CreateSgxPcsClientFromFlags() {
 Status WriteOutputAccordingToFlags(GetPckCertificateResult cert_result) {
   std::string outfmt = absl::GetFlag(FLAGS_outfmt);
   std::string outfile = absl::GetFlag(FLAGS_outfile);
-  LOG(INFO) << "Writing the certificate chain to " << outfile << ".";
+  std::cout << "Writing the certificate chain to " << outfile << "."
+            << std::endl;
 
   if (outfmt == "textproto") {
     return asylo::sgx::WriteTextProtoOutput(std::move(cert_result),

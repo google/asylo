@@ -31,8 +31,10 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/reflection.h"
 #include "absl/strings/string_view.h"
+#include "asylo/identity/attestation/sgx/internal/dcap_intel_architectural_enclave_path_setter.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.h"
+#include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/proto_parse_util.h"
@@ -47,8 +49,14 @@ using ::testing::Ne;
 using ::testing::NotNull;
 using ::testing::Test;
 
-constexpr char kValidPpid[] = "0f0e0d0c0b0a0908070605040302010f";
-constexpr char kValidCpuSvn[] = "0102030405060708090a0b0c0d0e0f01";
+constexpr char kValidPpidHex[] = "0f0e0d0c0b0a0908070605040302010f";
+constexpr char kValidPpid[] =
+    "\xf\xe\xd\xc\xb\xa\x9\x8\x7\x6\x5\x4\x3\x2\x1\xf";
+
+constexpr char kValidCpuSvnHex[] = "0102030405060708090a0b0c0d0e0f01";
+constexpr char kValidCpuSvn[] =
+    "\x1\x2\x3\x4\x5\x6\x7\x8\x9\xa\xb\xc\xd\xe\xf\x1";
+
 constexpr int kValidPceSvn = 1;
 
 // A few generated test certs for filling data structures. The PEMs here must
@@ -177,18 +185,67 @@ class SgxPcsToolLibTest : public Test {
   int temp_fd_ = -1;
 };
 
+TEST_F(SgxPcsToolLibTest, FillEmptyFieldsWhenAllFieldsAreEmpty) {
+  PlatformInfo full;
+  full.ppid.set_value(kValidPpid);
+  full.cpu_svn.set_value(kValidCpuSvn);
+  full.pce_svn.set_value(kValidPceSvn);
+  full.pce_id.set_value(kSupportedPceId);
+
+  PlatformInfo initially_empty;
+  initially_empty.FillEmptyFields(full);
+  EXPECT_THAT(initially_empty.ppid.value(), Eq(kValidPpid));
+  EXPECT_THAT(initially_empty.cpu_svn.value(), Eq(kValidCpuSvn));
+  EXPECT_THAT(initially_empty.pce_svn.value(), Eq(kValidPceSvn));
+  EXPECT_THAT(initially_empty.pce_id.value(), Eq(kSupportedPceId));
+}
+
+TEST_F(SgxPcsToolLibTest, FillEmptyFieldsWhenNoNoFieldsAreEmpty) {
+  PlatformInfo full;
+  full.ppid.set_value(kValidPpid);
+  full.cpu_svn.set_value(kValidCpuSvn);
+  full.pce_svn.set_value(kValidPceSvn);
+  full.pce_id.set_value(kSupportedPceId);
+
+  PlatformInfo also_full;
+  also_full.ppid.set_value("ppid");
+  also_full.cpu_svn.set_value("cpusvn");
+  also_full.pce_svn.set_value(12345678);
+  also_full.pce_id.set_value(42);
+
+  // Ensure none of the fields in full got overwritten.
+  full.FillEmptyFields(also_full);
+  EXPECT_THAT(full.ppid.value(), Eq(kValidPpid));
+  EXPECT_THAT(full.cpu_svn.value(), Eq(kValidCpuSvn));
+  EXPECT_THAT(full.pce_svn.value(), Eq(kValidPceSvn));
+  EXPECT_THAT(full.pce_id.value(), Eq(kSupportedPceId));
+}
+
+TEST_F(SgxPcsToolLibTest, FillEmptyFieldsWithEmptyInput) {
+  PlatformInfo initially_empty;
+  initially_empty.FillEmptyFields(PlatformInfo{});
+
+  EXPECT_FALSE(initially_empty.ppid.has_value());
+  EXPECT_FALSE(initially_empty.cpu_svn.has_value());
+  EXPECT_FALSE(initially_empty.pce_svn.has_value());
+  EXPECT_FALSE(initially_empty.pce_id.has_value());
+}
+
 TEST_F(SgxPcsToolLibTest, MissingPpidFlagWithGetPlatformInfo) {
-  absl::SetFlag(&FLAGS_cpu_svn, kValidCpuSvn);
+  absl::SetFlag(&FLAGS_cpu_svn, kValidCpuSvnHex);
   absl::SetFlag(&FLAGS_pce_svn, kValidPceSvn);
 
-  EXPECT_THAT(GetPlatformInfoFromFlags(),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
-                       HasSubstr(FLAGS_ppid.Name())));
+  PlatformInfo info;
+  ASYLO_ASSERT_OK_AND_ASSIGN(info, GetPlatformInfoFromFlags());
+  EXPECT_FALSE(info.ppid.has_value());
+  EXPECT_THAT(info.cpu_svn.value(), Eq(kValidCpuSvn));
+  EXPECT_THAT(info.pce_svn.value(), Eq(kValidPceSvn));
+  EXPECT_THAT(info.pce_id.value(), Eq(kSupportedPceId));
 }
 
 TEST_F(SgxPcsToolLibTest, InvalidPpidFlagWithGetPlatformInfo) {
   absl::SetFlag(&FLAGS_ppid, "totally bogus");
-  absl::SetFlag(&FLAGS_cpu_svn, kValidCpuSvn);
+  absl::SetFlag(&FLAGS_cpu_svn, kValidCpuSvnHex);
   absl::SetFlag(&FLAGS_pce_svn, kValidPceSvn);
 
   EXPECT_THAT(
@@ -197,15 +254,19 @@ TEST_F(SgxPcsToolLibTest, InvalidPpidFlagWithGetPlatformInfo) {
 }
 
 TEST_F(SgxPcsToolLibTest, MissingCpuSvnFlagWithGetPlatformInfo) {
-  absl::SetFlag(&FLAGS_ppid, kValidPpid);
+  absl::SetFlag(&FLAGS_ppid, kValidPpidHex);
   absl::SetFlag(&FLAGS_pce_svn, kValidPceSvn);
-  EXPECT_THAT(GetPlatformInfoFromFlags(),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
-                       HasSubstr(FLAGS_cpu_svn.Name())));
+
+  PlatformInfo info;
+  ASYLO_ASSERT_OK_AND_ASSIGN(info, GetPlatformInfoFromFlags());
+  EXPECT_THAT(info.ppid.value(), Eq(kValidPpid));
+  EXPECT_FALSE(info.cpu_svn.has_value());
+  EXPECT_THAT(info.pce_svn.value(), Eq(kValidPceSvn));
+  EXPECT_THAT(info.pce_id.value(), Eq(kSupportedPceId));
 }
 
 TEST_F(SgxPcsToolLibTest, InvalidCpuSvnFlagWithGetPlatformInfo) {
-  absl::SetFlag(&FLAGS_ppid, kValidPpid);
+  absl::SetFlag(&FLAGS_ppid, kValidPpidHex);
   absl::SetFlag(&FLAGS_cpu_svn, "not a secure version number");
   absl::SetFlag(&FLAGS_pce_svn, kValidPceSvn);
   EXPECT_THAT(
@@ -214,35 +275,42 @@ TEST_F(SgxPcsToolLibTest, InvalidCpuSvnFlagWithGetPlatformInfo) {
 }
 
 TEST_F(SgxPcsToolLibTest, MissingPceSvnFlagWithGetPlatformInfo) {
-  absl::SetFlag(&FLAGS_ppid, kValidPpid);
-  absl::SetFlag(&FLAGS_cpu_svn, kValidCpuSvn);
-  EXPECT_THAT(GetPlatformInfoFromFlags(),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
-                       HasSubstr(FLAGS_pce_svn.Name())));
+  absl::SetFlag(&FLAGS_ppid, kValidPpidHex);
+  absl::SetFlag(&FLAGS_cpu_svn, kValidCpuSvnHex);
+
+  PlatformInfo info;
+  ASYLO_ASSERT_OK_AND_ASSIGN(info, GetPlatformInfoFromFlags());
+  EXPECT_THAT(info.ppid.value(), Eq(kValidPpid));
+  EXPECT_THAT(info.cpu_svn.value(), Eq(kValidCpuSvn));
+  EXPECT_THAT(info.pce_id.value(), Eq(kSupportedPceId));
+  EXPECT_FALSE(info.pce_svn.has_value());
 }
 
 TEST_F(SgxPcsToolLibTest, InvalidPceSvnFlagWithGetPlatformInfo) {
-  absl::SetFlag(&FLAGS_ppid, kValidPpid);
-  absl::SetFlag(&FLAGS_cpu_svn, kValidCpuSvn);
+  absl::SetFlag(&FLAGS_ppid, kValidPpidHex);
+  absl::SetFlag(&FLAGS_cpu_svn, kValidCpuSvnHex);
   absl::SetFlag(&FLAGS_pce_svn, kPceSvnMaxValue + 1);
   EXPECT_THAT(
       GetPlatformInfoFromFlags(),
       StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("PceSvn")));
 }
 
-TEST_F(SgxPcsToolLibTest, ValidInfoFlags) {
-  absl::SetFlag(&FLAGS_ppid, kValidPpid);
-  absl::SetFlag(&FLAGS_cpu_svn, kValidCpuSvn);
+TEST_F(SgxPcsToolLibTest, AllInfoFlags) {
+  absl::SetFlag(&FLAGS_ppid, kValidPpidHex);
+  absl::SetFlag(&FLAGS_cpu_svn, kValidCpuSvnHex);
   absl::SetFlag(&FLAGS_pce_svn, kValidPceSvn);
 
   PlatformInfo info;
   ASYLO_ASSERT_OK_AND_ASSIGN(info, GetPlatformInfoFromFlags());
-  EXPECT_THAT(info.ppid.value(),
-              Eq("\xf\xe\xd\xc\xb\xa\x9\x8\x7\x6\x5\x4\x3\x2\x1\xf"));
-  EXPECT_THAT(info.cpu_svn.value(),
-              Eq("\x1\x2\x3\x4\x5\x6\x7\x8\x9\xa\xb\xc\xd\xe\xf\x1"));
+  EXPECT_THAT(info.ppid.value(), Eq(kValidPpid));
+  EXPECT_THAT(info.cpu_svn.value(), Eq(kValidCpuSvn));
   EXPECT_THAT(info.pce_svn.value(), Eq(kValidPceSvn));
   EXPECT_THAT(info.pce_id.value(), Eq(kSupportedPceId));
+}
+
+TEST_F(SgxPcsToolLibTest, GetPlatformInfoFromDcapWithInvalidSection) {
+  EXPECT_THAT(GetPlatformInfoFromDcap("bogus section name"),
+              StatusIs(error::GoogleError::NOT_FOUND));
 }
 
 TEST_F(SgxPcsToolLibTest, MissingApiKeyFlagWithCreateSgxPcsClient) {

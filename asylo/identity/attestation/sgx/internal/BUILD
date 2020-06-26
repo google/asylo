@@ -177,8 +177,8 @@ cc_library(
     hdrs = ["intel_architectural_enclave_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = [
-        "//asylo/identity/attestation/sgx:__pkg__",
-        "//asylo/identity/sgx:__pkg__",
+        "//asylo/identity/attestation/sgx:__subpackages__",
+        "//asylo/identity/provisioning/sgx:__subpackages__",
     ],
     deps = [
         "//asylo/crypto:algorithms_cc_proto",
@@ -251,7 +251,10 @@ cc_library(
     srcs = ["dcap_intel_architectural_enclave_interface.cc"],
     hdrs = ["dcap_intel_architectural_enclave_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo/identity/attestation/sgx:__pkg__"],
+    visibility = [
+        "//asylo/identity/attestation/sgx:__subpackages__",
+        "//asylo/identity/provisioning/sgx:__subpackages__",
+    ],
     deps = [
         ":dcap_library_interface",
         ":intel_architectural_enclave_interface",
@@ -271,11 +274,13 @@ cc_library(
 
 cc_library(
     name = "dcap_intel_architectural_enclave_path_setter",
-    testonly = 1,
     srcs = ["dcap_intel_architectural_enclave_path_setter.cc"],
     hdrs = ["dcap_intel_architectural_enclave_path_setter.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo/identity/attestation/sgx:__pkg__"],
+    visibility = [
+        "//asylo/identity/attestation/sgx:__subpackages__",
+        "//asylo/identity/provisioning/sgx:__subpackages__",
+    ],
     deps = [
         ":dcap_intel_architectural_enclave_interface",
         ":host_dcap_library_interface",
@@ -418,6 +423,10 @@ sgx_debug_sign_enclave(
     name = "report_oracle_enclave.so",
     config = ":report_oracle_enclave_config",
     unsigned = "report_oracle_enclave_unsigned.so",
+    visibility = [
+        "//asylo/identity/attestation/sgx:__subpackages__",
+        "//asylo/identity/provisioning/sgx:__subpackages__",
+    ],
 )
 
 cc_library(
@@ -425,6 +434,10 @@ cc_library(
     srcs = ["report_oracle_enclave_wrapper.cc"],
     hdrs = ["report_oracle_enclave_wrapper.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = [
+        "//asylo/identity/attestation/sgx:__subpackages__",
+        "//asylo/identity/provisioning/sgx:__subpackages__",
+    ],
     deps = [
         ":report_oracle_enclave_cc_proto",
         "//asylo/crypto/util:trivial_object_util",
@@ -683,6 +696,10 @@ cc_library(
     srcs = ["pce_util.cc"],
     hdrs = ["pce_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = [
+        "//asylo/identity/attestation/sgx:__subpackages__",
+        "//asylo/identity/provisioning/sgx:__subpackages__",
+    ],
     deps = [
         "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto:keys_cc_proto",
