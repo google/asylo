@@ -483,9 +483,10 @@ cc_test(
     ],
 )
 
-cc_binary(
-    name = "sgx_pcs_tool",
-    srcs = ["sgx_pcs_tool.cc"],
+cc_library(
+    name = "sgx_pcs_tool_lib",
+    srcs = ["sgx_pcs_tool_lib.cc"],
+    hdrs = ["sgx_pcs_tool_lib.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":platform_provisioning",
@@ -494,22 +495,50 @@ cc_binary(
         ":sgx_pcs_client_impl",
         "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto:asymmetric_encryption_key",
-        "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:rsa_oaep_encryption_key",
         "//asylo/crypto:x509_certificate",
+        "//asylo/identity/platform/sgx:machine_configuration_cc_proto",
         "//asylo/identity/platform/sgx/internal:ppid_ek",
         "//asylo/util:http_fetcher_impl",
         "//asylo/util:logging",
-        "//asylo/util:proto_enum_util",
-        "//asylo/util:proto_flag",
         "//asylo/util:proto_parse_util",
         "//asylo/util:status",
+        "@com_google_absl//absl/base",
         "@com_google_absl//absl/flags:flag",
-        "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "sgx_pcs_tool_lib_test",
+    srcs = ["sgx_pcs_tool_lib_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":platform_provisioning",
+        ":sgx_pcs_client",
+        ":sgx_pcs_tool_lib",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:proto_parse_util",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:reflection",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_binary(
+    name = "sgx_pcs_tool",
+    srcs = ["sgx_pcs_tool.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":sgx_pcs_tool_lib",
+        "//asylo/util:logging",
+        "//asylo/util:status",
     ],
 )
 
