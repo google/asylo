@@ -378,12 +378,13 @@ cc_proto_library(
 cc_unsigned_enclave(
     name = "demo_enclave_unsigned.so",
     srcs = ["demo_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":demo_cc_proto",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",
         "//asylo:enclave_runtime",
-        "//asylo/crypto:aes_gcm_siv",
+        "//asylo/crypto:aead_cryptor",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
     ],

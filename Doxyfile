@@ -797,7 +797,6 @@ WARN_LOGFILE           =
 INPUT                  = \
 asylo/binding/java/src/main/java/com/asylo/client \
 asylo/crypto/aead_cryptor.h \
-asylo/crypto/aes_gcm_siv.h \
 asylo/crypto/nonce_generator.h \
 asylo/crypto/sha256_hash_util.h \
 asylo/grpc/auth/enclave_auth_context.h \

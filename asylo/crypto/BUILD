@@ -494,46 +494,6 @@ cc_test(
     ],
 )
 
-# AES-GCM-SIV cryptor
-cc_library(
-    name = "aes_gcm_siv",
-    srcs = ["aes_gcm_siv.cc"],
-    hdrs = [
-        "aes_gcm_siv.h",
-        "nonce_generator.h",
-    ],
-    copts = ASYLO_DEFAULT_COPTS,
-    deprecation = "Use //asylo/crypto:aead_cryptor instead.",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//asylo/crypto/util:bssl_util",
-        "//asylo/crypto/util:bytes",
-        "//asylo/util:cleansing_types",
-        "//asylo/util:logging",
-        "//asylo/util:status",
-        "@boringssl//:crypto",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/strings",
-    ],
-)
-
-cc_test(
-    name = "aes_gcm_siv_test",
-    srcs = ["aes_gcm_siv_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":aes_gcm_siv",
-        "//asylo/crypto/util:byte_container_view",
-        "//asylo/crypto/util:bytes",
-        "//asylo/crypto/util:trivial_object_util",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "//asylo/util:status",
-        "@com_google_absl//absl/strings",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
 cc_library(
     name = "signing_key",
     srcs = ["signing_key.cc"],
