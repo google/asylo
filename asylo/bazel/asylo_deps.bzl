@@ -238,10 +238,10 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("rules_python"):
         http_archive(
             name = "rules_python",
-            # Commit from 2020 June 12
-            urls = ["https://github.com/bazelbuild/rules_python/archive/c82a8cc1f44ba6e81c65e801b1ec3e4f3852359e.tar.gz"],
-            sha256 = "8a4c48ffc3f85b1ee03438d1dc0de0935fa055144c3535df1c07061515d036d4",
-            strip_prefix = "rules_python-c82a8cc1f44ba6e81c65e801b1ec3e4f3852359e",
+            # Commit from 2020 June 25
+            urls = ["https://github.com/bazelbuild/rules_python/archive/cd552725122fdfe06a72864e21a92b5093a1857d.tar.gz"],
+            sha256 = "943071099515973b27e8139df8d2a2628404070a7e8782765b4fe1f12ab92033",
+            strip_prefix = "rules_python-cd552725122fdfe06a72864e21a92b5093a1857d",
         )
 
     # Absl for C++
