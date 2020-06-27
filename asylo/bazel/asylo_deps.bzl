@@ -279,10 +279,10 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("com_github_google_benchmark"):
         http_archive(
             name = "com_github_google_benchmark",
-            # Commit from 2020 June 17
-            urls = ["https://github.com/google/benchmark/archive/15e6dfd7182b74b4fb6860f52fe314d0654307fb.zip"],
-            strip_prefix = "benchmark-15e6dfd7182b74b4fb6860f52fe314d0654307fb",
-            sha256 = "b41f0cf12fc217c69117e3a492059dea260dc1a57cfb8ddc11cfcada8dac411a",
+            # Commit from 2020 June 25
+            urls = ["https://github.com/google/benchmark/archive/39b6e703f8cdf87284db2aaca2f9b214f02e5673.zip"],
+            strip_prefix = "benchmark-39b6e703f8cdf87284db2aaca2f9b214f02e5673",
+            sha256 = "f0a74928b8e105fabeacc778bcfc5fd89cce68cbb664bfc2456373959d3e3b67",
         )
 
     # Google certificate transparency has a merkletree implementation.
