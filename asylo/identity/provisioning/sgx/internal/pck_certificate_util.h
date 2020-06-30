@@ -79,6 +79,12 @@ StatusOr<Asn1Value> WriteSgxExtensions(const SgxExtensions &extensions);
 //     |tcbm|s.
 Status ValidatePckCertificates(const PckCertificates &pck_certificates);
 
+// Extracts the SGX extension data from the given |pck_certificate|. If the
+// provided certificate does not not represent an X.509 certificate, or does not
+// include the expected X.509 extensions, returns a non-OK Status.
+StatusOr<SgxExtensions> ExtractSgxExtensionsFromPckCert(
+    const CertificateInterface &pck_certificate);
+
 // Extracts the security-relevant machine configuration from the given
 // |pck_certificate|. If the provided certificate does not not represent an
 // X.509 certificate, or does not include the expected X.509 extensions, returns

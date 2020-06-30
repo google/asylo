@@ -32,6 +32,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/random/random.h"
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/asn1.h"
@@ -770,20 +771,66 @@ TEST(PckCertificateUtilTest,
       cert, AttestationKeyCertificateImpl::Create(non_x509_cert));
 
   ASSERT_THAT(ExtractMachineConfigurationFromPckCert(cert.get()),
-              StatusIs(error::GoogleError::UNAUTHENTICATED,
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
                        HasSubstr("X.509 certificate")));
 }
 
 TEST(PckCertificateUtilTest, ExtractMachineConfigurationFromPckCertSuccess) {
   std::unique_ptr<CertificateInterface> cert;
-  ASYLO_ASSERT_OK_AND_ASSIGN(cert, X509Certificate::Create(
-      *GetFakePckCertificateChain().certificates().begin()));
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      cert, X509Certificate::Create(
+                *GetFakePckCertificateChain().certificates().begin()));
 
   MachineConfiguration machine_configuration =
       ParseTextProtoOrDie(kFakePckMachineConfigurationTextProto);
 
   ASSERT_THAT(ExtractMachineConfigurationFromPckCert(cert.get()),
               IsOkAndHolds(EqualsProto(machine_configuration)));
+}
+
+TEST(PckCertificateUtilTest, ExtractSgxExtensionFromPckCertNonX509Fails) {
+  Certificate non_x509_cert;
+  non_x509_cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
+  non_x509_cert.set_data(absl::HexStringToBytes(kAttestationKeyCertificateHex));
+
+  std::unique_ptr<CertificateInterface> cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      cert, AttestationKeyCertificateImpl::Create(non_x509_cert));
+
+  EXPECT_THAT(ExtractSgxExtensionsFromPckCert(*cert),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(PckCertificateUtilTest,
+     ExtractSgxExtensionFromPckCertNoSgxExtensionsFails) {
+  CertificateChain pck_cert_chain = GetFakePckCertificateChain();
+
+  std::unique_ptr<CertificateInterface> cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      cert, X509Certificate::Create(pck_cert_chain.certificates(1)));
+
+  EXPECT_THAT(ExtractSgxExtensionsFromPckCert(*cert),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(PckCertificateUtilTest, ExtractSgxExtensionFromPckCertSuccess) {
+  CertificateChain pck_cert_chain = GetFakePckCertificateChain();
+  std::unique_ptr<CertificateInterface> cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      cert, X509Certificate::Create(pck_cert_chain.certificates(0)));
+
+  SgxExtensions expected;
+  expected.ppid.set_value(
+      absl::HexStringToBytes("010000005356000095a0aadca3054a8c"));
+  expected.tcb.set_components("A fake TCB level");
+  expected.tcb.mutable_pce_svn()->set_value(2);
+  expected.cpu_svn.set_value("A fake TCB level");
+  expected.pce_id.set_value(0);
+  expected.fmspc.set_value(absl::HexStringToBytes("010000005356"));
+  expected.sgx_type = SgxType::STANDARD;
+
+  EXPECT_THAT(ExtractSgxExtensionsFromPckCert(*cert),
+              IsOkAndHolds(SgxExtensionsEquals(expected)));
 }
 
 TEST(PckCertificateUtilTest, ExtractCpuSvnFromPckCertNonX509Fails) {

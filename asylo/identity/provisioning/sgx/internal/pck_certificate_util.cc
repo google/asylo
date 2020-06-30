@@ -342,25 +342,6 @@ Status ValidatePckCertificateInfo(
   return Status::OkStatus();
 }
 
-StatusOr<SgxExtensions> ExtractSgxExtensions(const X509Certificate &pck_cert) {
-  auto pck_extensions_result = pck_cert.GetOtherExtensions();
-  if (!pck_extensions_result.ok()) {
-    return pck_extensions_result.status().WithPrependedContext(
-        "PCK certificate does not contain extensions");
-  }
-  std::vector<X509Extension> pck_extensions =
-      std::move(pck_extensions_result).ValueOrDie();
-
-  for (const X509Extension &extension : pck_extensions) {
-    if (extension.oid == GetSgxExtensionsOid()) {
-      return ReadSgxExtensions(extension.value);
-    }
-  }
-
-  return Status(error::GoogleError::INVALID_ARGUMENT,
-                "PCK certificate does not contain SGX extensions");
-}
-
 }  // namespace
 
 const ObjectId &GetSgxExtensionsOid() { return GetSgxOids().sgx_extensions; }
@@ -480,17 +461,38 @@ Status ValidatePckCertificates(const PckCertificates &pck_certificates) {
   return Status::OkStatus();
 }
 
-StatusOr<MachineConfiguration> ExtractMachineConfigurationFromPckCert(
-    const CertificateInterface *pck_certificate) {
-  X509Certificate const *pck_cert =
-      dynamic_cast<X509Certificate const *>(pck_certificate);
+StatusOr<SgxExtensions> ExtractSgxExtensionsFromPckCert(
+    const CertificateInterface &pck_certificate) {
+  const X509Certificate *pck_cert =
+      dynamic_cast<const X509Certificate *>(&pck_certificate);
   if (pck_cert == nullptr) {
-    return Status(error::GoogleError::UNAUTHENTICATED,
+    return Status(error::GoogleError::INVALID_ARGUMENT,
                   "PCK certificate is not an X.509 certificate");
   }
 
+  auto pck_extensions_result = pck_cert->GetOtherExtensions();
+  if (!pck_extensions_result.ok()) {
+    return pck_extensions_result.status().WithPrependedContext(
+        "PCK certificate does not contain extensions");
+  }
+  std::vector<X509Extension> pck_extensions =
+      std::move(pck_extensions_result).ValueOrDie();
+
+  for (const X509Extension &extension : pck_extensions) {
+    if (extension.oid == GetSgxExtensionsOid()) {
+      return ReadSgxExtensions(extension.value);
+    }
+  }
+
+  return Status(error::GoogleError::INVALID_ARGUMENT,
+                "PCK certificate does not contain SGX extensions");
+}
+
+StatusOr<MachineConfiguration> ExtractMachineConfigurationFromPckCert(
+    const CertificateInterface *pck_certificate) {
   SgxExtensions sgx_extensions;
-  ASYLO_ASSIGN_OR_RETURN(sgx_extensions, ExtractSgxExtensions(*pck_cert));
+  ASYLO_ASSIGN_OR_RETURN(sgx_extensions,
+                         ExtractSgxExtensionsFromPckCert(*pck_certificate));
 
   MachineConfiguration machine_config;
   *machine_config.mutable_cpu_svn() = std::move(sgx_extensions.cpu_svn);
@@ -504,7 +506,8 @@ StatusOr<CpuSvn> ExtractCpuSvnFromPckCert(const Certificate &pck_certificate) {
   ASYLO_ASSIGN_OR_RETURN(pck_cert, X509Certificate::Create(pck_certificate));
 
   SgxExtensions sgx_extensions;
-  ASYLO_ASSIGN_OR_RETURN(sgx_extensions, ExtractSgxExtensions(*pck_cert));
+  ASYLO_ASSIGN_OR_RETURN(sgx_extensions,
+                         ExtractSgxExtensionsFromPckCert(*pck_cert));
 
   return sgx_extensions.cpu_svn;
 }
@@ -514,7 +517,8 @@ StatusOr<PceSvn> ExtractPceSvnFromPckCert(const Certificate &pck_certificate) {
   ASYLO_ASSIGN_OR_RETURN(pck_cert, X509Certificate::Create(pck_certificate));
 
   SgxExtensions sgx_extensions;
-  ASYLO_ASSIGN_OR_RETURN(sgx_extensions, ExtractSgxExtensions(*pck_cert));
+  ASYLO_ASSIGN_OR_RETURN(sgx_extensions,
+                         ExtractSgxExtensionsFromPckCert(*pck_cert));
 
   return sgx_extensions.tcb.pce_svn();
 }
