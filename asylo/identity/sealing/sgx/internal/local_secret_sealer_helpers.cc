@@ -148,7 +148,7 @@ Status GenerateCryptorKey(AeadScheme aead_scheme, const std::string &key_id,
         AeadScheme_Name(aead_scheme), key_id, absl::StrCat(key_size),
         absl::StrCat(key_subscript)));
 
-    static_assert(decltype(req->keyid)::size() == SHA256_DIGEST_LENGTH,
+    static_assert(decltype(req->keyid)::size() == kSha256DigestLength,
                   "KEYREQUEST.KEYID field has unexpected size");
 
     hasher.Init();

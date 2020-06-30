@@ -34,7 +34,7 @@ HashAlgorithm Sha256Hash::GetHashAlgorithm() const {
   return HashAlgorithm::SHA256;
 }
 
-size_t Sha256Hash::DigestSize() const { return EVP_MD_size(EVP_sha256()); }
+size_t Sha256Hash::DigestSize() const { return kSha256DigestLength; }
 
 void Sha256Hash::Init() {
   EVP_MD_CTX_cleanup(context_);

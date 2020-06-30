@@ -19,7 +19,6 @@
 #include "asylo/grpc/auth/core/ekep_crypto.h"
 
 #include <openssl/curve25519.h>
-#include <openssl/sha.h>
 
 #include <memory>
 #include <string>
@@ -27,6 +26,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/grpc/auth/core/ekep_error_space.h"
@@ -144,7 +144,7 @@ TEST(EkepCryptoTest, DeriveSecretsBadPrivateParameterSize) {
 // Verify success of DeriveSecrets using the ciphersuite consisting of
 // Curve25519 and SHA256.
 TEST(EkepCryptoTest, DeriveSecretsWithCurve25519Sha256) {
-  UnsafeBytes<SHA256_DIGEST_LENGTH> transcript_hash;
+  UnsafeBytes<kSha256DigestLength> transcript_hash;
   ASYLO_ASSERT_OK(
       SetTrivialObjectFromHexString(kTestTranscriptHash, &transcript_hash));
 
@@ -216,7 +216,7 @@ TEST(EkepCryptoTest, DeriveRecordProtocolKeyBadRecordProtocol) {
 // Verify success of DeriveRecordProtocolKey when using the ciphersuite
 // consisting of Curve25519 and SHA256, and the SEAL record protocol.
 TEST(EkepCryptoTest, DeriveRecordProtocolKeySealAes128Gcm) {
-  UnsafeBytes<SHA256_DIGEST_LENGTH> transcript_hash;
+  UnsafeBytes<kSha256DigestLength> transcript_hash;
   ASYLO_ASSERT_OK(
       SetTrivialObjectFromHexString(kTestTranscriptHash, &transcript_hash));
 
@@ -262,7 +262,7 @@ TEST(EkepCryptoTest, ComputeClientHandshakeAuthenticatorSha256) {
   ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(kTestAuthenticatorSecret,
                                                 &authenticator_secret));
 
-  SafeBytes<SHA256_DIGEST_LENGTH> expected_authenticator;
+  SafeBytes<kSha256DigestLength> expected_authenticator;
   ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(
       kTestClientHandshakeAuthenticator, &expected_authenticator));
 
@@ -273,9 +273,9 @@ TEST(EkepCryptoTest, ComputeClientHandshakeAuthenticatorSha256) {
                   .ok());
 
   // Verify that the client handshake authenticator is as expected.
-  SafeBytes<SHA256_DIGEST_LENGTH> *actual_authenticator =
-      SafeBytes<SHA256_DIGEST_LENGTH>::Place(&authenticator,
-                                             /*offset=*/0);
+  SafeBytes<kSha256DigestLength> *actual_authenticator =
+      SafeBytes<kSha256DigestLength>::Place(&authenticator,
+                                            /*offset=*/0);
   EXPECT_EQ(*actual_authenticator, expected_authenticator);
 }
 
@@ -301,7 +301,7 @@ TEST(EkepCryptoTest, ComputeServerHandshakeAuthenticatorSha256) {
   ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(kTestAuthenticatorSecret,
                                                 &authenticator_secret));
 
-  SafeBytes<SHA256_DIGEST_LENGTH> expected_authenticator;
+  SafeBytes<kSha256DigestLength> expected_authenticator;
   ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(
       kTestServerHandshakeAuthenticator, &expected_authenticator));
 
@@ -312,9 +312,9 @@ TEST(EkepCryptoTest, ComputeServerHandshakeAuthenticatorSha256) {
                   .ok());
 
   // Verify that the server handshake authenticator is as expected.
-  SafeBytes<SHA256_DIGEST_LENGTH> *actual_authenticator =
-      SafeBytes<SHA256_DIGEST_LENGTH>::Place(&authenticator,
-                                             /*offset=*/0);
+  SafeBytes<kSha256DigestLength> *actual_authenticator =
+      SafeBytes<kSha256DigestLength>::Place(&authenticator,
+                                            /*offset=*/0);
   EXPECT_EQ(*actual_authenticator, expected_authenticator);
 }
 

@@ -20,11 +20,11 @@
 #define ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_
 
 #include <openssl/aes.h>
-#include <openssl/sha.h>
 
 #include <type_traits>
 
 #include "absl/base/attributes.h"
+#include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/platform/sgx/internal/secs_attributes.h"
@@ -147,7 +147,7 @@ struct SigstructBody {
   UnsafeBytes<kIsvfamilyidSize> isvfamilyid;
   SecsAttributeSet attributes;
   SecsAttributeSet attributemask;
-  UnsafeBytes<SHA256_DIGEST_LENGTH> enclavehash;
+  UnsafeBytes<kSha256DigestLength> enclavehash;
   UnsafeBytes<16> reserved2;  // Field size taken from the Intel SDM.
   UnsafeBytes<kIsvextprodidSize> isvextprodid;
   uint16_t isvprodid;
@@ -278,7 +278,7 @@ using AlignedKeyrequestPtr = AlignedObjectPtr<Keyrequest, 512>;
 // be targeted. A TARGETINFO is one of the inputs that is provided to the
 // ENCLU[EREPORT] instruction.
 struct Targetinfo {
-  UnsafeBytes<SHA256_DIGEST_LENGTH> measurement;
+  UnsafeBytes<kSha256DigestLength> measurement;
   SecsAttributeSet attributes;
   UnsafeBytes<2> reserved1;  // Field size taken from the Intel SDM.
   uint16_t configsvn;
@@ -331,9 +331,9 @@ struct ReportBody {
   UnsafeBytes<12> reserved1;  // Field size taken from the Intel SDM.
   UnsafeBytes<kIsvextprodidSize> isvextprodid;
   SecsAttributeSet attributes;
-  UnsafeBytes<SHA256_DIGEST_LENGTH> mrenclave;
+  UnsafeBytes<kSha256DigestLength> mrenclave;
   UnsafeBytes<32> reserved2;  // Field size taken from the Intel SDM.
-  UnsafeBytes<SHA256_DIGEST_LENGTH> mrsigner;
+  UnsafeBytes<kSha256DigestLength> mrsigner;
   UnsafeBytes<32> reserved3;  // Field size taken from the Intel SDM.
   UnsafeBytes<kConfigidSize> configid;
   uint16_t isvprodid;

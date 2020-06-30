@@ -31,6 +31,7 @@
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
@@ -87,7 +88,7 @@ class SgxLocalSecretSealerTest : public ::testing::Test {
     enclave_copy_different_mrenclave_ =
         absl::make_unique<sgx::FakeEnclave>(*enclave_);
     enclave_copy_different_mrenclave_->set_mrenclave(
-        TrivialRandomObject<UnsafeBytes<SHA256_DIGEST_LENGTH>>());
+        TrivialRandomObject<UnsafeBytes<kSha256DigestLength>>());
 
     // Construct a fake enclave that differs from enclave_ only in MRSIGNER.
     // A secret sealed to MRSIGNER from enclave_ cannot be unsealed by
@@ -95,7 +96,7 @@ class SgxLocalSecretSealerTest : public ::testing::Test {
     enclave_copy_different_mrsigner_ =
         absl::make_unique<sgx::FakeEnclave>(*enclave_);
     enclave_copy_different_mrsigner_->set_mrsigner(
-        TrivialRandomObject<UnsafeBytes<SHA256_DIGEST_LENGTH>>());
+        TrivialRandomObject<UnsafeBytes<kSha256DigestLength>>());
 
     // Construct a fake enclave that has ISVSVN value 1 greater than that of
     // enclave_. A secret sealed to MRSIGNER from enclave_ can be unsealed

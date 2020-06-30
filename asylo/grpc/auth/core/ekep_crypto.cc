@@ -24,12 +24,12 @@
 #include <openssl/hmac.h>
 #include <openssl/mem.h>
 #include <openssl/rand.h>
-#include <openssl/sha.h>
 
 #include <cstdint>
 #include <memory>
 
 #include "absl/strings/str_cat.h"
+#include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/logging.h"
@@ -61,7 +61,7 @@ Status Hmac(const HandshakeCipher &ciphersuite, ByteContainerView key,
   switch (ciphersuite) {
     case CURVE25519_SHA256:
       digest = EVP_sha256();
-      mac->resize(SHA256_DIGEST_LENGTH);
+      mac->resize(kSha256DigestLength);
       break;
     default:
       return Status(

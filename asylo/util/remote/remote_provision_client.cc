@@ -17,7 +17,6 @@
  */
 
 #include <fcntl.h>
-#include <openssl/sha.h>
 
 #include <cstdint>
 #include <string>
@@ -25,6 +24,7 @@
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
+#include "asylo/crypto/sha256_hash.h"
 #include "asylo/platform/primitives/remote/util/grpc_credential_builder.h"
 #include "asylo/util/cleanup.h"
 #include "asylo/util/posix_error_space.h"
@@ -120,22 +120,29 @@ class RemoteProvisionClient : public RemoteProvision {
       auto read_buf =
           const_cast<char *>(request.mutable_enclave_binary()->data());
 
-      SHA256_CTX sha256;
-      SHA256_Init(&sha256);
-      request.mutable_cumulative_sha256()->resize(SHA256_DIGEST_LENGTH);
-      auto cumulative_sha256 = reinterpret_cast<uint8_t *>(
-          const_cast<char *>(request.mutable_cumulative_sha256()->data()));
+      Sha256Hash hasher;
+      std::vector<uint8_t> cumulative_hash;
 
-      // Read enclave binary block by block, calculate cumulaie SHA256 and send.
-      for (;;) {
-        auto len = read(fd, read_buf, kBufferLength);
-        if (fd < 0) {
-          return Status{
-              static_cast<error::PosixError>(errno),
-              absl::StrCat("Failed to read file ", enclave_file_path)};
+      // Read enclave binary block by block, calculate cumulative SHA256 and
+      // send.
+      while (true) {
+        ssize_t len = read(fd, read_buf, kBufferLength);
+        if (len == 0) {
+          break;
+        } else if (len < 0) {
+          if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
+            continue;
+          } else {
+            return Status{
+                static_cast<error::PosixError>(errno),
+                absl::StrCat("Failed to read file ", enclave_file_path)};
+          }
         }
-        SHA256_Update(&sha256, read_buf, len);
-        SHA256_Final(cumulative_sha256, &sha256);
+
+        hasher.Update(ByteContainerView(read_buf, len));
+        ASYLO_RETURN_IF_ERROR(hasher.CumulativeHash(&cumulative_hash));
+        request.set_cumulative_sha256(
+            std::string(cumulative_hash.begin(), cumulative_hash.end()));
         request.mutable_enclave_binary()->resize(len);
         if (!stream->Write(request)) {
           LOG(ERROR) << "Write failed";
@@ -143,17 +150,10 @@ class RemoteProvisionClient : public RemoteProvision {
         }
         // No client address after the first block.
         request.clear_client_address();
-        if (len < kBufferLength) {
-          break;
-        }
       }
     }
 
     ASYLO_RETURN_IF_ERROR(Status(stream->Finish()));
-    if (fd < 0) {
-      return Status{static_cast<error::PosixError>(errno),
-                    absl::StrCat("Failed to open file ", enclave_file_path)};
-    }
     if (response.enclave_path().empty()) {
       return Status{error::GoogleError::NOT_FOUND, "No enclave file path"};
     }

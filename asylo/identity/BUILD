@@ -298,6 +298,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":additional_authenticated_data_generator",
+        "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:bytes",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",

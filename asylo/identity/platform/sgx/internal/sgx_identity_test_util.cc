@@ -143,12 +143,12 @@ CodeIdentity GetRandomValidCodeIdentityWithConstraints(
     const std::vector<bool> &mrsigner_constraint) {
   CodeIdentity id;
   if (RandomSelect(mrenclave_constraint)) {
-    auto hash = TrivialRandomObject<UnsafeBytes<SHA256_DIGEST_LENGTH>>();
+    auto hash = TrivialRandomObject<UnsafeBytes<kSha256DigestLength>>();
     id.mutable_mrenclave()->set_hash(hash.data(), hash.size());
   }
 
   if (RandomSelect(mrsigner_constraint)) {
-    auto hash = TrivialRandomObject<UnsafeBytes<SHA256_DIGEST_LENGTH>>();
+    auto hash = TrivialRandomObject<UnsafeBytes<kSha256DigestLength>>();
     id.mutable_signer_assigned_identity()->mutable_mrsigner()->set_hash(
         hash.data(), hash.size());
   }

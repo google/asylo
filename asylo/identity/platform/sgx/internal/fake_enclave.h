@@ -19,11 +19,10 @@
 #ifndef ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_FAKE_ENCLAVE_H_
 #define ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_FAKE_ENCLAVE_H_
 
-#include <openssl/sha.h>
-
 #include <vector>
 
 #include "absl/base/attributes.h"
+#include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
@@ -109,10 +108,10 @@ class FakeEnclave {
   static void ExitEnclave();
 
   // Mutators
-  void set_mrenclave(const UnsafeBytes<SHA256_DIGEST_LENGTH> &value) {
+  void set_mrenclave(const UnsafeBytes<kSha256DigestLength> &value) {
     mrenclave_ = value;
   }
-  void set_mrsigner(const UnsafeBytes<SHA256_DIGEST_LENGTH> &value) {
+  void set_mrsigner(const UnsafeBytes<kSha256DigestLength> &value) {
     mrsigner_ = value;
   }
   void set_isvprodid(uint16_t value) { isvprodid_ = value; }
@@ -138,7 +137,7 @@ class FakeEnclave {
   void set_ownerepoch(const SafeBytes<kOwnerEpochSize> &value) {
     ownerepoch_ = value;
   }
-  void set_root_key(const SafeBytes<SHA256_DIGEST_LENGTH> &value) {
+  void set_root_key(const SafeBytes<kSha256DigestLength> &value) {
     root_key_ = value;
   }
   void set_seal_fuses(const SafeBytes<AES_BLOCK_SIZE> &value) {
@@ -164,10 +163,10 @@ class FakeEnclave {
   }
 
   // Accessors
-  const UnsafeBytes<SHA256_DIGEST_LENGTH> &get_mrenclave() const {
+  const UnsafeBytes<kSha256DigestLength> &get_mrenclave() const {
     return mrenclave_;
   }
-  const UnsafeBytes<SHA256_DIGEST_LENGTH> &get_mrsigner() const {
+  const UnsafeBytes<kSha256DigestLength> &get_mrsigner() const {
     return mrsigner_;
   }
   uint16_t get_isvprodid() const { return isvprodid_; }
@@ -189,7 +188,7 @@ class FakeEnclave {
   const SafeBytes<kOwnerEpochSize> &get_ownerepoch() const {
     return ownerepoch_;
   }
-  const SafeBytes<SHA256_DIGEST_LENGTH> &get_root_key() const {
+  const SafeBytes<kSha256DigestLength> &get_root_key() const {
     return root_key_;
   }
   const SafeBytes<AES_BLOCK_SIZE> &get_seal_fuses() const {
@@ -254,8 +253,8 @@ class FakeEnclave {
     SafeBytes<kOwnerEpochSize> ownerepoch;
     SecsAttributeSet attributes;
     SecsAttributeSet attributemask;
-    UnsafeBytes<SHA256_DIGEST_LENGTH> mrenclave;
-    UnsafeBytes<SHA256_DIGEST_LENGTH> mrsigner;
+    UnsafeBytes<kSha256DigestLength> mrenclave;
+    UnsafeBytes<kSha256DigestLength> mrsigner;
     UnsafeBytes<kKeyrequestKeyidSize> keyid;
     SafeBytes<AES_BLOCK_SIZE> seal_key_fuses;
     UnsafeBytes<kCpusvnSize> cpusvn;
@@ -308,10 +307,10 @@ class FakeEnclave {
                    HardwareKey *key) const;
 
   // SGX-defined MRENCLAVE value of this fake enclave.
-  UnsafeBytes<SHA256_DIGEST_LENGTH> mrenclave_;
+  UnsafeBytes<kSha256DigestLength> mrenclave_;
 
   // SGX-defined MRSIGNER value of this fake enclave.
-  UnsafeBytes<SHA256_DIGEST_LENGTH> mrsigner_;
+  UnsafeBytes<kSha256DigestLength> mrsigner_;
 
   // SGX-defined ISVPRODID value of this fake enclave.
   uint16_t isvprodid_;
@@ -349,7 +348,7 @@ class FakeEnclave {
   // Key at the root of the enclave's key hierarchy. All enclave-specific
   // keys are derived from this key. The Intel SDM does not directly reference
   // this key, nor does it mention its size.
-  SafeBytes<SHA256_DIGEST_LENGTH> root_key_;
+  SafeBytes<kSha256DigestLength> root_key_;
 
   // Value of the "Seal fuses" referenced by the EREPORT/EGETKEY pseudo code.
   // The SDM describes this as a "package-wide control register that is 128 bits

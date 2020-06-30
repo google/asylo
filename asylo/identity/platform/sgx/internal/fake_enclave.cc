@@ -111,8 +111,8 @@ void FakeEnclave::ExitEnclave() {
 }
 
 void FakeEnclave::SetRandomIdentity() {
-  mrenclave_ = TrivialRandomObject<UnsafeBytes<SHA256_DIGEST_LENGTH>>();
-  mrsigner_ = TrivialRandomObject<UnsafeBytes<SHA256_DIGEST_LENGTH>>();
+  mrenclave_ = TrivialRandomObject<UnsafeBytes<kSha256DigestLength>>();
+  mrsigner_ = TrivialRandomObject<UnsafeBytes<kSha256DigestLength>>();
   isvprodid_ = TrivialRandomObject<uint16_t>();
   isvsvn_ = TrivialRandomObject<uint16_t>();
 
@@ -143,13 +143,13 @@ void FakeEnclave::SetIdentity(const SgxIdentity &sgx_identity) {
   const MachineConfiguration &machine_config =
       sgx_identity.machine_configuration();
 
-  if (!SetTrivialObjectFromBinaryString<UnsafeBytes<SHA256_DIGEST_LENGTH>>(
+  if (!SetTrivialObjectFromBinaryString<UnsafeBytes<kSha256DigestLength>>(
            identity.mrenclave().hash(), &mrenclave_)
            .ok()) {
     LOG(FATAL) << "MRENCLAVE from SgxIdentity is invalid: "
                << absl::BytesToHexString(identity.mrenclave().hash());
   }
-  if (!SetTrivialObjectFromBinaryString<UnsafeBytes<SHA256_DIGEST_LENGTH>>(
+  if (!SetTrivialObjectFromBinaryString<UnsafeBytes<kSha256DigestLength>>(
            identity.signer_assigned_identity().mrsigner().hash(), &mrsigner_)
            .ok()) {
     LOG(FATAL) << "MRSIGNER from SgxIdentity is invalid: "

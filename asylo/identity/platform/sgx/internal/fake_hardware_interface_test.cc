@@ -26,6 +26,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
+#include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
@@ -48,7 +49,7 @@ namespace {
 
 using ::testing::Not;
 
-using Measurement = UnsafeBytes<SHA256_DIGEST_LENGTH>;
+using Measurement = UnsafeBytes<kSha256DigestLength>;
 using Keyid = UnsafeBytes<kReportKeyidSize>;
 
 template <class T1, class T2>

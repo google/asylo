@@ -19,6 +19,7 @@
 #ifndef ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SELF_IDENTITY_H_
 #define ASYLO_IDENTITY_PLATFORM_SGX_INTERNAL_SELF_IDENTITY_H_
 
+#include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/identity/platform/sgx/sgx_identity.pb.h"
@@ -34,8 +35,8 @@ struct SelfIdentity {
   UnsafeBytes<kCpusvnSize> cpusvn;
   uint32_t miscselect;
   SecsAttributeSet attributes;
-  UnsafeBytes<SHA256_DIGEST_LENGTH> mrenclave;
-  UnsafeBytes<SHA256_DIGEST_LENGTH> mrsigner;
+  UnsafeBytes<kSha256DigestLength> mrenclave;
+  UnsafeBytes<kSha256DigestLength> mrsigner;
   uint16_t isvprodid;
   uint16_t isvsvn;
 

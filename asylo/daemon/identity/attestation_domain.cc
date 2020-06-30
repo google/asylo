@@ -20,7 +20,6 @@
 
 #include <fcntl.h>
 #include <openssl/hmac.h>
-#include <openssl/sha.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -32,6 +31,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
@@ -45,7 +45,7 @@ namespace {
 constexpr int kFormattedUuidSize = 36;
 constexpr size_t kAttestationDomainSize = 16;
 
-static_assert(kAttestationDomainSize <= SHA256_DIGEST_LENGTH,
+static_assert(kAttestationDomainSize <= kSha256DigestLength,
               "kAttestationDomainSize is too large");
 
 constexpr char kBootUuidFile[] = "/proc/sys/kernel/random/boot_id";
@@ -91,8 +91,8 @@ StatusOr<std::string> GetAttestationDomain() {
   // exposing the raw UUID on the network. Instead, we derive an Asylo-specific
   // 16-byte value from the per-boot machine UUID using HMAC.
   const EVP_MD *digest = EVP_sha256();
-  uint8_t mac[SHA256_DIGEST_LENGTH];
-  unsigned int attestation_domain_size = SHA256_DIGEST_LENGTH;
+  uint8_t mac[kSha256DigestLength];
+  unsigned int attestation_domain_size = kSha256DigestLength;
 
   if (HMAC(digest, boot_uuid.data(), boot_uuid.size(),
            kAttestationDomainHmacData, sizeof(kAttestationDomainHmacData), mac,
