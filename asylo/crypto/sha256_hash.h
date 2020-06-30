@@ -29,7 +29,11 @@
 
 namespace asylo {
 
+#if __cplusplus >= 201703L
 inline constexpr int kSha256DigestLength = 32;
+#else
+constexpr int kSha256DigestLength = 32;
+#endif
 
 // Sha256Hash implements HashInterface for the SHA-256 hash function.
 class Sha256Hash final : public HashInterface {
