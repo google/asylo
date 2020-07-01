@@ -334,6 +334,22 @@ cc_test_and_cc_enclave_test(
     ],
 )
 
+cc_binary(
+    name = "pck_certificate_tool",
+    srcs = ["pck_certificate_tool.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    features = ["fully_static_link"],
+    deps = [
+        ":pck_certificate_util",
+        "//asylo/crypto:certificate_interface",
+        "//asylo/crypto:x509_certificate",
+        "//asylo/util:logging",
+        "//asylo/util:proto_enum_util",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
 cc_library(
     name = "pck_certs_from_json",
     srcs = ["pck_certs_from_json.cc"],
