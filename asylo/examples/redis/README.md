@@ -63,9 +63,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # Asylo
 http_archive(
     name = "com_google_asylo",
-    urls = ["https://github.com/google/asylo/archive/v0.5.2.tar.gz"],
-    sha256 = "7a32cb64b3f5cb2f2716eef063db0caccf7bafd9c771183b3e0146df2bc1697d",
-    strip_prefix = "asylo-0.5.2",
+    urls = ["https://github.com/google/asylo/archive/v0.5.3.tar.gz"],
+    sha256 = "012e786e9b691093b5e2c42b255986bcab1cadf9e25f9d024eab7adee25124b0",
+    strip_prefix = "asylo-0.5.3",
 )
 
 # Redis
@@ -260,7 +260,7 @@ docker run -it --rm \
     --tmpfs /root/.cache/bazel:exec \
     -w /opt/my-project \
     --network host \
-    gcr.io/asylo-framework/asylo:buildenv-v0.5.2
+    gcr.io/asylo-framework/asylo:buildenv-v0.5.3
 ```
 
 The SGX capabilities are propagated by the docker flags `--device=/dev/isgx` and
