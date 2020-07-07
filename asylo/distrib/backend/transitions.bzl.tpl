@@ -144,7 +144,7 @@ def _make_transition_forwarding_rule(
             kind of transition applied on cc_target.
         extra_attrs: A dictionary of argument name to attribute, used to extend
             the attributes provided by the defined rule. Base attributes are
-            cc_target, backend, and _whitelist_function_transition.
+            cc_target, backend, and _allowlist_function_transition.
 
     Returns:
         A starlark rule object.
