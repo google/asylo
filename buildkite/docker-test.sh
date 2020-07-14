@@ -42,7 +42,7 @@ ASYLO_EXTRA_BAZEL_FLAGS="build --noshow_progress --verbose_failures \
 --announce_rc --test_output=summary --test_summary=short \
 --color=yes --build_event_json_file=\"${BUILD_EVENT_FILE}\""
 
-: ${ASYLO_BUILD_ROOT:=/var/tmp/asylo-build}
+: "${ASYLO_BUILD_ROOT:=/var/tmp/asylo-build}"
 # We check that ${ASYLO_BUILD_ROOT} is already writable by ${USER}.
 if [ -w "${ASYLO_BUILD_ROOT}" ]; then
   echo "${ASYLO_BUILD_ROOT} is writable. Proceeding;"
@@ -52,10 +52,21 @@ else
 fi
 
 # Create build dir
-mkdir -p ${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}
-mkdir -p ${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}/${BUILDKITE_STEP_ID}
+mkdir -p "${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}"
+mkdir -p "${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}/${BUILDKITE_STEP_ID}"
 # We will collect build artifacts here
-mkdir -p ${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}/${BUILDKITE_STEP_ID}/artifacts/
+mkdir -p "${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}/${BUILDKITE_STEP_ID}/artifacts/"
+
+# Support for IPv6 build agents
+: "${ASYLO_BUILD_IPV6:=1}"
+if [[ ${ASYLO_BUILD_IPV6} -eq 1 ]];
+then
+  echo "Bazel will be configured to prefer IPv6"
+  PREFER_IPV6="-Djava.net.preferIPv6Addresses=true"
+  ASYLO_EXTRA_BAZEL_FLAGS+=$'\n'"startup --host_jvm_args=${PREFER_IPV6}"
+  ASYLO_EXTRA_BAZEL_FLAGS+=$'\n'"build --jvmopt=${PREFER_IPV6}"
+  COURSIER_OPTS="${PREFER_IPV6}"
+fi
 
 # Generate random container name
 CONTAINER_NAME=asylo${RANDOM}
@@ -80,7 +91,7 @@ else
 fi
 
 # Pull the latest Asylo image
-: ${ASYLO_DOCKER_IMAGE:=gcr.io/asylo-framework/asylo}
+: "${ASYLO_DOCKER_IMAGE:=gcr.io/asylo-framework/asylo}"
 docker pull ${ASYLO_DOCKER_IMAGE}
 
 # Start Asylo Docker Container
@@ -88,10 +99,11 @@ docker pull ${ASYLO_DOCKER_IMAGE}
 # We also mount /artifacts volume so that we can copy files we want to preserve.
 docker run \
     --env ASYLO_EXTRA_BAZEL_FLAGS="${ASYLO_EXTRA_BAZEL_FLAGS}" \
+    --env COURSIER_OPTS="${COURSIER_OPTS}" \
     --volume "${ASYLO_SDK}:/opt/asylo/sdk" \
     --volume "${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}/${BUILDKITE_STEP_ID}/artifacts:/artifacts" \
     "${SGX_HW_ARGS[@]}" \
-    --tmpfs /home/${USER}:exec \
+    --tmpfs "/home/${USER}:exec" \
     -w "/opt/asylo/sdk" \
     -it \
     --rm \
@@ -116,7 +128,7 @@ DOCKER="docker exec -i \
 
 # Create a user in the container to match the user running the script.
 # Parts of Bazel get unhappy if running as a user id that isn't registered.
-${DOCKER_ROOT} useradd -u $(id -u) ${USER}
+${DOCKER_ROOT} useradd -u "$(id -u)" "${USER}"
 
 # Remove output files
 echo "--- :bazel: Cleaning previous artifacts, if any"
@@ -124,8 +136,8 @@ ${DOCKER} bazel clean
 
 # Run Tests
 echo "--- :gear: Running Tests ${ASYLO_TO_TEST}"
-${DOCKER} asylo/test/run_enclave_tests.sh ${ASYLO_TO_TEST}
-STAT=$(($STAT || $?))
+${DOCKER} asylo/test/run_enclave_tests.sh "${ASYLO_TO_TEST}"
+STAT=$((STAT || $?))
 
 # Now test results are in bazel cache and Build Event files are in /home/${USER}.
 # We use artifacts collection script to copy test logs and test xml results
@@ -136,14 +148,15 @@ STAT=$(($STAT || $?))
 # (see https://buildkite.com/docs/pipelines/artifacts)
 echo "--- :package: Collecting Test Artifacts"
 ${DOCKER} python3 buildkite/collect_artifacts.py \
-            --build-events=${BUILD_EVENT_FILE} \
+            --build-events="${BUILD_EVENT_FILE}" \
             --destination=/artifacts
 
 # Uploading Test Artifacts to Buildkite
 if [ -x "$(command -v buildkite-agent)" ]; then
   echo "--- :package: Uploading Build Artifacts"
-  cd "${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}/${BUILDKITE_STEP_ID}/artifacts"
-  buildkite-agent artifact upload **/*.*
+  cd "${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}/${BUILDKITE_STEP_ID}/artifacts"\
+  || exit 1
+  buildkite-agent artifact upload ./**/*.*
 fi
 
 # General cleanup: We don't want to run out of disc space
