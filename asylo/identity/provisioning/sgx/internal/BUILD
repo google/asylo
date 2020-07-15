@@ -219,6 +219,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
+        ":pck_certificate_util",
         "//asylo/crypto:certificate_cc_proto",
         "@com_google_absl//absl/strings",
     ],

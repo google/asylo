@@ -819,18 +819,9 @@ TEST(PckCertificateUtilTest, ExtractSgxExtensionFromPckCertSuccess) {
   ASYLO_ASSERT_OK_AND_ASSIGN(
       cert, X509Certificate::Create(pck_cert_chain.certificates(0)));
 
-  SgxExtensions expected;
-  expected.ppid.set_value(
-      absl::HexStringToBytes("010000005356000095a0aadca3054a8c"));
-  expected.tcb.set_components("A fake TCB level");
-  expected.tcb.mutable_pce_svn()->set_value(2);
-  expected.cpu_svn.set_value("A fake TCB level");
-  expected.pce_id.set_value(0);
-  expected.fmspc.set_value(absl::HexStringToBytes("010000005356"));
-  expected.sgx_type = SgxType::STANDARD;
-
-  EXPECT_THAT(ExtractSgxExtensionsFromPckCert(*cert),
-              IsOkAndHolds(SgxExtensionsEquals(expected)));
+  EXPECT_THAT(
+      ExtractSgxExtensionsFromPckCert(*cert),
+      IsOkAndHolds(SgxExtensionsEquals(GetFakePckCertificateExtensions())));
 }
 
 TEST(PckCertificateUtilTest, ExtractCpuSvnFromPckCertNonX509Fails) {

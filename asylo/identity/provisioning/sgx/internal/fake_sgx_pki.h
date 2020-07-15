@@ -21,6 +21,7 @@
 
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certificate_util.h"
 
 namespace asylo {
 namespace sgx {
@@ -72,6 +73,9 @@ Certificate GetFakeSgxRootCertificate();
 //   * Asylo Fake SGX Processor CA Certificate
 //   * Asylo Fake SGX Root CA Certificate
 CertificateChain GetFakePckCertificateChain();
+
+// Returns the extensions that are embedded in the fake SGX PCK certificate.
+SgxExtensions GetFakePckCertificateExtensions();
 
 }  // namespace sgx
 }  // namespace asylo

@@ -18,6 +18,7 @@
 
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 
 namespace asylo {
@@ -193,6 +194,19 @@ CertificateChain GetFakePckCertificateChain() {
   CertificateChain certificate_chain;
   AppendFakePckCertificateChain(&certificate_chain);
   return certificate_chain;
+}
+
+SgxExtensions GetFakePckCertificateExtensions() {
+  SgxExtensions extensions;
+  extensions.ppid.set_value(
+      absl::HexStringToBytes("010000005356000095a0aadca3054a8c"));
+  extensions.tcb.set_components("A fake TCB level");
+  extensions.tcb.mutable_pce_svn()->set_value(2);
+  extensions.cpu_svn.set_value("A fake TCB level");
+  extensions.pce_id.set_value(0);
+  extensions.fmspc.set_value(absl::HexStringToBytes("010000005356"));
+  extensions.sgx_type = SgxType::STANDARD;
+  return extensions;
 }
 
 }  // namespace sgx
