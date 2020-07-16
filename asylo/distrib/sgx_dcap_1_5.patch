@@ -15,6 +15,8 @@
   * Added sgx_qe_set_enclave_dirpath to set the directory paths for both the
     PCE and QE.
   * Removed duplicated code in qe_logic.cpp.
+  * Added sgx_ql_set_quote_config to allow users to explicitly set the platform
+    quote data instead of relying on a Platform Quote Provider Library.
 --
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/common/inc/internal/se_map.h QuoteGeneration/common/inc/internal/se_map.h
 --- QuoteGeneration/common/inc/internal/se_map.h
@@ -512,7 +514,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/comm
  
  /**
      Class definition of the reference ECDSA-P256 quoting code which implements the quoting interface, IQuote.
-@@ -48,6 +54,12 @@
+@@ -48,6 +54,14 @@
  public:
      virtual quote3_error_t set_enclave_load_policy(sgx_ql_request_policy_t policy);
  
@@ -522,10 +524,12 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/comm
 +    virtual quote3_error_t set_enclave_dirpath(const char *dirpath);
 +#endif
 +
++    virtual quote3_error_t set_quote_config(const sgx_ql_config_t *config);
++
      virtual quote3_error_t init_quote(sgx_ql_att_key_id_t* p_att_key_id,
                                        sgx_ql_cert_key_type_t certification_key_type,
                                        sgx_target_info_t *p_target_info,
-@@ -68,6 +80,12 @@
+@@ -68,6 +82,12 @@
  private:
      quote3_error_t ecdsa_set_enclave_load_policy(sgx_ql_request_policy_t policy);
  
@@ -664,7 +668,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  #define SGX_QL_MAX_ATT_KEY_IDS 10
  
  #define SGX_QL_CERT_TYPE PPID_RSA3072_ENCRYPTED 
-@@ -50,6 +54,12 @@
+@@ -50,6 +54,14 @@
  
  quote3_error_t sgx_ql_set_enclave_load_policy(sgx_ql_request_policy_t policy);
  
@@ -673,6 +677,8 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
 +#else
 +quote3_error_t sgx_ql_set_enclave_dirpath(const char *dirpath);
 +#endif
++
++quote3_error_t sgx_ql_set_quote_config(const sgx_ql_config_t *config);
 +
  quote3_error_t sgx_ql_select_att_key_id(sgx_ql_att_key_id_list_t *p_att_key_id_list,
                                          sgx_ql_att_key_id_t **p_selected_key_id);
@@ -746,7 +752,26 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  
  #define MAX_PATH 260
  #define MAX_CERT_DATA_SIZE (4098*3)
-@@ -163,6 +209,8 @@
+@@ -96,6 +142,18 @@
+ #define strcpy_s(dst, dstsize, src) strncpy(dst, src, dstsize)
+ #endif
+ 
++/**
++ * Free the heap-allocated sgx_ql_config_t structure. Safe to call with a NULL
++ * pointer.
++ */
++static inline void free_quote_config(sgx_ql_config_t *config)
++{
++    if (config)
++    {
++        free(config->p_cert_data);
++        free(config);
++    }
++}
+ 
+ /**
+  * Since the error code space of the PCE library is not unique from SGX SDK error space, need to explicitly
+@@ -163,17 +221,22 @@
      se_mutex_t m_ecdsa_blob_mutex;
  
      sgx_ql_request_policy_t m_load_policy;
@@ -755,15 +780,26 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
      sgx_enclave_id_t m_eid;
      sgx_misc_attribute_t m_attributes;
      sgx_launch_token_t m_launch_token;
-@@ -172,6 +220,7 @@
+     uint8_t m_ecdsa_blob[SGX_QL_TRUSTED_ECDSA_BLOB_SIZE_SDK];
+     uint8_t *m_pencryptedppid;
+     sgx_pce_info_t m_pce_info;
++    sgx_ql_config_t *m_quote_config;
  
      ql_global_data():
          m_load_policy(SGX_QL_DEFAULT),
 +        m_qe_dirpath_length(0),
          m_eid(0),
-         m_pencryptedppid(NULL)
+-        m_pencryptedppid(NULL)
++        m_pencryptedppid(NULL),
++        m_quote_config(NULL)
      {
-@@ -196,7 +245,10 @@
+         se_mutex_init(&m_enclave_load_mutex);
+         se_mutex_init(&m_ecdsa_blob_mutex);
+@@ -193,10 +256,14 @@
+             free(m_pencryptedppid);
+             m_pencryptedppid = NULL;
+         }
++        free_quote_config(m_quote_config);
      }
  };
  
@@ -775,7 +811,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  
  #ifdef ENABLE_QE3_LOGGING
  /* OCall functions for debug */
-@@ -237,17 +289,10 @@
+@@ -237,17 +304,11 @@
      sgx_get_quote_config_func_t p_sgx_get_quote_config = NULL;
      sgx_free_quote_config_func_t p_sgx_free_quote_config = NULL;
      sgx_ql_config_t *p_pck_cert_config = NULL;
@@ -791,50 +827,165 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
 -    #else
 -    HINSTANCE handle;
 -    #endif
++    bool unlock_on_cleanup = false;
  
      if((NULL == p_pck_cert_id) ||
         (NULL == p_cert_cpu_svn) ||
-@@ -259,26 +304,24 @@
+@@ -259,175 +320,126 @@
          return SGX_QL_ERROR_INVALID_PARAMETER;
      }
  
 -    #ifndef _MSC_VER
 -    handle = dlopen(SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME, RTLD_LAZY);
 -    if (NULL == handle)
-+    handle = load_library(SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME);
-+    if (NULL == handle && NULL != SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME_LEGACY)
-     {
-         ///TODO:
-         // This is a temporary solution to make sure the legacy library without a version suffix can be loaded.
-         // We shalll remove this when we have a major version change later and drop the backward compatible
-         // support for old lib name.
+-    {
+-        ///TODO:
+-        // This is a temporary solution to make sure the legacy library without a version suffix can be loaded.
+-        // We shalll remove this when we have a major version change later and drop the backward compatible
+-        // support for old lib name.
 -        #ifndef DISABLE_TRACE
-         old_libname_used = true;
+-        old_libname_used = true;
 -        #endif
 -        handle = dlopen(SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME_LEGACY, RTLD_LAZY);
-+        handle = load_library(SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME_LEGACY);
++    if (!se_mutex_lock(&g_ql_global_data.m_enclave_load_mutex)) {
++        SE_TRACE(SE_TRACE_ERROR, "Failed to lock mutex\n");
++        return SGX_QL_ERROR_UNEXPECTED;
      }
-+
-     if (handle) {
-         SE_TRACE(SE_TRACE_DEBUG, "Found the Quote's dependent library. %s.\n",
-             old_libname_used ? SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME_LEGACY : SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME);
+-    if (handle) {
+-        SE_TRACE(SE_TRACE_DEBUG, "Found the Quote's dependent library. %s.\n",
+-            old_libname_used ? SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME_LEGACY : SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME);
 -        p_sgx_get_quote_config = (sgx_get_quote_config_func_t)dlsym(handle, "sgx_ql_get_quote_config");
 -        error1 = dlerror();
 -        p_sgx_free_quote_config = (sgx_free_quote_config_func_t)dlsym(handle, "sgx_ql_free_quote_config");
 -        error2 = dlerror();
-+        p_sgx_get_quote_config = (sgx_get_quote_config_func_t)lookup_symbol(handle, "sgx_ql_get_quote_config");
-+        error1 = get_lookup_error();
-+        p_sgx_free_quote_config = (sgx_free_quote_config_func_t)lookup_symbol(handle, "sgx_ql_free_quote_config");
-+        error2 = get_lookup_error();
- 
-         if ((NULL == error1) &&
-              (NULL != p_sgx_get_quote_config) &&
-@@ -349,85 +392,8 @@
+-
+-        if ((NULL == error1) &&
+-             (NULL != p_sgx_get_quote_config) &&
+-            (NULL == error2) &&
+-             (NULL != p_sgx_free_quote_config)){
+-            SE_TRACE(SE_TRACE_DEBUG, "Found the sgx_ql_get_quote_config and sgx_ql_free_quote_config API.\n");
+-            SE_TRACE(SE_TRACE_DEBUG, "Request the Quote Config data.\n");
+-            ret_val = p_sgx_get_quote_config(p_pck_cert_id, &p_pck_cert_config);
+-            if (SGX_QL_SUCCESS != ret_val) {
+-                SE_TRACE(SE_TRACE_ERROR, "Error returned from the p_sgx_get_quote_config API. 0x%04x\n", ret_val);
+-                ret_val = SGX_QL_NO_PLATFORM_CERT_DATA;
+-                goto CLEANUP;
+-            }
+-            if(NULL == p_pck_cert_config) {
+-                ret_val = SGX_QL_NO_PLATFORM_CERT_DATA;
+-                SE_TRACE(SE_TRACE_ERROR, "p_sgx_get_quote_config returned NULL for p_pck_cert_config.\n");
+-                goto CLEANUP;
+-            }
+-            if(p_pck_cert_config->version != SGX_QL_CONFIG_VERSION_1) {
+-                SE_TRACE(SE_TRACE_ERROR, "p_sgx_get_quote_config returned incompatible pck_cert_config version.\n");
+-                ret_val = SGX_QL_NO_PLATFORM_CERT_DATA;
+-                goto CLEANUP;
+-            }
+-            if(0 != memcpy_s(p_cert_cpu_svn, sizeof(*p_cert_cpu_svn), &p_pck_cert_config->cert_cpu_svn, sizeof(p_pck_cert_config->cert_cpu_svn))) {
+-                ret_val = SGX_QL_ERROR_UNEXPECTED;
+-                goto CLEANUP;
+-            }
+-            *p_cert_pce_isv_svn = p_pck_cert_config->cert_pce_isv_svn;
+-            if(NULL == p_cert_data) {
+-                // The caller only needs the TCBm and/or the required buffer size.
+-                // Return the required buffer size.
+-                *p_cert_data_size = p_pck_cert_config->cert_data_size;
+-            }
+-            else {
+-                // The caller wants the TCBm and the required buffer size.
+-                if(*p_cert_data_size < p_pck_cert_config->cert_data_size) {
+-                    // The buffer passed in to this API is not large enouge to contain the provider library's returned cert data.
+-                    // This shouldn't happen since the passed in value should be the result of calling this function
+-                    // with the inputted p_cert_data equal to NULL just befor this caller.
+-                    SE_TRACE(SE_TRACE_ERROR, "sgx_ql_get_quote_config returned a cert_data_size too large to fit in inputted buffer.\n");
+-                    ret_val = SGX_QL_ERROR_INVALID_PARAMETER;
+-                    goto CLEANUP;
+-                }
+-                if(NULL == p_pck_cert_config->p_cert_data) {
+-                    SE_TRACE(SE_TRACE_ERROR, "sgx_ql_get_quote_config returned NULL for p_cert_data.\n");
++
++    if (NULL != g_ql_global_data.m_quote_config) {
++        SE_TRACE(SE_TRACE_DEBUG, "Using explicitly set quote config.\n");
++        p_pck_cert_config = g_ql_global_data.m_quote_config;
++        unlock_on_cleanup = true;
++    } else {
++        // If the quote config was not explicitly set, try to look up the config
++        // using a Platform Quote Provider Library.
++
++        // Don't hold the lock if we're calling out to an unknown library.
++        unlock_on_cleanup = false;
++        if (!se_mutex_unlock(&g_ql_global_data.m_enclave_load_mutex)) {
++            SE_TRACE(SE_TRACE_ERROR, "Failed to unlock mutex\n");
++        }
++
++        handle = load_library(SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME);
++        if (NULL == handle && NULL != SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME_LEGACY)
++        {
++            // This is a temporary solution to make sure the legacy library without a version suffix can be loaded.
++            // We shalll remove this when we have a major version change later and drop the backward compatible
++            // support for old lib name.
++            old_libname_used = true;
++            handle = load_library(SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME_LEGACY);
++        }
++        if (handle) {
++            SE_TRACE(SE_TRACE_DEBUG, "Found the Quote's dependent library. %s.\n",
++                old_libname_used ? SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME_LEGACY : SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME);
++            p_sgx_get_quote_config = (sgx_get_quote_config_func_t)lookup_symbol(handle, "sgx_ql_get_quote_config");
++            error1 = get_lookup_error();
++            p_sgx_free_quote_config = (sgx_free_quote_config_func_t)lookup_symbol(handle, "sgx_ql_free_quote_config");
++            error2 = get_lookup_error();
++
++            if ((NULL == error1) &&
++                 (NULL != p_sgx_get_quote_config) &&
++                (NULL == error2) &&
++                 (NULL != p_sgx_free_quote_config)){
++                SE_TRACE(SE_TRACE_DEBUG, "Found the sgx_ql_get_quote_config and sgx_ql_free_quote_config API.\n");
++                SE_TRACE(SE_TRACE_DEBUG, "Request the Quote Config data.\n");
++                ret_val = p_sgx_get_quote_config(p_pck_cert_id, &p_pck_cert_config);
++                if (SGX_QL_SUCCESS != ret_val) {
++                    SE_TRACE(SE_TRACE_ERROR, "Error returned from the p_sgx_get_quote_config API. 0x%04x\n", ret_val);
+                     ret_val = SGX_QL_NO_PLATFORM_CERT_DATA;
+                     goto CLEANUP;
+                 }
+-                // Copy the returned cert data
+-                if(0 != memcpy_s(p_cert_data, *p_cert_data_size, p_pck_cert_config->p_cert_data, p_pck_cert_config->cert_data_size)) {
+-                    ret_val = SGX_QL_ERROR_UNEXPECTED;
+-                    goto CLEANUP;
+-                }
+-                // Return the number of bytes copied.
+-                *p_cert_data_size = p_pck_cert_config->cert_data_size;
++            } else {
++                ret_val = SGX_QL_PLATFORM_LIB_UNAVAILABLE;
++                SE_TRACE(SE_TRACE_WARNING, "Couldn't find 'sgx_ql_get_quote_config()' and 'sgx_ql_free_quote_config()' in the platform library. %s\n", dlerror());
++                goto CLEANUP;
+             }
+         } else {
+-            SE_TRACE(SE_TRACE_WARNING, "Couldn't find 'sgx_ql_get_quote_config()' and 'sgx_ql_free_quote_config()' in the platform library. %s\n", dlerror());
++            ret_val = SGX_QL_PLATFORM_LIB_UNAVAILABLE;
++            SE_TRACE(SE_TRACE_DEBUG, "Couldn't find the platform library. %s\n", dlerror());
++            goto CLEANUP;
          }
+-    } else {
+-        SE_TRACE(SE_TRACE_DEBUG, "Couldn't find the platform library. %s\n", dlerror());
      }
-     if(NULL != handle) {
+ 
+-    CLEANUP:
+-    if(NULL != p_sgx_free_quote_config){
+-        if(NULL != p_pck_cert_config) {
+-            p_sgx_free_quote_config(p_pck_cert_config);
+-        }
++    if(NULL == p_pck_cert_config) {
++        ret_val = SGX_QL_NO_PLATFORM_CERT_DATA;
++        SE_TRACE(SE_TRACE_ERROR, "p_sgx_get_quote_config returned NULL for p_pck_cert_config.\n");
++        goto CLEANUP;
+     }
+-    if(NULL != handle) {
 -        dlclose(handle);
--    }
++    if(p_pck_cert_config->version != SGX_QL_CONFIG_VERSION_1) {
++        SE_TRACE(SE_TRACE_ERROR, "p_sgx_get_quote_config returned incompatible pck_cert_config version.\n");
++        ret_val = SGX_QL_NO_PLATFORM_CERT_DATA;
++        goto CLEANUP;
+     }
 -    #else
 -    handle = LoadLibrary(TEXT(SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME));
 -    if (handle != NULL) {
@@ -898,25 +1049,66 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
 -        else {
 -            SE_TRACE(SE_TRACE_WARNING, "Couldn't find 'sgx_ql_get_quote_config()' and 'sgx_ql_free_quote_config()' in the platform library.\n");
 -        }
-+        close_library(handle);
++    if(0 != memcpy_s(p_cert_cpu_svn, sizeof(*p_cert_cpu_svn), &p_pck_cert_config->cert_cpu_svn, sizeof(p_pck_cert_config->cert_cpu_svn))) {
++        ret_val = SGX_QL_ERROR_UNEXPECTED;
++        goto CLEANUP;
++    }
++    *p_cert_pce_isv_svn = p_pck_cert_config->cert_pce_isv_svn;
++    if(NULL == p_cert_data) {
++        // The caller only needs the TCBm and/or the required buffer size.
++        // Return the required buffer size.
++        *p_cert_data_size = p_pck_cert_config->cert_data_size;
      }
--    else {
+     else {
 -        SE_TRACE(SE_TRACE_DEBUG, "Couldn't find the platform library. %s\n");
--    }
--    CLEANUP:
++        // The caller wants the TCBm and the required buffer size.
++        if(*p_cert_data_size < p_pck_cert_config->cert_data_size) {
++            // The buffer passed in to this API is not large enouge to contain the provider library's returned cert data.
++            // This shouldn't happen since the passed in value should be the result of calling this function
++            // with the inputted p_cert_data equal to NULL just befor this caller.
++            SE_TRACE(SE_TRACE_ERROR, "sgx_ql_get_quote_config returned a cert_data_size too large to fit in inputted buffer.\n");
++            ret_val = SGX_QL_ERROR_INVALID_PARAMETER;
++            goto CLEANUP;
++        }
++        if(NULL == p_pck_cert_config->p_cert_data) {
++            SE_TRACE(SE_TRACE_ERROR, "sgx_ql_get_quote_config returned NULL for p_cert_data.\n");
++            ret_val = SGX_QL_NO_PLATFORM_CERT_DATA;
++            goto CLEANUP;
++        }
++        // Copy the returned cert data
++        if(0 != memcpy_s(p_cert_data, *p_cert_data_size, p_pck_cert_config->p_cert_data, p_pck_cert_config->cert_data_size)) {
++            ret_val = SGX_QL_ERROR_UNEXPECTED;
++            goto CLEANUP;
++        }
++        // Return the number of bytes copied.
++        *p_cert_data_size = p_pck_cert_config->cert_data_size;
+     }
++
++    ret_val = SGX_QL_SUCCESS;
++
+     CLEANUP:
 -    if (NULL != p_sgx_free_quote_config) {
 -        if (NULL != p_pck_cert_config) {
--            p_sgx_free_quote_config(p_pck_cert_config);
--        }
--    }
++    if(NULL != p_sgx_free_quote_config){
++        if(NULL != p_pck_cert_config) {
+             p_sgx_free_quote_config(p_pck_cert_config);
+         }
+     }
 -    if (NULL != handle) {
 -        FreeLibrary(handle);
--    }
++    if(NULL != handle) {
++        close_library(handle);
++    }
++    if (unlock_on_cleanup) {
++        if (!se_mutex_unlock(&g_ql_global_data.m_enclave_load_mutex)) {
++            SE_TRACE(SE_TRACE_ERROR, "Failed to unlock mutex\n");
++        }
+     }
 -    #endif
  
      return(ret_val);
  }
-@@ -447,24 +413,38 @@
+@@ -447,24 +459,38 @@
      if(!p_file_name || !p_file_path) {
          return false;
      }
@@ -969,7 +1161,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
      }
  
      char* p_last_slash = strrchr(p_file_path, '/' );
-@@ -481,16 +461,18 @@
+@@ -481,16 +507,18 @@
      }
      (void)strncat(p_file_path,p_file_name, strnlen(p_file_name,buf_size));
      #else
@@ -996,10 +1188,11 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  
      TCHAR *p_last_slash = _tcsrchr(p_file_path, _T('\\'));
      if (p_last_slash != NULL)
-@@ -1077,6 +1059,62 @@
+@@ -1076,6 +1104,107 @@
+ 
      return(refqt_ret);
  }
- 
++
 +quote3_error_t ECDSA256Quote::set_enclave_dirpath(const TCHAR *dirpath)
 +{
 +    quote3_error_t refqt_ret = SGX_QL_ERROR_UNEXPECTED;
@@ -1056,9 +1249,53 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
 +    return(refqt_ret);
 +}
 +
++quote3_error_t ECDSA256Quote::set_quote_config(const sgx_ql_config_t *config)
++{
++    quote3_error_t refqt_ret = SGX_QL_ERROR_UNEXPECTED;
++    int rc = 0;
++
++    rc = se_mutex_lock(&g_ql_global_data.m_enclave_load_mutex);
++    if (0 == rc) {
++        SE_TRACE(SE_TRACE_ERROR, "Failed to lock mutex\n");
++        return SGX_QL_ERROR_UNEXPECTED;
++    }
++
++    free_quote_config(g_ql_global_data.m_quote_config);
++
++    g_ql_global_data.m_quote_config =
++        (sgx_ql_config_t *)malloc(sizeof(sgx_ql_config_t));
++    if (NULL == g_ql_global_data.m_quote_config) {
++        refqt_ret = SGX_QL_ERROR_OUT_OF_MEMORY;
++        goto CLEANUP;
++    }
++
++    memcpy(g_ql_global_data.m_quote_config, config, sizeof(*config));
++    if (NULL == config->p_cert_data) {
++        g_ql_global_data.m_quote_config->p_cert_data = NULL;
++    } else {
++        g_ql_global_data.m_quote_config->p_cert_data =
++            (uint8_t *)malloc(config->cert_data_size);
++        if (NULL == g_ql_global_data.m_quote_config->p_cert_data) {
++            refqt_ret = SGX_QL_ERROR_OUT_OF_MEMORY;
++            goto CLEANUP;
++        }
++        memcpy(g_ql_global_data.m_quote_config->p_cert_data,
++               config->p_cert_data, config->cert_data_size);
++    }
++
++    refqt_ret = SGX_QL_SUCCESS;
++    CLEANUP:
++    rc = se_mutex_unlock(&g_ql_global_data.m_enclave_load_mutex);
++    if (0 == rc) {
++        SE_TRACE(SE_TRACE_ERROR, "Failed to unlock mutex.\n");
++        refqt_ret = SGX_QL_ERROR_UNEXPECTED;
++    }
++
++    return(refqt_ret);
++}
+ 
  /**
   * This is the ECDSA-P256 specific init quote code.  The generic quote interfaces have been converted/reduced to the ECDSA specific inputs.
-  * The method will generate a new key and certify it when needed.
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quote/sgx_ql_core_wrapper.cpp QuoteGeneration/quote_wrapper/quote/sgx_ql_core_wrapper.cpp
 --- QuoteGeneration/quote_wrapper/quote/sgx_ql_core_wrapper.cpp
 +++ QuoteGeneration/quote_wrapper/quote/sgx_ql_core_wrapper.cpp
@@ -1077,15 +1314,10 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  #ifdef USE_DEBUG_MRSIGNER
  // This is the mrsigner for debug key
  uint8_t g_qe_mrsigner[32] = { 0xe4, 0xbd, 0x9f, 0xc2, 0x12, 0x98, 0x35, 0xba, 0x1d, 0xcc, 0xa1, 0x93, 0x9d, 0x57, 0xd0, 0x8e,
-@@ -123,6 +128,31 @@
-     if(SGX_QL_SUCCESS != ret_val) {
-         if((ret_val < SGX_QL_ERROR_MIN) ||
-            (ret_val > SGX_QL_ERROR_MAX))
-+        {
-+                ret_val = SGX_QL_ERROR_UNEXPECTED;
-+        }
-+    }
-+
+@@ -128,6 +133,56 @@
+         }
+     }
+ 
 +    return(ret_val);
 +}
 +
@@ -1106,9 +1338,39 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
 +    if(SGX_QL_SUCCESS != ret_val) {
 +        if((ret_val < SGX_QL_ERROR_MIN) ||
 +           (ret_val > SGX_QL_ERROR_MAX))
-         {
-                 ret_val = SGX_QL_ERROR_UNEXPECTED;
-         }
++        {
++                ret_val = SGX_QL_ERROR_UNEXPECTED;
++        }
++    }
++
++    return(ret_val);
++}
++
++/**
++ * Used to set the quote configuration data associated with quotes. This data
++ * includes information such as CPU and PCE SVNs. It additionally includes any
++ * certification data, such as the PCK certificate chain.
++ *
++ * If quote config is explicitly set, the DCAP library will not attempt to load
++ * a Platform Quote Provider Library.
++ */
++quote3_error_t sgx_ql_set_quote_config(const sgx_ql_config_t *config)
++{
++    quote3_error_t ret_val = SGX_QL_ERROR_UNEXPECTED;
++    ECDSA256Quote ecdsa_quote;
++
++    ret_val = ecdsa_quote.set_quote_config(config);
++    if(SGX_QL_SUCCESS != ret_val) {
++        if((ret_val < SGX_QL_ERROR_MIN) ||
++           (ret_val > SGX_QL_ERROR_MAX))
++        {
++            ret_val = SGX_QL_ERROR_UNEXPECTED;
++        }
++    }
++
+     return(ret_val);
+ }
+ 
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification.cpp QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification.cpp
 --- QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification.cpp
 +++ QuoteVerification/QVL/Src/AttestationLibrary/src/QuoteVerification.cpp
