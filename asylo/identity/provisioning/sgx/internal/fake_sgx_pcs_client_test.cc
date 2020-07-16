@@ -425,7 +425,7 @@ TEST_P(FakeSgxPcsClientTest,
 TEST_P(FakeSgxPcsClientTest, GetPckCertificatesFailsOnPpidWithUnknownFmspc) {
   Fmspc fmspc;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      fmspc, FakeSgxPcsClient::CreateFmspcWithProperties(platform_properties_));
+      fmspc, fake_client_->CreateFmspcWithProperties(platform_properties_));
   Ppid ppid;
   ASYLO_ASSERT_OK_AND_ASSIGN(ppid, FakeSgxPcsClient::CreatePpidForFmspc(fmspc));
   EXPECT_THAT(
@@ -443,7 +443,7 @@ TEST_P(FakeSgxPcsClientTest,
 
     Fmspc fmspc;
     ASYLO_ASSERT_OK_AND_ASSIGN(
-        fmspc, FakeSgxPcsClient::CreateFmspcWithProperties(platform));
+        fmspc, fake_client_->CreateFmspcWithProperties(platform));
     TcbInfo tcb_info = SomeTcbInfo(/*version=*/2, fmspc);
     ASSERT_THAT(fake_client_->AddFmspc(fmspc, tcb_info), IsOkAndHolds(true));
 
@@ -493,7 +493,7 @@ TEST_P(FakeSgxPcsClientTest, GetTcbInfoFailsOnFmspcNotMatchingFakeFormat) {
 TEST_P(FakeSgxPcsClientTest, GetTcbInfoFailsOnUnknownFmspc) {
   Fmspc fmspc;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      fmspc, FakeSgxPcsClient::CreateFmspcWithProperties(platform_properties_));
+      fmspc, fake_client_->CreateFmspcWithProperties(platform_properties_));
   EXPECT_THAT(fake_client_->GetTcbInfo(fmspc),
               StatusIs(error::GoogleError::NOT_FOUND));
 }
@@ -503,7 +503,7 @@ TEST_P(FakeSgxPcsClientTest, GetTcbInfoReturnsConfiguredTcbInfoForAddedFmspc) {
     Fmspc fmspc;
     ASYLO_ASSERT_OK_AND_ASSIGN(
         fmspc,
-        FakeSgxPcsClient::CreateFmspcWithProperties(platform_properties_));
+        fake_client_->CreateFmspcWithProperties(platform_properties_));
     TcbInfo expected_tcb_info = SomeTcbInfo(tcb_info_version, fmspc);
     ASSERT_THAT(fake_client_->AddFmspc(fmspc, expected_tcb_info),
                 IsOkAndHolds(true));
@@ -525,7 +525,7 @@ TEST_P(FakeSgxPcsClientTest, UpdateFmspcFailsForUnknownFmspc) {
     Fmspc fmspc;
     ASYLO_ASSERT_OK_AND_ASSIGN(
         fmspc,
-        FakeSgxPcsClient::CreateFmspcWithProperties(platform_properties_));
+        fake_client_->CreateFmspcWithProperties(platform_properties_));
     EXPECT_THAT(
         fake_client_->UpdateFmspc(fmspc, SomeTcbInfo(tcb_info_version, fmspc)),
         StatusIs(error::GoogleError::INVALID_ARGUMENT));
@@ -537,7 +537,7 @@ TEST_P(FakeSgxPcsClientTest, GetTcbInfoReturnsNewTcbInfoForChangedFmspc) {
     Fmspc fmspc;
     ASYLO_ASSERT_OK_AND_ASSIGN(
         fmspc,
-        FakeSgxPcsClient::CreateFmspcWithProperties(platform_properties_));
+        fake_client_->CreateFmspcWithProperties(platform_properties_));
     ASSERT_THAT(
         fake_client_->AddFmspc(fmspc, SomeTcbInfo(tcb_info_version, fmspc)),
         IsOkAndHolds(true));

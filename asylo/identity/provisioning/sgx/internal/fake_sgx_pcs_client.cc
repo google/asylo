@@ -96,10 +96,9 @@ struct FakeFmspcLayout {
   // The PCE ID corresponding to this FMSPC.
   uint16_t pce_id;
 
-  // Random bytes. This field must be at least two bytes to ensure that the
-  // probability of a collision in 10 random FMSPCs for a given
-  // PlatformProperties is < 0.1%.
-  UnsafeBytes<2> random_id;
+  // Unique identifier, allowing us to create up to 2^16 unique FMSPC values
+  // for a given ca and pce_id.
+  uint16_t unique_id;
 } ABSL_ATTRIBUTE_PACKED;
 
 static_assert(sizeof(FakeFmspcLayout) == kFmspcSize,
@@ -325,7 +324,10 @@ FakeSgxPcsClient::FakeSgxPcsClient(absl::string_view pck_der)
                                 .ValueOrDie()),
       pck_public_key_der_(reinterpret_cast<const char *>(pck_der.data()),
                           pck_der.size()),
-      tcb_infos_(FmspcToTcbInfoMap()) {}
+      tcb_infos_(FmspcToTcbInfoMap()),
+      fmspc_id_counter_(
+          absl::Uniform<decltype(FakeFmspcLayout::unique_id)>(absl::BitGen())) {
+}
 
 StatusOr<bool> FakeSgxPcsClient::AddFmspc(Fmspc fmspc, TcbInfo tcb_info) {
   ASYLO_RETURN_IF_ERROR(IsValidFmspcTcbInfoPair(fmspc, tcb_info));
@@ -452,7 +454,8 @@ StatusOr<Fmspc> FakeSgxPcsClient::CreateFmspcWithProperties(
   FakeFmspcLayout layout = {};
   layout.ca = properties.ca;
   layout.pce_id = properties.pce_id.value();
-  Randomize(absl::MakeSpan(layout.random_id));
+
+  layout.unique_id = fmspc_id_counter_++;
 
   Fmspc fmspc;
   fmspc.set_value(ConvertTrivialObjectToBinaryString(layout));

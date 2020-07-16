@@ -19,6 +19,7 @@
 #ifndef ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_FAKE_SGX_PCS_CLIENT_H_
 #define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_FAKE_SGX_PCS_CLIENT_H_
 
+#include <atomic>
 #include <memory>
 #include <string>
 #include <vector>
@@ -144,7 +145,7 @@ class FakeSgxPcsClient : public SgxPcsClient {
   // Returns a new random FMSPC that a FakeSgxPcsClient can associate with
   // |properties|. Callers should be careful to check for collisions with
   // previous randomly-generated FMSPCs.
-  static StatusOr<Fmspc> CreateFmspcWithProperties(
+  StatusOr<Fmspc> CreateFmspcWithProperties(
       const PlatformProperties &properties);
 
   // Returns a new random PPID that a FakeSgxPcsClient can associate with
@@ -196,6 +197,7 @@ class FakeSgxPcsClient : public SgxPcsClient {
   const std::unique_ptr<const SigningKey> tcb_info_signing_key_;
   const std::string pck_public_key_der_;
   MutexGuarded<FmspcToTcbInfoMap> tcb_infos_;
+  std::atomic<uint32_t> fmspc_id_counter_;
 };
 
 }  // namespace sgx
