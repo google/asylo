@@ -172,7 +172,7 @@ cc_unsigned_enclave(
     ],
     backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:private"],
     deps = [
         ":client_enclave_cc_proto",
         ":messenger_client_impl",
