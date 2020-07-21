@@ -150,8 +150,8 @@ CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig() {
 
 StatusOr<EnclaveAssertionAuthorityConfig>
 CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
-    std::vector<Certificate> pck_certificate_chain, SgxIdentity qe_identity) {
-  if (pck_certificate_chain.empty()) {
+    CertificateChain pck_certificate_chain, SgxIdentity qe_identity) {
+  if (pck_certificate_chain.certificates_size() == 0) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "The pck_certificate_chain must not be empty");
   }
@@ -160,11 +160,8 @@ CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
   *sgx_config.mutable_verifier_info()->add_root_certificates() =
       MakeIntelSgxRootCaCertificateProto();
 
-  auto config_pck_certs =
-      sgx_config.mutable_generator_info()->mutable_pck_certificate_chain();
-  for (auto &cert : pck_certificate_chain) {
-    *config_pck_certs->add_certificates() = std::move(cert);
-  }
+  *sgx_config.mutable_generator_info()->mutable_pck_certificate_chain() =
+      std::move(pck_certificate_chain);
   ASYLO_ASSIGN_OR_RETURN(
       *sgx_config.mutable_verifier_info()->mutable_qe_identity_expectation(),
       CreateDefaultExpectation(std::move(qe_identity)));

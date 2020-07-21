@@ -243,11 +243,13 @@ TEST(EnclaveAssertionAuthorityConfigsTest,
 
   ASSERT_TRUE(sgx_config.SerializeToString(expected_config.mutable_config()));
 
-  std::vector<Certificate> certs = {
-      ParseTextProtoOrDie("format: X509_PEM\ndata: '" TEST_PEM_CERT "'"),
-      ParseTextProtoOrDie("format: X509_PEM\ndata: '" TEST_PEM_CERT "'")};
+  Certificate pem_cert =
+      ParseTextProtoOrDie("format: X509_PEM\ndata: '" TEST_PEM_CERT "'");
+  CertificateChain certs;
+  *certs.add_certificates() = pem_cert;
+  *certs.add_certificates() = pem_cert;
   EXPECT_THAT(experimental::CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
-                  {certs}, GetSelfSgxIdentity()),
+                  certs, GetSelfSgxIdentity()),
               IsOkAndHolds(EqualsProto(expected_config)));
 }
 

@@ -69,7 +69,6 @@ class SgxIntelEcdsaQeRemoteAssertionE2eTest : public Test {
   static void TearDownTestSuite() { delete test_enclave_; }
 
   void SetUp() override {
-    std::vector<Certificate> certs;
     std::string path = absl::GetFlag(FLAGS_pck_cert_chain_path);
     if (path.empty()) {
       ASYLO_ASSERT_OK_AND_ASSIGN(
@@ -82,15 +81,14 @@ class SgxIntelEcdsaQeRemoteAssertionE2eTest : public Test {
       google::protobuf::io::FileInputStream input(fd);
       input.SetCloseOnDelete(true);
 
-      CertificateChain cert_chain_proto;
-      ASSERT_TRUE(google::protobuf::TextFormat::Parse(&input, &cert_chain_proto));
-      certs = {cert_chain_proto.certificates().begin(),
-               cert_chain_proto.certificates().end()};
+      CertificateChain cert_chain;
+      ASSERT_TRUE(google::protobuf::TextFormat::Parse(&input, &cert_chain));
 
       ASYLO_ASSERT_OK_AND_ASSIGN(
           assertion_authority_config_,
           experimental::CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
-              certs, ParseTextProtoOrDie(sgx::kIntelEcdsaQeIdentityTextproto)));
+              cert_chain,
+              ParseTextProtoOrDie(sgx::kIntelEcdsaQeIdentityTextproto)));
     }
 
     ASYLO_ASSERT_OK(test_enclave_->ResetGenerator());
