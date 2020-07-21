@@ -57,6 +57,10 @@ StatusOr<std::unique_ptr<FakePce>> FakePce::CreateFromFakePki() {
   return absl::make_unique<FakePce>(std::move(pck), kPceSvn, kPceId, kPpid);
 }
 
+Status FakePce::SetPckCertificateChain(const CertificateChain &chain) {
+  return Status::OkStatus();
+}
+
 Status FakePce::SetEnclaveDir(const std::string &path) {
   return Status::OkStatus();
 }

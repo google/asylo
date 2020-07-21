@@ -25,9 +25,15 @@
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce_types.h"
 #include "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h"
 #include "QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h"
+#include "QuoteGeneration/quote_wrapper/quote/inc/sgx_ql_core_wrapper.h"
 
 namespace asylo {
 namespace sgx {
+
+quote3_error_t HostDcapLibraryInterface::SetQuoteConfig(
+    const sgx_ql_config_t &config) const {
+  return sgx_ql_set_quote_config(&config);
+}
 
 quote3_error_t HostDcapLibraryInterface::QeSetEnclaveDirpath(
     const char *dirpath) const {

@@ -40,6 +40,8 @@ class HostDcapLibraryInterface : public DcapLibraryInterface {
  public:
   ~HostDcapLibraryInterface() override = default;
 
+  quote3_error_t SetQuoteConfig(const sgx_ql_config_t &config) const override;
+
   quote3_error_t QeSetEnclaveDirpath(const char *dirpath) const override;
 
   sgx_pce_error_t PceGetTarget(sgx_target_info_t *p_pce_target,

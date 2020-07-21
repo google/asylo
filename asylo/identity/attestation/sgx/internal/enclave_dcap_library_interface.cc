@@ -28,6 +28,12 @@
 namespace asylo {
 namespace sgx {
 
+quote3_error_t EnclaveDcapLibraryInterface::SetQuoteConfig(
+    const sgx_ql_config_t &config) const {
+  return static_cast<quote3_error_t>(
+      primitives::enc_untrusted_ql_set_quote_config(&config));
+}
+
 quote3_error_t EnclaveDcapLibraryInterface::QeSetEnclaveDirpath(
     const char *dirpath) const {
   // This API is not required inside of enclaves.

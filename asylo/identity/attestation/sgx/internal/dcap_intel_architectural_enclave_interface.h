@@ -53,6 +53,8 @@ class DcapIntelArchitecturalEnclaveInterface
 
   // From IntelArchitecturalEnclaveInterface.
 
+  Status SetPckCertificateChain(const CertificateChain &chain) override;
+
   Status SetEnclaveDir(const std::string &path) override;
 
   Status GetPceTargetinfo(Targetinfo *targetinfo, uint16_t *pce_svn) override;

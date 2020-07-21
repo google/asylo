@@ -38,6 +38,7 @@ enclave {
   from "../../../platform/primitives/sgx/errno.edl" import *;
 
   include "include/sgx_report.h"
+  include "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h"
 
   trusted {
     // Invokes the trusted entry point designated by `selector`.
@@ -96,6 +97,10 @@ enclave {
 
     // The following functions invoke the Intel DCAP library. These functions
     // support getting remotely verifiable quotes of an enclave's identity.
+    uint32_t ocall_enc_untrusted_ql_set_quote_config(
+        [in] const sgx_ql_config_t *config,
+	uint32_t cert_data_size,
+	[in, size=cert_data_size] const uint8_t *cert_data);
     uint32_t ocall_enc_untrusted_qe_get_target_info(
         [out] sgx_target_info_t *qe_target_info);
     uint32_t ocall_enc_untrusted_qe_get_quote_size(

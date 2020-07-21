@@ -338,6 +338,13 @@ void DeAllocateUntrustedBuffers(void **free_list, size_t count) {
       free_list, static_cast<uint64_t>(count)));
 }
 
+uint32_t enc_untrusted_ql_set_quote_config(const sgx_ql_config_t *config) {
+  uint32_t result;
+  CHECK_OCALL(ocall_enc_untrusted_ql_set_quote_config(
+      &result, config, config->cert_data_size, config->p_cert_data));
+  return result;
+}
+
 uint32_t enc_untrusted_qe_get_target_info(sgx_target_info_t *qe_target_info) {
   uint32_t result;
   CHECK_OCALL(ocall_enc_untrusted_qe_get_target_info(&result, qe_target_info));

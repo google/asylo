@@ -124,6 +124,7 @@ cc_library(
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:cleanup",
         "@com_google_absl//absl/memory",
+        "@sgx_dcap//:quote_wrapper_common",
     ],
     alwayslink = 1,
 )
@@ -437,5 +438,7 @@ cc_library(
     ) + select(
         {"@com_google_asylo//asylo": ["@linux_sgx//:trts"]},
         no_match_error = "Must be built in Asylo toolchain",
-    ),
+    ) + [
+        "@sgx_dcap//:quote_wrapper_common",
+    ],
 )

@@ -18,23 +18,32 @@
 
 #include "asylo/identity/attestation/sgx/internal/dcap_intel_architectural_enclave_interface.h"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <numeric>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/crypto/x509_certificate.h"
 #include "asylo/identity/attestation/sgx/internal/dcap_library_interface.h"
 #include "asylo/identity/attestation/sgx/internal/pce_util.h"
 #include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
+#include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certificate_util.h"
 #include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/error_codes.h"
+#include "asylo/util/proto_parse_util.h"
 #include "asylo/util/status.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce_types.h"
@@ -54,18 +63,22 @@ bool operator==(const Report &lhs, const Report &rhs) {
 
 namespace {
 
+using ::testing::HasSubstr;
 using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Eq;
 using ::testing::Not;
 using ::testing::NotNull;
 using ::testing::Pointee;
+using ::testing::PrintToString;
 using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::Test;
 
 class MockDcapLibraryInterface : public DcapLibraryInterface {
  public:
+  MOCK_METHOD(quote3_error_t, SetQuoteConfig, (const sgx_ql_config_t &),
+              (const, override));
   MOCK_METHOD(quote3_error_t, QeSetEnclaveDirpath, (const char *),
               (const, override));
   MOCK_METHOD(sgx_pce_error_t, PceGetTarget,
@@ -113,6 +126,159 @@ class DcapIntelArchitecturalEnclaveInterfaceTests : public Test {
   MockDcapLibraryInterface *dcap_library_ = new MockDcapLibraryInterface;
   DcapIntelArchitecturalEnclaveInterface dcap_{absl::WrapUnique(dcap_library_)};
 };
+
+// Matches a sgx_ql_config_t equal to the expected SgxExtensions |extensions|
+// and CertificateChain |cert_chain| objects.
+
+MATCHER_P2(QuoteConfigEquals, extensions, cert_chain,
+           negation ? "config unexpectedly matches" : "config does not match") {
+  if (arg.version != SGX_QL_CONFIG_VERSION_1) {
+    *result_listener << "which has version " << arg.version << " instead of "
+                     << SGX_QL_CONFIG_VERSION_1;
+    return false;
+  }
+
+  if (extensions.cpu_svn.value().size() != sizeof(arg.cert_cpu_svn)) {
+    *result_listener << "which has cpu_svn of size "
+                     << extensions.cpu_svn.value().size() << "instead of "
+                     << sizeof(arg.cert_cpu_svn);
+    return false;
+  }
+
+  if (0 != memcmp(&arg.cert_cpu_svn, extensions.cpu_svn.value().data(),
+                  extensions.cpu_svn.value().size())) {
+    *result_listener << "which has cpu_svn of "
+                     << PrintToString(arg.cert_cpu_svn) << " instead of "
+                     << extensions.cpu_svn.DebugString();
+    return false;
+  }
+
+  if (extensions.tcb.pce_svn().value() != arg.cert_pce_isv_svn) {
+    *result_listener << "which has cert_pce_isv_svn of " << arg.cert_pce_isv_svn
+                     << " instead of "
+                     << PrintToString(extensions.tcb.pce_svn());
+    return false;
+  }
+
+  std::string concatenated_chain;
+  for (const auto &cert : cert_chain.certificates()) {
+    absl::StrAppend(&concatenated_chain, cert.data(), "\n");
+  }
+
+  if (concatenated_chain.size() != arg.cert_data_size) {
+    *result_listener << "which has a cert chain of size " << arg.cert_data_size
+                     << " instead of " << concatenated_chain.size();
+    return false;
+  }
+
+  if (0 !=
+      memcmp(arg.p_cert_data, concatenated_chain.data(), arg.cert_data_size)) {
+    *result_listener << "which has a cert chain of "
+                     << reinterpret_cast<const char *>(arg.p_cert_data)
+                     << " instead of " << concatenated_chain;
+    return false;
+  }
+
+  return true;
+}
+
+TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
+       SetPckCertificateChainWithPemSuccess) {
+  CertificateChain cert_chain = GetFakePckCertificateChain();
+  ASSERT_THAT(cert_chain.certificates(0).format(), Eq(Certificate::X509_PEM));
+  SgxExtensions expected_extensions = GetFakePckCertificateExtensions();
+  EXPECT_CALL(*dcap_library_, SetQuoteConfig(QuoteConfigEquals(
+                                  expected_extensions, cert_chain)))
+      .WillOnce(Return(SGX_QL_SUCCESS));
+  EXPECT_THAT(dcap_.SetPckCertificateChain(cert_chain), IsOk());
+}
+
+TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
+       SetPckCertificateChainWithDerSuccess) {
+  CertificateChain der_cert_chain = GetFakePckCertificateChain();
+  for (auto &cert_proto : *der_cert_chain.mutable_certificates()) {
+    std::unique_ptr<X509Certificate> cert;
+    ASYLO_ASSERT_OK_AND_ASSIGN(
+        cert, X509Certificate::CreateFromPem(cert_proto.data()));
+    ASYLO_ASSERT_OK_AND_ASSIGN(cert_proto,
+                               cert->ToCertificateProto(Certificate::X509_DER));
+  }
+
+  CertificateChain expected_cert_chain = GetFakePckCertificateChain();
+  SgxExtensions expected_extensions = GetFakePckCertificateExtensions();
+  EXPECT_CALL(*dcap_library_, SetQuoteConfig(QuoteConfigEquals(
+                                  expected_extensions, expected_cert_chain)))
+      .WillOnce(Return(SGX_QL_SUCCESS));
+  EXPECT_THAT(dcap_.SetPckCertificateChain(der_cert_chain), IsOk());
+}
+
+TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
+       SetPckCertificateChainWithEmptyChainFails) {
+  CertificateChain chain;
+  EXPECT_CALL(*dcap_library_, SetQuoteConfig(_)).Times(0);
+  EXPECT_THAT(
+      dcap_.SetPckCertificateChain(chain),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("empty")));
+}
+
+TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
+       SetPckCertificateChainWithInvalidCertFormatFails) {
+  CertificateChain chain = GetFakePckCertificateChain();
+  chain.mutable_certificates(0)->set_format(Certificate::UNKNOWN);
+  EXPECT_CALL(*dcap_library_, SetQuoteConfig(_)).Times(0);
+  EXPECT_THAT(
+      dcap_.SetPckCertificateChain(chain),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("UNKNOWN")));
+}
+
+TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
+       SetPckCertificateChainWithInvalidPemDataFails) {
+  CertificateChain chain = ParseTextProtoOrDie(R"proto(
+    certificates {
+      format: X509_PEM
+      data: "-----BEGIN CERTIFICATE-----\n"
+            "garbage that does not parse\n"
+            "-----END CERTIFICATE-----\n"
+    }
+  )proto");
+  EXPECT_CALL(*dcap_library_, SetQuoteConfig(_)).Times(0);
+  EXPECT_THAT(
+      dcap_.SetPckCertificateChain(chain),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("OPENSSL")));
+}
+
+TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
+       SetPckCertificateChainWithNonPckCertificates) {
+  CertificateChain chain = ParseTextProtoOrDie(R"proto(
+    certificates {
+      format: X509_PEM
+      data: "-----BEGIN CERTIFICATE-----\n"
+            "MIIBdTCCAR+gAwIBAgIUS+k75vD4HWABXZ+uKjh3o7haIqYwDQYJKoZIhvcNAQEF\n"
+            "BQAwDzENMAsGA1UEAwwEdGVzdDAeFw0yMDA3MDkyMTU5MjZaFw00NzExMjQyMTU5\n"
+            "MjZaMA8xDTALBgNVBAMMBHRlc3QwXDANBgkqhkiG9w0BAQEFAANLADBIAkEA2jgr\n"
+            "UaWP6w+e+JLoRbJlL0Ppq8QZYM0DvUuh2xIog3ttM5P5rlkCf8B6lxUQD23jFiH3\n"
+            "bHdLEB7FHDWRKk/7lwIDAQABo1MwUTAdBgNVHQ4EFgQUcvWfSWJNA86iqea3IEbm\n"
+            "K1dU7EIwHwYDVR0jBBgwFoAUcvWfSWJNA86iqea3IEbmK1dU7EIwDwYDVR0TAQH/\n"
+            "BAUwAwEB/zANBgkqhkiG9w0BAQUFAANBAGqdW9Or2u9blHMZC7V1ZxVQst1u+Sa5\n"
+            "f37mIcHjwvauhhLUprjEW8gL2FuDMT5q7cLgdvA8jAYNQkb1zBgZ9r4=\n"
+            "-----END CERTIFICATE-----\n"
+    }
+  )proto");
+  ASSERT_THAT(X509Certificate::Create(chain.certificates(0)), IsOk());
+
+  EXPECT_CALL(*dcap_library_, SetQuoteConfig(_)).Times(0);
+  EXPECT_THAT(
+      dcap_.SetPckCertificateChain(chain),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+               HasSubstr("PCK certificate does not contain SGX extensions")));
+}
+
+TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, SetQuoteConfigFailure) {
+  EXPECT_CALL(*dcap_library_, SetQuoteConfig(_))
+      .WillOnce(Return(SGX_QL_ERROR_INVALID_PRIVILEGE));
+  EXPECT_THAT(dcap_.SetPckCertificateChain(GetFakePckCertificateChain()),
+              StatusIs(error::GoogleError::PERMISSION_DENIED));
+}
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, SetEnclaveDirSuccess) {
   const std::string kDir = "some directory";

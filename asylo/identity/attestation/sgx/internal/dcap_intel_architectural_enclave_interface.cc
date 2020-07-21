@@ -24,9 +24,13 @@
 
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/certificate_util.h"
+#include "asylo/crypto/x509_certificate.h"
 #include "asylo/identity/attestation/sgx/internal/dcap_library_interface.h"
 #include "asylo/identity/attestation/sgx/internal/intel_architectural_enclave_interface.h"
 #include "asylo/identity/attestation/sgx/internal/pce_util.h"
+#include "asylo/identity/provisioning/sgx/internal/pck_certificate_util.h"
+#include "asylo/util/error_codes.h"
 #include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -177,6 +181,61 @@ Status Quote3ErrorToStatus(quote3_error_t quote3_error) {
 DcapIntelArchitecturalEnclaveInterface::DcapIntelArchitecturalEnclaveInterface(
     std::unique_ptr<DcapLibraryInterface> dcap_library)
     : dcap_library_(std::move(dcap_library)) {}
+
+Status DcapIntelArchitecturalEnclaveInterface::SetPckCertificateChain(
+    const CertificateChain &chain) {
+  if (chain.certificates().empty()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Certificate chain is empty");
+  }
+
+  auto parsed_chain =
+      CreateCertificateChain({{Certificate::X509_PEM, X509Certificate::Create},
+                              {Certificate::X509_DER, X509Certificate::Create}},
+                             chain);
+  if (!parsed_chain.ok()) {
+    // Wrap the cert parsing error so that we always return INVALID_ARGUMENT if
+    // the input cert chain cannot be parsed. The cert chain parsing code will
+    // return other errors, which are potentially misleading.
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  parsed_chain.status().error_message());
+  }
+
+  SgxExtensions extensions;
+  ASYLO_ASSIGN_OR_RETURN(extensions, ExtractSgxExtensionsFromPckCert(
+                                         *parsed_chain.ValueOrDie().front()));
+
+  sgx_ql_config_t config;
+  config.version = SGX_QL_CONFIG_VERSION_1;
+  if (extensions.cpu_svn.value().size() != sizeof(config.cert_cpu_svn)) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrCat("CPUSVN in the cert is ",
+                     extensions.cpu_svn.value().size(), " bytes. Expected ",
+                     sizeof(config.cert_cpu_svn)));
+  }
+  memcpy(&config.cert_cpu_svn, extensions.cpu_svn.value().data(),
+         extensions.cpu_svn.value().size());
+  config.cert_pce_isv_svn = extensions.tcb.pce_svn().value();
+
+  std::string cert_data;
+  for (const auto &parsed_cert : parsed_chain.ValueOrDie()) {
+    Certificate proto_cert;
+    ASYLO_ASSIGN_OR_RETURN(
+        proto_cert, parsed_cert->ToCertificateProto(Certificate::X509_PEM));
+    absl::StrAppend(&cert_data, proto_cert.data());
+    // The output is a PEM with multiple certs. Each cert must be separated from
+    // the previous one with a newline.
+    if (proto_cert.data().back() != '\n') {
+      absl::StrAppend(&cert_data, "\n");
+    }
+  }
+
+  config.cert_data_size = cert_data.size();
+  config.p_cert_data =
+      reinterpret_cast<uint8_t *>(const_cast<char *>(cert_data.data()));
+  return Quote3ErrorToStatus(dcap_library_->SetQuoteConfig(config));
+}
 
 Status DcapIntelArchitecturalEnclaveInterface::SetEnclaveDir(
     const std::string &path) {

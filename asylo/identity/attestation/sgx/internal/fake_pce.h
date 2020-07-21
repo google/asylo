@@ -55,6 +55,7 @@ class FakePce : public IntelArchitecturalEnclaveInterface {
   // kPceSvn, and kPceId.
   static StatusOr<std::unique_ptr<FakePce>> CreateFromFakePki();
 
+  Status SetPckCertificateChain(const CertificateChain &chain) override;
   Status SetEnclaveDir(const std::string &path) override;
   Status GetPceTargetinfo(Targetinfo *targetinfo, uint16_t *pce_svn) override;
   Status PceSignReport(const Report &report, uint16_t target_pce_svn,

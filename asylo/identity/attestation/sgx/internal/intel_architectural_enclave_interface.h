@@ -24,6 +24,7 @@
 
 #include "absl/types/span.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/util/status.h"
@@ -40,6 +41,11 @@ namespace sgx {
 class IntelArchitecturalEnclaveInterface {
  public:
   virtual ~IntelArchitecturalEnclaveInterface() = default;
+
+  // Sets the certificate chain used to certify the current platform. The Intel
+  // enclaves need this information to derive keys appropriate to the current
+  // TCB level.
+  virtual Status SetPckCertificateChain(const CertificateChain &chain) = 0;
 
   // Sets the directory |path| where the architectural enclaves are located.
   // If this function is not called, the enclaves will be loaded from the

@@ -27,6 +27,7 @@
 
 #include "asylo/platform/system_call/type_conversions/types.h"
 #include "include/sgx_report.h"
+#include "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h"
 
 namespace asylo {
 namespace primitives {
@@ -56,6 +57,10 @@ void **AllocateUntrustedBuffers(size_t count, size_t size);
 // Releases memory on the untrusted heap pointed to by buffer pointers stored in
 // |free_list|.
 void DeAllocateUntrustedBuffers(void **free_list, size_t count);
+
+// Exits the enclave and calls into the Intel Data Center Attestation Primitives
+// library to set the platform quote config.
+uint32_t enc_untrusted_ql_set_quote_config(const sgx_ql_config_t *config);
 
 // Exits the enclave and calls into the Intel Data Center Attestation Primitives
 // library to get the target info required to build a report targeting the Intel

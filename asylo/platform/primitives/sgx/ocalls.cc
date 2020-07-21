@@ -50,7 +50,9 @@
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
+#include "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h"
 #include "QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h"
+#include "QuoteGeneration/quote_wrapper/quote/inc/sgx_ql_core_wrapper.h"
 
 namespace {
 
@@ -500,6 +502,15 @@ int ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {
 }
 
 void ocall_untrusted_local_free(void *buffer) { free(buffer); }
+
+uint32_t ocall_enc_untrusted_ql_set_quote_config(const sgx_ql_config_t *config,
+                                                 uint32_t cert_data_size,
+                                                 const uint8_t *cert_data) {
+  sgx_ql_config_t config_copy = *config;
+  config_copy.cert_data_size = cert_data_size;
+  config_copy.p_cert_data = const_cast<uint8_t *>(cert_data);
+  return sgx_ql_set_quote_config(&config_copy);
+}
 
 uint32_t ocall_enc_untrusted_qe_get_target_info(
     sgx_target_info_t *qe_target_info) {

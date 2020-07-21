@@ -37,6 +37,11 @@ class DcapLibraryInterface {
  public:
   virtual ~DcapLibraryInterface() = default;
 
+  // Wraps sgx_ql_set_quote_config. Returns a value from the `quote3_error_t`
+  // enumeration to indicate status.
+  virtual quote3_error_t SetQuoteConfig(
+      const sgx_ql_config_t &config) const = 0;
+
   // Wraps sgx_qe_set_enclave_dirpath. Returns a value from the `quote3_error_t`
   // enumeration to indicate status.
   virtual quote3_error_t QeSetEnclaveDirpath(const char *dirpath) const = 0;
