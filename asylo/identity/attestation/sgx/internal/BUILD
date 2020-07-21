@@ -302,6 +302,8 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
+        "//asylo/util:error_codes",
+        "//asylo/util:status",
         "@linux_sgx//:public",
         "@sgx_dcap//:pce_types",
         "@sgx_dcap//:quote_wrapper_common",

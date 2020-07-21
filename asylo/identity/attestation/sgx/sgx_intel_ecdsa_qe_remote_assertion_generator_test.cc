@@ -33,6 +33,7 @@
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
+#include "asylo/identity/attestation/sgx/internal/intel_certs/qe_identity.h"
 #include "asylo/identity/attestation/sgx/internal/intel_ecdsa_quote.h"
 #include "asylo/identity/attestation/sgx/internal/mock_intel_architectural_enclave_interface.h"
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
@@ -46,6 +47,7 @@
 #include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/error_codes.h"
 #include "asylo/util/proto_parse_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/thread.h"
@@ -75,7 +77,9 @@ class SgxIntelEcdsaQeRemoteAssertionGeneratorTests : public testing::Test {
     EnclaveAssertionAuthorityConfig config;
     ASYLO_ASSERT_OK_AND_ASSIGN(
         config,
-        experimental::CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig());
+        experimental::CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
+            sgx::GetFakePckCertificateChain(),
+            ParseTextProtoOrDie(sgx::kIntelEcdsaQeIdentityTextproto)));
     valid_config_ = std::move(*config.mutable_config());
   }
 
@@ -130,6 +134,8 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests, InitializeWorksOnce) {
   EXPECT_FALSE(generator_.IsInitialized());
+  EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
+      .WillOnce(Return(Status::OkStatus()));
   EXPECT_THAT(generator_.Initialize(valid_config_), IsOk());
   EXPECT_TRUE(generator_.IsInitialized());
   EXPECT_THAT(generator_.Initialize(valid_config_),
@@ -163,6 +169,24 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
+TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
+       InitializeFailsWhenSetPckCertificateChainFails) {
+  EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
+      .WillOnce(Return(Status(error::GoogleError::INTERNAL, "kaboom")));
+  EXPECT_THAT(generator_.Initialize(valid_config_),
+              StatusIs(error::GoogleError::INTERNAL));
+}
+
+TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
+       InitializeSetsPckCertificateChain) {
+  auto expected_certs = sgx::GetFakePckCertificateChain();
+  EXPECT_CALL(
+      *mock_intel_enclaves_,
+      SetPckCertificateChain(EqualsProto(expected_certs)))
+      .WillOnce(Return(Status::OkStatus()));
+  EXPECT_THAT(generator_.Initialize(valid_config_), IsOk());
+}
+
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests, IdentityType) {
   EXPECT_THAT(generator_.IdentityType(), Eq(CODE_IDENTITY));
 }
@@ -174,6 +198,8 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests, AuthorityType) {
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
        CreateAssertionOfferSuccess) {
+  EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
+      .WillOnce(Return(Status::OkStatus()));
   ASSERT_THAT(generator_.Initialize(valid_config_), IsOk());
 
   AssertionOffer assertion_offer;
@@ -192,6 +218,8 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests, CanGenerateSuccess) {
+  EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
+      .WillOnce(Return(Status::OkStatus()));
   ASSERT_THAT(generator_.Initialize(valid_config_), IsOk());
   AssertionRequest request;
   *request.mutable_description() = CreateValidAssertionDescription();
@@ -207,6 +235,8 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
        CanGenerateFailsForIncompatibleDescription) {
+  EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
+      .WillOnce(Return(Status::OkStatus()));
   ASSERT_THAT(generator_.Initialize(valid_config_), IsOk());
   AssertionRequest request;
 
@@ -232,6 +262,8 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests, GenerateSucceeds) {
   expected_report_data.data.replace(sizeof(kDataSha256) + sizeof(kAadPurpose),
                                     kAadUuid);
 
+  EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
+      .WillOnce(Return(Status::OkStatus()));
   ASSERT_THAT(generator_.Initialize(valid_config_), IsOk());
   AssertionRequest request;
   *request.mutable_description() = CreateValidAssertionDescription();
@@ -259,51 +291,6 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests, GenerateSucceeds) {
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
-       GenerateSucceedsWithUserSuppliedCertChain) {
-  SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config;
-  auto cert_chain =
-      config.mutable_generator_info()->mutable_pck_certificate_chain();
-  *cert_chain = sgx::GetFakePckCertificateChain();
-
-  std::string expected_output_cert_chain;
-  for (const auto &cert : cert_chain->certificates()) {
-    ASSERT_THAT(cert.format(), Eq(Certificate::X509_PEM));
-    absl::StrAppend(&expected_output_cert_chain, cert.data(), "\n");
-  }
-
-  std::string serialized_config;
-  ASSERT_TRUE(config.SerializeToString(&serialized_config));
-  EXPECT_THAT(generator_.Initialize(serialized_config), IsOk());
-
-  EXPECT_CALL(*mock_intel_enclaves_, GetQeTargetinfo())
-      .WillOnce(Return(CreateFakeTargetInfo()));
-  EXPECT_CALL(*mock_hardware_interface_, GetReport(_, _))
-      .WillOnce(Return(TrivialRandomObject<Report>()));
-
-  sgx::IntelQeQuote input_quote;
-  RandomFillTrivialObject(&input_quote.header);
-  RandomFillTrivialObject(&input_quote.body);
-  auto fake_quote = TrivialRandomObject<UnsafeBytes<101>>();
-  EXPECT_CALL(*mock_intel_enclaves_, GetQeQuote(_))
-      .WillOnce(Return(sgx::PackDcapQuote(input_quote)));
-
-  AssertionRequest request;
-  *request.mutable_description() = CreateValidAssertionDescription();
-
-  Assertion assertion;
-  ASSERT_THAT(generator_.Generate("user data", request, &assertion), IsOk());
-  sgx::IntelQeQuote output_quote;
-  ASYLO_ASSERT_OK_AND_ASSIGN(output_quote,
-                             sgx::ParseDcapPackedQuote(assertion.assertion()));
-
-  ASSERT_THAT(output_quote.cert_data.qe_cert_data_type,
-              Eq(::intel::sgx::qvl::constants::PCK_ID_PCK_CERT_CHAIN));
-  EXPECT_THAT(std::string(output_quote.cert_data.qe_cert_data.begin(),
-                          output_quote.cert_data.qe_cert_data.end()),
-              Eq(expected_output_cert_chain));
-}
-
-TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
        GenerateFailsIfNotInitialized) {
   ASSERT_FALSE(generator_.IsInitialized());
   Assertion assertion;
@@ -314,6 +301,8 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
        GenerateFailsForIncompatibleDescription) {
+  EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
+      .WillOnce(Return(Status::OkStatus()));
   ASSERT_THAT(generator_.Initialize(valid_config_), IsOk());
   AssertionRequest request;
   Assertion assertion;
@@ -334,6 +323,9 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
        InitializeSucceedsOnceFromMultipleThreads) {
   constexpr int kNumThreads = 10;
+
+  EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
+      .WillOnce(Return(Status::OkStatus()));
 
   std::atomic<int> success_count(0);
   std::vector<Thread> threads;

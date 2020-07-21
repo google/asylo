@@ -49,7 +49,6 @@
 #include "QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h"
 
 namespace asylo {
-namespace {
 
 using asylo::sgx::AlignedReportdataPtr;
 using asylo::sgx::AlignedReportPtr;
@@ -62,43 +61,6 @@ using asylo::sgx::kSgxIntelEcdsaQeRemoteAssertionAuthority;
 
 using GeneratorInfo =
     SgxIntelEcdsaQeRemoteAssertionAuthorityConfig_GeneratorInfo;
-
-// Implements the `absl::visit` pattern for appending the appropriate
-// certification data to a quote returned by the Intel quoting enclave.
-class AppendCertificationDataToQuote {
- public:
-  explicit AppendCertificationDataToQuote(std::vector<uint8_t> *quote)
-      : quote_(quote) {}
-
-  Status operator()(SgxIntelEcdsaQeRemoteAssertionGenerator::UseDcapDefault) {
-    // Noop, leave the quote alone
-    return Status::OkStatus();
-  }
-
-  Status operator()(const CertificateInterfaceVector &pck_certificate_chain) {
-    sgx::IntelQeQuote parsed_quote;
-    ASYLO_ASSIGN_OR_RETURN(parsed_quote, sgx::ParseDcapPackedQuote(*quote_));
-
-    parsed_quote.cert_data.qe_cert_data_type =
-        ::intel::sgx::qvl::constants::PCK_ID_PCK_CERT_CHAIN;
-    parsed_quote.cert_data.qe_cert_data.clear();
-    for (const auto &cert : pck_certificate_chain) {
-      Certificate pem_cert;
-      ASYLO_ASSIGN_OR_RETURN(pem_cert,
-                             cert->ToCertificateProto(Certificate::X509_PEM));
-      std::move(pem_cert.data().begin(), pem_cert.data().end(),
-                std::back_inserter(parsed_quote.cert_data.qe_cert_data));
-    }
-
-    *quote_ = sgx::PackDcapQuote(parsed_quote);
-    return Status::OkStatus();
-  }
-
- private:
-  std::vector<uint8_t> *quote_;
-};
-
-}  // namespace
 
 SgxIntelEcdsaQeRemoteAssertionGenerator::
     SgxIntelEcdsaQeRemoteAssertionGenerator()
@@ -140,15 +102,13 @@ Status SgxIntelEcdsaQeRemoteAssertionGenerator::Initialize(
     return Status::OkStatus();
   }
 
-  ASYLO_ASSIGN_OR_RETURN(members_view->certification_data,
-                         ReadCertificationData(parsed_config));
+  ASYLO_RETURN_IF_ERROR(ReadCertificationData(parsed_config));
 
   members_view->is_initialized = true;
   return Status::OkStatus();
 }
 
-StatusOr<SgxIntelEcdsaQeRemoteAssertionGenerator::CertificationData>
-SgxIntelEcdsaQeRemoteAssertionGenerator::ReadCertificationData(
+Status SgxIntelEcdsaQeRemoteAssertionGenerator::ReadCertificationData(
     const SgxIntelEcdsaQeRemoteAssertionAuthorityConfig &config) const {
   switch (config.generator_info().certification_case()) {
     case GeneratorInfo::CERTIFICATION_NOT_SET:
@@ -156,12 +116,11 @@ SgxIntelEcdsaQeRemoteAssertionGenerator::ReadCertificationData(
                     "Generator info is missing certification info");
 
     case GeneratorInfo::kPckCertificateChain:
-      return CreateCertificateChain(
-          {{Certificate::X509_PEM, X509Certificate::Create}},
+      return intel_enclaves_->SetPckCertificateChain(
           config.generator_info().pck_certificate_chain());
 
     case GeneratorInfo::kUseDcapDefault:
-      return UseDcapDefault{};
+      return Status::OkStatus();
   }
 
   return Status(
@@ -235,9 +194,6 @@ Status SgxIntelEcdsaQeRemoteAssertionGenerator::Generate(
 
   std::vector<uint8_t> quote;
   ASYLO_ASSIGN_OR_RETURN(quote, intel_enclaves_->GetQeQuote(report));
-
-  ASYLO_RETURN_IF_ERROR(absl::visit(AppendCertificationDataToQuote{&quote},
-                                    members_.ReaderLock()->certification_data));
 
   assertion->mutable_assertion()->assign(quote.begin(), quote.end());
   assertion->mutable_description()->set_authority_type(AuthorityType());

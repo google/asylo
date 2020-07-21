@@ -22,7 +22,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/types/variant.h"
 #include "asylo/crypto/certificate_util.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/attestation/enclave_assertion_generator.h"
@@ -44,12 +43,6 @@ namespace asylo {
 class SgxIntelEcdsaQeRemoteAssertionGenerator
     : public EnclaveAssertionGenerator {
  public:
-  // Empty type used within the certification data variant
-  struct UseDcapDefault {};
-
-  using CertificationData =
-      absl::variant<UseDcapDefault, CertificateInterfaceVector>;
-
   // Constructs a new `SgxIntelEcdsaQeAssertionGenerator` that internally uses
   // the `EnclaveDcapLibraryInterface`, which uses ocalls to invoke all
   // Intel DCAP APIs. Default-constructed objects generate assertions suitable
@@ -91,10 +84,9 @@ class SgxIntelEcdsaQeRemoteAssertionGenerator
  private:
   struct Members {
     bool is_initialized = false;
-    CertificationData certification_data;
   };
 
-  StatusOr<CertificationData> ReadCertificationData(
+  Status ReadCertificationData(
       const SgxIntelEcdsaQeRemoteAssertionAuthorityConfig &config) const;
 
   MutexGuarded<Members> members_;

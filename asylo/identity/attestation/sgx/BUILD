@@ -53,7 +53,7 @@ cc_proto_library(
 proto_library(
     name = "sgx_intel_ecdsa_qe_remote_assertion_authority_config_proto",
     srcs = ["sgx_intel_ecdsa_qe_remote_assertion_authority_config.proto"],
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [
         "//asylo/crypto:certificate_proto",
         "//asylo/identity:identity_acl_proto",
@@ -62,7 +62,7 @@ proto_library(
 
 cc_proto_library(
     name = "sgx_intel_ecdsa_qe_remote_assertion_authority_config_cc_proto",
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = ["sgx_intel_ecdsa_qe_remote_assertion_authority_config_proto"],
 )
 
@@ -284,6 +284,7 @@ cc_library(
     hdrs = ["sgx_intel_ecdsa_qe_remote_assertion_generator.h"],
     copts = ASYLO_DEFAULT_COPTS,
     tags = sgx.tags(),
+    visibility = ["//visibility:public"],
     deps = [
         ":sgx_intel_ecdsa_qe_remote_assertion_authority_config_cc_proto",
         "//asylo/crypto:certificate_cc_proto",
