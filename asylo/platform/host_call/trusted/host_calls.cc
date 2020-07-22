@@ -982,7 +982,7 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
   }
 
   auto buffer_received = output.next();
-  memcpy(buf, buffer_received.data(), len);
+  memcpy(buf, buffer_received.data(), std::min(len, buffer_received.size()));
 
   // If |src_addr| is not NULL, and the underlying protocol provides the source
   // address, this source address is filled in. When |src_addr| is NULL, nothing
