@@ -37,7 +37,7 @@
 namespace asylo {
 namespace {
 
-const int64_t kDeadlineMicros = absl::Seconds(1) / absl::Microseconds(1);
+const int64_t kDeadlineMicros = absl::Seconds(5) / absl::Microseconds(1);
 
 StatusOr<sgx::RemoteAssertionRequestAdditionalInfo> ParseAdditionalInfo(
     const AssertionRequest &request) {
