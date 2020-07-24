@@ -429,8 +429,8 @@ specifies the enclave's path.
 
 Let us now run the demo enclave inside the Docker image we downloaded
 [above](#getting-started-with-the-example-code). You can set the `--message`
-flag passed to the `//quickstart_sgx_sim` target to contain any string that you
-would like to encrypt.
+flag passed to the `//quickstart:quickstart_sgx_sim` target to contain any
+string that you would like to encrypt.
 
 Note: The following command runs the enclave in simulation mode.
 
@@ -440,7 +440,7 @@ docker run -it --rm \
     -v "${MY_PROJECT}":/opt/my-project \
     -w /opt/my-project \
     gcr.io/asylo-framework/asylo \
-    bazel run //quickstart_sgx_sim -- --message="Asylo Rocks"
+    bazel run //quickstart:quickstart_sgx_sim -- --message="Asylo Rocks"
 Encrypted message:
 2dc402068266ba995608e0d4a16c1604b792355d4635dec43cf2888cf2036d2007772ed5f24e5c
 ```
