@@ -25,6 +25,7 @@
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 #include "include/grpcpp/channel.h"
+#include "include/grpcpp/create_channel.h"
 #include "include/grpcpp/support/channel_arguments.h"
 
 namespace asylo {
@@ -36,7 +37,7 @@ StatusOr<std::shared_ptr<::grpc::Channel>> GrpcChannelBuilder::BuildChannel(
       creds, primitives::GrpcCredentialBuilder::BuildChannelCredentials());
   ::grpc::ChannelArguments args;
   ASYLO_ASSIGN_OR_RETURN(args, BuildChannelArguments());
-  return CreateCustomChannelImpl(std::string(server_address), creds, args);
+  return ::grpc::CreateCustomChannel(std::string(server_address), creds, args);
 }
 
 StatusOr<::grpc::ChannelArguments> GrpcChannelBuilder::BuildChannelArguments() {
