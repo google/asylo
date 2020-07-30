@@ -42,7 +42,6 @@ cc_library(
     visibility = [
         "//asylo/identity/attestation/sgx/internal:__subpackages__",
         "//asylo/identity/platform/sgx:__subpackages__",
-        "//asylo/identity/sgx:__subpackages__",
     ],
     deps = [
         ":code_identity_constants",
@@ -78,7 +77,6 @@ cc_library(
         "//asylo/identity/attestation/sgx:__subpackages__",
         "//asylo/identity/platform/sgx:__subpackages__",
         "//asylo/identity/sealing/sgx:__subpackages__",
-        "//asylo/identity/sgx:__subpackages__",
     ],
     deps = [
         ":code_identity_constants",
@@ -234,7 +232,6 @@ cc_library(
         "//asylo/identity/attestation/sgx:__subpackages__",
         "//asylo/identity/platform/sgx:__subpackages__",
         "//asylo/identity/sealing/sgx/internal:__subpackages__",
-        "//asylo/identity/sgx:__subpackages__",
     ],
     deps = [
         ":hardware_types",

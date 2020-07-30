@@ -89,7 +89,6 @@ cc_library(
     name = "container_util",
     hdrs = ["container_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo/identity/sgx:__subpackages__"],
     deps = [
         ":platform_provisioning_cc_proto",
         ":tcb_cc_proto",
