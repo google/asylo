@@ -63,9 +63,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # Asylo
 http_archive(
     name = "com_google_asylo",
-    urls = ["https://github.com/google/asylo/archive/v0.5.3.tar.gz"],
-    sha256 = "012e786e9b691093b5e2c42b255986bcab1cadf9e25f9d024eab7adee25124b0",
-    strip_prefix = "asylo-0.5.3",
+    urls = ["https://github.com/google/asylo/archive/v0.6.0.tar.gz"],
+    sha256 = "bb6e9599f3e174321d96616ac8069fac76ce9d2de3bd0e4e31e1720c562e83f7",
+    strip_prefix = "asylo-0.6.0",
 )
 
 # Redis
@@ -82,6 +82,18 @@ asylo_deps()
 
 load("@com_google_asylo//asylo/bazel:sgx_deps.bzl", "sgx_deps")
 sgx_deps()
+
+# The grpc dependency is defined by asylo_deps, and load must be top-level,
+# so this has to come after asylo_deps().
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+
+grpc_deps()
+
+# Projects using gRPC as an external dependency must call both grpc_deps() and
+# grpc_extra_deps().
+load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
+
+grpc_extra_deps()
 ```
 
 This bazel rule imports Asylo and Redis. To build Redis with Bazel, Asylo
@@ -140,7 +152,7 @@ docker run -it --rm \
     --tmpfs /root/.cache/bazel:exec \
     -w /opt/my-project \
     --network host \
-    gcr.io/asylo-framework/asylo:buildenv-v0.5.2
+    gcr.io/asylo-framework/asylo:buildenv-v0.6.0
 ```
 
 Here `-v` maps the current workspace to the directory in Docker, and `-w` sets
@@ -260,7 +272,7 @@ docker run -it --rm \
     --tmpfs /root/.cache/bazel:exec \
     -w /opt/my-project \
     --network host \
-    gcr.io/asylo-framework/asylo:buildenv-v0.5.3
+    gcr.io/asylo-framework/asylo:buildenv-v0.6.0
 ```
 
 The SGX capabilities are propagated by the docker flags `--device=/dev/isgx` and
