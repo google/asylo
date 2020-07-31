@@ -20,7 +20,7 @@ mkdir -p ${TMP_BUILD_FOLDER}
 pushd /opt/asylo/sdk
 bazel build //asylo/util/remote:remote_provision_host_server
 bazel build //asylo/util/remote:sgx_remote_proxy
-bazel build //asylo/util/remote:remote_provision_host_loader
+bazel build //asylo/util/remote:remote_provision_host_server_host_loader
 BAZEL_BIN_PATH=$(bazel info bazel-bin)
 cp -r ${BAZEL_BIN_PATH}/asylo/util/remote/* ${TMP_BUILD_FOLDER}
 popd
@@ -31,7 +31,7 @@ bazel build //remote/provision_server:certs
 BAZEL_GEN_PATH=$(bazel info bazel-genfiles)
 cp -r ${BAZEL_GEN_PATH}/remote/provision_server/* ${TMP_BUILD_FOLDER}
 
-${TMP_BUILD_FOLDER}/remote_provision_host_loader \
+${TMP_BUILD_FOLDER}/remote_provision_host_server_host_loader \
   --security_type=ssl \
   --ssl_key=${TMP_BUILD_FOLDER}/server.key \
   --ssl_cert=${TMP_BUILD_FOLDER}/server.crt \

@@ -50,7 +50,7 @@ fi
 # Enclave to be used in the example.
 ENCLAVE_TARGET=demo_enclave_debug_${ENCLAVE_TAG}.so
 
-bazel build //remote/quickstart_${ENCLAVE_TAG}:${ENCLAVE_TARGET}
+bazel build //remote/quickstart:${ENCLAVE_TARGET}
 
 # Path where bazel puts built objects.
 BAZEL_BIN_PATH=$(bazel info bazel-bin)
@@ -62,7 +62,7 @@ BAZEL_GEN_PATH=$(bazel info bazel-genfiles)
 PROVISION_PATH=${BAZEL_GEN_PATH}/remote/provision_server
 
 # Run the quickstart_remote example.
-bazel run //remote/quickstart:quickstart_remote -- \
+bazel run --define=ASYLO_REMOTE=1 //remote/quickstart:quickstart_remote -- \
           --message="$2" \
           --security_type=ssl \
           --ssl_key=${PROVISION_PATH}/server.key \

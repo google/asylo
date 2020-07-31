@@ -86,7 +86,7 @@ docker run -it --rm \
     -v "${MY_PROJECT}":/opt/my-project \
     -w /opt/my-project \
     gcr.io/asylo-framework/asylo \
-    bazel run //hello_world_sgx_sim -- --names="${NAMES}"
+    bazel run //hello_world:hello_world_sgx_sim -- --names="${NAMES}"
 ```
 
 You can also set `NAMES` to a comma-separated list of names and see the
@@ -122,8 +122,8 @@ from the host:
 
 In the above example, we use the following Bazel flag:
 
-+   `--names="${NAMES}"` is the argument passed to the `//hello_world_sgx_sim`
-    target.
++   `--names="${NAMES}"` is the argument passed to the
+    `//hello_world:hello_world_sgx_sim` target.
 
 Note: The example source code includes an additional Bazel configuration file,
 `.bazelrc`, at the root of the source tree. Remember to copy the contents of
@@ -155,7 +155,7 @@ This opens a terminal inside the Docker container. From this terminal, you can
 run Bazel as usual:
 
 ```bash
-bazel run //hello_world_sgx_sim -- --names="${NAMES}"
+bazel run //hello_world:hello_world_sgx_sim -- --names="${NAMES}"
 ```
 
 #### Running the regression tests
@@ -213,7 +213,7 @@ simulated SGX enclave backend:
 ```bash
 cd "${MY_PROJECT}"
 NAMES="${USER}"
-bazel run //hello_world_sgx_sim -- --names="${NAMES}"
+bazel run //hello_world:hello_world_sgx_sim -- --names="${NAMES}"
 ```
 
 Refer to
