@@ -28,6 +28,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/sgx/exit_handlers.h"
 #include "asylo/platform/primitives/sgx/generated_bridge_u.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
@@ -62,6 +63,7 @@ constexpr absl::string_view kCallingProcessBinaryFile = "/proc/self/exe";
 forked_loader_callback_t forked_loader_callback;
 
 constexpr int kMaxEnclaveCreateAttempts = 5;
+constexpr size_t kPageSize = 4096;
 
 // Enters the enclave and invokes the secure snapshot key transfer entry-point.
 // If the ecall fails, return a non-OK status.
@@ -174,8 +176,8 @@ StatusOr<std::shared_ptr<Client>> SgxBackend::Load(
   }
 
   if (status != SGX_SUCCESS) {
-    return Status(status, absl::StrCat("Failed to create an enclave for ",
-                                       enclave_path));
+    return Status(
+        status, absl::StrCat("Failed to create an enclave for ", enclave_path));
   }
 
   client->size_ = sgx_enclave_size(client->id_);
@@ -188,8 +190,6 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
     absl::string_view section_name, size_t enclave_size,
     const EnclaveConfig &config, bool debug,
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
-  constexpr size_t kEnclaveAlignment = 4096;
-
   std::shared_ptr<SgxEnclaveClient> client(
       new SgxEnclaveClient(enclave_name, std::move(exit_call_provider)));
   client->RegisterExitHandlers();
@@ -223,20 +223,13 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
   absl::Span<const uint8_t> enclave_buffer;
   ASYLO_ASSIGN_OR_RETURN(enclave_buffer,
                          self_binary_reader.GetSectionData(section_name));
-
-  // The SGX kernel driver requires enclaves to be aligned at a 4096-byte
-  // boundary.
-  void *aligned_enclave_ptr = nullptr;
-  int memalign_result = posix_memalign(&aligned_enclave_ptr, kEnclaveAlignment,
-                                       enclave_buffer.size());
-  if (memalign_result != 0) {
-    return Status(static_cast<error::PosixError>(memalign_result),
-                  "Failed to allocate aligned enclave buffer");
+  // The enclave section should be page-aligned, which is ensured by the
+  // embed_enclaves rule.
+  if ((reinterpret_cast<uintptr_t>(enclave_buffer.data()) & (kPageSize - 1))) {
+    return Status(error::GoogleError::FAILED_PRECONDITION,
+                  absl::StrCat("Enclave section ", section_name,
+                               " must be page-aligned"));
   }
-  std::unique_ptr<uint8_t, FunctionDeleter<free>> aligned_enclave_buffer(
-      reinterpret_cast<uint8_t *>(aligned_enclave_ptr));
-  memcpy(aligned_enclave_buffer.get(), enclave_buffer.data(),
-         enclave_buffer.size());
 
   if (base_address && enclave_size > 0 &&
       munmap(base_address, enclave_size) < 0) {
@@ -254,8 +247,8 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
   ex_features_p[SGX_CREATE_ENCLAVE_EX_ASYLO_BIT_IDX] = &create_config;
   for (int i = 0; i < kMaxEnclaveCreateAttempts; ++i) {
     status = sgx_create_enclave_from_buffer_ex(
-        const_cast<uint8_t *>(aligned_enclave_buffer.get()),
-        enclave_buffer.size(), debug, &client->id_,
+        const_cast<uint8_t *>(enclave_buffer.data()), enclave_buffer.size(),
+        debug, &client->id_,
         /*misc_attr=*/nullptr, ex_features, ex_features_p);
 
     if (status != SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED) {

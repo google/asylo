@@ -53,14 +53,22 @@ def internal_embed_enclaves(name, elf_file, enclaves, **kwargs):
         the system.
       **kwargs: genrule arguments.
     """
+
+    # GNU-objcopy can't both add a section and set its alignment at the same
+    # time. We add the sections in an intermediate step and then align them
+    # with a second objcopy.
     genrule_name = name + "_rule"
-    objcopy_flags = []
+    intermediate_name = name + "_unaligned"
+    objcopy_add_flags = []
+    objcopy_align_flags = []
     for section_name, enclave_file in enclaves.items():
         if len(section_name) == 0:
             fail("Section names must be non-empty")
         if section_name[0] == ".":
             fail("User-defined section names may not begin with \".\"")
-        objcopy_flags += [
+
+        # Flags to add each enclave in its own section.
+        objcopy_add_flags += [
             "--add-section",
             "\"{section_name}\"=\"$(location {enclave_file})\"".format(
                 section_name = section_name,
@@ -68,17 +76,33 @@ def internal_embed_enclaves(name, elf_file, enclaves, **kwargs):
             ),
         ]
 
+        # Alignment flags for the second objcopy
+        objcopy_align_flags += [
+            "--set-section-flags",
+            "\"{section_name}\"=\"code,readonly\"".format(section_name = section_name),
+            "--set-section-alignment",
+            "\"{section_name}\"=4096".format(section_name = section_name),
+        ]
     native.genrule(
         name = genrule_name,
         srcs = enclaves.values() + [elf_file],
         outs = [name],
         output_to_bindir = 1,
-        cmd = "$(OBJCOPY) {objcopy_flags} $(location {elf_file}) $@".format(
-            objcopy_flags = " ".join(objcopy_flags),
-            elf_file = elf_file,
-        ),
+        # There can only be one output if the rule is executable, so use a temp
+        # file.
+        cmd = " && ".join([
+            "INTERMEDIATE=$$(mktemp)",
+            "$(OBJCOPY) {flags} $(location {elf}) $${{INTERMEDIATE}}".format(
+                flags = " ".join(objcopy_add_flags),
+                elf = elf_file,
+            ),
+            "$(OBJCOPY) {flags} $${{INTERMEDIATE}} $@".format(
+                flags = " ".join(objcopy_align_flags),
+            ),
+            "rm $${INTERMEDIATE}",
+        ]),
         tags = ["manual"] + kwargs.pop("tags", []),
-        toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
+        toolchains = ["@com_google_asylo_toolchain//toolchain:crosstool"],
         **kwargs
     )
 
