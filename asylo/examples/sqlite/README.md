@@ -63,9 +63,9 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # Asylo
 http_archive(
     name = "com_google_asylo",
-    urls = ["https://github.com/google/asylo/archive/v0.5.2.tar.gz"],
-    sha256 = "7a32cb64b3f5cb2f2716eef063db0caccf7bafd9c771183b3e0146df2bc1697d",
-    strip_prefix = "asylo-0.5.2",
+    urls = ["https://github.com/google/asylo/archive/v0.6.0.tar.gz"],
+    sha256 = "bb6e9599f3e174321d96616ac8069fac76ce9d2de3bd0e4e31e1720c562e83f7",
+    strip_prefix = "asylo-0.6.0",
 )
 
 # SQLite
@@ -82,6 +82,18 @@ asylo_deps()
 
 load("@com_google_asylo//asylo/bazel:sgx_deps.bzl", "sgx_deps")
 sgx_deps()
+
+# The grpc dependency is defined by asylo_deps, and load must be top-level,
+# so this has to come after asylo_deps().
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+
+grpc_deps()
+
+# Projects using gRPC as an external dependency must call both grpc_deps() and
+# grpc_extra_deps().
+load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
+
+grpc_extra_deps()
 ```
 
 This bazel rule imports Asylo and SQLite. To build SQLite with Bazel, Asylo
@@ -128,7 +140,7 @@ docker run -it --rm \
     -v ${PWD}:/opt/my-project \
     --tmpfs /root/.cache/bazel:exec \
     -w /opt/my-project \
-    gcr.io/asylo-framework/asylo:buildenv-v0.5.2
+    gcr.io/asylo-framework/asylo:buildenv-v0.6.0
 ```
 
 Here `-v` maps the current workspace to the directory in Docker, and `-w` sets
@@ -158,10 +170,10 @@ Now we can run SQLite inside an enclave with some simple examples, such as:
 
 ```shell
 sqlite> create table mytable(one varchar(10), two smallint);
-sqlite> insert into mytable values('Asylo', 050);
+sqlite> insert into mytable values('Asylo', 060);
 sqlite> insert into mytable values('SQLite', 33001);
 sqlite> select * from mytable;
-Asylo|50
+Asylo|60
 SQLite|33001
 ```
 
@@ -181,7 +193,7 @@ docker run -it --rm \
     -v /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket \
     --tmpfs /root/.cache/bazel:exec \
     -w /opt/my-project \
-    gcr.io/asylo-framework/asylo:buildenv-v0.5.2
+    gcr.io/asylo-framework/asylo:buildenv-v0.6.0
 ```
 
 The SGX capabilities are propagated by the docker flags `--device=/dev/isgx` and
