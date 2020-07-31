@@ -84,4 +84,15 @@ bzl_library(
         "transitions.bzl",
     ],
     visibility = ["//visibility:public"],
+    deps = [":starlark_language_rules"],
+)
+
+bzl_library(
+    name = "starlark_language_rules",
+    srcs = [
+        "@rules_cc//cc:action_names.bzl",
+        "@rules_cc//cc:defs.bzl",
+        "@rules_cc//cc:find_cc_toolchain.bzl",
+        "@rules_cc//cc/private/rules_impl:srcs",
+    ],
 )

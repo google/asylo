@@ -29,13 +29,19 @@ bzl_library(
         "//asylo/bazel:asylo_transitions.bzl",
         "//asylo/bazel:copts.bzl",
     ],
-    deps = ["//asylo/docs/linux_sgx:sgx_sdk_bzl"],
+    deps = [
+        ":starlark_language_rules",
+        "//asylo/docs/linux_sgx:sgx_sdk_bzl",
+    ],
 )
 
 bzl_library(
     name = "asylo_bzl",
     srcs = ["//asylo/bazel:asylo.bzl"],
-    deps = [":asylo_bzl_internal_dependendency"],
+    deps = [
+        ":asylo_bzl_internal_dependendency",
+        ":starlark_language_rules",
+    ],
 )
 
 stardoc(
@@ -91,4 +97,14 @@ stardoc(
 bzl_library(
     name = "asylo_deps_internal_dependency",
     srcs = ["//asylo/bazel:installation_path.bzl"],
+)
+
+bzl_library(
+    name = "starlark_language_rules",
+    srcs = [
+        "@rules_cc//cc:action_names.bzl",
+        "@rules_cc//cc:defs.bzl",
+        "@rules_cc//cc:find_cc_toolchain.bzl",
+        "@rules_cc//cc/private/rules_impl:srcs",
+    ],
 )
