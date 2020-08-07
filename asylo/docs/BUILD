@@ -23,24 +23,22 @@ licenses(["notice"])
 
 bzl_library(
     name = "asylo_bzl_internal_dependendency",
-    srcs = [
-        "//asylo/bazel:asylo_copy_from_host.bzl",
-        "//asylo/bazel:asylo_internal.bzl",
-        "//asylo/bazel:asylo_transitions.bzl",
-        "//asylo/bazel:copts.bzl",
-    ],
     deps = [
         ":starlark_language_rules",
+        "//asylo/bazel:asylo_copy_from_host_bzl",
+        "//asylo/bazel:asylo_internal_bzl",
+        "//asylo/bazel:asylo_transitions_bzl",
+        "//asylo/bazel:copts_bzl",
         "//asylo/docs/linux_sgx:sgx_sdk_bzl",
     ],
 )
 
 bzl_library(
     name = "asylo_bzl",
-    srcs = ["//asylo/bazel:asylo.bzl"],
     deps = [
         ":asylo_bzl_internal_dependendency",
         ":starlark_language_rules",
+        "//asylo/bazel:asylo_bzl",
     ],
 )
 

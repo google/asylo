@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
 licenses(["notice"])  # Apache v2.0
 
 package(default_visibility = ["//visibility:public"])
@@ -22,3 +24,9 @@ exports_files([
     "grpc_1_29_0.patch",
     "sgx_dcap_1_5.patch",
 ])
+
+bzl_library(
+    name = "toolchain/crosstool_bzl",
+    srcs = ["toolchain/crosstool.bzl"],
+    visibility = ["//asylo:implementation"],
+)

@@ -16,6 +16,7 @@
 
 # BUILD file needed to make bzl files available to load.
 
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load(
@@ -141,4 +142,82 @@ sh_test(
     ],
     toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
     deps = ["//asylo/test/util:shell_testing"],
+)
+
+bzl_library(
+    name = "dlopen_enclave_bzl",
+    srcs = ["dlopen_enclave.bzl"],
+    visibility = ["//asylo:implementation"],
+)
+
+bzl_library(
+    name = "asylo_bzl",
+    srcs = ["asylo.bzl"],
+    visibility = ["//asylo:implementation"],
+)
+
+bzl_library(
+    name = "installation_path_bzl",
+    srcs = ["installation_path.bzl"],
+    visibility = ["//asylo:implementation"],
+)
+
+bzl_library(
+    name = "asylo_copy_from_host_bzl",
+    srcs = ["asylo_copy_from_host.bzl"],
+    visibility = ["//asylo:implementation"],
+)
+
+bzl_library(
+    name = "asylo_transitions_bzl",
+    srcs = ["asylo_transitions.bzl"],
+    visibility = ["//asylo:implementation"],
+)
+
+bzl_library(
+    name = "asylo_internal_bzl",
+    srcs = ["asylo_internal.bzl"],
+    visibility = ["//asylo:implementation"],
+)
+
+bzl_library(
+    name = "asylo_deps_bzl",
+    srcs = ["asylo_deps.bzl"],
+    visibility = ["//asylo:implementation"],
+)
+
+bzl_library(
+    name = "asylo_guitar_bzl",
+    srcs = ["asylo_guitar.bzl"],
+    visibility = ["//asylo:implementation"],
+)
+
+bzl_library(
+    name = "remote_deps_bzl",
+    srcs = ["remote_deps.bzl"],
+    visibility = ["//asylo:implementation"],
+)
+
+bzl_library(
+    name = "sgx_rules_bzl",
+    srcs = ["sgx_rules.bzl"],
+    visibility = ["//asylo:implementation"],
+)
+
+bzl_library(
+    name = "java_deps_bzl",
+    srcs = ["java_deps.bzl"],
+    visibility = ["//asylo:implementation"],
+)
+
+bzl_library(
+    name = "copts_bzl",
+    srcs = ["copts.bzl"],
+    visibility = ["//asylo:implementation"],
+)
+
+bzl_library(
+    name = "sgx_deps_bzl",
+    srcs = ["sgx_deps.bzl"],
+    visibility = ["//asylo:implementation"],
 )

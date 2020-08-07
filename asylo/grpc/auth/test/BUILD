@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(":generate_end2end_tests.bzl", "grpc_end2end_tests")
@@ -76,3 +77,9 @@ cc_library(
 # See END2END_TESTS in generate_end2end_tests.bzl for the test names that are
 # supported.
 grpc_end2end_tests()
+
+bzl_library(
+    name = "generate_end2end_tests_bzl",
+    srcs = ["generate_end2end_tests.bzl"],
+    visibility = ["//asylo:implementation"],
+)
