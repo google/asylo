@@ -36,7 +36,7 @@ genrule(
     srcs = ["syscalls.txt"],
     outs = ["syscalls.inc"],
     cmd = "$(location preprocess) < $(<) > $(@)",
-    tools = [":preprocess"],
+    exec_tools = [":preprocess"],
 )
 
 # Code generator utility for building static C++ tables describing

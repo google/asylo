@@ -62,7 +62,7 @@ genrule(
     name = "do_generate_macros",
     outs = ["types_macros.inc"],
     cmd = "$(location generate_macros) > $(@)",
-    tools = [":generate_macros"],
+    exec_tools = [":generate_macros"],
 )
 
 # Code generator utility emitting definitions and metadata describing the symbols defined in
