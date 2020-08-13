@@ -269,10 +269,10 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("com_github_grpc_grpc"):
         http_archive(
             name = "com_github_grpc_grpc",
-            urls = ["https://github.com/grpc/grpc/archive/v1.30.0.tar.gz"],
-            sha256 = "419dba362eaf8f1d36849ceee17c3e2ff8ff12ac666b42d3ff02a164ebe090e9",
-            patches = ["@com_google_asylo//asylo/distrib:grpc_1_30_0.patch"],
-            strip_prefix = "grpc-1.30.0",
+            urls = ["https://github.com/grpc/grpc/archive/v1.31.0.tar.gz"],
+            sha256 = "1236514199d3deb111a6dd7f6092f67617cd2b147f7eda7adbafccea95de7381",
+            patches = ["@com_google_asylo//asylo/distrib:grpc_1_31_0.patch"],
+            strip_prefix = "grpc-1.31.0",
         )
 
     # Google benchmark.

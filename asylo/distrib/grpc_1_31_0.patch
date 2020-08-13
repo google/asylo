@@ -22,7 +22,7 @@ diff -Naur -x '*~' -x '*.orig' bazel/build_settings.bzl bazel/build_settings.bzl
 diff -Naur -x '*~' -x '*.orig' BUILD BUILD
 --- BUILD
 +++ BUILD
-@@ -26,6 +26,8 @@
+@@ -29,6 +29,8 @@
      ],
  )
  
@@ -31,7 +31,7 @@ diff -Naur -x '*~' -x '*.orig' BUILD BUILD
  load(
      "//bazel:grpc_build_system.bzl",
      "grpc_cc_library",
-@@ -34,11 +36,32 @@
+@@ -37,11 +39,32 @@
      "python_config_settings",
  )
  
@@ -68,7 +68,7 @@ diff -Naur -x '*~' -x '*.orig' BUILD BUILD
 diff -Naur -x '*~' -x '*.orig' include/grpc/impl/codegen/port_platform.h include/grpc/impl/codegen/port_platform.h
 --- include/grpc/impl/codegen/port_platform.h
 +++ include/grpc/impl/codegen/port_platform.h
-@@ -212,6 +212,9 @@
+@@ -180,6 +180,9 @@
  #define GPR_POSIX_TIME 1
  #define GPR_POSIX_ENV 1
  #define GPR_ASYLO 1
@@ -81,7 +81,7 @@ diff -Naur -x '*~' -x '*.orig' include/grpc/impl/codegen/port_platform.h include
 diff -Naur -x '*~' -x '*.orig' test/core/end2end/generate_tests.bzl test/core/end2end/generate_tests.bzl
 --- test/core/end2end/generate_tests.bzl
 +++ test/core/end2end/generate_tests.bzl
-@@ -390,6 +390,7 @@
+@@ -420,6 +420,7 @@
              "end2end_tests.h",
          ],
          language = "C++",
