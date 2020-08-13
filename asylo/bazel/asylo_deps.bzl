@@ -248,12 +248,12 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("com_google_absl"):
         http_archive(
             name = "com_google_absl",
-            # Commit from 2020 June 24
+            # Commit from 2020 August 12
             urls = [
-                "https://github.com/abseil/abseil-cpp/archive/b86fff162e15ad8ee534c25e58bf522330e8376d.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/1b7e751e58ce7d40ac7d1ffd944a8e6928994dfa.tar.gz",
             ],
-            sha256 = "f5fc6de9f5193afb5d5fcff9a7e07c858e1d764cf962c1a5fa90f03b800941af",
-            strip_prefix = "abseil-cpp-b86fff162e15ad8ee534c25e58bf522330e8376d",
+            sha256 = "741a80d684fe0ee498025cc389e8fd617adefbbae09ece6834a15ba2b98a7ed8",
+            strip_prefix = "abseil-cpp-1b7e751e58ce7d40ac7d1ffd944a8e6928994dfa",
         )
 
     # Protobuf
