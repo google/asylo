@@ -199,9 +199,9 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("com_googlesource_code_re2"):
         http_archive(
             name = "com_googlesource_code_re2",
-            urls = ["https://github.com/google/re2/archive/2020-06-01.tar.gz"],
-            sha256 = "fb8e0f4ed7a212e3420507f27933ef5a8c01aec70e5148c6a35313573269fae6",
-            strip_prefix = "re2-2020-06-01",
+            urls = ["https://github.com/google/re2/archive/2020-08-01.tar.gz"],
+            sha256 = "6f4c8514249cd65b9e85d3e6f4c35595809a63ad71c5d93083e4d1dcdf9e0cd6",
+            strip_prefix = "re2-2020-08-01",
         )
 
     # Required for Absl, Googletest, Protobuf.
