@@ -5151,31 +5151,6 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/stdint.h ./newlib/libc/i
  #include <machine/_default_types.h>
  #include <sys/_intsup.h>
  #include <sys/_stdint.h>
-diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/stdlib.h ./newlib/libc/include/stdlib.h
---- ../newlib-2.5.0.20170922/newlib/libc/include/stdlib.h
-+++ ./newlib/libc/include/stdlib.h
-@@ -173,7 +173,7 @@
- #if __GNU_VISIBLE
- double	strtod_l (const char *__restrict, char **__restrict, locale_t);
- float	strtof_l (const char *__restrict, char **__restrict, locale_t);
--#ifdef _HAVE_LONG_DOUBLE
-+#if defined(_HAVE_LONG_DOUBLE) || defined(__ASYLO__)
- extern long double strtold_l (const char *__restrict, char **__restrict,
- 			      locale_t);
- #endif /* _HAVE_LONG_DOUBLE */
-@@ -316,10 +316,10 @@
- /* On platforms where long double equals double.  */
- #ifdef _HAVE_LONG_DOUBLE
- extern long double _strtold_r (struct _reent *, const char *__restrict, char **__restrict);
--#if __ISO_C_VISIBLE >= 1999
-+#endif
-+#if (defined(_HAVE_LONG_DOUBLE) && __ISO_C_VISIBLE >= 1999) || defined(__ASYLO__)
- extern long double strtold (const char *__restrict, char **__restrict);
- #endif
--#endif /* _HAVE_LONG_DOUBLE */
- 
- /*
-  * If we're in a mode greater than C99, expose C11 functions.
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/features.h ./newlib/libc/include/sys/features.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/sys/features.h
 +++ ./newlib/libc/include/sys/features.h
@@ -5780,30 +5755,6 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/stdlib/strtoimax.c ./newlib/libc
  	char c;
  	uintmax_t cutoff;
  	int neg = 0, any, cutlim;
-diff -Naur ../newlib-2.5.0.20170922/newlib/libc/stdlib/strtold.c ./newlib/libc/stdlib/strtold.c
---- ../newlib-2.5.0.20170922/newlib/libc/stdlib/strtold.c
-+++ ./newlib/libc/stdlib/strtold.c
-@@ -101,5 +101,19 @@
- #endif
- }
- 
--#endif /* _HAVE_LONG_DOUBLE */
-+#else  /* _HAVE_LONG_DOUBLE */
-+
-+#ifdef __ASYLO__
-+__attribute__((weak))
-+long double
-+strtold_l (const char *__restrict s00, char **__restrict se, locale_t loc) {
-+  abort();
-+}
- 
-+__attribute__((weak))
-+long double
-+strtold (const char *__restrict s00, char **__restrict se) {
-+  abort();
-+}
-+#endif /* __ASYLO__ */
-+#endif /* _HAVE_LONG_DOUBLE */
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/string/local.h ./newlib/libc/string/local.h
 --- ../newlib-2.5.0.20170922/newlib/libc/string/local.h
 +++ ./newlib/libc/string/local.h
