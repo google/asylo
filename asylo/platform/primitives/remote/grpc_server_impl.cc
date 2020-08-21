@@ -49,7 +49,6 @@
 #include "include/grpcpp/security/server_credentials.h"
 #include "include/grpcpp/server.h"
 #include "include/grpcpp/server_builder.h"
-#include "include/grpcpp/server_impl.h"
 
 ABSL_FLAG(
     int64_t, host_time_expiration_ms, 500,
