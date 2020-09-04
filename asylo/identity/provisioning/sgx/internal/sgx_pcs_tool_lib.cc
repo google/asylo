@@ -123,8 +123,7 @@ NVOFBkpdn627G190
 // reported by errno.
 std::string ErrnoToString() {
   char buf[128] = {};
-  strerror_r(errno, buf, sizeof(buf));
-  return buf;
+  return strerror_r(errno, buf, sizeof(buf));
 }
 
 // Returns the path for a file containing the CA certificate used to
