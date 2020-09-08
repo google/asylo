@@ -26,6 +26,7 @@
 
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/string_view.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/error_codes.h"  // IWYU pragma: export
@@ -87,6 +88,10 @@ class Status {
         other.error_message());
   }
 
+  explicit Status(const absl::Status &other) {
+    Set(static_cast<error::GoogleError>(other.raw_code()), other.message());
+  }
+
   Status &operator=(const Status &other) = default;
 
   // Non-default move assignment operator since the moved status should be set
@@ -119,6 +124,42 @@ class Status {
     Status status = ToCanonical();
     return StatusT(status_internal::ErrorCodeHolder(status.error_code_),
                    status.message_);
+  }
+
+  // Type-cast operators from
+  //   ::asylo::Status -> ::absl::Status, and
+  //   ::asylo::Status -> ::absl::StatusOr<T>
+  //
+  // These operators are provided for convenience to consumers of the Asylo SDK
+  // who are also using absl. They enable implicit conversions between
+  // ::asylo::Status and the related ::absl::Status and ::absl::StatusOr types.
+  //
+  // Example usage:
+  //   ::absl::Status CallEnclave1() {
+  //     ::asylo::Status status = client_->EnterAndRun(...);
+  //     if (!status.ok()) {
+  //       return status;
+  //     }
+  //     return ::absl::Status();
+  //   }
+  //
+  //  ::absl::StatusOr<Foo> CallEnclave2() {
+  //    Foo foo = ...
+  //    ::asylo::Status status = client_->EnterAndRun(...);
+  //    if (!status.ok()) {
+  //      return status;
+  //    }
+  //    return foo;
+  //  }
+  operator ::absl::Status() {
+    Status status = ToCanonical();
+    return ::absl::Status(static_cast<::absl::StatusCode>(status.error_code_),
+                          status.message_);
+  }
+
+  template <class T>
+  operator absl::StatusOr<T>() {
+    return absl::StatusOr<T>(::absl::Status(*this));
   }
 
   /// Gets the integer error code for this object.

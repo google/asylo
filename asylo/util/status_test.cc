@@ -23,6 +23,8 @@
 #include <google/protobuf/stubs/status.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/posix_error_space.h"
 #include "include/grpcpp/support/status.h"
@@ -348,6 +350,80 @@ TEST(StatusTest, ConvertToGrpcStatusNonOkNonCanonical) {
   EXPECT_EQ(grpc_status.ok(), status.ok());
   EXPECT_EQ(grpc_status.error_code(), ::grpc::StatusCode::INVALID_ARGUMENT);
   EXPECT_EQ(grpc_status.error_message(), status.ToString());
+}
+
+TEST(StatusTest, ConstructFromAbslStatusOk) {
+  // Default constructor for ::absl::Status constructs an OK status object.
+  ::absl::Status absl_status;
+  ::asylo::Status status(absl_status);
+
+  EXPECT_THAT(status, IsOk());
+}
+
+TEST(StatusTest, ConstructFromAbslStatusNonOk) {
+  ::absl::Status absl_status(absl::StatusCode::kInvalidArgument,
+                                kErrorMessage1);
+  ::asylo::Status status(absl_status);
+
+  EXPECT_THAT(status, Not(IsOk()));
+  EXPECT_EQ(status.error_code(), absl_status.raw_code());
+  EXPECT_EQ(status.error_message(), absl_status.message());
+}
+
+TEST(StatusTest, TypeCastToAbslStatusOk) {
+  ::asylo::Status status = ::asylo::Status::OkStatus();
+  ::absl::Status absl_status = status;
+
+  EXPECT_EQ(status.ok(), absl_status.ok());
+  EXPECT_EQ(status.error_code(), absl_status.raw_code());
+  EXPECT_EQ(status.error_message(), absl_status.message());
+}
+
+TEST(StatusTest, TypeCastToAbslStatusNonOk) {
+  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  ::absl::Status absl_status = status;
+
+  EXPECT_EQ(status.ok(), absl_status.ok());
+  EXPECT_EQ(status.error_code(), absl_status.raw_code());
+  EXPECT_EQ(status.error_message(), absl_status.message());
+}
+
+TEST(StatusTest, TypeCastToAbslStatusNonOkNonCanonical) {
+  ::asylo::Status status(error::PosixError::P_EINVAL, kErrorMessage1);
+  ::absl::Status absl_status = status;
+
+  // Status objects outside the canonical error space are converted before
+  // type-casting:
+  //   * Error code is converted to the equivalent code in the canonical error
+  //   space
+  //   * Error message is set to the ToString() representation
+  EXPECT_EQ(absl_status.ok(), status.ok());
+  EXPECT_EQ(absl_status.raw_code(), error::GoogleError::INVALID_ARGUMENT);
+  EXPECT_EQ(absl_status.message(), status.ToString());
+}
+
+TEST(StatusTest, TypeCastToAbslStatusOrNonOk) {
+  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  absl::StatusOr<std::string> absl_statusor = status;
+
+  EXPECT_EQ(absl_statusor.ok(), status.ok());
+  EXPECT_EQ(absl_statusor.status().raw_code(), status.error_code());
+  EXPECT_EQ(absl_statusor.status().message(), status.error_message());
+}
+
+TEST(StatusTest, TypeCastToAbslStatusOrNonOkNonCanonical) {
+  ::asylo::Status status(error::PosixError::P_EINVAL, kErrorMessage1);
+  absl::StatusOr<std::string> absl_statusor = status;
+
+  // Status objects outside the canonical error space are converted before
+  // type-casting:
+  //   * Error code is converted to the equivalent code in the canonical error
+  //   space
+  //   * Error message is set to the ToString() representation
+  EXPECT_EQ(absl_statusor.ok(), status.ok());
+  EXPECT_EQ(absl_statusor.status().raw_code(),
+            error::GoogleError::INVALID_ARGUMENT);
+  EXPECT_EQ(absl_statusor.status().message(), status.ToString());
 }
 
 TEST(StatusTest, IsPositiveTest) {
