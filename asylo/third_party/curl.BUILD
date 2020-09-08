@@ -228,6 +228,8 @@ cc_library(
         "lib/vauth/vauth.c",
         "lib/vauth/vauth.h",
         "lib/version.c",
+        "lib/version_win32.c",
+        "lib/version_win32.h",
         "lib/vssh/ssh.h",
         "lib/vtls/bearssl.c",
         "lib/vtls/bearssl.h",
