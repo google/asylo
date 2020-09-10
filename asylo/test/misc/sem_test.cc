@@ -218,6 +218,12 @@ class ProducerConsumerTest : public ::testing::Test {
   // The number of items to be queued per thread.
   static constexpr int kCountsPerThread = 5000;
 
+  // The number of times each thread should log.
+  static constexpr int kLogsPerTest = 10;
+
+  // The number of iterations per log, derived from total desired logs.
+  static constexpr int kItersPerLog = kCountsPerThread / kLogsPerTest;
+
   // Ensure that the counter is within the intended bounds.
   void CheckInvariants() {
     int count;
@@ -231,11 +237,19 @@ class ProducerConsumerTest : public ::testing::Test {
   // work in between each post. Meanwhile, the consumer routine is waiting on
   // the semaphore.
   void ProducerRoutine() {
+    LOG(INFO) << "Starting producer routine";
     for (int i = 0; i < kCountsPerThread; ++i) {
+      if (i % kItersPerLog == 0) {
+        int count;
+        ASSERT_EQ(sem_getvalue(&sem, &count), 0);
+        LOG(INFO) << "Producer has completed " << i
+                  << " iterations, sem value: " << count;
+      }
       CheckInvariants();
       sem_post(&sem);
       BusyWork();
     }
+    LOG(INFO) << "Ending producer routine";
   }
 
   static void *ProducerTrampoline(void *arg) {
@@ -249,11 +263,19 @@ class ProducerConsumerTest : public ::testing::Test {
   // busy work in between each wait to simulate doing work on the "dequeued
   // resource".
   void ConsumerRoutine() {
+    LOG(INFO) << "Starting consumer routine";
     for (int i = 0; i < kCountsPerThread; i++) {
+      if (i % kItersPerLog == 0) {
+        int count;
+        ASSERT_EQ(sem_getvalue(&sem, &count), 0);
+        LOG(INFO) << "Consumer has completed " << i
+                  << " iterations, sem value: " << count;
+      }
       CheckInvariants();
       sem_wait(&sem);
       BusyWork();
     }
+    LOG(INFO) << "Ending consumer routine";
   }
 
   static void *ConsumerTrampoline(void *arg) {
