@@ -24,8 +24,6 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-exports_files(["LICENSE"])
-
 # Core untrusted Asylo components.
 cc_library(
     name = "untrusted_core",

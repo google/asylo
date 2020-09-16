@@ -14,8 +14,10 @@
 # limitations under the License.
 #
 
-load("@com_google_asylo_toolchain//toolchain:crosstool.bzl",
-     "cc_toolchain_config_rule")
+load(
+    "@com_google_asylo_toolchain//toolchain:crosstool.bzl",
+    "cc_toolchain_config_rule",
+)
 load(
     "@rules_cc//cc:defs.bzl",
     "cc_library",
@@ -26,8 +28,6 @@ load(
 licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
-
-exports_files(["LICENSE"])
 
 
 ASYLO_TOOLCHAINS = [
@@ -58,8 +58,8 @@ filegroup(
     cc_toolchain(
         name = "cc-compiler-" + x[0] + "-" + x[1],
         all_files = ":everything",
-	ar_files = ":everything",
-	as_files = ":everything",
+        ar_files = ":everything",
+        as_files = ":everything",
         compiler_files = ":everything",
         dwp_files = ":everything",
         linker_files = ":everything",

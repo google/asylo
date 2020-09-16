@@ -14,8 +14,6 @@ package(
 
 licenses(["notice"])  # BSD
 
-exports_files(["LICENSE"])
-
 # Redefine the redis zcalloc function name to avoid collisions with zlib, which
 # is a dependency of protobuf.
 ZCALLOC_COPT = ["-Dzcalloc=redis_zcalloc"]
@@ -42,7 +40,7 @@ cc_library(
     ]],
     copts = [
         "-std=c99",
-	"-Wno-unused-function",
+        "-Wno-unused-function",
         # The definition of macro "__redis_strerror_r" in "hiredis.h" with
         # "GNU_SOURCE" defined has a bug that causes bazel compilation errors
         # when used by "__redisSetErrorFromErrno()" in "net.c".
@@ -136,7 +134,7 @@ cc_library(
         "-Wno-empty-body",
         "-Wno-implicit-function-declaration",
         "-Wno-unused-variable",
-	"-Wno-misleading-indentation",
+        "-Wno-misleading-indentation",
         # Needed to enable the cjson Lua module.
         "-DENABLE_CJSON_GLOBAL",
     ] + ZCALLOC_COPT,
@@ -232,7 +230,7 @@ cc_library(
         "crc64.c",
         "bitops.c",
         "sentinel.c",
-	"siphash.c",
+        "siphash.c",
         "notify.c",
         "setproctitle.c",
         "blocked.c",
@@ -259,31 +257,31 @@ cc_library(
         "-D_GNU_SOURCE",
     ] + select({
         "@com_google_asylo//asylo": [
-	    # "llroundl" is used in "src/hyperloglog.c", but the arguments are
-	    # all doubles, therefore we use llround instead for it since it's
-	    # sufficent and Asylo don't currently support "llroundl".
+            # "llroundl" is used in "src/hyperloglog.c", but the arguments are
+            # all doubles, therefore we use llround instead for it since it's
+            # sufficent and Asylo don't currently support "llroundl".
             "-Dllroundl=llround",
         ],
-	"//conditions:default": [
-	    # These flags are needed for bazel to compile Redis client without
-	    # Asylo toolchain.
-	    "-DSYNC_FILE_RANGE_WAIT_BEFORE=1",
-	    "-DSYNC_FILE_RANGE_WRITE=2",
-	],
+        "//conditions:default": [
+            # These flags are needed for bazel to compile Redis client without
+            # Asylo toolchain.
+            "-DSYNC_FILE_RANGE_WAIT_BEFORE=1",
+            "-DSYNC_FILE_RANGE_WRITE=2",
+        ],
     }) + ZCALLOC_COPT,
-    linkopts = select({
-        "@com_google_asylo//asylo": [],
-	"//conditions:default": ["-ldl"],
-    }),
     includes = [
         "deps/hiredis",
         "deps/linenoise",
         "deps/lua/src",
         "src",
     ],
+    linkopts = select({
+        "@com_google_asylo//asylo": [],
+        "//conditions:default": ["-ldl"],
+    }),
     textual_hdrs = [
         "src/ae_select.c",
-	"src/ae_epoll.c",
+        "src/ae_epoll.c",
     ],
     deps = [
         ":hiredis_lib",
@@ -358,8 +356,8 @@ cc_library(
     ],
     copts = ["-std=c99"] + ZCALLOC_COPT,
     deps = [
+        ":hiredis_lib",
         ":redis_lib",
-	":hiredis_lib",
     ],
 )
 

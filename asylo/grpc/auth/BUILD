@@ -32,8 +32,6 @@ licenses(["notice"])
 #     * Null assertion libraries
 package(default_visibility = ["//asylo:__subpackages__"])
 
-exports_files(["LICENSE"])
-
 # gRPC channel and server credentials objects.
 cc_library(
     name = "grpc++_security_enclave",
