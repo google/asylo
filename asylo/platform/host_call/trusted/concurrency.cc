@@ -93,6 +93,10 @@ int32_t *enc_untrusted_create_wait_queue() {
   CheckStatusAndParamCount(status, output, "enc_untrusted_create_wait_queue",
                            2);
   int32_t *queue = reinterpret_cast<int32_t *>(output.next<uintptr_t>());
+  if (!TrustedPrimitives::IsOutsideEnclave(queue, sizeof(int32_t))) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_create_wait_queue: queue should be in untrusted memory");
+  }
   int klinux_errno = output.next<int>();
   if (queue == nullptr) {
     errno = FromkLinuxErrorNumber(klinux_errno);
