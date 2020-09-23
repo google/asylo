@@ -226,6 +226,8 @@ class X509Certificate : public CertificateInterface {
 
   absl::optional<KeyUsageInformation> KeyUsage() const override;
 
+  StatusOr<bool> WithinValidityPeriod(const absl::Time &time) const override;
+
   StatusOr<Certificate> ToCertificateProto(
       Certificate::CertificateFormat encoding) const override;
 

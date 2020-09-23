@@ -23,6 +23,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/certificate_interface.h"
@@ -73,6 +74,8 @@ class AttestationKeyCertificateImpl : public CertificateInterface {
   absl::optional<int64_t> CertPathLength() const override;
 
   absl::optional<KeyUsageInformation> KeyUsage() const override;
+
+  StatusOr<bool> WithinValidityPeriod(const absl::Time &time) const override;
 
   StatusOr<Certificate> ToCertificateProto(
       Certificate::CertificateFormat encoding) const override;

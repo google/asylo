@@ -26,6 +26,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/time/time.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
@@ -257,6 +258,11 @@ absl::optional<int64_t> AttestationKeyCertificateImpl::CertPathLength() const {
 absl::optional<KeyUsageInformation> AttestationKeyCertificateImpl::KeyUsage()
     const {
   return absl::nullopt;
+}
+
+StatusOr<bool> AttestationKeyCertificateImpl::WithinValidityPeriod(
+    const absl::Time &time) const {
+  return true;
 }
 
 StatusOr<Certificate> AttestationKeyCertificateImpl::ToCertificateProto(

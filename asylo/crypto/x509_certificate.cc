@@ -44,6 +44,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "absl/time/time.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -420,7 +421,7 @@ Status SetSubjectPublicKey(absl::string_view subject_key_der, X509 *x509) {
   const unsigned char *der_data =
       reinterpret_cast<const unsigned char *>(subject_key_der.data());
   bssl::UniquePtr<EVP_PKEY> evp_pkey(d2i_PUBKEY(
-      /*a=*/nullptr, &der_data, subject_key_der.size()));
+      /*out=*/nullptr, &der_data, subject_key_der.size()));
   if (evp_pkey == nullptr) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
@@ -864,6 +865,17 @@ Status X509Certificate::Verify(const CertificateInterface &issuer_certificate,
     }
   }
 
+  if (config.subject_validity_period.has_value()) {
+    bool within_period;
+    ASYLO_ASSIGN_OR_RETURN(
+        within_period,
+        WithinValidityPeriod(config.subject_validity_period.value()));
+    if (!within_period) {
+      return Status(error::GoogleError::UNAUTHENTICATED,
+                    "Subject certificate is not valid at this time.");
+    }
+  }
+
   return Status::OkStatus();
 }
 
@@ -941,6 +953,14 @@ StatusOr<bssl::UniquePtr<BIGNUM>> X509Certificate::GetSerialNumber() const {
   ASYLO_RETURN_IF_ERROR(
       serial_asn1_value.SetBsslInteger(*X509_get_serialNumber(x509_.get())));
   return serial_asn1_value.GetInteger();
+}
+
+StatusOr<bool> X509Certificate::WithinValidityPeriod(
+    const absl::Time &time) const {
+  X509Validity subject_validity_period;
+  ASYLO_ASSIGN_OR_RETURN(subject_validity_period, GetValidity());
+  return subject_validity_period.not_before <= time &&
+         subject_validity_period.not_after >= time;
 }
 
 StatusOr<X509Name> X509Certificate::GetIssuerName() const {

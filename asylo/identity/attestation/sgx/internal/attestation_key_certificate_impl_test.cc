@@ -25,6 +25,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
+#include "absl/time/time.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/certificate_interface.h"
@@ -511,6 +512,8 @@ TEST(AttestationKeyCertificateImplTest, VerifyFixedAccessorValues) {
   EXPECT_THAT(ak_cert_impl->IsCa(), Optional(IsFalse()));
   EXPECT_THAT(ak_cert_impl->CertPathLength(), Eq(absl::nullopt));
   EXPECT_THAT(ak_cert_impl->KeyUsage(), Eq(absl::nullopt));
+  EXPECT_THAT(ak_cert_impl->WithinValidityPeriod(absl::Now()),
+              IsOkAndHolds(true));
 }
 
 TEST(AttestationKeyCertificateImplTest, SubjectKeyDerCorrectValue) {

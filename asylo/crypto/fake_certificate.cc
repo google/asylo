@@ -23,6 +23,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_format.h"
+#include "absl/time/time.h"
 #include "asylo/crypto/fake_certificate.pb.h"
 #include "asylo/util/status_macros.h"
 
@@ -119,6 +120,11 @@ absl::optional<int64_t> FakeCertificate::CertPathLength() const {
 
 absl::optional<KeyUsageInformation> FakeCertificate::KeyUsage() const {
   return absl::nullopt;
+}
+
+StatusOr<bool> FakeCertificate::WithinValidityPeriod(
+    const absl::Time &time) const {
+  return true;
 }
 
 StatusOr<Certificate> FakeCertificate::ToCertificateProto(

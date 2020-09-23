@@ -22,6 +22,8 @@
 #include <cstdint>
 #include <string>
 
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "absl/types/optional.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/util/status.h"
@@ -44,14 +46,31 @@ struct VerificationConfig {
   // Checks the key usage of the issuer certificate is the type expected for the
   // subject certificate's format, if the key usage is given.
   bool issuer_key_usage;
+  // Checks that the validity period of the subject certificate is valid at the
+  // given time.
+  absl::optional<absl::Time> subject_validity_period;
 
   VerificationConfig() = default;
 
-  // Initializes the fields with the value of |all_fields|.
+  // Initializes the fields with the value of |all_fields|. If |all_fields| is
+  // true, sets |subject_validity_period| to current time, else sets
+  // |subject_validity_period| to nullopt.
   explicit VerificationConfig(bool all_fields)
       : issuer_ca(all_fields),
         max_pathlen(all_fields),
-        issuer_key_usage(all_fields) {}
+        issuer_key_usage(all_fields) {
+    if (all_fields) {
+      subject_validity_period = absl::Now();
+    } else {
+      subject_validity_period = absl::nullopt;
+    }
+  }
+
+  VerificationConfig(bool all_fields, absl::Time subject_validity_period)
+      : issuer_ca(all_fields),
+        max_pathlen(all_fields),
+        issuer_key_usage(all_fields),
+        subject_validity_period(subject_validity_period) {}
 };
 
 // The certificate-defined allowed uses of the certificate's subject key.
@@ -109,6 +128,9 @@ class CertificateInterface {
 
   // Returns the allowed uses of a key certified by this object.
   virtual absl::optional<KeyUsageInformation> KeyUsage() const = 0;
+
+  // Returns whether the certificate is valid at the given time.
+  virtual StatusOr<bool> WithinValidityPeriod(const absl::Time &time) const = 0;
 
   // Creates and returns a certificate with |encoding| equivalent to the data in
   // this object. Returns a non-OK Status if the object could not be
