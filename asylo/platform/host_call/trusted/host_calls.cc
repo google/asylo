@@ -981,6 +981,11 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
     return result;
   }
 
+  if (result > len) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_recvfrom: result exceeds requested");
+  }
+
   auto buffer_received = output.next();
   memcpy(buf, buffer_received.data(), std::min(len, buffer_received.size()));
 
