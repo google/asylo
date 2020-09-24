@@ -822,6 +822,11 @@ ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
     return result;
   }
 
+  if (result > total_buffer_size) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_recvmsg: result exceeds requested");
+  }
+
   auto msg_name_extent = output.next();
   // The returned |msg_namelen| should not exceed the buffer size.
   if (msg_name_extent.size() <= msg->msg_namelen) {
