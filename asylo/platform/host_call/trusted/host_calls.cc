@@ -644,6 +644,12 @@ void *enc_untrusted_realloc(void *ptr, size_t size) {
   if (!result && size != 0) {
     errno = FromkLinuxErrorNumber(klinux_errno);
   }
+
+  if (!::asylo::primitives::TrustedPrimitives::IsOutsideEnclave(result, size)) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_realloc: realloc result should be in untrusted "
+        "memory");
+  }
   return result;
 }
 
