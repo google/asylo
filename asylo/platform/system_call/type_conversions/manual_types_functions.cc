@@ -429,6 +429,10 @@ bool FromkLinuxSockAddr(const struct klinux_sockaddr *input,
 
   int16_t klinux_family = input->klinux_sa_family;
   if (klinux_family == kLinux_AF_UNIX) {
+    if (input_len < sizeof(struct klinux_sockaddr_un)) {
+      return false;
+    }
+
     struct klinux_sockaddr_un *klinux_sockaddr_un_in =
         const_cast<struct klinux_sockaddr_un *>(
             reinterpret_cast<const struct klinux_sockaddr_un *>(input));
@@ -442,6 +446,9 @@ bool FromkLinuxSockAddr(const struct klinux_sockaddr *input,
                  sizeof(klinux_sockaddr_un_in->klinux_sun_path)));
     CopySockaddr(&sockaddr_un_out, sizeof(sockaddr_un_out), output, output_len);
   } else if (klinux_family == kLinux_AF_INET) {
+    if (input_len < sizeof(struct klinux_sockaddr_in)) {
+      return false;
+    }
     struct klinux_sockaddr_in *klinux_sockaddr_in_in =
         const_cast<struct klinux_sockaddr_in *>(
             reinterpret_cast<const struct klinux_sockaddr_in *>(input));
@@ -457,6 +464,10 @@ bool FromkLinuxSockAddr(const struct klinux_sockaddr *input,
                          klinux_sockaddr_in_in->klinux_sin_zero);
     CopySockaddr(&sockaddr_in_out, sizeof(sockaddr_in_out), output, output_len);
   } else if (klinux_family == kLinux_AF_INET6) {
+    if (input_len < sizeof(struct klinux_sockaddr_in6)) {
+      return false;
+    }
+
     struct klinux_sockaddr_in6 *klinux_sockaddr_in6_in =
         const_cast<struct klinux_sockaddr_in6 *>(
             reinterpret_cast<const struct klinux_sockaddr_in6 *>(input));
