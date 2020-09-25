@@ -1325,9 +1325,10 @@ const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
     return nullptr;
   }
 
-  memcpy(dst, result.data(),
-         std::min(static_cast<size_t>(size),
-                  static_cast<size_t>(INET6_ADDRSTRLEN)));
+  memcpy(
+      dst, result.data(),
+      std::min({static_cast<size_t>(size), static_cast<size_t>(result.size()),
+                static_cast<size_t>(INET6_ADDRSTRLEN)}));
   return dst;
 }
 
