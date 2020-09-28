@@ -26,6 +26,8 @@
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/sha256_hash.pb.h"
+#include "asylo/crypto/sha256_hash_util.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -68,6 +70,12 @@ TEST(Sha256HashTest, TestVector1) {
   ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
   EXPECT_EQ(absl::BytesToHexString(CopyToByteContainer<std::string>(digest)),
             kResult1);
+
+  Sha256HashProto expected_digest_proto;
+  expected_digest_proto.set_hash(absl::HexStringToBytes(kResult1));
+  Sha256HashProto digest_proto;
+  ASYLO_ASSERT_OK_AND_ASSIGN(digest_proto, hash.CumulativeHash());
+  EXPECT_EQ(digest_proto, expected_digest_proto);
 }
 
 TEST(Sha256HashTest, TestVector2) {
@@ -77,6 +85,12 @@ TEST(Sha256HashTest, TestVector2) {
   ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
   EXPECT_EQ(absl::BytesToHexString(CopyToByteContainer<std::string>(digest)),
             kResult2);
+
+  Sha256HashProto expected_digest_proto;
+  expected_digest_proto.set_hash(absl::HexStringToBytes(kResult2));
+  Sha256HashProto digest_proto;
+  ASYLO_ASSERT_OK_AND_ASSIGN(digest_proto, hash.CumulativeHash());
+  EXPECT_EQ(digest_proto, expected_digest_proto);
 }
 
 // Verify that calling Init() after addition of some data resets the object to

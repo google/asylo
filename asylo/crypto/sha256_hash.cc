@@ -21,8 +21,14 @@
 #include <openssl/base.h>
 #include <openssl/digest.h>
 
+#include <cstdint>
+#include <vector>
+
+#include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/util/status_macros.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 
@@ -65,6 +71,14 @@ Status Sha256Hash::CumulativeHash(std::vector<uint8_t> *digest) const {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
   return Status::OkStatus();
+}
+
+StatusOr<Sha256HashProto> Sha256Hash::CumulativeHash() const {
+  std::vector<uint8_t> hash;
+  ASYLO_RETURN_IF_ERROR(CumulativeHash(&hash));
+  Sha256HashProto hash_proto;
+  hash_proto.set_hash(hash.data(), hash.size());
+  return hash_proto;
 }
 
 }  // namespace asylo

@@ -21,11 +21,14 @@
 
 #include <openssl/base.h>
 
+#include <cstdint>
 #include <vector>
 
 #include "asylo/crypto/hash_interface.h"
+#include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/status.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 
@@ -47,6 +50,8 @@ class Sha256Hash final : public HashInterface {
   void Init() override;
   void Update(ByteContainerView data) override;
   Status CumulativeHash(std::vector<uint8_t> *digest) const override;
+
+  StatusOr<Sha256HashProto> CumulativeHash() const;
 
  private:
   EVP_MD_CTX *context_;

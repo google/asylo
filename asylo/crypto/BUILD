@@ -471,6 +471,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":hash_interface",
+        "//asylo/crypto:sha256_hash_cc_proto",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:status",
@@ -486,6 +487,8 @@ cc_test(
     deps = [
         ":algorithms_cc_proto",
         ":sha256_hash",
+        "//asylo/crypto:sha256_hash_cc_proto",
+        "//asylo/crypto:sha256_hash_util",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
