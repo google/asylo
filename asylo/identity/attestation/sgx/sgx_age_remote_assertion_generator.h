@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/certificate_util.h"
 #include "asylo/identity/attestation/enclave_assertion_generator.h"
 #include "asylo/identity/attestation/sgx/internal/sgx_remote_assertion_generator_client.h"
 #include "asylo/identity/identity.pb.h"
@@ -78,6 +79,9 @@ class SgxAgeRemoteAssertionGenerator final : public EnclaveAssertionGenerator {
   struct Members {
     // The root CAs' certificates in X.509 format.
     std::vector<Certificate> root_ca_certificates;
+
+    // The root CAs' certificates as CertificateInterfaces
+    CertificateInterfaceVector root_ca_certificate_interfaces;
 
     // The server address of the Assertion Generator Enclave (AGE).
     std::string server_address;

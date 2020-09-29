@@ -19,15 +19,19 @@
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_generator.h"
 
 #include <algorithm>
+#include <memory>
+#include <utility>
 
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/util/message_differencer.h>
 #include "absl/memory/memory.h"
 #include "absl/time/time.h"
+#include "asylo/crypto/certificate_interface.h"
 #include "asylo/crypto/certificate_util.h"
 #include "asylo/grpc/auth/enclave_channel_credentials.h"
 #include "asylo/grpc/auth/enclave_credentials_options.h"
 #include "asylo/grpc/auth/sgx_local_credentials_options.h"
+#include "asylo/identity/attestation/sgx/internal/certificate_util.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion.pb.h"
 #include "asylo/identity/attestation/sgx/internal/sgx_remote_assertion_generator_client.h"
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
@@ -99,6 +103,17 @@ Status SgxAgeRemoteAssertionGenerator::Initialize(const std::string &config) {
   members_view->server_address = authority_config.server_address();
   members_view->initialized = true;
 
+
+  for (auto &cert : members_view->root_ca_certificates) {
+    std::unique_ptr<CertificateInterface> cert_interface;
+    ASYLO_ASSIGN_OR_RETURN(
+        cert_interface, CreateCertificateInterface(
+            *sgx::GetSgxCertificateFactories(), cert));
+
+    members_view->root_ca_certificate_interfaces.emplace_back(
+        std::move(cert_interface));
+  }
+
   return Status::OkStatus();
 }
 
@@ -160,13 +175,19 @@ StatusOr<bool> SgxAgeRemoteAssertionGenerator::CanGenerate(
   // of root CA certificates. Because of this, just do a simple nested for-loop
   // instead of something more clever like a set lookup, which would require
   // hashing the certs and therefore be slower in practice anyways.
+
   for (const Certificate &info_cert : additional_info.root_ca_certificates()) {
-    auto &certificates = members_view->root_ca_certificates;
-    if (std::find_if(certificates.begin(), certificates.end(),
-                     [info_cert](const Certificate &other) {
-                       return google::protobuf::util::MessageDifferencer::Equals(
-                           info_cert, other);
-                     }) == certificates.end()) {
+    std::unique_ptr<CertificateInterface> info_cert_if;
+    ASYLO_ASSIGN_OR_RETURN(info_cert_if, CreateCertificateInterface(
+        *sgx::GetSgxCertificateFactories(), info_cert));
+
+    if (std::none_of(members_view->root_ca_certificate_interfaces.begin(),
+                     members_view->root_ca_certificate_interfaces.end(),
+                     [&info_cert_if]
+                     (const std::unique_ptr<CertificateInterface> &other)
+                     {
+                       return *info_cert_if == *other;
+                     })) {
       return false;
     }
   }

@@ -27,6 +27,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/strings/escaping.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/enclave.pb.h"
@@ -68,6 +70,29 @@ constexpr char kBadConfig[] = "baD cOnFig";
 constexpr char kBadAdditionalInfo[] = "baD inFO";
 
 constexpr char kUserData[] = "User data";
+
+constexpr absl::string_view kTestDerHex =
+    "3082027230820217a003020102021409e3256099b2bbb1f1f60e55c7b8bf"
+    "7f3dfa0e87300a06082a8648ce3d04030430818d310b3009060355040613"
+    "0255533113301106035504080c0a57617368696e67746f6e3111300f0603"
+    "5504070c084b69726b6c616e64310f300d060355040a0c06476f6f676c65"
+    "310c300a060355040b0c03474350310f300d06035504030c066a65737369"
+    "653126302406092a864886f70d01090116176a65737369652e71792e6c69"
+    "7540676d61696c2e636f6d301e170d3230303932383232323430335a170d"
+    "3230313032383232323430335a30818d310b300906035504061302555331"
+    "13301106035504080c0a57617368696e67746f6e3111300f06035504070c"
+    "084b69726b6c616e64310f300d060355040a0c06476f6f676c65310c300a"
+    "060355040b0c03474350310f300d06035504030c066a6573736965312630"
+    "2406092a864886f70d01090116176a65737369652e71792e6c697540676d"
+    "61696c2e636f6d3059301306072a8648ce3d020106082a8648ce3d030107"
+    "0342000411c4a455280b2d3c750a8df6cd80a3fbc4bdb3a3a242b98b2a13"
+    "1c338f4575908e4f7be2a37d8fcaf9786bacd95ef60b39d40ef7bd1005dd"
+    "2fdbc55cc3dffb8aa3533051301d0603551d0e04160414026c5a1e62738a"
+    "ccd46b7d19ff7211f46b962ceb301f0603551d23041830168014026c5a1e"
+    "62738accd46b7d19ff7211f46b962ceb300f0603551d130101ff04053003"
+    "0101ff300a06082a8648ce3d0403040349003046022100ca8f37f452dbfa"
+    "eb4e2b546e33815e186b4ca44b8f146dadca50f0534cd2fc5b022100c41c"
+    "f13136b19bb4e507c9b7cb1b69f89f894737893ea5107084e2acaf33478e";
 
 class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
  protected:
@@ -378,7 +403,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest,
   // Add another valid cert into the request.
   Certificate certificate;
   certificate.set_format(Certificate::X509_DER);
-  certificate.set_data("I'm a good cert!");
+  certificate.set_data(absl::HexStringToBytes(kTestDerHex));
   certificates.push_back(certificate);
 
   // Create a valid AssertionRequest.
