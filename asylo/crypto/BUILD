@@ -729,6 +729,7 @@ cc_library(
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
     ],
 )
 
@@ -742,6 +743,7 @@ cc_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
 )

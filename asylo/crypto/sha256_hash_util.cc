@@ -21,6 +21,7 @@
 #include <string>
 
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_format.h"
 #include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
@@ -37,6 +38,17 @@ StatusOr<Sha256HashProto> CreateSha256HashProto(absl::string_view hash_hex) {
   Sha256HashProto hash;
   hash.set_hash(reinterpret_cast<const char *>(bytes.data()), bytes.size());
   return hash;
+}
+
+Status ValidateSha256HashProto(const Sha256HashProto &hash_proto) {
+  if (hash_proto.hash().size() != kSha256DigestLength) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrFormat("The length of the given hash (%d) does not match the "
+                        "expected hash length for SHA-256 (%d)",
+                        hash_proto.hash().size(), kSha256DigestLength));
+  }
+  return Status::OkStatus();
 }
 
 bool operator==(const Sha256HashProto &lhs, const Sha256HashProto &rhs) {

@@ -22,6 +22,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/strings/escaping.h"
 #include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -59,6 +60,19 @@ TEST_F(Sha256HashUtilTest, SuccessfulConversionFromHexString) {
 
 TEST_F(Sha256HashUtilTest, UnsuccessfulConversionFromHexString) {
   EXPECT_THAT(CreateSha256HashProto(kHashHexShort),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST_F(Sha256HashUtilTest, ValidateSha256HashProtoSucceeds) {
+  Sha256HashProto hash_proto;
+  hash_proto.set_hash(absl::HexStringToBytes(kHashHex1));
+  ASYLO_EXPECT_OK(ValidateSha256HashProto(hash_proto));
+}
+
+TEST_F(Sha256HashUtilTest, ValidateSha256HashProtoFails) {
+  Sha256HashProto hash_proto;
+  hash_proto.set_hash(absl::HexStringToBytes(kHashHexShort));
+  EXPECT_THAT(ValidateSha256HashProto(hash_proto),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

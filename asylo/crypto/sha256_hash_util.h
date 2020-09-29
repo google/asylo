@@ -27,9 +27,12 @@
 
 namespace asylo {
 
-/// Returns a `Sha256HashProto` with the hash of the given |hex_string|, or a
+/// Returns a `Sha256HashProto` with the hash of the given |hash_hex|, or a
 /// non-OK Status if the provided string is an invalid hex-encoded SHA-256 hash.
 StatusOr<Sha256HashProto> CreateSha256HashProto(absl::string_view hash_hex);
+
+/// Validates that |hash_proto| has a hash that is exactly 32 bytes.
+Status ValidateSha256HashProto(const Sha256HashProto &hash_proto);
 
 /// Compares two `Sha256HashProto` messages for equality.
 bool operator==(const Sha256HashProto &lhs, const Sha256HashProto &rhs);
