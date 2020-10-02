@@ -5252,7 +5252,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/li
  };
  
  /* Signal Actions, P1003.1b-1993, p. 64 */
-@@ -69,10 +100,82 @@
+@@ -69,10 +100,121 @@
    int          si_signo;    /* Signal number */
    int          si_code;     /* Cause of the signal */
    union sigval si_value;    /* Signal value */
@@ -5328,6 +5328,45 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/li
 +# define si_call_addr 	_sifields._sigsys._call_addr
 +# define si_syscall	_sifields._sigsys._syscall
 +# define si_arch	_sifields._sigsys._arch
++
++/* SIGILL codes */
++# define ILL_ILLOPC	1
++# define ILL_ILLOPN	2
++# define ILL_ILLADR	3
++# define ILL_ILLTRP	4
++# define ILL_PRVOPC	5
++# define ILL_PRVREG	6
++# define ILL_COPROC	7
++# define ILL_BADSTK	8
++
++/* SIGFPE codes */
++# define FPE_INTDIV	1
++# define FPE_INTOVF	2
++# define FPE_FLTDIV	3
++# define FPE_FLTOVF	4
++# define FPE_FLTUND	5
++# define FPE_FLTRES	6
++# define FPE_FLTINV	7
++# define FPE_FLTSUB	8
++
++/* SIGSEGV codes */
++# define SEGV_MAPERR	1
++# define SEGV_ACCERR	2
++/* SIGBUS codes */
++# define BUS_ADRALN	1
++# define BUS_ADRERR	2
++# define BUS_OBJERR	3
++/* SIGTRAP codes */
++# define TRAP_BRKPT	1
++# define TRAP_TRACE	2
++/* SIGCHLD codes */
++# define CLD_EXITED			1
++# define CLD_KILLED			2
++# define CLD_DUMPED			3
++# define CLD_TRAPPED		4
++# define CLD_STOPPED		5
++# define CLD_CONTINUED	6
++
 +#endif
 +
  #endif /* defined(_POSIX_REALTIME_SIGNALS) || __POSIX_VISIBLE >= 199309 */
@@ -5337,7 +5376,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/li
  
  /*  3.3.8 Synchronously Accept a Signal, P1003.1b-1993, p. 76 */
  
-@@ -112,19 +215,19 @@
+@@ -112,19 +254,19 @@
  #define sa_sigaction  _signal_handlers._sigaction
  #endif
  
@@ -5360,7 +5399,17 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/li
  #endif /* defined(__CYGWIN__) */
  
  #if __BSD_VISIBLE || __XSI_VISIBLE >= 4 || __POSIX_VISIBLE >= 200809
-@@ -357,6 +460,22 @@
+@@ -353,10 +495,31 @@
+ #define	SIGLOST 29	/* resource lost (eg, record-lock lost) */
+ #define	SIGUSR1 30	/* user defined signal 1 */
+ #define	SIGUSR2 31	/* user defined signal 2 */
+-#define NSIG	32      /* signal 0 implied */
++# if defined(__ASYLO__)
++#  define SIGPWR 32	/* power failure imminent */
++#  define NSIG	33
++# else
++#  define NSIG	32      /* signal 0 implied */
++# endif
  #endif
  #endif
  

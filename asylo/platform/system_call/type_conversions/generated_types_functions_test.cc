@@ -536,7 +536,7 @@ TEST_F(GeneratedTypesFunctionsTest, BaseSignalNumberTest) {
       kLinux_SIGCONT,   kLinux_SIGSTOP, kLinux_SIGTSTP,  kLinux_SIGTTIN,
       kLinux_SIGTTOU,   kLinux_SIGURG,  kLinux_SIGXCPU,  kLinux_SIGXFSZ,
       kLinux_SIGVTALRM, kLinux_SIGPROF, kLinux_SIGWINCH, kLinux_SIGSYS,
-      kLinux_SIGIO,     kLinux_NSIG,
+      kLinux_SIGIO,
 #ifdef SIGPWR
       kLinux_SIGPWR,
 #endif
@@ -546,12 +546,13 @@ TEST_F(GeneratedTypesFunctionsTest, BaseSignalNumberTest) {
 #ifdef SIGRTMAX
       kLinux_SIGRTMAX,
 #endif
+      kLinux_NSIG,
   };
   std::vector<int> to_consts = {
       SIGHUP,    SIGINT,  SIGQUIT,  SIGILL,  SIGTRAP, SIGABRT, SIGBUS,  SIGFPE,
       SIGKILL,   SIGUSR1, SIGSEGV,  SIGUSR2, SIGPIPE, SIGALRM, SIGTERM, SIGCHLD,
       SIGCONT,   SIGSTOP, SIGTSTP,  SIGTTIN, SIGTTOU, SIGURG,  SIGXCPU, SIGXFSZ,
-      SIGVTALRM, SIGPROF, SIGWINCH, SIGSYS,  SIGIO,   NSIG,
+      SIGVTALRM, SIGPROF, SIGWINCH, SIGSYS,  SIGIO,
 #ifdef SIGPWR
       SIGPWR,
 #endif
@@ -561,6 +562,7 @@ TEST_F(GeneratedTypesFunctionsTest, BaseSignalNumberTest) {
 #ifdef SIGRTMAX
       SIGRTMAX,
 #endif
+     NSIG,
   };
   auto from_matcher = IsFiniteRestrictionOf<int, int>(
       [&](int input) { return FromkLinuxBaseSignalNumber(input); });
