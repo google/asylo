@@ -389,10 +389,10 @@ asylo::Status DestroyGrpcServerEnclave() {
 The driver's `main` function starts by parsing command-line arguments:
 
 ```cpp
-absl::ParseCommandLine(argc, argv);
+  absl::ParseCommandLine(argc, argv);
 
-std::string enclave_path = absl::GetFlag(FLAGS_enclave_path);
-LOG_IF(QFATAL, enclave_path.empty()) << "--enclave_path cannot be empty";
+  std::string enclave_path = absl::GetFlag(FLAGS_enclave_path);
+  LOG_IF(QFATAL, enclave_path.empty()) << "--enclave_path cannot be empty";
 ```
 
 #### Starting the enclave
@@ -404,23 +404,23 @@ enclave in debug mode. The call to `LoadGrpcServerEnclave` triggers a call to
 the `Initialize` method of the `TrustedApplication`:
 
 ```cpp
-asylo::Status status =
-    asylo::EnclaveManager::Configure(asylo::EnclaveManagerOptions());
-LOG_IF(QFATAL, !status.ok())
-    << "Failed to configure EnclaveManager: " << status;
+  asylo::Status status =
+      asylo::EnclaveManager::Configure(asylo::EnclaveManagerOptions());
+  LOG_IF(QFATAL, !status.ok())
+      << "Failed to configure EnclaveManager: " << status;
 
-status = examples::grpc_server::LoadGrpcServerEnclave(
-    enclave_path, absl::GetFlag(FLAGS_port), absl::GetFlag(FLAGS_debug));
-LOG_IF(QFATAL, !status.ok())
-    << "Loading " << enclave_path << " failed: " << status;
+  status = examples::grpc_server::LoadGrpcServerEnclave(
+      enclave_path, absl::GetFlag(FLAGS_port), absl::GetFlag(FLAGS_debug));
+  LOG_IF(QFATAL, !status.ok())
+      << "Loading " << enclave_path << " failed: " << status;
 
-asylo::StatusOr<int> port_result =
-    examples::grpc_server::GrpcServerEnclaveGetPort();
-LOG_IF(QFATAL, !port_result.ok())
-    << "Retrieving port failed: " << port_result.status();
+  asylo::StatusOr<int> port_result =
+      examples::grpc_server::GrpcServerEnclaveGetPort();
+  LOG_IF(QFATAL, !port_result.ok())
+      << "Retrieving port failed: " << port_result.status();
 
-std::cout << "Server started on port " << port_result.ValueOrDie()
-          << std::endl;
+  std::cout << "Server started on port " << port_result.ValueOrDie()
+            << std::endl;
 ```
 
 #### Entering the enclave
@@ -429,7 +429,7 @@ The driver blocks for the configured timeout period, allowing the enclave and
 the gRPC service to run on other threads.
 
 ```cpp
-absl::SleepFor(absl::Seconds(absl::GetFlag(FLAGS_server_max_lifetime)));
+  absl::SleepFor(absl::Seconds(absl::GetFlag(FLAGS_server_max_lifetime)));
 ```
 
 While the enclave's gRPC server is running, clients can communicate with it
@@ -440,9 +440,9 @@ through the assigned server port.
 The driver then finalizes the enclave:
 
 ```cpp
-status = examples::grpc_server::DestroyGrpcServerEnclave();
-LOG_IF(QFATAL, !status.ok())
-    << "Destroy " << enclave_path << " failed: " << status;
+  status = examples::grpc_server::DestroyGrpcServerEnclave();
+  LOG_IF(QFATAL, !status.ok())
+      << "Destroy " << enclave_path << " failed: " << status;
 ```
 
 ## Building the application
@@ -549,6 +549,7 @@ debug_sign_enclave(
     config = "//asylo/grpc/util:grpc_enclave_config",
     unsigned = "grpc_server_enclave_unsigned.so",
 )
+
 ```
 
 Finally, the BUILD file needs an `enclave_loader` target for the driver with an
