@@ -21,18 +21,28 @@
 #include <cstdint>
 #include <cstdlib>
 
-int closedir(DIR *) { abort(); }
+extern "C" {
 
-DIR *opendir(const char *) { abort(); }
-
-struct dirent *readdir(DIR *) {
+int getdents (int fd, void *dirp, unsigned int count) {
   abort();
 }
 
-int readdir_r(DIR *, struct dirent *, struct dirent **) { abort(); }
+int __attribute__((weak)) closedir(DIR *) { abort(); }
 
-void rewinddir(DIR *) { abort(); }
+DIR * __attribute__((weak)) opendir(const char *) { abort(); }
 
-void seekdir(DIR *, int64_t) { abort(); }
+struct dirent * __attribute__((weak)) readdir(DIR *) {
+  abort();
+}
 
-int64_t telldir(DIR *) { abort(); }
+int __attribute__((weak)) readdir_r(DIR *, struct dirent *, struct dirent **) {
+  abort();
+}
+
+void __attribute__((weak)) rewinddir(DIR *) { abort(); }
+
+void __attribute__((weak)) seekdir(DIR *, int64_t) { abort(); }
+
+int64_t __attribute__((weak)) telldir(DIR *) { abort(); }
+
+}  // extern "C"
