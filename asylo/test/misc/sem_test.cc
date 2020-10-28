@@ -216,7 +216,7 @@ class ProducerConsumerTest : public ::testing::Test {
   static constexpr int kNumThreads = 4;
 
   // The number of items to be queued per thread.
-  static constexpr int kCountsPerThread = 5000;
+  static constexpr int kCountsPerThread = 4000;
 
   // The number of times each thread should log.
   static constexpr int kLogsPerTest = 10;
