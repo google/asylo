@@ -108,21 +108,6 @@ sudo apt update
 sudo apt install bazel
 ```
 
-The Asylo toolchain requires Bazel's version to be at least `0.22`. You can
-check your installed Bazel by running `bazel version` and checking the output
-"Build label".
-
-Example output:
-
-```bash
-$ bazel version
-Build label: 0.22.0
-Build target: bazel-out/k8-opt/bin/src/main/java/com/google/devtools/build/lib/bazel/BazelServer_deploy.jar
-Build time: Mon Jan 28 12:58:08 2019 (1548680288)
-Build timestamp: 1548680288
-Build timestamp as int: 1548680288
-```
-
 ## Additional dependencies
 
 The following packages are used by Asylo and its dependencies, and must also be

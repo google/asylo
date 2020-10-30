@@ -59,10 +59,6 @@ for additional details on how to pull images from Google's Container Registry.
 Some of Asylo's tests require IPv6 to be enabled in your Docker daemon. See this
 [guide](https://docs.docker.com/config/daemon/ipv6/) for how to enable IPv6.
 
-**Note**: If the Docker daemon fails to start with `"ipv6": true` added to the
-daemon.json file, you may also need to explicitly configure IPv6 subnet as shown
-[here](https://docs.docker.com/v17.09/engine/userguide/networking/default_network/ipv6/).
-
 ### Examples
 
 #### Running the `hello_world` example
