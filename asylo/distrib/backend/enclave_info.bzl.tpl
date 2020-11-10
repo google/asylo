@@ -189,20 +189,6 @@ def _asylo_backend_impl(ctx):
 
 asylo_backend = rule(implementation = _asylo_backend_impl, attrs = {})
 
-# The following definitions are useful for backend implementations.
-def _static_libraries_to_link_from_contexts(linking_contexts):
-    libraries_to_link = []
-    for link_context in linking_contexts:
-        lib_list = link_context.libraries_to_link
-        if lib_list == None:
-            continue
-        if type(lib_list) != "list":
-            lib_list = lib_list.to_list()
-        for lib in lib_list:
-            if lib and lib.static_library:
-                libraries_to_link.append(lib.static_library)
-    return libraries_to_link
-
 def _cc_private_sources(srcs):
     """Returns a pair of the source files and header files in srcs"""
     source_suffixes = [".cc", ".cpp", ".cxx", ".c++", ".C", ".c"]
@@ -305,6 +291,7 @@ def native_cc_binary(
         extra_features: More features to add on top of user-provided features.
         extra_copts: More copts to add on top of user-provided copts.
         extra_linkopts: More linkopts to add on top of user-provided linkopts.
+        extra_data: More data dependencies to include in the target's runfiles.
         extra_deps: More deps to add on top of user-provided deps.
         extra_linking_contexts: More linking contexts to include in the
             target's linking.
@@ -330,16 +317,16 @@ def native_cc_binary(
     deps = ctx.attr.deps + extra_deps
     compilation_contexts = []
     linking_contexts = []
+    deps_linker_inputs = []
     for dep in deps:
         # Split transitions on the rule make each dep a list of deps. We use
         # a single transition, so take the 0th element.
         if type(dep) == "list":
             dep = dep[0]
         compilation_contexts.append(dep[CcInfo].compilation_context)
-        linking_contexts.append(dep[CcInfo].linking_context)
-
-    # Link in all dependencies' static libraries.
-    libraries_to_link = _static_libraries_to_link_from_contexts(linking_contexts)
+        linking_context = dep[CcInfo].linking_context
+        linking_contexts.append(linking_context)
+        deps_linker_inputs.append(linking_context.linker_inputs)
 
     (_source_files, _private_headers) = _cc_private_sources(ctx.files.srcs)
     (compilation_context, compilation_outputs) = cc_common.compile(
@@ -374,19 +361,20 @@ def native_cc_binary(
 
     _to_link = _linking_outputs.library_to_link
     executable = None
-    if _to_link:
-        if ctx.attr.linkshared and _to_link.dynamic_library:
-            output_files.append(_to_link.dynamic_library)
-        elif not ctx.attr.linkshared and _to_link.static_pic_library:
-            output_files.append(_to_link.static_pic_library)
     if _linking_outputs.executable:
         executable = _linking_outputs.executable
         output_files.append(executable)
+    elif _to_link:
+        output_files.append(_to_link.pic_static_library or _to_link.dynamic_library)
 
+    linker_inputs = depset([cc_common.create_linker_input(
+        owner = ctx.label,
+        libraries = depset([_to_link]) if _to_link else None,
+        user_link_flags = depset(ctx.attr.linkopts),
+        additional_inputs = depset(additional_linker_inputs),
+    )], transitive = deps_linker_inputs)
     _linking_context = cc_common.create_linking_context(
-        libraries_to_link = libraries_to_link + output_files,
-        user_link_flags = ctx.attr.linkopts,
-        additional_inputs = additional_linker_inputs,
+        linker_inputs = linker_inputs,
     )
     return [
         CcInfo(linking_context = _linking_context, compilation_context = compilation_context),

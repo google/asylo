@@ -3611,7 +3611,7 @@ diff -Nur /dev/null BUILD
 +# "unencumbered" licenses present:
 +# SQLite
 +# CC0 1.0 (DLMalloc),
-+licenses(["reciprocal"])  # Eclipse public license
++licenses(["reciprocal"])
 +
 +exports_files([
 +    "License.txt",
@@ -4921,7 +4921,7 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,1004 @@
+@@ -0,0 +1,1010 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
@@ -5013,9 +5013,13 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            "{g_peak_heap_used}": "g_peak_heap_used;" if ctx.attr.debug else "",
 +        },
 +    )
++    linker_input = cc_common.create_linker_input(
++        owner = ctx.label,
++        additional_inputs = depset([output]),
++        user_link_flags = depset(["-Wl,--version-script", output.path]),
++    )
 +    linking_context = cc_common.create_linking_context(
-+        additional_inputs = [output],
-+        user_link_flags = ["-Wl,--version-script", output.path],
++        linker_inputs = depset([linker_input]),
 +    )
 +    return [DefaultInfo(files = depset([output])), CcInfo(linking_context = linking_context)]
 +
@@ -5502,9 +5506,11 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            mandatory = True,
 +            providers = [backend_tools.AsyloBackendInfo],
 +        )
++
 +        attrs["_whitelist_function_transition"] = attr.label(
 +            default = Label("//tools/whitelists/function_transition_whitelist"),
 +        )
++
 +    return rule(
 +        implementation = _sgx_generate_enclave_signing_material_impl,
 +        doc = ("Creates a file that contains the parts of the enclave SIGSTRUCT" +
