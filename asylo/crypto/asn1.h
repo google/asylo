@@ -63,6 +63,9 @@ enum class Asn1Type {
 
   // SEQUENCE values are represented by arrays of Asn1Values.
   kSequence,
+
+  // IA5String values are represented by an ASCII string.
+  kIA5String,
 };
 
 // Represents an ASN.1 OBJECT IDENTIFIER. Each object identifier can be
@@ -153,6 +156,7 @@ class Asn1Value {
   static StatusOr<Asn1Value> CreateObjectId(const ObjectId &value);
   static StatusOr<Asn1Value> CreateSequence(
       absl::Span<const Asn1Value> elements);
+  static StatusOr<Asn1Value> CreateIA5String(absl::string_view value);
 
   // Factory methods for creating INTEGER and ENUMERATED values directly from
   // integral types.
@@ -199,6 +203,7 @@ class Asn1Value {
   StatusOr<std::vector<uint8_t>> GetOctetString() const;
   StatusOr<ObjectId> GetObjectId() const;
   StatusOr<std::vector<Asn1Value>> GetSequence() const;
+  StatusOr<std::string> GetIA5String() const;
 
   // Getters that get an INTEGER or ENUMERATED value directly as an integral
   // type.
@@ -224,6 +229,7 @@ class Asn1Value {
   Status SetOctetString(ByteContainerView value);
   Status SetObjectId(const ObjectId &value);
   Status SetSequence(absl::Span<const Asn1Value> elements);
+  Status SetIA5String(absl::string_view value);
 
   // Setters for setting an Asn1Value to be an INTEGER or ENUMERATED value from
   // an integral type.
@@ -264,6 +270,8 @@ class Asn1Value {
       const ASN1_OBJECT &bssl_value);
   static StatusOr<Asn1Value> CreateSequenceFromBssl(
       const ASN1_SEQUENCE_ANY &bssl_value);
+  static StatusOr<Asn1Value> CreateIA5StringFromBssl(
+      const ASN1_IA5STRING &bssl_value);
 
   // Each "Bssl" getter returns the contained value in the appropriate BoringSSL
   // type. Fails if the Asn1Value does not have the appropriate type.
@@ -276,6 +284,7 @@ class Asn1Value {
   StatusOr<bssl::UniquePtr<ASN1_OCTET_STRING>> GetBsslOctetString() const;
   StatusOr<bssl::UniquePtr<ASN1_OBJECT>> GetBsslObjectId() const;
   StatusOr<bssl::UniquePtr<ASN1_SEQUENCE_ANY>> GetBsslSequence() const;
+  StatusOr<bssl::UniquePtr<ASN1_IA5STRING>> GetBsslIA5String() const;
 
   // Each "Bssl" setter sets the Asn1Value to have the appropriate type and the
   // given value. If a setter fails, then the value of the Asn1Value is
@@ -287,6 +296,7 @@ class Asn1Value {
   Status SetBsslOctetString(const ASN1_OCTET_STRING &bssl_value);
   Status SetBsslObjectId(const ASN1_OBJECT &bssl_value);
   Status SetBsslSequence(const ASN1_SEQUENCE_ANY &bssl_value);
+  Status SetBsslIA5String(const ASN1_IA5STRING &bssl_value);
 
  private:
   friend bool operator==(const Asn1Value &lhs, const Asn1Value &rhs);

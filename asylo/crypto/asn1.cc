@@ -33,11 +33,13 @@
 #include "absl/base/macros.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/logging.h"
+#include "asylo/util/error_codes.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
@@ -63,6 +65,8 @@ absl::optional<Asn1Type> FromOpensslType(int openssl_type) {
       return Asn1Type::kObjectId;
     case V_ASN1_SEQUENCE:
       return Asn1Type::kSequence;
+    case V_ASN1_IA5STRING:
+      return Asn1Type::kIA5String;
     default:
       return absl::nullopt;
   }
@@ -85,6 +89,8 @@ int ToOpensslType(Asn1Type type) {
       return V_ASN1_OBJECT;
     case Asn1Type::kSequence:
       return V_ASN1_SEQUENCE;
+    case Asn1Type::kIA5String:
+      return V_ASN1_IA5STRING;
   }
 
   return V_ASN1_UNDEF;
@@ -397,6 +403,12 @@ StatusOr<Asn1Value> Asn1Value::CreateSequence(
   return result;
 }
 
+StatusOr<Asn1Value> Asn1Value::CreateIA5String(absl::string_view value) {
+  Asn1Value result;
+  ASYLO_RETURN_IF_ERROR(result.SetIA5String(value));
+  return result;
+}
+
 StatusOr<Asn1Value> Asn1Value::CreateSequenceFromStatusOrs(
     absl::Span<const StatusOr<Asn1Value>> results) {
   Asn1Value result;
@@ -495,6 +507,14 @@ StatusOr<std::vector<Asn1Value>> Asn1Value::GetSequence() const {
   return result;
 }
 
+StatusOr<std::string> Asn1Value::GetIA5String() const {
+  ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kIA5String));
+  const ASN1_IA5STRING *str = value_->value.ia5string;
+
+  return std::string(reinterpret_cast<const char *>(ASN1_STRING_get0_data(str)),
+                     ASN1_STRING_length(str));
+}
+
 Status Asn1Value::SetBoolean(bool value) { return SetBsslBoolean(value); }
 
 Status Asn1Value::SetInteger(const BIGNUM &value) {
@@ -562,6 +582,21 @@ Status Asn1Value::SetSequence(absl::Span<const Asn1Value> elements) {
     }
   }
   return SetBsslSequence(*sequence);
+}
+
+Status Asn1Value::SetIA5String(absl::string_view value) {
+  bssl::UniquePtr<ASN1_IA5STRING> ia5_string(ASN1_IA5STRING_new());
+  if (ia5_string == nullptr) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  if (ASN1_STRING_set(ia5_string.get(), value.data(), value.length()) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  ASN1_TYPE_set(value_.get(), V_ASN1_IA5STRING, ia5_string.release());
+
+  return Status::OkStatus();
 }
 
 Status Asn1Value::SetSequenceFromStatusOrs(
@@ -636,6 +671,13 @@ StatusOr<Asn1Value> Asn1Value::CreateSequenceFromBssl(
   return asn1;
 }
 
+StatusOr<Asn1Value> Asn1Value::CreateIA5StringFromBssl(
+    const ASN1_IA5STRING &bssl_value) {
+  Asn1Value asn1;
+  ASYLO_RETURN_IF_ERROR(asn1.SetBsslIA5String(bssl_value));
+  return asn1;
+}
+
 StatusOr<ASN1_BOOLEAN> Asn1Value::GetBsslBoolean() const {
   ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kBoolean));
   return value_->value.boolean;
@@ -685,6 +727,12 @@ StatusOr<bssl::UniquePtr<ASN1_SEQUENCE_ANY>> Asn1Value::GetBsslSequence()
 
   // GCC 4.9 requires this std::move() invocation.
   return std::move(sequence);
+}
+
+StatusOr<bssl::UniquePtr<ASN1_IA5STRING>> Asn1Value::GetBsslIA5String() const {
+  ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kIA5String));
+  return bssl::UniquePtr<ASN1_IA5STRING>(
+      CHECK_NOTNULL(ASN1_STRING_dup(value_->value.ia5string)));
 }
 
 Status Asn1Value::SetBsslBoolean(ASN1_BOOLEAN bssl_value) {
@@ -749,6 +797,13 @@ Status Asn1Value::SetBsslSequence(const ASN1_SEQUENCE_ANY &bssl_value) {
   return Status::OkStatus();
 }
 
+Status Asn1Value::SetBsslIA5String(const ASN1_IA5STRING &bssl_value) {
+  if (ASN1_TYPE_set1(value_.get(), V_ASN1_IA5STRING, &bssl_value) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return Status::OkStatus();
+}
+
 Asn1Value::Asn1Value(bssl::UniquePtr<ASN1_TYPE> value)
     : value_(std::move(value)) {}
 
@@ -794,6 +849,7 @@ bool operator==(const Asn1Value &lhs, const Asn1Value &rhs) {
     case Asn1Type::kBitString:
     case Asn1Type::kObjectId:
     case Asn1Type::kOctetString:
+    case Asn1Type::kIA5String:
       return ASN1_TYPE_cmp(lhs.value_.get(), rhs.value_.get()) == 0;
   }
 

@@ -187,6 +187,7 @@ cc_library(
         ":bignum_util",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:error_codes",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@boringssl//:crypto",

@@ -934,6 +934,53 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kSequence>> : public Test {
   }
 };
 
+// Specialization of Asn1Test for Asn1Type::kIA5String.
+template <>
+class Asn1Test<Asn1TypeTag<Asn1Type::kIA5String>> : public Test {
+ public:
+  using ValueType = std::string;
+  using BsslValueType = bssl::UniquePtr<ASN1_IA5STRING>;
+
+  static constexpr Asn1Type Type() { return Asn1Type::kIA5String; }
+
+  static std::vector<ValueType> TestData() {
+    return {"", "t", "Test string.", "This is a test string.",
+            "This has \0 null \0\0 characters"};
+  }
+
+  static std::vector<std::vector<ValueType>> EqualTestData() { return {}; }
+
+  static std::vector<ValueType> BadTestData() { return {}; }
+
+  static void ExpectEqual(const ValueType &lhs, const ValueType &rhs) {
+    EXPECT_THAT(lhs, Eq(rhs));
+  }
+
+  static StatusOr<Asn1Value> Create(const ValueType &value) {
+    return Asn1Value::CreateIA5String(value);
+  }
+
+  static StatusOr<ValueType> Get(const Asn1Value &asn1) {
+    return asn1.GetIA5String();
+  }
+
+  static Status Set(Asn1Value *asn1, const ValueType &value) {
+    return asn1->SetIA5String(value);
+  }
+
+  static StatusOr<Asn1Value> CreateFromBssl(const BsslValueType &bssl_value) {
+    return Asn1Value::CreateIA5StringFromBssl(*bssl_value);
+  }
+
+  static StatusOr<BsslValueType> GetBssl(const Asn1Value &asn1) {
+    return asn1.GetBsslIA5String();
+  }
+
+  static Status SetBssl(Asn1Value *asn1, const BsslValueType &bssl_value) {
+    return asn1->SetBsslIA5String(*bssl_value);
+  }
+};
+
 using Asn1TestingTypes = Types<
     Asn1TypeTag<Asn1Type::kBoolean>, Asn1TypeTag<Asn1Type::kInteger>,
     Asn1IntegerConversionTag<int8_t>, Asn1IntegerConversionTag<uint8_t>,
@@ -946,7 +993,7 @@ using Asn1TestingTypes = Types<
     Asn1EnumeratedConversionTag<uint32_t>, Asn1EnumeratedConversionTag<int64_t>,
     Asn1EnumeratedConversionTag<uint16_t>, Asn1TypeTag<Asn1Type::kBitString>,
     Asn1TypeTag<Asn1Type::kOctetString>, Asn1TypeTag<Asn1Type::kObjectId>,
-    Asn1TypeTag<Asn1Type::kSequence>>;
+    Asn1TypeTag<Asn1Type::kSequence>, Asn1TypeTag<Asn1Type::kIA5String>>;
 TYPED_TEST_SUITE(Asn1Test, Asn1TestingTypes);
 
 // std::vector<Asn1ValueType<TestParam::value>>::const_reference is used for
