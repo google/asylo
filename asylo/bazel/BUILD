@@ -187,12 +187,6 @@ bzl_library(
 )
 
 bzl_library(
-    name = "asylo_guitar_bzl",
-    srcs = ["asylo_guitar.bzl"],
-    visibility = ["//asylo:implementation"],
-)
-
-bzl_library(
     name = "remote_deps_bzl",
     srcs = ["remote_deps.bzl"],
     visibility = ["//asylo:implementation"],
