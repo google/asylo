@@ -23,7 +23,7 @@ FROM debian/snapshot:${debian_snapshot} as toolchain
 
 # Add build dependencies from Debian.
 RUN apt-get update && \
-    apt-get install -y \
+    apt-get -o Acquire::Retries=5 -o Acquire::http::Dl-Limit=800 install -y \
         bison \
         build-essential \
         flex \
@@ -56,7 +56,7 @@ RUN apt-get update && \
     wget "${bazel_url}" -nv -o- -O bazel.deb && \
     echo "${bazel_sha}  bazel.deb" > bazel.sha256 && \
     sha256sum --check bazel.sha256 && \
-    apt-get install -y \
+    apt-get -o Acquire::Retries=5 -o Acquire::http::Dl-Limit=800 install -y \
         ./bazel.deb \
         bash-completion \
         build-essential \
