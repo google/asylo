@@ -192,6 +192,8 @@ unsigned int enc_untrusted_if_nametoindex(const char *ifname);
 char *enc_untrusted_if_indextoname(unsigned int ifindex, char *ifname);
 int enc_untrusted_getifaddrs(struct ifaddrs **ifap);
 pid_t enc_untrusted_wait3(int *status, int options, struct rusage *rusage);
+pid_t enc_untrusted_wait4(pid_t pid, int *status, int options,
+                          struct rusage *rusage);
 pid_t enc_untrusted_waitpid(pid_t pid, int *status, int options);
 struct passwd *enc_untrusted_getpwuid(uid_t uid);
 void enc_untrusted_hex_dump(const void *buf, size_t nbytes);
