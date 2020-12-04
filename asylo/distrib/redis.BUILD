@@ -1,6 +1,6 @@
 # Description:
 #   Redis (http://redis.io) is an open source, advanced key-value store.
-#   This is a bazel BUILD file for Redis 5.0.5.
+#   This is a bazel BUILD file for Redis 6.0.9.
 
 load("@rules_cc//cc:defs.bzl", "cc_library")
 
@@ -25,6 +25,7 @@ cc_library(
     srcs = ["deps/hiredis/" + filename for filename in [
         "async.c",
         "async.h",
+        "async_private.h",
         "dict.c",
         "dict.h",
         "fmacros.h",
@@ -34,9 +35,10 @@ cc_library(
         "net.h",
         "read.c",
         "read.h",
-        "sds.c",
         "sds.h",
         "sdsalloc.h",
+        "sockcompat.h",
+        "win32.h",
     ]],
     copts = [
         "-std=c99",
@@ -156,6 +158,7 @@ genrule(
 cc_library(
     name = "redis_lib",
     srcs = ["src/" + filename for filename in [
+        "acl.c",
         "adlist.c",
         "adlist.h",
         "atomicvar.h",
@@ -167,10 +170,14 @@ cc_library(
         "anet.h",
         "config.h",
         "crc64.h",
+        "connection.c",
+        "connection.h",
+        "connhelpers.h",
         "debugmacro.h",
         "dict.c",
         "dict.h",
         "endianconv.h",
+        "sds.c",
         "sds.h",
         "zmalloc.c",
         "latency.h",
@@ -185,6 +192,8 @@ cc_library(
         "zipmap.h",
         "sha1.c",
         "sha1.h",
+        "sha256.c",
+        "sha256.h",
         "ziplist.c",
         "rax.c",
         "rax.h",
@@ -198,6 +207,8 @@ cc_library(
         "replication.c",
         "rdb.c",
         "rdb.h",
+        "tracking.c",
+        "tls.c",
         "t_string.c",
         "t_list.c",
         "t_set.c",
@@ -228,6 +239,8 @@ cc_library(
         "rand.h",
         "memtest.c",
         "crc64.c",
+        "crcspeed.c",
+        "crcspeed.h",
         "bitops.c",
         "sentinel.c",
         "siphash.c",
@@ -240,6 +253,7 @@ cc_library(
         "server.h",
         "sparkline.c",
         "sparkline.h",
+        "redismodule.h",
         "redis-check-rdb.c",
         "geo.c",
         "geo.h",
@@ -247,6 +261,7 @@ cc_library(
         "geohash.h",
         "geohash_helper.c",
         "geohash_helper.h",
+        "gopher.c",
         "util.h",
         "version.h",
         "ziplist.h",
@@ -316,7 +331,9 @@ cc_library(
         "src/listpack_malloc.h",
         "src/localtime.c",
         "src/lolwut.c",
+        "src/lolwut.h",
         "src/lolwut5.c",
+        "src/lolwut6.c",
         "src/module.c",
         "src/quicklist.h",
         "src/rdb.h",
@@ -330,6 +347,7 @@ cc_library(
         "src/slowlog.h",
         "src/solarisfixes.h",
         "src/sparkline.h",
+        "src/timeout.c",
         "src/t_stream.c",
         "src/util.h",
         "src/ziplist.h",

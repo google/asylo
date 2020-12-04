@@ -130,9 +130,9 @@ def asylo_testonly_deps():
         http_archive(
             name = "com_github_antirez_redis",
             build_file = "@com_google_asylo//asylo/distrib:redis.BUILD",
-            urls = ["https://github.com/antirez/redis/archive/5.0.7.tar.gz"],
-            sha256 = "2761422599f8969559e66797cd7f606c16e907bf82d962345a7d366c5d1278df",
-            strip_prefix = "redis-5.0.7",
+            urls = ["https://github.com/antirez/redis/archive/6.0.9.tar.gz"],
+            sha256 = "2819b6d9c56be1f25cd157b9cb6b7c2733edcb46f4f6bcb1b79cefe639a2853b",
+            strip_prefix = "redis-6.0.9",
         )
 
 def _instantiate_crosstool_impl(repository_ctx):
