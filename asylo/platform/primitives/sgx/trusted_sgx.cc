@@ -269,6 +269,10 @@ PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
 
   SgxParams *const sgx_params =
       reinterpret_cast<SgxParams *>(untrusted_cache->Malloc(sizeof(SgxParams)));
+  if (!TrustedPrimitives::IsOutsideEnclave(sgx_params, sizeof(SgxParams))) {
+    TrustedPrimitives::BestEffortAbort(
+        "UntrustedCall: sgx_param should be in untrusted memory");
+  }
   Cleanup clean_up(
       [sgx_params, untrusted_cache] { untrusted_cache->Free(sgx_params); });
   sgx_params->input_size = 0;
