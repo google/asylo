@@ -41,20 +41,12 @@ proto_library(
 
 cc_proto_library(
     name = "local_assertion_cc_proto",
-    visibility = [
-        "//asylo/identity/attestation/sgx:__subpackages__",
-        "//asylo/identity/sgx:__subpackages__",
-    ],
     deps = [":local_assertion_proto"],
 )
 
 proto_library(
     name = "remote_assertion_proto",
     srcs = ["remote_assertion.proto"],
-    visibility = [
-        "//asylo/identity/attestation/sgx:__subpackages__",
-        "//asylo/identity/sgx:__subpackages__",
-    ],
     deps = [
         "//asylo/crypto:algorithms_proto",
         "//asylo/crypto:certificate_proto",
@@ -65,10 +57,6 @@ proto_library(
 
 cc_proto_library(
     name = "remote_assertion_cc_proto",
-    visibility = [
-        "//asylo/identity/attestation/sgx:__subpackages__",
-        "//asylo/identity/sgx:__subpackages__",
-    ],
     deps = [":remote_assertion_proto"],
 )
 
@@ -176,10 +164,6 @@ cc_library(
     name = "intel_architectural_enclave_interface",
     hdrs = ["intel_architectural_enclave_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = [
-        "//asylo/identity/attestation/sgx:__subpackages__",
-        "//asylo/identity/provisioning/sgx:__subpackages__",
-    ],
     deps = [
         "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto:certificate_cc_proto",
@@ -570,10 +554,7 @@ cc_library(
     testonly = 1,
     hdrs = ["mock_intel_architectural_enclave_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = [
-        "//asylo/identity/attestation/sgx:__pkg__",
-        "//asylo/identity/sgx:__pkg__",
-    ],
+    visibility = ["//asylo/identity/attestation/sgx:__pkg__"],
     deps = [
         ":intel_architectural_enclave_interface",
         "//asylo/crypto:algorithms_cc_proto",
@@ -983,10 +964,6 @@ cc_library(
     srcs = ["remote_assertion_util.cc"],
     hdrs = ["remote_assertion_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = [
-        "//asylo/identity/attestation/sgx:__subpackages__",
-        "//asylo/identity/sgx:__subpackages__",
-    ],
     deps = [
         ":attestation_key_certificate_impl",
         ":remote_assertion_cc_proto",
