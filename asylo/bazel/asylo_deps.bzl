@@ -218,10 +218,10 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("rules_java"):
         http_archive(
             name = "rules_java",
-            # Commit from 2020 February 18
-            urls = ["https://github.com/bazelbuild/rules_java/archive/9eb38ebffbaf4414fa3d2292b28e604a256dd5a5.tar.gz"],
-            sha256 = "a0adff084a3e8ffac3b88582b208897cd615a29620aa5416337df93a3d3bfd15",
-            strip_prefix = "rules_java-9eb38ebffbaf4414fa3d2292b28e604a256dd5a5",
+            # Commit from 2020 October 01
+            urls = ["https://github.com/bazelbuild/rules_java/archive/d43b0aa2d3b2173fcc54d3c194e89fa66cdc6e1a.tar.gz"],
+            sha256 = "f3f75b52e1a70c0e2c6f8c4387feca5dbbb9f9d9cc9f64031994411291516877",
+            strip_prefix = "rules_java-d43b0aa2d3b2173fcc54d3c194e89fa66cdc6e1a",
         )
 
     # Required for Protobuf.
