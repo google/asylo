@@ -282,6 +282,11 @@ PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
     if (sgx_params->input_size > 0) {
       // Allocate and copy data to |input_buffer|.
       sgx_params->input = untrusted_cache->Malloc(sgx_params->input_size);
+      if (!TrustedPrimitives::IsOutsideEnclave(sgx_params->input,
+                                               sgx_params->input_size)) {
+        TrustedPrimitives::BestEffortAbort(
+            "UntrustedCall: sgx_param input should be in untrusted memory");
+      }
       input->Serialize(const_cast<void *>(sgx_params->input));
     }
   }
