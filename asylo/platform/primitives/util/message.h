@@ -205,6 +205,11 @@ class MessageReader {
       uint64_t extent_len;
       memcpy(&extent_len, ptr, sizeof(uint64_t));
       ptr += sizeof(uint64_t);
+      if (ptr + extent_len > end_ptr) {
+        // |extent_len| overflows size. This indicates an invalid/modified
+        // buffer.
+        abort();
+      }
       char *extent_data = new char[extent_len];
       extents_.emplace_back(std::unique_ptr<char[]>(extent_data), extent_len);
       memcpy(extent_data, ptr, extent_len);
