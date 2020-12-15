@@ -22,6 +22,7 @@
 
 #include <unordered_set>
 
+#include "absl/container/node_hash_set.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
@@ -42,7 +43,7 @@ namespace {
 // Returns a single string that must be the shared parent directory of all the
 // paths in `locations`, or fails.
 StatusOr<std::string> DirPathFromLocations(absl::string_view locations) {
-  std::unordered_set<std::string> parents;
+  absl::node_hash_set<std::string> parents;
   for (absl::string_view location : absl::StrSplit(locations, ' ')) {
     std::vector<char> location_copy(location.begin(), location.end());
     location_copy.push_back('\0');

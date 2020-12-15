@@ -275,6 +275,7 @@ cc_library(
         ":host_dcap_library_interface",
         "//asylo/util:error_codes",
         "//asylo/util:status",
+        "@com_google_absl//absl/container:node_hash_set",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
     ],
