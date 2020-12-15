@@ -45,7 +45,7 @@ StatusOr<pid_t> LaunchProxy(absl::string_view host_address,
   }
   std::string proxy_name(remote_proxy.data(), remote_proxy.size());
   std::string process_basename;
-  const size_t slash_position = proxy_name.rfind("/");
+  const size_t slash_position = proxy_name.rfind('/');
   if (slash_position == std::string::npos) {
     process_basename = proxy_name;
   } else {
