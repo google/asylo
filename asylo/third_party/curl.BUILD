@@ -115,6 +115,7 @@ cc_library(
         "lib/hostip4.c",
         "lib/hostip6.c",
         "lib/hostsyn.c",
+        "lib/hsts.h",
         "lib/http.c",
         "lib/http.h",
         "lib/http2.c",
