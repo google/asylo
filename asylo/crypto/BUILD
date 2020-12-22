@@ -361,7 +361,7 @@ cc_library(
         ":asn1",
         ":certificate_cc_proto",
         ":certificate_interface",
-        ":signing_key",
+        ":x509_signer",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:logging",

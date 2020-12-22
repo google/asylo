@@ -48,6 +48,7 @@
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/crypto/x509_signer.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
@@ -618,7 +619,7 @@ std::ostream &operator<<(std::ostream &out, const X509NameEntry &entry) {
 }
 
 StatusOr<std::unique_ptr<X509Certificate>> X509CertificateBuilder::SignAndBuild(
-    const SigningKey &issuer_key) const {
+    const X509Signer &issuer_key) const {
   if (serial_number == nullptr) {
     return Status(
         error::GoogleError::INVALID_ARGUMENT,

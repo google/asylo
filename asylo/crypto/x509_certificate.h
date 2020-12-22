@@ -37,8 +37,8 @@
 #include "asylo/crypto/asn1.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/certificate_interface.h"
-#include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/bssl_util.h"
+#include "asylo/crypto/x509_signer.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
@@ -180,7 +180,7 @@ struct X509CertificateBuilder {
   // certificate with |issuer_key|, and returns the certificate as an
   // X509Certificate.
   StatusOr<std::unique_ptr<X509Certificate>> SignAndBuild(
-      const SigningKey &issuer_key) const;
+      const X509Signer &issuer_key) const;
 };
 
 // An implementation of CertificateInterface that can parse and verify
