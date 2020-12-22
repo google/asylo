@@ -738,6 +738,7 @@ cc_library(
     name = "x509_signer",
     hdrs = ["x509_signer.h"],
     deps = [
+        "//asylo/util:cleansing_types",
         "//asylo/util:status",
         "@boringssl//:crypto",
     ],

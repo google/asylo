@@ -76,10 +76,6 @@ class SigningKey : public X509Signer {
   // serialized key.
   virtual StatusOr<CleansingVector<uint8_t>> SerializeToDer() const = 0;
 
-  // Serializes this SigningKey into a PEM-encoded key structure and writes it
-  // to |serialized_key|.
-  virtual StatusOr<CleansingVector<char>> SerializeToPem() const = 0;
-
   // Returns an AsymmetricSigningKeyProto representation of this SigningKey.
   StatusOr<AsymmetricSigningKeyProto> SerializeToKeyProto(
       AsymmetricKeyEncoding encoding) const;

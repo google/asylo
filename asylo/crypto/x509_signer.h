@@ -19,7 +19,9 @@
 
 #include <openssl/base.h>
 
+#include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 
@@ -27,6 +29,10 @@ namespace asylo {
 class X509Signer {
  public:
   virtual ~X509Signer() = default;
+
+  // Serializes this X509Signer into a PEM-encoded key structure and writes it
+  // to |serialized_key|.
+  virtual StatusOr<CleansingVector<char>> SerializeToPem() const = 0;
 
   // Signs |x509|. Returns a non-OK Status if the signing operation failed. This
   // method treats |x509| as an in-out parameter.
