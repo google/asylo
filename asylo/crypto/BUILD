@@ -508,12 +508,12 @@ cc_library(
     deps = [
         ":algorithms_cc_proto",
         ":keys_cc_proto",
+        ":x509_signer",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:cleansing_types",
         "//asylo/util:proto_enum_util",
         "//asylo/util:status",
-        "@boringssl//:crypto",
         "@com_google_absl//absl/strings:str_format",
     ],
 )
@@ -731,6 +731,15 @@ cc_library(
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
+    ],
+)
+
+cc_library(
+    name = "x509_signer",
+    hdrs = ["x509_signer.h"],
+    deps = [
+        "//asylo/util:status",
+        "@boringssl//:crypto",
     ],
 )
 

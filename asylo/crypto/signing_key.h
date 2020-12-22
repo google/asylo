@@ -19,14 +19,13 @@
 #ifndef ASYLO_CRYPTO_SIGNING_KEY_H_
 #define ASYLO_CRYPTO_SIGNING_KEY_H_
 
-#include <openssl/base.h>
-
 #include <cstdint>
 #include <string>
 
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/crypto/x509_signer.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -68,10 +67,8 @@ class VerifyingKey {
 };
 
 // SigningKey abstracts a signing key from an asymmetric key-pair.
-class SigningKey {
+class SigningKey : public X509Signer {
  public:
-  virtual ~SigningKey() = default;
-
   // Returns the signature scheme used by this SigningKey.
   virtual SignatureScheme GetSignatureScheme() const = 0;
 
@@ -98,12 +95,6 @@ class SigningKey {
                       std::vector<uint8_t> *signature) const = 0;
   virtual Status Sign(ByteContainerView message,
                       Signature *signature) const = 0;
-
-  // Signs |x509|. Returns a non-OK Status if the signing operation failed. This
-  // method treats |x509| as an in-out parameter.
-  //
-  // This function should only be used by Asylo's certificate abstractions.
-  virtual Status SignX509(X509 *x509) const = 0;
 };
 
 }  // namespace asylo
