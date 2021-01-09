@@ -184,6 +184,24 @@ StatusOr<bssl::UniquePtr<EVP_PKEY>> CreatePublicKey(
 
       return std::move(evp_key);
     }
+    case NID_sha256WithRSAEncryption: {
+      uint8_t const *public_key_data = public_key_der.data();
+
+      // Create a public key from the input data. If |a| was set, the EC_KEY
+      // object referenced by |a| would be freed and |a| would be updated to
+      // point to the returned object.
+      bssl::UniquePtr<RSA> rsa_key(d2i_RSA_PUBKEY(
+          /*out=*/nullptr, &public_key_data, public_key_der.size()));
+      if (!rsa_key) {
+        return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      }
+
+      if (EVP_PKEY_assign_RSA(evp_key.get(), rsa_key.release()) != 1) {
+        return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      }
+
+      return std::move(evp_key);
+    }
     default: {
       std::string signature_name;
       const char *data = OBJ_nid2sn(signature_id);
@@ -840,6 +858,7 @@ Status X509Certificate::Verify(const CertificateInterface &issuer_certificate,
   std::string issuer_public_key_der;
   ASYLO_ASSIGN_OR_RETURN(issuer_public_key_der,
                          issuer_certificate.SubjectKeyDer());
+
   bssl::UniquePtr<EVP_PKEY> public_key;
   ASYLO_ASSIGN_OR_RETURN(public_key,
                          CreatePublicKey(x509_.get(), issuer_public_key_der));
