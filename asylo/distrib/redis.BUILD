@@ -372,7 +372,11 @@ cc_library(
         "src/help.h",
         "src/redis-cli.c",
     ],
-    copts = ["-std=c99"] + ZCALLOC_COPT,
+    copts = [
+        "-std=c99",
+        # This is required to include strncasecmp and strcasecmp declaration.
+        "-D_DEFAULT_SOURCE",
+    ] + ZCALLOC_COPT,
     deps = [
         ":hiredis_lib",
         ":redis_lib",
