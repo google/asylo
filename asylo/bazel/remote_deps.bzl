@@ -43,9 +43,10 @@ def remote_deps():
     if "io_opencensus_cpp" not in native.existing_rules():
         http_archive(
             name = "io_opencensus_cpp",
-            sha256 = "37318503885badf91043934a4c0579072005e37aed75bc2dfefad06474315233",
-            strip_prefix = "opencensus-cpp-dec85ad71dd2ceab49b0e6b531534aa117327952",
-            url = "https://github.com/census-instrumentation/opencensus-cpp/archive/dec85ad71dd2ceab49b0e6b531534aa117327952.tar.gz",
+            # Commit from 2021 January 05
+            urls = ["https://github.com/census-instrumentation/opencensus-cpp/archive/afe0460f92fb78e6d6cf8c8a30ced9bc5e2e57d3.tar.gz"],
+            sha256 = "5a9928d3901fda00c348ef2fab46aebcbcdf8f036042c254c4b4d3600d683eee",
+            strip_prefix = "opencensus-cpp-afe0460f92fb78e6d6cf8c8a30ced9bc5e2e57d3",
         )
 
     # Remote uses grpc for communications between proxy client and server.
