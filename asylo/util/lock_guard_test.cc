@@ -85,7 +85,7 @@ void increment_then_decrement(volatile int* counter, int original_value,
 // by using it for mutual exclusion.
 TYPED_TEST_P(OneArgLockGuardTest, OneArgOneLockNonrecursive) {
   TypeParam lock(/*is_recursive = */ false);
-  volatile int counter GUARDED_BY(lock) = 0;
+  volatile int counter ABSL_GUARDED_BY(lock) = 0;
   std::vector<Thread> threads;
   for (int i = 0; i < kNumThreads; i++) {
     threads.emplace_back([&counter, &lock] {
@@ -103,7 +103,7 @@ TYPED_TEST_P(OneArgLockGuardTest, OneArgOneLockNonrecursive) {
 // in a re-entrant (or recursive) case.
 TYPED_TEST_P(OneArgLockGuardTest, OneArgOneLockRecursive) {
   TypeParam lock(/*is_recursive = */ true);
-  volatile int counter GUARDED_BY(lock) = 0;
+  volatile int counter ABSL_GUARDED_BY(lock) = 0;
   std::vector<Thread> threads;
   for (int i = 0; i < kNumThreads; i++) {
     threads.emplace_back([&counter, &lock] {
@@ -140,7 +140,7 @@ TYPED_TEST_SUITE_P(ZeroArgLockGuardTest);
 // by using it for mutual exclusion.
 TYPED_TEST_P(ZeroArgLockGuardTest, ZeroArgOneLock) {
   TypeParam lock;
-  volatile int counter GUARDED_BY(lock) = 0;
+  volatile int counter ABSL_GUARDED_BY(lock) = 0;
   std::vector<Thread> threads;
   for (int i = 0; i < kNumThreads; i++) {
     threads.emplace_back([&counter, &lock] {
