@@ -73,12 +73,4 @@ Status Sha256Hash::CumulativeHash(std::vector<uint8_t> *digest) const {
   return Status::OkStatus();
 }
 
-StatusOr<Sha256HashProto> Sha256Hash::CumulativeHash() const {
-  std::vector<uint8_t> hash;
-  ASYLO_RETURN_IF_ERROR(CumulativeHash(&hash));
-  Sha256HashProto hash_proto;
-  hash_proto.set_hash(hash.data(), hash.size());
-  return hash_proto;
-}
-
 }  // namespace asylo

@@ -51,8 +51,6 @@ class Sha256Hash final : public HashInterface {
   void Update(ByteContainerView data) override;
   Status CumulativeHash(std::vector<uint8_t> *digest) const override;
 
-  StatusOr<Sha256HashProto> CumulativeHash() const;
-
  private:
   EVP_MD_CTX *context_;
 };
