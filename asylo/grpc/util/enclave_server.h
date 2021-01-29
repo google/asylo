@@ -166,6 +166,7 @@ class EnclaveServer final : public TrustedApplication {
     auto server_view(server_.Lock());
     if (*server_view) {
       LOG(INFO) << "Shutting down...";
+      credentials_ = nullptr;
       (*server_view)->Shutdown();
       *server_view = nullptr;
     }
