@@ -519,6 +519,34 @@ cc_test(
     ],
 )
 
+# Implementation of ShaHash for SHA256.
+cc_library(
+    name = "sha384_hash",
+    hdrs = ["sha384_hash.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":algorithms_cc_proto",
+        ":sha_hash",
+        "@boringssl//:crypto",
+    ],
+)
+
+# Tests for the Sha384Hash wrapper class.
+cc_test(
+    name = "sha384_hash_test",
+    srcs = ["sha384_hash_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":algorithms_cc_proto",
+        ":sha384_hash",
+        ":sha_hash_test",
+        "//asylo/test/util:test_main",
+        "@boringssl//:crypto",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 cc_library(
     name = "signing_key",
     srcs = ["signing_key.cc"],
