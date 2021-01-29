@@ -22,14 +22,9 @@
 #include <string>
 #include <vector>
 
-#include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "absl/strings/escaping.h"
 #include "asylo/crypto/algorithms.pb.h"
-#include "asylo/crypto/sha256_hash.pb.h"
-#include "asylo/crypto/sha256_hash_util.h"
-#include "asylo/crypto/util/byte_container_util.h"
-#include "asylo/test/util/status_matchers.h"
+#include "asylo/crypto/sha_hash_test.h"
 
 namespace asylo {
 namespace {
@@ -50,67 +45,18 @@ constexpr char kResult2[] =
 constexpr char kSuffix[] =
     "dbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
 
-TEST(Sha256HashTest, Algorithm) {
-  Sha256Hash hash;
-  EXPECT_EQ(hash.GetHashAlgorithm(), HashAlgorithm::SHA256);
-}
+class Sha256HashTest : public ShaHashTest<Sha256Hash> {
+ public:
+  using ShaHashType = Sha256Hash;
+  Sha256HashTest()
+      : ShaHashTest(Sha256HashOptions::kDigestLength,
+                    Sha256HashOptions::kHashAlgorithm,
+                    Sha256HashOptions::EvpMd(), kTestVector1, kResult1,
+                    kTestVector2, kResult2, kSuffix) {}
+};
 
-TEST(Sha256HashTest, DigestSize) {
-  Sha256Hash hash;
-  EXPECT_EQ(hash.DigestSize(), kSha256DigestLength);
-}
-
-// The following two tests verify the correctness of the Sha256Hash wrapper
-// implementation by testing against standard SHA test vectors.
-
-TEST(Sha256HashTest, TestVector1) {
-  Sha256Hash hash;
-  hash.Update(kTestVector1);
-  std::vector<uint8_t> digest;
-  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
-  EXPECT_EQ(absl::BytesToHexString(CopyToByteContainer<std::string>(digest)),
-            kResult1);
-}
-
-TEST(Sha256HashTest, TestVector2) {
-  Sha256Hash hash;
-  hash.Update(kTestVector2);
-  std::vector<uint8_t> digest;
-  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
-  EXPECT_EQ(absl::BytesToHexString(CopyToByteContainer<std::string>(digest)),
-            kResult2);
-}
-
-// Verify that calling Init() after addition of some data resets the object to
-// a clean state, allowing a new hash operation to take place.
-TEST(Sha256HashTest, InitBetweenUpdates) {
-  Sha256Hash hash;
-  hash.Update(kTestVector1);
-
-  hash.Init();
-
-  hash.Update(kTestVector2);
-  std::vector<uint8_t> digest;
-  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
-  EXPECT_EQ(absl::BytesToHexString(CopyToByteContainer<std::string>(digest)),
-            kResult2);
-}
-
-// Verify that the correct hash is computed when the input is added over several
-// calls to Update.
-TEST(Sha256HashTest, MultipleUpdates) {
-  Sha256Hash hash;
-  hash.Update(kTestVector1);
-  std::vector<uint8_t> digest;
-  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
-  EXPECT_EQ(absl::BytesToHexString(CopyToByteContainer<std::string>(digest)),
-            kResult1);
-
-  hash.Update(kSuffix);
-  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
-  EXPECT_EQ(absl::BytesToHexString(CopyToByteContainer<std::string>(digest)),
-            kResult2);
-}
+typedef testing::Types<Sha256HashTest> ShaHashTypes;
+INSTANTIATE_TYPED_TEST_SUITE_P(Sha256, HashTest, ShaHashTypes);
 
 }  // namespace
 }  // namespace asylo

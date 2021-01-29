@@ -19,16 +19,10 @@
 #ifndef ASYLO_CRYPTO_SHA256_HASH_H_
 #define ASYLO_CRYPTO_SHA256_HASH_H_
 
-#include <openssl/base.h>
+#include <openssl/evp.h>
 
-#include <cstdint>
-#include <vector>
-
-#include "asylo/crypto/hash_interface.h"
-#include "asylo/crypto/sha256_hash.pb.h"
-#include "asylo/crypto/util/byte_container_view.h"
-#include "asylo/util/status.h"
-#include "asylo/util/statusor.h"
+#include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/sha_hash.h"
 
 namespace asylo {
 
@@ -38,22 +32,13 @@ inline constexpr int kSha256DigestLength = 32;
 constexpr int kSha256DigestLength = 32;
 #endif
 
-// Sha256Hash implements HashInterface for the SHA-256 hash function.
-class Sha256Hash final : public HashInterface {
- public:
-  Sha256Hash();
-  ~Sha256Hash() override;
-
-  // From HashInterface.
-  HashAlgorithm GetHashAlgorithm() const override;
-  size_t DigestSize() const override;
-  void Init() override;
-  void Update(ByteContainerView data) override;
-  Status CumulativeHash(std::vector<uint8_t> *digest) const override;
-
- private:
-  EVP_MD_CTX *context_;
+struct Sha256HashOptions {
+  static constexpr int kDigestLength = kSha256DigestLength;
+  static constexpr HashAlgorithm kHashAlgorithm = HashAlgorithm::SHA256;
+  static const EVP_MD *EvpMd() { return EVP_sha256(); }
 };
+
+using Sha256Hash = ShaHash<Sha256HashOptions>;
 
 }  // namespace asylo
 

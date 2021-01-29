@@ -461,19 +461,46 @@ cc_test(
     ],
 )
 
-# Implementation of HashInterface for SHA256.
+# Implementation of HashInterface for SHA algorithms
 cc_library(
-    name = "sha256_hash",
-    srcs = ["sha256_hash.cc"],
-    hdrs = ["sha256_hash.h"],
+    name = "sha_hash",
+    hdrs = ["sha_hash.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
     deps = [
         ":hash_interface",
         ":sha256_hash_cc_proto",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:status",
+        "@boringssl//:crypto",
+    ],
+)
+
+cc_library(
+    name = "sha_hash_test",
+    testonly = True,
+    hdrs = ["sha_hash_test.h"],
+    deps = [
+        ":algorithms_cc_proto",
+        ":sha256_hash_util",
+        ":sha_hash",
+        "//asylo/crypto/util:byte_container_util",
+        "//asylo/test/util:status_matchers",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# Implementation of ShaHash for SHA256.
+cc_library(
+    name = "sha256_hash",
+    hdrs = ["sha256_hash.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":algorithms_cc_proto",
+        ":sha_hash",
         "@boringssl//:crypto",
     ],
 )
@@ -486,12 +513,8 @@ cc_test(
     deps = [
         ":algorithms_cc_proto",
         ":sha256_hash",
-        ":sha256_hash_cc_proto",
-        ":sha256_hash_util",
-        "//asylo/crypto/util:byte_container_util",
-        "//asylo/test/util:status_matchers",
+        ":sha_hash_test",
         "//asylo/test/util:test_main",
-        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
 )
