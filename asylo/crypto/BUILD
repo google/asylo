@@ -567,11 +567,9 @@ cc_library(
 )
 
 cc_library(
-    name = "ecdsa_p256_sha256_signing_key",
-    srcs = ["ecdsa_p256_sha256_signing_key.cc"],
-    hdrs = ["ecdsa_p256_sha256_signing_key.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    name = "ecdsa_signing_key",
+    srcs = ["ecdsa_signing_key.cc"],
+    hdrs = ["ecdsa_signing_key.h"],
     deps = [
         ":algorithms_cc_proto",
         ":bignum_util",
@@ -590,12 +588,13 @@ cc_library(
     ],
 )
 
-cc_test(
-    name = "ecdsa_p256_sha256_signing_key_test",
-    srcs = ["ecdsa_p256_sha256_signing_key_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
+cc_library(
+    name = "ecdsa_signing_key_test",
+    testonly = True,
+    hdrs = ["ecdsa_signing_key_test.h"],
     deps = [
-        ":ecdsa_p256_sha256_signing_key",
+        ":algorithms_cc_proto",
+        ":ecdsa_signing_key",
         ":fake_signing_key",
         ":keys_cc_proto",
         ":signing_key",
@@ -604,14 +603,42 @@ cc_test(
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:string_matchers",
-        "//asylo/test/util:test_main",
         "//asylo/util:cleansing_types",
         "//asylo/util:logging",
         "@boringssl//:crypto",
         "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/functional:bind_front",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_library(
+    name = "ecdsa_p256_sha256_signing_key",
+    hdrs = ["ecdsa_p256_sha256_signing_key.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":algorithms_cc_proto",
+        ":ecdsa_signing_key",
+        ":sha256_hash",
+        "@boringssl//:crypto",
+    ],
+)
+
+cc_test(
+    name = "ecdsa_p256_sha256_signing_key_test",
+    srcs = ["ecdsa_p256_sha256_signing_key_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":algorithms_cc_proto",
+        ":ecdsa_p256_sha256_signing_key",
+        ":ecdsa_signing_key_test",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
     ],
 )
 
