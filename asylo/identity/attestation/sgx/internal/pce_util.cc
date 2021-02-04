@@ -119,6 +119,7 @@ absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(
   switch (signature_scheme) {
     case ECDSA_P256_SHA256:
       return static_cast<uint8_t>(PCE_NIST_P256_ECDSA_SHA256);
+    case ECDSA_P384_SHA384:
     case UNKNOWN_SIGNATURE_SCHEME:
       break;
   }

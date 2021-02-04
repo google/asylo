@@ -29,6 +29,7 @@
 #include "absl/time/time.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
+#include "asylo/crypto/ecdsa_p384_sha384_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -57,6 +58,7 @@ StatusOr<std::unique_ptr<VerifyingKey>> CreateVerifyingKey(
   switch (signature_scheme) {
     case ECDSA_P256_SHA256:
       return EcdsaP256Sha256VerifyingKey::CreateFromDer(issuer_subject_key);
+    case ECDSA_P384_SHA384:
     case UNKNOWN_SIGNATURE_SCHEME:
       break;
   }
@@ -88,10 +90,14 @@ StatusOr<std::string> VerifyingKeyToDer(
               EcdsaP256Sha256VerifyingKey::CreateFromPem(asymmetric_key.key()));
           return verifying_key->SerializeToDer();
         }
+        case ECDSA_P384_SHA384:
         case UNKNOWN_SIGNATURE_SCHEME:
           return Status(
               error::GoogleError::INVALID_ARGUMENT,
-              "Could not DER encode a key with an unknown signature scheme");
+              absl::StrCat(
+                  "Could not DER encode a key with an unknown or unsupported "
+                  "signature scheme: ",
+                  ProtoEnumValueName(asymmetric_key.signature_scheme())));
       }
     case UNKNOWN_ASYMMETRIC_KEY_ENCODING:
       break;

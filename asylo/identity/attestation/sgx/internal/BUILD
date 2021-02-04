@@ -342,6 +342,7 @@ cc_library(
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:certificate_interface",
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:ecdsa_p384_sha384_signing_key",
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto:signing_key",
         "//asylo/crypto/util:byte_container_view",

@@ -643,6 +643,31 @@ cc_test(
 )
 
 cc_library(
+    name = "ecdsa_p384_sha384_signing_key",
+    hdrs = ["ecdsa_p384_sha384_signing_key.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":algorithms_cc_proto",
+        ":ecdsa_signing_key",
+        ":sha384_hash",
+        "@boringssl//:crypto",
+    ],
+)
+
+cc_test(
+    name = "ecdsa_p384_sha384_signing_key_test",
+    srcs = ["ecdsa_p384_sha384_signing_key_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":ecdsa_p384_sha384_signing_key",
+        ":ecdsa_signing_key_test",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "fake_certificate",
     testonly = 1,
     srcs = ["fake_certificate.cc"],

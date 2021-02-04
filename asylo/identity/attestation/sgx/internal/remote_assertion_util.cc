@@ -69,6 +69,7 @@ StatusOr<std::unique_ptr<VerifyingKey>> CreateVerifyingKey(
   switch (key_proto.signature_scheme()) {
     case ECDSA_P256_SHA256:
       return EcdsaP256Sha256VerifyingKey::CreateFromProto(key_proto);
+    case ECDSA_P384_SHA384:
     case UNKNOWN_SIGNATURE_SCHEME:
       return Status(
           error::GoogleError::UNIMPLEMENTED,
