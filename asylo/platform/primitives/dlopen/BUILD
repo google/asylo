@@ -58,7 +58,7 @@ cc_library(
                 "//asylo/platform/primitives/util:trusted_runtime_helper",
                 "//asylo/platform/primitives:trusted_primitives",
                 "//asylo/platform/primitives:trusted_runtime",
-                "//asylo/platform/posix:backend_agnostic_posix",
+                "//asylo/platform/posix:backend_independent_posix",
             ],
         },
         "Trusted dlopen components must be built with Asylo toolchain",

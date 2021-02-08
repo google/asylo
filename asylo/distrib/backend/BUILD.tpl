@@ -37,7 +37,7 @@ asylo_backend(
 )
 
 # A configurable build setting that selects which Asylo backend is in use. This
-# allows enclaves to be defined in more backend-agnostic ways, and to use
+# allows enclaves to be defined in more backend-independent ways, and to use
 # conditional compilation in the cases that are platform-specific.
 # The flag can be set with a rule (e.g., transitions.backend_binary), or from
 # the top level with a flag like so:

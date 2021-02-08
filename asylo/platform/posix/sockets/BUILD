@@ -44,7 +44,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
-        ":backend_agnostic_sockets",
+        ":backend_independent_sockets",
         "//asylo/platform/common:memory",
         "//asylo/platform/posix/io:io_manager",
     ],
@@ -54,11 +54,11 @@ cc_library(
 # Contains backend independent implementations of sockets. This is required to
 # distinguish backend dependent (unmigrated) and backend independent (migrated)
 # cc files in sockets library. This library can be used for providing backend
-# agnostic posix implementations for backends requiring one, or by higher level
-# libraries like backend_agnostic_posix. This is expected to be removed if/when
+# independent posix implementations for backends requiring one, or by higher level
+# libraries like backend_independent_posix. This is expected to be removed if/when
 # sockets cc_library does not rely on backend dependent trusted_arch anymore.
 cc_library(
-    name = "backend_agnostic_sockets",
+    name = "backend_independent_sockets",
     srcs = [
         "inet.cc",
         "netdb.cc",

@@ -63,14 +63,14 @@ cc_library(
     ),
 )
 
-# A backend agnostic POSIX runtime implementation.
+# A backend independent POSIX runtime implementation.
 # This can be used by backends requiring posix calls that are platform
 # independent, or as a dependency by higher level library like posix, to
 # separate backend dependent and backend independent posix calls provided by
 # posix library. Expected to be removed if/when all posix calls in posix library
 # become backend independent.
 cc_library(
-    name = "backend_agnostic_posix",
+    name = "backend_independent_posix",
     srcs = [
         "dirent.cc",
         "dlfcn.cc",
@@ -97,7 +97,7 @@ cc_library(
         "//asylo/platform/common:time_util",
         "//asylo/platform/core:atomic",
         "//asylo/platform/host_call",
-        "//asylo/platform/posix/sockets:backend_agnostic_sockets",
+        "//asylo/platform/posix/sockets:backend_independent_sockets",
         "//asylo/platform/primitives:trusted_backend",
     ],
     alwayslink = 1,
@@ -177,7 +177,7 @@ cc_library(
             "@com_google_asylo//asylo": [
                 # Only trusted architectures should build.
                 ":pthread_impl",
-                ":backend_agnostic_posix",
+                ":backend_independent_posix",
                 "//asylo/platform/primitives:trusted_primitives",
                 "//asylo/platform/arch:trusted_arch",
             ],
