@@ -25,7 +25,7 @@ This is a step-by-step guide on how to use Asylo to produce and launch a release
 enclave for the Intel SGX hardware backend. A release enclave may be run in
 release mode, which disables inspection of the enclave's memory (e.g., by a
 debugger) at a hardware level. Note that launching an SGX hardware enclave
-requires that the user possesses an Intel-whitelisted enclave-signing key[^1].
+requires that the user possesses an Intel-allowlisted enclave-signing key[^1].
 
 This guide is suitable for users of the
 [Asylo Docker image](https://github.com/google/asylo#build-environment-in-docker-recommended),
@@ -210,7 +210,7 @@ ${CP} "$(${BAZEL} info bazel-bin)/package/path/enclave_signing_material.dat" "${
 ### Step 3: Sign the release data
 
 Bring a copy of `"${RELEASE_DIR}/enclave_signing_material.dat"` to your offline
-signing facility and sign it with your whitelisted private key. The exact steps
+signing facility and sign it with your allowlisted private key. The exact steps
 required to produce the signature will depend on your key storage facility
 (e.g., an HSM). For OpenSSL usage, refer to Intel's
 [OpenSSL examples](https://software.intel.com/en-us/sgx-sdk-dev-reference-openssl-examples)
@@ -266,10 +266,10 @@ ${BAZEL} run --@com_google_asylo_backend_provider//:backend=@linux_sgx//:asylo_s
 ## Notes
 
 *   To launch a release enclave, the private key that signed the enclave must be
-    on Intel's whitelist. You can get the latest version of the whitelist
+    on Intel's allowlist. You can get the latest version of the allowlist
     [here](http://whitelist.trustedservices.intel.com/SGX/LCWL/Linux/sgx_white_list_cert.bin).
-    The whitelist must be installed on the machine as part of the PSW. The PSW
-    may periodically contact the Internet to refresh the Intel key whitelist.
+    The allowlist must be installed on the machine as part of the PSW. The PSW
+    may periodically contact the Internet to refresh the Intel key allowlist.
 *   To run a release enclave built for the SGX hardware backend, you need access
     to SGX hardware.
 
@@ -279,7 +279,7 @@ ${BAZEL} run --@com_google_asylo_backend_provider//:backend=@linux_sgx//:asylo_s
     [DCAP tree kernel driver](https://github.com/intel/SGXDataCenterAttestationPrimitives/tree/master/driver/linux),
     only users that have a
     [commercial license agreement with Intel](https://software.intel.com/en-us/articles/intel-software-guard-extensions-product-licensing-faq)
-    are authorized to run release mode Intel SGX enclaves via a whitelisted
+    are authorized to run release mode Intel SGX enclaves via a allowlisted
     signing key. In release mode, the debug bit is unset, which means that
     enclave memory is guarded from inspection. Debug enclaves can have their
     memory inspected by attaching a debugger to the process. Users that wish

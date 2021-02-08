@@ -366,6 +366,6 @@ authorized to make the RPC.
 
 [^1]: Running non-debug enclaves requires access to SGX hardware that supports
     [Flexible Launch Control (FLC)](https://software.intel.com/en-us/blogs/2018/12/09/an-update-on-3rd-party-attestation),
-    or a commercial license and whitelisted signing key on pre-FLC platforms.
+    or a commercial license and allowlisted signing key on pre-FLC platforms.
     For more information, see Intel’s guide for
     [Registering your Production Enclave](https://software.intel.com/en-us/sgx/request-license).
