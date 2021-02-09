@@ -93,7 +93,7 @@ ssize_t write_all(int fd, const void *buf, size_t len) {
     offset += bytes_written;
   }
 
-  // Sanity check.
+  // Coherence check.
   if (offset != len) {
     return -1;
   }

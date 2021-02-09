@@ -58,7 +58,7 @@ struct ErrorSpaceAdlTag {
 //
 // This class uses some SFINAE techniques to determine the existence of an error
 // space. While these techniques add some code complexity, it is expected that
-// the added complexity is worth the sanity of compile-time error detection.
+// the added complexity is worth the benefit of compile-time error detection.
 template <typename EnumT>
 struct error_enum_traits {
  private:

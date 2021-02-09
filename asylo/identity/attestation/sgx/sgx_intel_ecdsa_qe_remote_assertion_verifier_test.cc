@@ -99,7 +99,7 @@ class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
 
   sgx::IntelQeQuoteHeader GenerateValidQuoteHeader() const {
     // Pull the constants directly from the Intel spec instead of their
-    // libraries so that we sanity check compliance with the written spec.
+    // libraries so that we confirm compliance with the written spec.
     constexpr int kVersion = 3;
     constexpr int kEcdsaP256 = 2;
     constexpr char kVendorId[] =

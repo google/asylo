@@ -63,7 +63,7 @@ cc_library(
 )
 
 # This target supports building trusted targets with the system native compiler,
-# which provides a very basic sanity check for Asylo clients in contexts
+# which provides a very basic coherence check for Asylo clients in contexts
 # where pulling in the cross-compiler toolchain is inconvenient or tricky.
 # Attempting to load a dynamic library linked against this target will fail
 # since no actual implementation is provided.

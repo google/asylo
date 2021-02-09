@@ -93,7 +93,7 @@ Status DeriveSecrets(const HandshakeCipher &ciphersuite,
   // the ciphersuite.
   switch (ciphersuite) {
     case CURVE25519_SHA256:
-      // Sanity check the arguments.
+      // Validate the arguments.
       if (peer_dh_public_key.size() != X25519_PUBLIC_VALUE_LEN) {
         return Status(Abort::PROTOCOL_ERROR,
                       absl::StrCat("Public parameter has incorrect size: ",

@@ -52,7 +52,7 @@ typedef ::testing::Types<UnsafeBytes<16>, UnsafeBytes<32>, TrivialStructure,
     MyTypes;
 TYPED_TEST_SUITE(TypedTrivialObjectUtilTest, MyTypes);
 
-// Rough sanity check on TrivialRandomObject. This test generates
+// Rough coherence check on TrivialRandomObject. This test generates
 // 32 different values and expects no collisions. Since the smallest
 // trivial-object size is 64 bits, the probability of this test failing
 // is O(2^-55), if the entropy source is doing what it is supposed to do!

@@ -34,7 +34,7 @@
 //
 //   * Consider adding tests in metadata_test.cc and system_call_test.cc.
 //
-//   * Run the table generator and test suite. The test suite will sanity check
+//   * Run the table generator and test suite. The test suite will validate
 //     and ensure each metadata entry is serializable.
 
 // Required Include Paths

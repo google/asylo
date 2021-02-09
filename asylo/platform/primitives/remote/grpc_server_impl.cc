@@ -96,7 +96,7 @@ class ServerInvocation : public Communicator::Invocation {
 
   void SerializeIntoResponse(CommunicationMessage *response) const {
     response->set_request_sequence_number(
-        request_sequence_number_);  // copy request quid for sanity check
+        request_sequence_number_);  // copy request quid for coherence check
     response->set_selector(selector);
     response->set_invocation_thread_id(invocation_thread_id);
     if (!status.ok()) {

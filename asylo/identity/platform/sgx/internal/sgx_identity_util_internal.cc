@@ -87,7 +87,7 @@ StatusOr<HardwareKey> GetReportKey(
   request->keyid = keyid;
 
   // The following fields of KEYREQUEST are ignored by the SGX hardware. These
-  // are just initialized to some sane values.
+  // are just initialized to some sensible values.
   request->keypolicy = kKeypolicyMrenclaveBitMask;
   request->isvsvn = 0;
   request->cpusvn.fill(0);
