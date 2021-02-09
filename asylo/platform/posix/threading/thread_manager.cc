@@ -252,8 +252,8 @@ int ThreadManager::StartThread(pid_t tid) {
           return true;
         }
 
-        // If we're finalizing, don't wait because this will cause a hang if an
-        // enclave forgets to join a thread.
+        // If we're finalizing, don't wait because this will cause a freeze if
+        // an enclave forgets to join a thread.
         if (finalizing_.load()) {
           skipped_join = true;
           return true;

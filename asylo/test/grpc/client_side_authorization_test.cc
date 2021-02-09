@@ -104,8 +104,8 @@ class ClientSideAuthorizationTest : public Test {
     EnclaveFinal enclave_final;
     // Destroy the server enclave before the client enclave. This is due to a
     // known issue where DestroyEnclave will wait indefinitely for threads
-    // currently outside the enclave, which can lead to this test hanging if
-    // the client is destroyed before the server.
+    // currently outside the enclave, which can lead to this test never exiting
+    // if the client is destroyed before the server.
     ASYLO_EXPECT_OK(manager_->DestroyEnclave(server_enclave_, enclave_final,
                                              /*skip_finalize=*/false));
     ASYLO_EXPECT_OK(manager_->DestroyEnclave(client_enclave_, enclave_final,

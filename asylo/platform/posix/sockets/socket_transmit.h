@@ -41,8 +41,8 @@ class SocketTransmit {
   // on failure. If a non-OK Status is returned, the socket is in an undefined
   // state and the caller opts to close the channel. If there are insufficient
   // data fed to socket, this Read is always blocking, even for non-blocking
-  // sockets. If the read syscall is always interrupted, this Read will hang
-  // forever.
+  // sockets. If the read syscall is always interrupted, this Read will be stuck
+  // in a never-ending loop.
   Status Read(int fd, void *buf, size_t read_len);
 
   // Writes |write_len| bytes from |buf| into |fd|.
@@ -51,7 +51,7 @@ class SocketTransmit {
   // and the caller opts to close the channel. This Write will continue until
   // it sends |write_len| bytes or encounters an error, and is therefore always
   // effectively blocking, even for non-blocking sockets. If the write syscall
-  // is always interrupted, this Write will hang forever.
+  // is always interrupted, this Write will be stuck in a never-ending loop.
   Status Write(int fd, const void *buf, size_t write_len);
 
   // Receives messages from a socked |sockfd| in |msg|.

@@ -309,7 +309,7 @@ cc_enclave_test(
     ],
 )
 
-# Test to illustrate how absl::Now hangs in sgx-gdb
+# Test to illustrate how absl::Now never returns in sgx-gdb
 cc_enclave_test(
     name = "now_test",
     srcs = ["now_test.cc"],
