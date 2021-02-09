@@ -47,7 +47,7 @@ constexpr size_t kNumSpinLockAttempts = 10000;
 
 static void (*tsd_destructors[PTHREAD_KEYS_MAX])(void *) = {0};
 static pthread_rwlock_t key_lock = PTHREAD_RWLOCK_INITIALIZER;
-static void NoDestructor(void *dummy) {}
+static void NoDestructor(void *placeholder) {}
 size_t __pthread_tsd_size = sizeof(void *) * PTHREAD_KEYS_MAX;
 
 inline int pthread_spin_lock(pthread_spinlock_t *lock) {

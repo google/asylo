@@ -170,7 +170,7 @@ char *getcwd(char *buf, size_t bufsize) {
       asylo::GetEnclaveConfig();
 
   // It is possible for global constructors to call getcwd prior to us
-  // initializing the enclave.  In this case, return a dummy value.
+  // initializing the enclave.  In this case, return a placeholder value.
   if (!config_result.ok()) {
     const char *dir = "./";
     memcpy(buf, dir, 3);

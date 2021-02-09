@@ -130,7 +130,7 @@ extern const struct in6_addr in6addr_loopback;  // Inet6 "::1"
    ((__IN6_ADDR_CAST_8(a)[1] & 0x0f) == 0x0e))
 
 /* Standard well-known IP protocols.  */
-#define IPPROTO_IP 0         // Dummy protocol for TCP.
+#define IPPROTO_IP 0         // Base protocol for TCP.
 #define IPPROTO_ICMP 1       // Internet Control Message Protocol.
 #define IPPROTO_IGMP 2       // Internet Group Management Protocol
 #define IPPROTO_IPIP 4       // IPIP tunnels (older KA9Q tunnels use 94).

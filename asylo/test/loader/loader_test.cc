@@ -29,7 +29,7 @@ namespace {
 
 using ::testing::Not;
 
-// Dummy client implementation for a debug enclave.
+// Placeholder client implementation for a debug enclave.
 class TestClient : public EnclaveClient {
  public:
   TestClient() : EnclaveClient("test") {}

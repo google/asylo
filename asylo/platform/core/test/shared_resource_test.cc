@@ -23,7 +23,7 @@
 namespace asylo {
 namespace {
 
-// A dummy resource object for testing.
+// A fake resource object for testing.
 struct TestResource {
   // Initializes the resource with a pointer to write if and when the object is
   // destroyed.

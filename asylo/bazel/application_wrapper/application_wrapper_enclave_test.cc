@@ -262,10 +262,10 @@ TEST_F(ApplicationWrapperEnclaveTest, NoMultipleRunFromMultipleThreads) {
   // The number of threads to use for the test.
   constexpr int kNumTestThreads = 256;
 
-  // A dummy Status used to initialize run_statuses so that if a thread does not
+  // A phony Status used to initialize run_statuses so that if a thread does not
   // not update its corresponding entry in run_statuses, the un-updated Status
   // will not match the corresponding Status in expected_statuses.
-  const Status dummy_status(error::GoogleError::UNKNOWN,
+  const Status phony_status(error::GoogleError::UNKNOWN,
                             "Indicates that thread did not set this status");
 
   // The expected Statuses to be returned by each thread's call to RunEnclave(),
@@ -280,7 +280,7 @@ TEST_F(ApplicationWrapperEnclaveTest, NoMultipleRunFromMultipleThreads) {
 
   // A vector to hold the statuses returned by each thread's call to
   // RunEnclave().
-  std::vector<Status> run_statuses(kNumTestThreads, dummy_status);
+  std::vector<Status> run_statuses(kNumTestThreads, phony_status);
 
   std::vector<std::thread> run_threads;
   run_threads.reserve(kNumTestThreads);

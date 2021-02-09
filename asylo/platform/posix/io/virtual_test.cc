@@ -188,10 +188,10 @@ TEST_F(VirtualHandlerTest, OverlappingPrefixMatchSecond) {
 }
 
 TEST_F(VirtualHandlerTest, NoMatch) {
-  const std::string path1 = "/test/dummy";
-  const std::string path2 = "/test/dummydir";
-  const std::string path3 = "/test/another/dummy";
-  const std::string path4 = "/test/another/dummydir";
+  const std::string path1 = "/test/fake";
+  const std::string path2 = "/test/fakedir";
+  const std::string path3 = "/test/another/fake";
+  const std::string path4 = "/test/another/fakedir";
 
   const std::string label1 = "NoMatch1";
   const std::string label2 = "NoMatch2";
@@ -216,7 +216,7 @@ TEST_F(VirtualHandlerTest, NoMatch) {
 
 TEST_F(VirtualHandlerTest, SiblingMatch) {
   const std::string path1 = "/test";
-  const std::string path2 = "/test/dummy";
+  const std::string path2 = "/test/fake";
 
   const std::string label1 = "Sibling1";
   const std::string label2 = "Sibling2";

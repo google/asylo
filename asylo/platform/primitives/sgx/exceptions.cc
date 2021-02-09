@@ -130,7 +130,7 @@ int handle_cpuid_exception(sgx_exception_info_t *info) {
 }
 
 // Called whenever an SGX exception occurs.  This handler deals with RDTSC
-// invalid opcode exceptions by filling in dummy data.
+// invalid opcode exceptions by filling in trivial data.
 int handle_rdtsc_exception(sgx_exception_info_t *info) {
   // Grab the opcode for the instruction at the exception's instruction pointer.
   uint16_t opcode = *reinterpret_cast<uint16_t *>(info->cpu_context.rip);

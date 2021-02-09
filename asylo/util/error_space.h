@@ -93,8 +93,8 @@ struct error_enum_traits {
     return GetErrorSpace(tag);
   }
 
-  // Dummy implementation designed to provide a meaningful compile-time error
-  // for types that do not have an error space associated them.
+  // Placeholder implementation designed to provide a meaningful compile-time
+  // error for types that do not have an error space associated them.
   //
   // Note that although this definition of get_error_space() is a valid
   // candidate when TruthType is std::true_type, the compiler will choose the
