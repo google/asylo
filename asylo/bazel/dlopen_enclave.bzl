@@ -60,8 +60,8 @@ def _make_primitives_dlopen_enclave(transition):
             default = "//asylo/platform/primitives/dlopen",
             providers = [backend_tools.AsyloBackendInfo],
         ),
-        "_whitelist_function_transition": attr.label(
-            default = "//tools/whitelists/function_transition_whitelist",
+        "_allowlist_function_transition": attr.label(
+            default = "//tools/allowlists/function_transition_allowlist",
         ),
     }
     return rule(

@@ -951,8 +951,8 @@ def _make_enclave_build_test(transition):
             mandatory = True,
             providers = [backend_tools.AsyloBackendInfo],
         ),
-        "_whitelist_function_transition": attr.label(
-            default = "//tools/whitelists/function_transition_whitelist",
+        "_allowlist_function_transition": attr.label(
+            default = "//tools/allowlists/function_transition_allowlist",
         ),
     }
     old_dict = {

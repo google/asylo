@@ -157,8 +157,8 @@ def _make_transition_forwarding_rule(
             providers = [DefaultInfo],
             mandatory = True,
         ),
-        "_whitelist_function_transition": attr.label(
-            default = "//tools/whitelists/function_transition_whitelist",
+        "_allowlist_function_transition": attr.label(
+            default = "//tools/allowlists/function_transition_allowlist",
         ),
     }
     attrs["backend"] = attr.label(
@@ -250,8 +250,8 @@ _cc_backend_binary = rule(
                 allow_files = True,
                 cfg = asylo_backend_transition,
             ),
-            "_whitelist_function_transition": attr.label(
-                default = "//tools/whitelists/function_transition_whitelist",
+            "_allowlist_function_transition": attr.label(
+                default = "//tools/allowlists/function_transition_allowlist",
             ),
         },
     ),

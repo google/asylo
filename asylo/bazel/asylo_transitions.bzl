@@ -19,8 +19,8 @@ def _make_cc_backend_unsigned_enclave(experimental):
                     mandatory = True,
                     providers = [backend_tools.AsyloBackendInfo],
                 ),
-                "_whitelist_function_transition": attr.label(
-                    default = "//tools/whitelists/function_transition_whitelist",
+                "_allowlist_function_transition": attr.label(
+                    default = "//tools/allowlists/function_transition_allowlist",
                 ),
             },
             internal.dlopen_implicit_cc_binary_attrs(True) if experimental else {},
@@ -219,8 +219,8 @@ def _make_enclave_runner_rule(test = False):
                 allow_files = True,
                 doc = "Like data, but undergoes a backend transition first.",
             ),
-            "_whitelist_function_transition": attr.label(
-                default = "//tools/whitelists/function_transition_whitelist",
+            "_allowlist_function_transition": attr.label(
+                default = "//tools/allowlists/function_transition_allowlist",
             ),
         },
     )

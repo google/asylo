@@ -19,7 +19,7 @@ licenses(["notice"])
 # This group must exist at this label in order to enable Bazel transitions.
 # This might have problems if used from a client workspace.
 package_group(
-    name = "function_transition_whitelist",
+    name = "function_transition_allowlist",
     includes = [
         "@com_google_asylo_backend_provider//:implementation",
         "@linux_sgx//:implementation",

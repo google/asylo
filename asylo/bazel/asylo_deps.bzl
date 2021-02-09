@@ -76,8 +76,8 @@ def _asylo_backend_deps_impl(repository_ctx):
         Label("@com_google_asylo//asylo/distrib/backend:true.c"),
     )
     repository_ctx.template(
-        "tools/whitelists/function_transition_whitelist/BUILD",
-        Label("@com_google_asylo//asylo/distrib/backend/tools/whitelists/function_transition_whitelist:BUILD.tpl"),
+        "tools/allowlists/function_transition_allowlist/BUILD",
+        Label("@com_google_asylo//asylo/distrib/backend/tools/allowlists/function_transition_allowlist:BUILD.tpl"),
     )
 
 # Rule to include Asylo's backend support dependencies in a WORKSPACE.

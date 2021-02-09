@@ -5059,8 +5059,8 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        mandatory = True,
 +        providers = [backend_tools.AsyloBackendInfo],
 +    ),
-+    "_whitelist_function_transition": attr.label(
-+        default = "//tools/whitelists/function_transition_whitelist",
++    "_allowlist_function_transition": attr.label(
++        default = "//tools/allowlists/function_transition_allowlist",
 +    ),
 +}
 +
@@ -5507,8 +5507,8 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            providers = [backend_tools.AsyloBackendInfo],
 +        )
 +
-+        attrs["_whitelist_function_transition"] = attr.label(
-+            default = Label("//tools/whitelists/function_transition_whitelist"),
++        attrs["_allowlist_function_transition"] = attr.label(
++            default = Label("//tools/allowlists/function_transition_allowlist"),
 +        )
 +
 +    return rule(
