@@ -49,7 +49,7 @@ namespace asylo {
 // cannot cause the calling thread to access memory outside the bounds of the
 // object itself.
 //
-// A simple versioning scheme is supported to sanity check the compatibility of
+// A simple versioning scheme is supported to confirm the compatibility of
 // objects and types at runtime, as this type is intended to remain compatible
 // between different compiler and source versions. If the layout of an instance
 // matches the expected layout of a type then:

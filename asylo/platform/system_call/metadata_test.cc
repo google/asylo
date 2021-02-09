@@ -76,7 +76,7 @@ std::string Summarize(int sysno) {
   return result;
 }
 
-TEST(MetaDataTest, SanityCheck) {
+TEST(MetaDataTest, CoherenceCheck) {
   for (int i = 0; i <= LastSystemCall(); i++) {
     SystemCallDescriptor syscall(i);
     for (int j = 0; j < syscall.parameter_count(); j++) {
