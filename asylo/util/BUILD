@@ -380,6 +380,18 @@ cc_test(
     ],
 )
 
+cc_library(
+    name = "status_helpers",
+    srcs = ["status_helpers.cc"],
+    hdrs = ["status_helpers.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":status",
+        ":status_cc_proto",
+    ],
+)
+
 # Container types that zero-out memory before freeing resources.
 cc_library(
     name = "cleansing_types",

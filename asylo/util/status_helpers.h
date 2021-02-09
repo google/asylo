@@ -1,0 +1,56 @@
+/*
+ * Copyright 2021 Asylo authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef ASYLO_UTIL_STATUS_HELPERS_H_
+#define ASYLO_UTIL_STATUS_HELPERS_H_
+
+#include "asylo/util/status.h"
+#include "asylo/util/status.pb.h"
+
+namespace asylo {
+
+/// Exports the contents of `status` into a `StatusProto`. This function sets
+/// all fields in the returned proto.
+///
+/// \param status A `Status` to pack into a proto.
+/// \return A `StatusProto` representing `status`.
+StatusProto StatusToProto(const Status &status);
+
+/// Returns a `Status` based on the contents of the given `status_proto`.
+///
+/// If the error space given by `status_proto.space()` is unrecognized, the
+/// returned `Status` is in the canonical error space and has an error code
+/// equal to `status_proto.canonical_code()`. If `status_proto` has no canonical
+/// code, the returned `Status` has an error code of
+/// `error::GoogleError::UNKNOWN`. Note that the error message is only set if
+/// `status_proto` represents a non-OK status.
+///
+/// If the given `status_proto` is invalid, the error code of the returned
+/// `Status` is `error::StatusError::INVALID_STATUS_PROTO`. A `StatusProto` is
+/// valid if and only if all the following conditions hold:
+///
+///   * If `code()` is 0, then `canonical_code()` is set to 0.
+///   * If `canonical_code()` is 0, then `code()` is set to 0.
+///   * If the error space is recognized, then `canonical_code()` is equal to
+///     the equivalent canonical code given by the error space.
+///
+/// \param status_proto A protobuf object to unpack.
+/// \return A `Status` based on the contents of `status_proto`.
+Status StatusFromProtos(const StatusProto &status_proto);
+
+}  // namespace asylo
+
+#endif  // ASYLO_UTIL_STATUS_HELPERS_H_

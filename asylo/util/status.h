@@ -24,6 +24,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/base/attributes.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
@@ -211,7 +212,12 @@ class Status {
   /// Exports the contents of this object into `status_proto`. This method sets
   /// all fields in `status_proto`.
   ///
+  /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
+  ///             `StatusToProto()` instead.
   /// \param[out] status_proto A protobuf object to populate.
+  ABSL_DEPRECATED(
+      "Deprecated as part of Asylo's absl::Status migration. Use "
+      "StatusToProto() from status_helpers.h instead.")
   void SaveTo(StatusProto *status_proto) const;
 
   /// Populates this object using the contents of the given `status_proto`.
@@ -232,7 +238,12 @@ class Status {
   ///   * If the error space is recognized, then `canonical_code()` is equal to
   ///     the equivalent canonical code given by the error space.
   ///
+  /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
+  ///             `StatusFromProto()` instead.
   /// \param status_proto A protobuf object to set this object from.
+  ABSL_DEPRECATED(
+      "Deprecated as part of Asylo's absl::Status migration. Use "
+      "StatusFromProto() from status_helpers.h instead.")
   void RestoreFrom(const StatusProto &status_proto);
 
   /// Indicates whether this object is the same as `code`.
