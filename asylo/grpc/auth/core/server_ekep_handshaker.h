@@ -165,8 +165,8 @@ class ServerEkepHandshaker final : public EkepHandshaker {
   // validation of the ClientId message.
   std::vector<uint8_t> client_public_key_;
 
-  // EKEP Master and Authenticator secrets.
-  CleansingVector<uint8_t> master_secret_;
+  // EKEP Primary and Authenticator secrets.
+  CleansingVector<uint8_t> primary_secret_;
   CleansingVector<uint8_t> authenticator_secret_;
 
   // A snapshot of the transcript to which the client's assertions are bound:

@@ -202,10 +202,10 @@ class EkepHandshaker {
   void SetRecordProtocol(RecordProtocol record_protocol);
 
   // Derives and sets the record protocol key using the given |cipher_suite|,
-  // |record_protocol|, |master_secret|, and the current handshake transcript.
+  // |record_protocol|, |primary_secret|, and the current handshake transcript.
   Status DeriveAndSetRecordProtocolKey(HandshakeCipher cipher_suite,
                                        RecordProtocol record_protocol,
-                                       ByteContainerView master_secret);
+                                       ByteContainerView primary_secret);
 
   // Returns true if the handshake is in progress. A handshake is in progress if
   // the ClientPrecommit message has been sent and the handshake is neither

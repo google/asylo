@@ -161,9 +161,9 @@ class ClientEkepHandshaker final : public EkepHandshaker {
   std::vector<uint8_t> dh_public_key_;
   CleansingVector<uint8_t> dh_private_key_;
 
-  // EKEP Master and Authenticator secrets.
+  // EKEP Primary and Authenticator secrets.
   CleansingVector<uint8_t> authenticator_secret_;
-  CleansingVector<uint8_t> master_secret_;
+  CleansingVector<uint8_t> primary_secret_;
 
   // A snapshot of the transcript to which the server's assertions are bound:
   //   hash(ClientPrecommit || ServerPrecommit || ClientId)

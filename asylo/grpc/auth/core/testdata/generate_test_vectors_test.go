@@ -50,7 +50,7 @@ var (
 		0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad}
 )
 
-// deriveSecrets generates an EKEP master and authenticator secret using
+// deriveSecrets generates an EKEP primary and authenticator secret using
 // Curve25519 and SHA256.
 func deriveSecrets() ([]byte, []byte) {
 	// Compute the shared secret.
@@ -60,28 +60,28 @@ func deriveSecrets() ([]byte, []byte) {
 	salt := []byte("EKEP Handshake v1")
 	hkdf := hkdf.New(hash, secret[:], salt, info[:])
 
-	// Generate the master and authenticator secrets.
-	masterSecret := make([]byte, 64)
+	// Generate the primary and authenticator secrets.
+	primarySecret := make([]byte, 64)
 	authSecret := make([]byte, 64)
 
-	n, err := io.ReadFull(hkdf, masterSecret)
-	if n != len(masterSecret) || err != nil {
-		log.Fatalf("io.ReadFull(%v, %v) = _, %v", hkdf, masterSecret, err)
+	n, err := io.ReadFull(hkdf, primarySecret)
+	if n != len(primarySecret) || err != nil {
+		log.Fatalf("io.ReadFull(%v, %v) = _, %v", hkdf, primarySecret, err)
 	}
 
 	n, err = io.ReadFull(hkdf, authSecret)
 	if n != len(authSecret) || err != nil {
 		log.Fatalf("io.ReadFull(%v, %v) = _, %v", hkdf, authSecret, err)
 	}
-	return masterSecret, authSecret
+	return primarySecret, authSecret
 }
 
 // DeriveRecordProtocolKey generates an ALTSRP AES128 GCM record protocol key
-// using the given master secret.
-func deriveRecordProtocolKey(masterSecret []byte) []byte {
+// using the given primary secret.
+func deriveRecordProtocolKey(primarySecret []byte) []byte {
 	hash := sha256.New
 	salt := []byte("EKEP Record Protocol v1")
-	hkdf := hkdf.New(hash, masterSecret, salt, info[:])
+	hkdf := hkdf.New(hash, primarySecret, salt, info[:])
 	key := make([]byte, 16)
 
 	n, err := io.ReadFull(hkdf, key)
@@ -118,21 +118,21 @@ func computeClientHandshakeAuthenticator(authenticatorSecret []byte) []byte {
 }
 
 func main() {
-	// EKEP master and authenticator secrets
-	masterSecret, authSecret := deriveSecrets()
+	// EKEP primary and authenticator secrets
+	primarySecret, authSecret := deriveSecrets()
 
 	fmt.Println(">>EKEP Secret Derivation<<")
 	fmt.Printf("Public key:\n%s\n", hex.EncodeToString(pubKey[:]))
 	fmt.Printf("Private key:\n%s\n", hex.EncodeToString(privKey[:]))
 	fmt.Printf("HKDF info:\n%s\n", hex.EncodeToString(info[:]))
-	fmt.Printf("Master secret:\n%s\n", hex.EncodeToString(masterSecret))
+	fmt.Printf("Primary secret:\n%s\n", hex.EncodeToString(primarySecret))
 	fmt.Printf("Authenticator secret:\n%s\n\n", hex.EncodeToString(authSecret))
 
 	// EKEP record protocol secrets
-	key := deriveRecordProtocolKey(masterSecret)
+	key := deriveRecordProtocolKey(primarySecret)
 
 	fmt.Println(">>EKEP Record Protocol Key<<")
-	fmt.Printf("Master secret:\n%s\n", hex.EncodeToString(masterSecret[:]))
+	fmt.Printf("Primary secret:\n%s\n", hex.EncodeToString(primarySecret[:]))
 	fmt.Printf("HKDF info:\n%s\n", hex.EncodeToString(info[:]))
 	fmt.Printf("Record protocol key:\n%s\n\n", hex.EncodeToString(key[:]))
 

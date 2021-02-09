@@ -41,7 +41,7 @@ namespace asylo {
 namespace {
 
 constexpr size_t kEkepSecretSize =
-    (kEkepMasterSecretSize + kEkepAuthenticatorSecretSize);
+    (kEkepPrimarySecretSize + kEkepAuthenticatorSecretSize);
 
 constexpr char kEkepHkdfSalt[] = "EKEP Handshake v1";
 constexpr char kEkepHkdfSaltRecordProtocol[] = "EKEP Record Protocol v1";
@@ -84,7 +84,7 @@ Status DeriveSecrets(const HandshakeCipher &ciphersuite,
                      ByteContainerView transcript_hash,
                      ByteContainerView peer_dh_public_key,
                      ByteContainerView self_dh_private_key,
-                     CleansingVector<uint8_t> *master_secret,
+                     CleansingVector<uint8_t> *primary_secret,
                      CleansingVector<uint8_t> *authenticator_secret) {
   const EVP_MD *digest = nullptr;
   CleansingVector<uint8_t> shared_secret;
@@ -122,7 +122,7 @@ Status DeriveSecrets(const HandshakeCipher &ciphersuite,
           "Ciphersuite not supported: " + ProtoEnumValueName(ciphersuite));
   }
 
-  // Derive the master and authenticator secrets using HKDF.
+  // Derive the primary and authenticator secrets using HKDF.
   std::string salt(kEkepHkdfSalt);
   CleansingVector<uint8_t> output_key;
   output_key.resize(kEkepSecretSize);
@@ -134,12 +134,12 @@ Status DeriveSecrets(const HandshakeCipher &ciphersuite,
     return Status(Abort::INTERNAL_ERROR, "Internal error");
   }
 
-  // Copy the master secret.
-  std::copy(output_key.cbegin(), output_key.cbegin() + kEkepMasterSecretSize,
-            std::back_inserter(*master_secret));
+  // Copy the primary secret.
+  std::copy(output_key.cbegin(), output_key.cbegin() + kEkepPrimarySecretSize,
+            std::back_inserter(*primary_secret));
 
   // Copy the authenticator secret.
-  std::copy(output_key.cbegin() + kEkepMasterSecretSize, output_key.cend(),
+  std::copy(output_key.cbegin() + kEkepPrimarySecretSize, output_key.cend(),
             std::back_inserter(*authenticator_secret));
 
   return Status::OkStatus();
@@ -148,7 +148,7 @@ Status DeriveSecrets(const HandshakeCipher &ciphersuite,
 Status DeriveRecordProtocolKey(const HandshakeCipher &ciphersuite,
                                const RecordProtocol &record_protocol,
                                ByteContainerView transcript_hash,
-                               ByteContainerView master_secret,
+                               ByteContainerView primary_secret,
                                CleansingVector<uint8_t> *record_protocol_key) {
   record_protocol_key->clear();
   const EVP_MD *digest = nullptr;
@@ -184,7 +184,7 @@ Status DeriveRecordProtocolKey(const HandshakeCipher &ciphersuite,
 
   std::string salt(kEkepHkdfSaltRecordProtocol);
   if (!HKDF(record_protocol_key->data(), record_protocol_key->size(), digest,
-            master_secret.data(), master_secret.size(),
+            primary_secret.data(), primary_secret.size(),
             reinterpret_cast<const uint8_t *>(salt.data()), salt.size(),
             transcript_hash.data(), transcript_hash.size())) {
     LOG(ERROR) << "HKDF failed: " << BsslLastErrorString();

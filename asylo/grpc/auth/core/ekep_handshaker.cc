@@ -339,11 +339,11 @@ void EkepHandshaker::SetRecordProtocol(RecordProtocol record_protocol) {
 
 Status EkepHandshaker::DeriveAndSetRecordProtocolKey(
     HandshakeCipher cipher_suite, RecordProtocol record_protocol,
-    ByteContainerView master_secret) {
+    ByteContainerView primary_secret) {
   std::string final_transcript_hash;
   ASYLO_RETURN_IF_ERROR(GetTranscriptHash(&final_transcript_hash));
   return DeriveRecordProtocolKey(cipher_suite, record_protocol,
-                                 final_transcript_hash, master_secret,
+                                 final_transcript_hash, primary_secret,
                                  &record_protocol_key_);
 }
 

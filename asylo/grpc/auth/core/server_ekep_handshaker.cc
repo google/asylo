@@ -160,7 +160,7 @@ ServerEkepHandshaker::Result ServerEkepHandshaker::HandleHandshakeMessage(
   // not result in an Abort message being sent to the peer.
   if (IsHandshakeCompleted()) {
     if (!DeriveAndSetRecordProtocolKey(
-             selected_cipher_suite_, selected_record_protocol_, master_secret_)
+             selected_cipher_suite_, selected_record_protocol_, primary_secret_)
              .ok()) {
       handshaker_state_ = HandshakeState::ABORTED;
     }
@@ -466,9 +466,9 @@ Status ServerEkepHandshaker::WriteServerFinish(std::string *output) {
   std::string transcript_hash;
   ASYLO_RETURN_IF_ERROR(GetTranscriptHash(&transcript_hash));
 
-  ASYLO_RETURN_IF_ERROR(DeriveSecrets(selected_cipher_suite_, transcript_hash,
-                                      client_public_key_, dh_private_key_,
-                                      &master_secret_, &authenticator_secret_));
+  ASYLO_RETURN_IF_ERROR(
+      DeriveSecrets(selected_cipher_suite_, transcript_hash, client_public_key_,
+                    dh_private_key_, &primary_secret_, &authenticator_secret_));
 
   CleansingVector<uint8_t> authenticator;
   ASYLO_RETURN_IF_ERROR(ComputeServerHandshakeAuthenticator(

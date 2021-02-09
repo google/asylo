@@ -30,13 +30,13 @@
 
 namespace asylo {
 
-constexpr size_t kEkepMasterSecretSize = 64;
+constexpr size_t kEkepPrimarySecretSize = 64;
 constexpr size_t kEkepAuthenticatorSecretSize = 64;
 constexpr size_t kAltsRecordProtocolAes128GcmKeySize = 16;
 
 // Derives EKEP secrets based on the selected |ciphersuite| and the input
 // |transcript_hash|, |peer_dh_public_key|, and |self_dh_private_key|. On
-// success, writes the master secret to |master_secret| and the authenticator
+// success, writes the primary secret to |primary_secret| and the authenticator
 // secret to |authenticator_secret|.
 //
 // Note that |self_dh_private_key| is a ByteContainerView, which does not
@@ -52,17 +52,17 @@ Status DeriveSecrets(const HandshakeCipher &ciphersuite,
                      ByteContainerView transcript_hash,
                      ByteContainerView peer_dh_public_key,
                      ByteContainerView self_dh_private_key,
-                     CleansingVector<uint8_t> *master_secret,
+                     CleansingVector<uint8_t> *primary_secret,
                      CleansingVector<uint8_t> *authenticator_secret);
 
 // Derives a record protocol key for the given |record_protocol| using HKDF
 // initialized with the hash function from |ciphersuite| and the input key
-// material |master_secret|. On success, writes the record protocol key to
+// material |primary_secret|. On success, writes the record protocol key to
 // |record_protocol_key|.
 //
-// Note that |master_secret| is a ByteContainerView, which does not enforce
+// Note that |primary_secret| is a ByteContainerView, which does not enforce
 // any data safety policy on the underlying container. The caller should take
-// care to pass their master secret using a self-cleansing container.
+// care to pass their primary secret using a self-cleansing container.
 //
 // If the ciphersuite is unsupported, returns BAD_HANDSHAKE_CIPHER.
 // If the record protocol is unsupported, returns BAD_RECORD_PROTOCOL.
@@ -70,7 +70,7 @@ Status DeriveSecrets(const HandshakeCipher &ciphersuite,
 Status DeriveRecordProtocolKey(const HandshakeCipher &ciphersuite,
                                const RecordProtocol &record_protocol,
                                ByteContainerView transcript_hash,
-                               ByteContainerView master_secret,
+                               ByteContainerView primary_secret,
                                CleansingVector<uint8_t> *record_protocol_key);
 
 // The following two methods compute the handshake authenticator for the

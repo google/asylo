@@ -42,7 +42,7 @@ using ::testing::Not;
 //   Inputs:
 //     kTestPrivKey, kTestPubKey, kTestTranscriptHash
 //   Outputs:
-//     kTestMasterSecret, kTestAuthenticatorSecret
+//     kTestPrimarySecret, kTestAuthenticatorSecret
 constexpr char kTestPrivKey[] =
     "77076d0a7318a57d3c16c17251b26645df4c2f87ebc0992ab177fba51db92c2a";
 
@@ -52,7 +52,7 @@ constexpr char kTestPubKey[] =
 constexpr char kTestTranscriptHash[] =
     "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad";
 
-constexpr char kTestMasterSecret[] =
+constexpr char kTestPrimarySecret[] =
     "537271d5b1876f97d0a943a27cfa05fd4c97b90909f9fa209e94000cf2329f47"
     "7ecca6f668b97b447774556d9eca9d7ef0aefb9667a0bbc3b81b8684aa7b53bf";
 
@@ -62,7 +62,7 @@ constexpr char kTestAuthenticatorSecret[] =
 
 // Test vector for record protocol key derivation.
 //   Inputs:
-//     kTestMasterSecret, kTestTranscriptHash
+//     kTestPrimarySecret, kTestTranscriptHash
 //   Outputs:
 //     kTestRecordProtocolKey
 constexpr char kTestRecordProtocolKey[] = "c7e0f5436c0fe4efdb6327469651b9fe";
@@ -90,11 +90,11 @@ TEST(EkepCryptoTest, DeriveSecretsBadCiphersuite) {
   std::vector<uint8_t> peer_dh_public_key;
   CleansingVector<uint8_t> self_dh_private_key;
   CleansingVector<uint8_t> authenticator_secret;
-  CleansingVector<uint8_t> master_secret;
+  CleansingVector<uint8_t> primary_secret;
 
   Status status = DeriveSecrets(UNKNOWN_HANDSHAKE_CIPHER, transcript_hash,
                                 peer_dh_public_key, self_dh_private_key,
-                                &master_secret, &authenticator_secret);
+                                &primary_secret, &authenticator_secret);
   EXPECT_THAT(status, Not(IsOk()));
   EXPECT_THAT(status, StatusIs(Abort::BAD_HANDSHAKE_CIPHER));
 }
@@ -111,11 +111,11 @@ TEST(EkepCryptoTest, DeriveSecretsBadPublicParameterSize) {
       TrivialRandomObject<SafeBytes<X25519_PRIVATE_KEY_LEN>>();
 
   CleansingVector<uint8_t> authenticator_secret;
-  CleansingVector<uint8_t> master_secret;
+  CleansingVector<uint8_t> primary_secret;
 
-  Status status =
-      DeriveSecrets(CURVE25519_SHA256, transcript_hash, peer_dh_public_key,
-                    self_dh_private_key, &master_secret, &authenticator_secret);
+  Status status = DeriveSecrets(CURVE25519_SHA256, transcript_hash,
+                                peer_dh_public_key, self_dh_private_key,
+                                &primary_secret, &authenticator_secret);
   EXPECT_THAT(status, Not(IsOk()));
   EXPECT_THAT(status, StatusIs(Abort::PROTOCOL_ERROR));
 }
@@ -132,11 +132,11 @@ TEST(EkepCryptoTest, DeriveSecretsBadPrivateParameterSize) {
       TrivialRandomObject<SafeBytes<X25519_PUBLIC_VALUE_LEN>>();
 
   CleansingVector<uint8_t> authenticator_secret;
-  CleansingVector<uint8_t> master_secret;
+  CleansingVector<uint8_t> primary_secret;
 
-  Status status =
-      DeriveSecrets(CURVE25519_SHA256, transcript_hash, peer_dh_public_key,
-                    self_dh_private_key, &master_secret, &authenticator_secret);
+  Status status = DeriveSecrets(CURVE25519_SHA256, transcript_hash,
+                                peer_dh_public_key, self_dh_private_key,
+                                &primary_secret, &authenticator_secret);
   EXPECT_THAT(status, Not(IsOk()));
   EXPECT_THAT(status, StatusIs(Abort::INTERNAL_ERROR));
 }
@@ -156,27 +156,27 @@ TEST(EkepCryptoTest, DeriveSecretsWithCurve25519Sha256) {
   ASYLO_ASSERT_OK(
       SetTrivialObjectFromHexString(kTestPrivKey, &self_dh_private_key));
 
-  SafeBytes<kEkepMasterSecretSize> expected_master_secret;
-  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(kTestMasterSecret,
-                                                &expected_master_secret));
+  SafeBytes<kEkepPrimarySecretSize> expected_primary_secret;
+  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(kTestPrimarySecret,
+                                                &expected_primary_secret));
 
   SafeBytes<kEkepAuthenticatorSecretSize> expected_authenticator_secret;
   ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(
       kTestAuthenticatorSecret, &expected_authenticator_secret));
 
   CleansingVector<uint8_t> authenticator_secret;
-  CleansingVector<uint8_t> master_secret;
+  CleansingVector<uint8_t> primary_secret;
 
   ASSERT_TRUE(DeriveSecrets(CURVE25519_SHA256, transcript_hash,
                             peer_dh_public_key, self_dh_private_key,
-                            &master_secret, &authenticator_secret)
+                            &primary_secret, &authenticator_secret)
                   .ok());
 
-  // Verify that the master secret is as expected.
-  SafeBytes<kEkepMasterSecretSize> *actual_master_secret =
-      SafeBytes<kEkepMasterSecretSize>::Place(&master_secret,
-                                              /*offset=*/0);
-  EXPECT_EQ(*actual_master_secret, expected_master_secret);
+  // Verify that the primary secret is as expected.
+  SafeBytes<kEkepPrimarySecretSize> *actual_primary_secret =
+      SafeBytes<kEkepPrimarySecretSize>::Place(&primary_secret,
+                                               /*offset=*/0);
+  EXPECT_EQ(*actual_primary_secret, expected_primary_secret);
 
   // Verify that the authenticator secret is as expected.
   SafeBytes<kEkepAuthenticatorSecretSize> *actual_authenticator_secret =
@@ -189,12 +189,12 @@ TEST(EkepCryptoTest, DeriveSecretsWithCurve25519Sha256) {
 // when passed an unsupported ciphersuite.
 TEST(EkepCryptoTest, DeriveRecordProtocolKeyBadCiphersuite) {
   std::string transcript_hash;
-  std::vector<uint8_t> master_secret;
+  std::vector<uint8_t> primary_secret;
   CleansingVector<uint8_t> key;
 
   Status status =
       DeriveRecordProtocolKey(UNKNOWN_HANDSHAKE_CIPHER, ALTSRP_AES128_GCM,
-                              transcript_hash, master_secret, &key);
+                              transcript_hash, primary_secret, &key);
   EXPECT_THAT(status, Not(IsOk()));
   EXPECT_THAT(status, StatusIs(Abort::BAD_HANDSHAKE_CIPHER));
 }
@@ -203,12 +203,12 @@ TEST(EkepCryptoTest, DeriveRecordProtocolKeyBadCiphersuite) {
 // when passed an unsupported record protocol.
 TEST(EkepCryptoTest, DeriveRecordProtocolKeyBadRecordProtocol) {
   std::string transcript_hash;
-  std::vector<uint8_t> master_secret;
+  std::vector<uint8_t> primary_secret;
   CleansingVector<uint8_t> key;
 
   Status status =
       DeriveRecordProtocolKey(CURVE25519_SHA256, UNKNOWN_RECORD_PROTOCOL,
-                              transcript_hash, master_secret, &key);
+                              transcript_hash, primary_secret, &key);
   EXPECT_THAT(status, Not(IsOk()));
   EXPECT_THAT(status, StatusIs(Abort::BAD_RECORD_PROTOCOL));
 }
@@ -220,9 +220,9 @@ TEST(EkepCryptoTest, DeriveRecordProtocolKeySealAes128Gcm) {
   ASYLO_ASSERT_OK(
       SetTrivialObjectFromHexString(kTestTranscriptHash, &transcript_hash));
 
-  SafeBytes<kEkepMasterSecretSize> master_secret;
+  SafeBytes<kEkepPrimarySecretSize> primary_secret;
   ASYLO_ASSERT_OK(
-      SetTrivialObjectFromHexString(kTestMasterSecret, &master_secret));
+      SetTrivialObjectFromHexString(kTestPrimarySecret, &primary_secret));
 
   SafeBytes<kAltsRecordProtocolAes128GcmKeySize> expected_key;
   ASYLO_ASSERT_OK(
@@ -231,7 +231,7 @@ TEST(EkepCryptoTest, DeriveRecordProtocolKeySealAes128Gcm) {
   CleansingVector<uint8_t> key;
 
   ASSERT_TRUE(DeriveRecordProtocolKey(CURVE25519_SHA256, ALTSRP_AES128_GCM,
-                                      transcript_hash, master_secret, &key)
+                                      transcript_hash, primary_secret, &key)
                   .ok());
 
   // Verify that the record protocol key is as expected.

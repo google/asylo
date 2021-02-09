@@ -150,7 +150,7 @@ ClientEkepHandshaker::Result ClientEkepHandshaker::HandleHandshakeMessage(
   // not result in an Abort message being sent to the peer.
   if (IsHandshakeCompleted()) {
     if (!DeriveAndSetRecordProtocolKey(
-             selected_cipher_suite_, selected_record_protocol_, master_secret_)
+             selected_cipher_suite_, selected_record_protocol_, primary_secret_)
              .ok()) {
       handshaker_state_ = HandshakeState::ABORTED;
     }
@@ -323,12 +323,12 @@ Status ClientEkepHandshaker::HandleServerId(const google::protobuf::Message &mes
             server_id.dh_public_key().cend(),
             std::back_inserter(server_public_key));
 
-  // Derive EKEP Master and Authenticator secrets using the current transcript
+  // Derive EKEP Primary and Authenticator secrets using the current transcript
   // and the server's public key.
   std::string transcript_hash;
   ASYLO_RETURN_IF_ERROR(GetTranscriptHash(&transcript_hash));
   return DeriveSecrets(selected_cipher_suite_, transcript_hash,
-                       server_public_key, dh_private_key_, &master_secret_,
+                       server_public_key, dh_private_key_, &primary_secret_,
                        &authenticator_secret_);
 }
 
