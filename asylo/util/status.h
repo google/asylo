@@ -94,7 +94,7 @@ class Status {
         other.error_message());
   }
 
-  explicit Status(const absl::Status &other) {
+  Status(const absl::Status &other) {
     Set(static_cast<error::GoogleError>(other.raw_code()), other.message());
   }
 
