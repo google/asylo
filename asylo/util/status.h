@@ -80,10 +80,15 @@ class Status {
   /// This constructor is provided for the convenience of Asylo-SDK consumers
   /// utilizing other status types such as `::grpc::Status`.
   ///
+  /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
+  ///             `ConvertStatus()` instead.
   /// \param other A status-like object to copy.
   template <typename StatusT,
             typename E = typename absl::enable_if_t<
                 status_internal::status_type_traits<StatusT>::is_status>>
+  ABSL_DEPRECATED(
+      "Deprecated as part of Asylo's absl::Status migration. Use "
+      "ConvertStatus() from status_helpers.h instead.")
   explicit Status(const StatusT &other) {
     Set(status_internal::status_type_traits<StatusT>::CanonicalCode(other),
         other.error_message());
@@ -117,10 +122,15 @@ class Status {
   /// This operator is provided for the convenience of the Asylo SDK users
   /// that utilize other status types, such as `::grpc::Status`.
   ///
+  /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
+  ///             `ConvertStatus()` instead.
   /// \return A status-like object copied from this object.
   template <typename StatusT,
             typename E = typename absl::enable_if_t<
                 status_internal::status_type_traits<StatusT>::is_status>>
+  ABSL_DEPRECATED(
+      "Deprecated as part of Asylo's absl::Status migration. Use "
+      "ConvertStatus() from status_helpers.h instead.")
   StatusT ToOtherStatus() {
     Status status = ToCanonical();
     return StatusT(status_internal::ErrorCodeHolder(status.error_code_),

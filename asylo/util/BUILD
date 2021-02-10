@@ -382,13 +382,37 @@ cc_test(
 
 cc_library(
     name = "status_helpers",
-    srcs = ["status_helpers.cc"],
+    srcs = [
+        "status_helpers.cc",
+        "status_helpers_internal.h",
+    ],
     hdrs = ["status_helpers.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":status",
         ":status_cc_proto",
+        "@com_google_absl//absl/status",
+    ],
+)
+
+cc_test(
+    name = "status_helpers_test",
+    srcs = ["status_helpers_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "status_helpers_enclave_test",
+    deps = [
+        ":error_codes",
+        ":status",
+        ":status_helpers",
+        "//asylo/platform/primitives/sgx:sgx_error_space",
+        "//asylo/test/util:test_main",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf_lite",
+        "@linux_sgx//:public",
     ],
 )
 

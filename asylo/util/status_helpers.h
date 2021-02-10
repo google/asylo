@@ -19,8 +19,32 @@
 
 #include "asylo/util/status.h"
 #include "asylo/util/status.pb.h"
+#include "asylo/util/status_helpers_internal.h"
 
 namespace asylo {
+
+/// Converts a status-like object to another status type.
+///
+/// The source and target types must:
+///
+///   * Have a two-parameter constructor that takes an enum as its first
+///     parameter and a string as its second parameter.
+///   * Have non-static `const` `error_code()`, `error_message()`, and `ok()`
+///     methods.
+///
+/// This function is provided for the convenience of Asylo-SDK consumers
+/// utilizing other status types such as `::grpc::Status`.
+///
+/// Note that all statuses are converted to the canonical error space, so
+/// additional error space information is lost.
+///
+/// \param from_status A status-like object to copy.
+/// \return A status-like object copied from `from_status`.
+template <typename ToStatusT, typename FromStatusT>
+ToStatusT ConvertStatus(const FromStatusT &from_status) {
+  return internal::ConvertStatusImpl<ToStatusT, FromStatusT>::Convert(
+      from_status);
+}
 
 /// Exports the contents of `status` into a `StatusProto`. This function sets
 /// all fields in the returned proto.
