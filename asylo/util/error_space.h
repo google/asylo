@@ -20,8 +20,10 @@
 #define ASYLO_UTIL_ERROR_SPACE_H_
 
 #include <string>
+#include <type_traits>
 #include <unordered_map>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "asylo/platform/common/static_map.h"
 #include "asylo/util/error_codes.h"
@@ -262,7 +264,7 @@ class ErrorSpaceImplementationHelper : public ErrorSpace {
   ///        singleton instance of this ErrorSpace.
   /// \param default_error_string The result for String() for an unrecognized
   ///        error code.
-  ErrorSpaceImplementationHelper(
+  explicit ErrorSpaceImplementationHelper(
       const std::string &space_name,
       const std::string &default_error_string = "Unrecognized Code")
       : space_name_{space_name}, default_error_string_{default_error_string} {
@@ -336,6 +338,9 @@ error_internal::AsyloErrorSpaceStaticMap::ValueInserter
 ErrorSpace const *GetErrorSpace(
     ErrorSpaceAdlTag<::asylo::error::GoogleError> tag);
 
+/// Binds the class GoogleErrorSpace to the #absl::StatusCode enum.
+ErrorSpace const *GetErrorSpace(ErrorSpaceAdlTag<::absl::StatusCode> tag);
+
 /// The implementation of the ErrorSpace interface for the GoogleError canonical
 /// error space.
 class GoogleErrorSpace
@@ -344,7 +349,7 @@ class GoogleErrorSpace
   using code_type = GoogleError;
 
   GoogleErrorSpace(const GoogleErrorSpace &other) = delete;
-  virtual ~GoogleErrorSpace() = default;
+  ~GoogleErrorSpace() override = default;
   GoogleErrorSpace &operator=(const GoogleErrorSpace &other) = delete;
 
   /// Gets the singleton instance of GoogleErrorSpace.

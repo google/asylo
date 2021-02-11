@@ -26,6 +26,7 @@
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/error_codes.h"
 #include "asylo/util/posix_error_space.h"
 #include "include/grpcpp/support/status.h"
 
@@ -46,17 +47,19 @@ constexpr char kErrorMessage1WithPrependedContext[] =
 TEST(StatusTest, OkSuccess) { EXPECT_TRUE(::asylo::Status::OkStatus().ok()); }
 
 TEST(StatusTest, OkFailure) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
   EXPECT_FALSE(status.ok());
 }
 
 TEST(StatusTest, GetErrorCodeOkStatus) {
-  EXPECT_EQ(::asylo::Status::OkStatus().error_code(), error::GoogleError::OK);
+  EXPECT_EQ(::asylo::Status::OkStatus().error_code(),
+            static_cast<int>(absl::StatusCode::kOk));
 }
 
 TEST(StatusTest, GetErrorCodeNonOkStatus) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
-  EXPECT_EQ(status.error_code(), error::GoogleError::INVALID_ARGUMENT);
+  ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  EXPECT_EQ(status.error_code(),
+            static_cast<int>(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(StatusTest, GetErrorMessageOkStatus) {
@@ -64,7 +67,7 @@ TEST(StatusTest, GetErrorMessageOkStatus) {
 }
 
 TEST(StatusTest, GetErrorMessageNonOkStatus) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
   EXPECT_EQ(status.error_message(), kErrorMessage1);
 }
 
@@ -74,7 +77,7 @@ TEST(StatusTest, GetErrorSpaceOkStatus) {
 }
 
 TEST(StatusTest, GetErrorSpaceNonOkStatus) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
   const error::ErrorSpace *error_space = status.error_space();
   EXPECT_EQ(error_space->SpaceName(), error::kCanonicalErrorSpaceName);
 }
@@ -91,7 +94,7 @@ TEST(StatusTest, ToStringOkStatus) {
 }
 
 TEST(StatusTest, ToStringNonOkStatus) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
   std::string error_code_name =
       status.error_space()->String(status.error_code());
   std::string error_space_name = status.error_space()->SpaceName();
@@ -107,7 +110,7 @@ TEST(StatusTest, ToStringNonOkStatus) {
 
 TEST(StatusTest, Equality) {
   ::asylo::Status ok_status = Status::OkStatus();
-  Status error_status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  Status error_status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
 
   EXPECT_TRUE(ok_status == ok_status);
   EXPECT_TRUE(error_status == error_status);
@@ -116,9 +119,9 @@ TEST(StatusTest, Equality) {
 
 TEST(StatusTest, Inequality) {
   asylo::Status ok_status = Status::OkStatus();
-  asylo::Status invalid_arg_status(error::GoogleError::INVALID_ARGUMENT,
+  asylo::Status invalid_arg_status(absl::StatusCode::kInvalidArgument,
                                    kErrorMessage1);
-  asylo::Status internal_status(error::GoogleError::INTERNAL, kErrorMessage2);
+  asylo::Status internal_status(absl::StatusCode::kInternal, kErrorMessage2);
 
   EXPECT_FALSE(ok_status != ok_status);
   EXPECT_FALSE(invalid_arg_status != invalid_arg_status);
@@ -135,7 +138,7 @@ TEST(StatusTest, ToCanonicalOk) {
 }
 
 TEST(StatusTest, ToCanonicalNonOk) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
   EXPECT_EQ(status.ToCanonical(), status);
 }
 
@@ -148,25 +151,28 @@ TEST(StatusTest, ToCanonicalNonOkNonCanonical) {
   //   space
   //   * Error message is set to the ToString() representation
   EXPECT_EQ(canonical,
-            Status(error::GoogleError::INVALID_ARGUMENT, status.ToString()));
+            Status(absl::StatusCode::kInvalidArgument, status.ToString()));
 }
 
-TEST(StatusTest, CanonicalCodeOk) {
+TEST(StatusTest, CodeAndCanonicalCodeOk) {
+  EXPECT_EQ(Status::OkStatus().code(), absl::StatusCode::kOk);
   EXPECT_EQ(Status::OkStatus().CanonicalCode(), error::GoogleError::OK);
 }
 
-TEST(StatusTest, CanonicalCodeNonOk) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+TEST(StatusTest, CodeAndCanonicalCodeNonOk) {
+  ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  EXPECT_EQ(status.code(), static_cast<absl::StatusCode>(status.error_code()));
   EXPECT_EQ(status.CanonicalCode(), status.error_code());
 }
 
-TEST(StatusTest, CanonicalCodeNonOkNonCanonical) {
+TEST(StatusTest, CodeAndCanonicalCodeNonOkNonCanonical) {
   ::asylo::Status status(error::PosixError::P_EINVAL, kErrorMessage1);
+  EXPECT_EQ(status.code(), absl::StatusCode::kInvalidArgument);
   EXPECT_EQ(status.CanonicalCode(), error::GoogleError::INVALID_ARGUMENT);
 }
 
 TEST(StatusTest, SaveTo) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
   ::asylo::StatusProto status_proto;
   status.SaveTo(&status_proto);
 
@@ -177,7 +183,7 @@ TEST(StatusTest, SaveTo) {
 
 TEST(StatusTest, RestoreFromOk) {
   ::asylo::StatusProto status_proto;
-  status_proto.set_code(error::GoogleError::OK);
+  status_proto.set_code(static_cast<int>(absl::StatusCode::kOk));
   status_proto.set_error_message(kErrorMessage1);
   status_proto.set_space(error::kCanonicalErrorSpaceName);
 
@@ -192,25 +198,26 @@ TEST(StatusTest, RestoreFromOk) {
 
 TEST(StatusTest, RestoreFromNonOk) {
   ::asylo::StatusProto status_proto;
-  status_proto.set_code(error::GoogleError::INVALID_ARGUMENT);
+  status_proto.set_code(static_cast<int>(absl::StatusCode::kInvalidArgument));
   status_proto.set_error_message(kErrorMessage1);
   status_proto.set_space(error::kCanonicalErrorSpaceName);
 
   ::asylo::Status status;
   status.RestoreFrom(status_proto);
 
-  EXPECT_THAT(status, StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status, StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_EQ(status.error_message(), status_proto.error_message());
 }
 
 TEST(StatusTest, RestoreFromNonOkInvalidCanonicalCode) {
   // StatusProto with a mismatched error code and canonical code. The expected
-  // equivalent canonical code is error::GoogleError::INVALID_ARGUMENT.
+  // equivalent canonical code is absl::StatusCode::kInvalidArgument.
   ::asylo::StatusProto status_proto;
   status_proto.set_code(error::PosixError::P_EINVAL);
   status_proto.set_error_message(kErrorMessage1);
   status_proto.set_space(error::kCanonicalErrorSpaceName);
-  status_proto.set_canonical_code(error::GoogleError::UNAUTHENTICATED);
+  status_proto.set_canonical_code(
+      static_cast<int>(absl::StatusCode::kInvalidArgument));
 
   ::asylo::Status status;
   status.RestoreFrom(status_proto);
@@ -224,12 +231,13 @@ TEST(StatusTest, RestoreFromUnknownErrorSpace) {
   status_proto.set_code(42);
   status_proto.set_error_message(kErrorMessage1);
   status_proto.set_space(kBadErrorSpace);
-  status_proto.set_canonical_code(error::GoogleError::INVALID_ARGUMENT);
+  status_proto.set_canonical_code(
+      static_cast<int>(absl::StatusCode::kInvalidArgument));
 
   ::asylo::Status status;
   status.RestoreFrom(status_proto);
 
-  EXPECT_THAT(status, StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status, StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_EQ(status.error_message(), status_proto.error_message());
 }
 
@@ -243,7 +251,7 @@ TEST(StatusTest, RestoreFromUnknownErrorSpaceMissingCanonicalCode) {
   ::asylo::Status status;
   status.RestoreFrom(status_proto);
 
-  EXPECT_THAT(status, StatusIs(error::GoogleError::UNKNOWN));
+  EXPECT_THAT(status, StatusIs(absl::StatusCode::kUnknown));
   EXPECT_EQ(status.error_message(), status_proto.error_message());
 }
 
@@ -253,7 +261,8 @@ TEST(StatusTest, RestoreFromUnknownErrorSpaceInvalid) {
   ::asylo::StatusProto status_proto;
   status_proto.set_code(0);
   status_proto.set_space(kBadErrorSpace);
-  status_proto.set_canonical_code(error::GoogleError::INVALID_ARGUMENT);
+  status_proto.set_canonical_code(
+      static_cast<int>(absl::StatusCode::kInvalidArgument));
 
   asylo::Status status;
   status.RestoreFrom(status_proto);
@@ -272,7 +281,7 @@ TEST(StatusTest, RestoreFromUnknownErrorSpaceInvalid) {
 }
 
 TEST(StatusTest, SaveToRestoreFromEndToEnd) {
-  ::asylo::Status status1(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  ::asylo::Status status1(absl::StatusCode::kInvalidArgument, kErrorMessage1);
 
   ::asylo::StatusProto status_proto;
   status1.SaveTo(&status_proto);
@@ -330,7 +339,7 @@ TEST(StatusTest, ConvertToGrpcStatusOk) {
 }
 
 TEST(StatusTest, ConvertToGrpcStatusNonOk) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
   ::grpc::Status grpc_status = status.ToOtherStatus<::grpc::Status>();
 
   EXPECT_EQ(status.ok(), grpc_status.ok());
@@ -362,7 +371,7 @@ TEST(StatusTest, ConstructFromAbslStatusOk) {
 
 TEST(StatusTest, ConstructFromAbslStatusNonOk) {
   ::absl::Status absl_status(absl::StatusCode::kInvalidArgument,
-                                kErrorMessage1);
+                             kErrorMessage1);
   ::asylo::Status status(absl_status);
 
   EXPECT_THAT(status, Not(IsOk()));
@@ -380,7 +389,7 @@ TEST(StatusTest, TypeCastToAbslStatusOk) {
 }
 
 TEST(StatusTest, TypeCastToAbslStatusNonOk) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
   ::absl::Status absl_status = status;
 
   EXPECT_EQ(status.ok(), absl_status.ok());
@@ -398,12 +407,13 @@ TEST(StatusTest, TypeCastToAbslStatusNonOkNonCanonical) {
   //   space
   //   * Error message is set to the ToString() representation
   EXPECT_EQ(absl_status.ok(), status.ok());
-  EXPECT_EQ(absl_status.raw_code(), error::GoogleError::INVALID_ARGUMENT);
+  EXPECT_EQ(absl_status.raw_code(),
+            static_cast<int>(absl::StatusCode::kInvalidArgument));
   EXPECT_EQ(absl_status.message(), status.ToString());
 }
 
 TEST(StatusTest, TypeCastToAbslStatusOrNonOk) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
   absl::StatusOr<std::string> absl_statusor = status;
 
   EXPECT_EQ(absl_statusor.ok(), status.ok());
@@ -422,15 +432,16 @@ TEST(StatusTest, TypeCastToAbslStatusOrNonOkNonCanonical) {
   //   * Error message is set to the ToString() representation
   EXPECT_EQ(absl_statusor.ok(), status.ok());
   EXPECT_EQ(absl_statusor.status().raw_code(),
-            error::GoogleError::INVALID_ARGUMENT);
+            static_cast<int>(absl::StatusCode::kInvalidArgument));
   EXPECT_EQ(absl_statusor.status().message(), status.ToString());
 }
 
 TEST(StatusTest, IsPositiveTest) {
+  EXPECT_TRUE(Status::OkStatus().Is(absl::StatusCode::kOk));
   EXPECT_TRUE(Status::OkStatus().Is(error::GoogleError::OK));
 
-  Status invalid_arg_status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
+  Status invalid_arg_status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  EXPECT_TRUE(invalid_arg_status.Is(absl::StatusCode::kInvalidArgument));
   EXPECT_TRUE(invalid_arg_status.Is(error::GoogleError::INVALID_ARGUMENT));
 
   Status einval_status(error::PosixError::P_EINVAL, kErrorMessage1);
@@ -439,18 +450,19 @@ TEST(StatusTest, IsPositiveTest) {
 
 TEST(StatusTest, IsNegativeTest) {
   // Verify correctness of Is() within an error space.
-  Status invalid_arg_status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
+  Status invalid_arg_status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  EXPECT_FALSE(invalid_arg_status.Is(absl::StatusCode::kOk));
   EXPECT_FALSE(invalid_arg_status.Is(error::GoogleError::OK));
 
   // Verify correctness of Is() across error spaces.
   Status einval_status(error::PosixError::P_EINVAL, kErrorMessage1);
+  EXPECT_FALSE(einval_status.Is(absl::StatusCode::kInvalidArgument));
   EXPECT_FALSE(einval_status.Is(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST(StatusTest, WithPrependedContextCorrect) {
-  Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
-  Status expected_status_with_context(error::GoogleError::INVALID_ARGUMENT,
+  Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  Status expected_status_with_context(absl::StatusCode::kInvalidArgument,
                                       kErrorMessage1WithPrependedContext);
 
   EXPECT_EQ(status.WithPrependedContext(kContext),
@@ -458,12 +470,10 @@ TEST(StatusTest, WithPrependedContextCorrect) {
 }
 
 TEST(StatusTest, StatusIsMatcher) {
-  EXPECT_THAT(Status::OkStatus(), StatusIs(error::GoogleError::OK));
+  EXPECT_THAT(Status::OkStatus(), StatusIs(absl::StatusCode::kOk));
 
-  Status invalid_arg_status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
-  EXPECT_THAT(invalid_arg_status,
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  Status invalid_arg_status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  EXPECT_THAT(invalid_arg_status, StatusIs(absl::StatusCode::kInvalidArgument));
 
   Status einval_status(error::PosixError::P_EINVAL, kErrorMessage1);
   EXPECT_THAT(einval_status, StatusIs(error::PosixError::P_EINVAL));
@@ -478,40 +488,34 @@ TEST(StatusTest, IsOkMatcher) {
 }
 
 TEST(StatusTest, MoveConstructorTest) {
-  Status invalid_arg_status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
-  EXPECT_THAT(invalid_arg_status,
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  Status invalid_arg_status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  EXPECT_THAT(invalid_arg_status, StatusIs(absl::StatusCode::kInvalidArgument));
 
   Status that(std::move(invalid_arg_status));
 
-  EXPECT_THAT(that, StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(that, StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(invalid_arg_status, StatusIs(error::StatusError::MOVED));
 }
 
 TEST(StatusTest, MoveAssignmentTestNonOk) {
-  Status invalid_arg_status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
-  EXPECT_THAT(invalid_arg_status,
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  Status invalid_arg_status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  EXPECT_THAT(invalid_arg_status, StatusIs(absl::StatusCode::kInvalidArgument));
 
-  Status that(error::GoogleError::CANCELLED, kErrorMessage2);
+  Status that(absl::StatusCode::kCancelled, kErrorMessage2);
   that = std::move(invalid_arg_status);
 
-  EXPECT_THAT(that, StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(that, StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(invalid_arg_status, StatusIs(error::StatusError::MOVED));
 }
 
 TEST(StatusTest, MoveAssignmentTestOk) {
-  Status invalid_arg_status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
-  EXPECT_THAT(invalid_arg_status,
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  Status invalid_arg_status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  EXPECT_THAT(invalid_arg_status, StatusIs(absl::StatusCode::kInvalidArgument));
 
   Status ok = Status::OkStatus();
   invalid_arg_status = std::move(ok);
 
-  EXPECT_THAT(invalid_arg_status, StatusIs(error::GoogleError::OK, ""));
+  EXPECT_THAT(invalid_arg_status, StatusIs(absl::StatusCode::kOk, ""));
   EXPECT_THAT(ok, StatusIs(error::StatusError::MOVED));
 }
 
@@ -523,27 +527,27 @@ TEST(StatusTest, CopyConstructorTestOk) {
 }
 
 TEST(StatusTest, CopyConstructorTestNonOk) {
-  Status invalid_arg_status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
-  EXPECT_THAT(invalid_arg_status,
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  Status invalid_arg_status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  EXPECT_THAT(invalid_arg_status, StatusIs(absl::StatusCode::kInvalidArgument));
 
   Status that(invalid_arg_status);
 
-  EXPECT_THAT(that, StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(that, StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(StatusTest, ConstructorWithErrorSpaceOk) {
-  Status that(error::error_enum_traits<error::GoogleError>::get_error_space(),
-              error::GoogleError::OK, "This message is not copied");
+  Status that(error::error_enum_traits<absl::StatusCode>::get_error_space(),
+              static_cast<int>(absl::StatusCode::kOk),
+              "This message is not copied");
   EXPECT_TRUE(that.error_message().empty());
   EXPECT_THAT(that, IsOk());
 }
 
 TEST(StatusTest, ConstructorWithErrorSpaceNotOk) {
-  Status that(error::error_enum_traits<error::GoogleError>::get_error_space(),
-              error::GoogleError::INVALID_ARGUMENT, "This message is copied");
-  EXPECT_THAT(that, StatusIs(error::GoogleError::INVALID_ARGUMENT,
+  Status that(error::error_enum_traits<absl::StatusCode>::get_error_space(),
+              static_cast<int>(absl::StatusCode::kInvalidArgument),
+              "This message is copied");
+  EXPECT_THAT(that, StatusIs(absl::StatusCode::kInvalidArgument,
                              "This message is copied"));
 }
 

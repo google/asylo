@@ -18,6 +18,8 @@
 
 #include "asylo/util/error_space.h"
 
+#include "absl/status/status.h"
+
 namespace asylo {
 namespace error {
 
@@ -30,6 +32,10 @@ ErrorSpace const *ErrorSpace::Find(const std::string &name) {
 
 ErrorSpace const *GetErrorSpace(
     ErrorSpaceAdlTag<::asylo::error::GoogleError> tag) {
+  return GoogleErrorSpace::GetInstance();
+}
+
+ErrorSpace const *GetErrorSpace(ErrorSpaceAdlTag<::absl::StatusCode> tag) {
   return GoogleErrorSpace::GetInstance();
 }
 

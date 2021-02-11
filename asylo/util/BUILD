@@ -332,6 +332,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "status_enclave_test",
     deps = [
+        ":error_codes",
         ":status",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -360,6 +361,7 @@ cc_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:str_format",
         "@com_google_googletest//:gtest",
     ],
@@ -458,6 +460,7 @@ cc_test(
         "//asylo/platform/common:static_map",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:str_format",
         "@com_google_googletest//:gtest",
     ],

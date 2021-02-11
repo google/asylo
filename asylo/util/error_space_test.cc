@@ -20,6 +20,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 
 namespace asylo {
 namespace error {
@@ -35,7 +36,11 @@ TEST_F(ErrorSpaceTest, GoogleErrorSpaceSingleton) {
   EXPECT_NE(space1, nullptr);
   ErrorSpace const *space2 = error_enum_traits<GoogleError>::get_error_space();
   EXPECT_NE(space2, nullptr);
+  ErrorSpace const *space3 =
+      error_enum_traits<absl::StatusCode>::get_error_space();
+  EXPECT_NE(space3, nullptr);
   EXPECT_EQ(space1, space2);
+  EXPECT_EQ(space2, space3);
 }
 
 // Test the ErrorSpace interface for GoogleErrorSpace.

@@ -18,6 +18,7 @@
 
 #include "asylo/util/status.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/util/status_error_space.h"
 
@@ -90,6 +91,10 @@ Status Status::ToCanonical() const {
 
 error::GoogleError Status::CanonicalCode() const {
   return error_space_->GoogleErrorCode(error_code_);
+}
+
+absl::StatusCode Status::code() const {
+  return static_cast<absl::StatusCode>(CanonicalCode());
 }
 
 void Status::SaveTo(StatusProto *status_proto) const {

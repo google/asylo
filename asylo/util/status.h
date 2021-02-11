@@ -95,7 +95,7 @@ class Status {
   }
 
   Status(const absl::Status &other) {
-    Set(static_cast<error::GoogleError>(other.raw_code()), other.message());
+    Set(other.code(), other.message());
   }
 
   Status &operator=(const Status &other) = default;
@@ -219,6 +219,11 @@ class Status {
   /// \return A canonical `error::GoogleError` code.
   error::GoogleError CanonicalCode() const;
 
+  /// Gets the canonical error code for this object.
+  ///
+  /// \return The `absl::StatusCode` code.
+  absl::StatusCode code() const;
+
   /// Exports the contents of this object into `status_proto`. This method sets
   /// all fields in `status_proto`.
   ///
@@ -235,7 +240,7 @@ class Status {
   /// If the error space given by `status_proto.space()` is unrecognized, sets
   /// the error space to the canonical error space and sets the error code using
   /// the value given by `status_proto.canonical_code()`. If there is no
-  /// canonical code, sets the error code to `error::GoogleError::UNKNOWN`. Note
+  /// canonical code, sets the error code to `absl::StatusCode::kUnknown`. Note
   /// that the error message is only set if `status_proto` represents a non-ok
   /// Status.
   ///
