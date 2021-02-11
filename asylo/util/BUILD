@@ -480,6 +480,35 @@ cc_test(
 )
 
 cc_library(
+    name = "posix_errors",
+    srcs = ["posix_errors.cc"],
+    hdrs = ["posix_errors.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":status",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+    ],
+)
+
+cc_test(
+    name = "posix_errors_test",
+    srcs = ["posix_errors_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "posix_errors_enclave_test",
+    deps = [
+        ":posix_errors",
+        ":status",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "proto_enum_util",
     hdrs = ["proto_enum_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
