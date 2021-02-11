@@ -178,10 +178,20 @@ class Status {
   /// \return The associated integer error code.
   int error_code() const;
 
+  /// Gets the error code for this object as an `int`.
+  ///
+  /// \return The associated integer error code.
+  int raw_code() const;
+
   /// Gets the string error message for this object.
   ///
   /// \return The associated error message.
   absl::string_view error_message() const;
+
+  /// Gets the string error message for this object.
+  ///
+  /// \return The associated error message.
+  absl::string_view message() const;
 
   /// Gets the error space for this object.
   ///
@@ -312,8 +322,13 @@ bool operator!=(const Status &lhs, const Status &rhs);
 
 std::ostream &operator<<(std::ostream &os, const Status &status);
 
+/// Returns an OK status object.
+///
+/// \return A Status indicating no error occurred.
+Status OkStatus();
+
 /// Checks that the `Status` object in `val` is OK.
-#define ASYLO_CHECK_OK(val) CHECK_EQ(::asylo::Status::OkStatus(), (val))
+#define ASYLO_CHECK_OK(val) CHECK_EQ(::asylo::OkStatus(), (val))
 
 }  // namespace asylo
 

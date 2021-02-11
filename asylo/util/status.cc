@@ -69,9 +69,13 @@ Status &Status::operator=(Status &&other) {
 
 Status Status::OkStatus() { return Status(); }
 
-int Status::error_code() const { return error_code_; }
+int Status::error_code() const { return raw_code(); }
 
-absl::string_view Status::error_message() const { return message_; }
+int Status::raw_code() const { return error_code_; }
+
+absl::string_view Status::error_message() const { return message(); }
+
+absl::string_view Status::message() const { return message_; }
 
 const error::ErrorSpace *Status::error_space() const { return error_space_; }
 
@@ -163,5 +167,7 @@ bool operator!=(const Status &lhs, const Status &rhs) { return !(lhs == rhs); }
 std::ostream &operator<<(std::ostream &os, const Status &status) {
   return os << status.ToString();
 }
+
+Status OkStatus() { return Status(); }
 
 }  // namespace asylo
