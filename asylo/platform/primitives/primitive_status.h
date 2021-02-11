@@ -55,6 +55,31 @@ namespace primitives {
 // Ensure common width for implementation-defined types.
 static_assert(sizeof(size_t) == 8, "Unexpected size for type size_t");
 
+/// This enum of error codes aliases `absl::StatusCode`. These aliases are
+/// needed because these error codes may be used by low-level runtime components
+/// which must compile without C++ runtime support. Abseil does not guarantee
+/// that the file defining `absl::StatusCode` will be supported in such an
+/// environment.
+enum AbslStatusCode : int {
+  kOk = 0,
+  kCancelled = 1,
+  kUnknown = 2,
+  kInvalidArgument = 3,
+  kDeadlineExceeded = 4,
+  kNotFound = 5,
+  kAlreadyExists = 6,
+  kPermissionDenied = 7,
+  kResourceExhausted = 8,
+  kFailedPrecondition = 9,
+  kAborted = 10,
+  kOutOfRange = 11,
+  kUnimplemented = 12,
+  kInternal = 13,
+  kUnavailable = 14,
+  kDataLoss = 15,
+  kUnauthenticated = 16,
+};
+
 /// \class PrimitiveStatus primitive_status.h @primitive_status
 /// Shared representation of a status code across the enclave boundary.
 ///
@@ -66,7 +91,7 @@ class PrimitiveStatus {
   static constexpr size_t kMessageMax = 1024;
 
   /// Builds an OK status.
-  PrimitiveStatus() : PrimitiveStatus(error::GoogleError::OK) {}
+  PrimitiveStatus() : PrimitiveStatus(AbslStatusCode::kOk) {}
 
   /// Builds a status with an error code and an empty message.
   ///
@@ -133,7 +158,7 @@ class PrimitiveStatus {
   /// Predicate for non-error status.
   ///
   /// \returns True if and only if this object is OK (indicates no error).
-  bool ok() const { return error_code_ == error::GoogleError::OK; }
+  bool ok() const { return error_code_ == AbslStatusCode::kOk; }
 
  private:
   // This method is not intended to be called, it is defined only to provide a
