@@ -35,6 +35,7 @@
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/remote/remote_proxy_config.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 #include "asylo/util/thread.h"
@@ -51,8 +52,8 @@ namespace {
 
 void SerializeIntoRequest(CommunicationMessage *request,
                           Communicator::Invocation *invocation) {
-  Status{error::GoogleError::UNKNOWN, "Invocation request"}.SaveTo(
-      request->mutable_status());
+  *request->mutable_status() =
+      StatusToProto(Status{error::GoogleError::UNKNOWN, "Invocation request"});
   request->set_invocation_thread_id(invocation->invocation_thread_id);
   request->set_selector(invocation->selector);
   // Parameters are OK, serialize them into request.
@@ -68,7 +69,7 @@ void SerializeIntoRequest(CommunicationMessage *request,
 void DeserializeFromReply(const CommunicationMessage &reply,
                           Communicator::Invocation *invocation) {
   if (reply.has_status()) {
-    invocation->status.RestoreFrom(reply.status());
+    invocation->status = StatusFromProto(reply.status());
     return;
   }
 

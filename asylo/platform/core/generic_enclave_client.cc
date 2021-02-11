@@ -30,6 +30,7 @@
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -118,9 +119,8 @@ Status GenericEnclaveClient::EnterAndInitialize(const EnclaveConfig &config) {
     return Status(error::GoogleError::INTERNAL,
                   "Failed to deserialize StatusProto");
   }
-  Status status;
-  status.RestoreFrom(status_proto);
-  return status;
+
+  return StatusFromProto(status_proto);
 }
 
 Status GenericEnclaveClient::EnterAndRun(const EnclaveInput &input,
@@ -139,15 +139,13 @@ Status GenericEnclaveClient::EnterAndRun(const EnclaveInput &input,
   // have a value.
   EnclaveOutput local_output;
   local_output.ParseFromArray(output_buf.get(), output_len);
-  Status status;
-  status.RestoreFrom(local_output.status());
 
   // Set the output parameter if necessary.
   if (output) {
     *output = local_output;
   }
 
-  return status;
+  return StatusFromProto(local_output.status());
 }
 
 Status GenericEnclaveClient::EnterAndFinalize(const EnclaveFinal &final_input) {
@@ -166,9 +164,8 @@ Status GenericEnclaveClient::EnterAndFinalize(const EnclaveFinal &final_input) {
   // have a value.
   StatusProto status_proto;
   status_proto.ParseFromArray(output.get(), output_len);
-  Status status;
-  status.RestoreFrom(status_proto);
-  return status;
+
+  return StatusFromProto(status_proto);
 }
 
 Status GenericEnclaveClient::DestroyEnclave() {

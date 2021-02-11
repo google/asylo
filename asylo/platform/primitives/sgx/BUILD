@@ -162,6 +162,7 @@ cc_library(
         "//asylo/util:function_deleter",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "//asylo/util:status_helpers",
         "//asylo/util:status_macros",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",

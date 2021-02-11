@@ -73,7 +73,7 @@ StatusProto StatusToProto(const Status &status);
 ///
 /// \param status_proto A protobuf object to unpack.
 /// \return A `Status` based on the contents of `status_proto`.
-Status StatusFromProtos(const StatusProto &status_proto);
+Status StatusFromProto(const StatusProto &status_proto);
 
 }  // namespace asylo
 

@@ -37,6 +37,7 @@
 #include "asylo/util/cleanup.h"
 #include "asylo/util/mutex_guarded.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 #include "asylo/util/thread.h"
@@ -95,7 +96,7 @@ class Communicator::ThreadActivityWorkQueue {
         continue;
       }
       if (wrapped_message->has_status()) {
-        message_status.RestoreFrom(wrapped_message->status());
+        message_status = StatusFromProto(wrapped_message->status());
       }
       if (!message_status.Is(error::GoogleError::UNKNOWN)) {
         // Response received.

@@ -36,6 +36,7 @@
 #include "asylo/platform/primitives/remote/metrics/proc_system_service.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 #include "asylo/util/thread.h"
@@ -100,7 +101,7 @@ class ServerInvocation : public Communicator::Invocation {
     response->set_selector(selector);
     response->set_invocation_thread_id(invocation_thread_id);
     if (!status.ok()) {
-      status.SaveTo(response->mutable_status());
+      *response->mutable_status() = StatusToProto(status);
     } else {
       writer.Serialize([response](Extent extent) {
         auto item = response->add_items();

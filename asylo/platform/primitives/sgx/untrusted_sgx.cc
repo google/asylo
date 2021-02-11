@@ -42,6 +42,7 @@
 #include "asylo/util/function_deleter.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
@@ -364,8 +365,7 @@ Status SgxEnclaveClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {
   // have a value.
   EnclaveOutput local_output;
   local_output.ParseFromArray(output_buf, output_len);
-  Status status;
-  status.RestoreFrom(local_output.status());
+  Status status = StatusFromProto(local_output.status());
 
   // If |output| is not null, then |output_buf| points to a memory buffer
   // allocated inside the enclave using
@@ -400,8 +400,7 @@ Status SgxEnclaveClient::EnterAndRestore(
   // have a value.
   StatusProto status_proto;
   status_proto.ParseFromArray(output, output_len);
-  Status status;
-  status.RestoreFrom(status_proto);
+  Status status = StatusFromProto(status_proto);
 
   // |output| points to an untrusted memory buffer allocated by the enclave. It
   // is the untrusted caller's responsibility to free this buffer.
@@ -429,8 +428,7 @@ Status SgxEnclaveClient::EnterAndTransferSecureSnapshotKey(
   // have a value.
   StatusProto status_proto;
   status_proto.ParseFromArray(output, output_len);
-  Status status;
-  status.RestoreFrom(status_proto);
+  Status status = StatusFromProto(status_proto);
 
   // |output| points to an untrusted memory buffer allocated by the enclave. It
   // is the untrusted caller's responsibility to free this buffer.
