@@ -24,6 +24,8 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/base/config.h"
+#include "absl/status/statusor.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status_error_space.h"
 
@@ -44,6 +46,7 @@ struct Foo {
   int bar;
   std::string baz;
 
+  Foo() = delete;
   explicit Foo(int value) : bar(value), baz(kStringElement) {}
 };
 
@@ -211,7 +214,7 @@ TYPED_TEST(StatusOrTest, ConstructorElementConstReference) {
 
   ASSERT_THAT(statusor, IsOk());
   ASSERT_THAT(statusor.status(), IsOk());
-  EXPECT_EQ(statusor.ValueOrDie(), value);
+  EXPECT_EQ(*statusor, value);
 }
 
 // Verify that StatusOr can be constructed from an rvalue reference of an object
@@ -225,7 +228,7 @@ TYPED_TEST(StatusOrTest, ConstructorElementRValue) {
   ASSERT_THAT(statusor.status(), IsOk());
 
   // Compare to a copy of the original value, since the original was moved.
-  EXPECT_EQ(statusor.ValueOrDie(), value_copy);
+  EXPECT_EQ(*statusor, value_copy);
 }
 
 // Verify that StatusOr can be copy-constructed from a StatusOr with a non-ok
@@ -247,7 +250,7 @@ TYPED_TEST(StatusOrTest, CopyConstructorOkStatus) {
 
   EXPECT_EQ(statusor1.ok(), statusor2.ok());
   ASSERT_THAT(statusor2, IsOk());
-  EXPECT_EQ(statusor1.ValueOrDie(), statusor2.ValueOrDie());
+  EXPECT_EQ(*statusor1, *statusor2);
 }
 
 // Verify that copy-assignment of a StatusOr with a non-ok is working as
@@ -274,7 +277,7 @@ TYPED_TEST(StatusOrTest, CopyAssignmentOkStatus) {
   statusor2 = statusor1;
   EXPECT_EQ(statusor1.ok(), statusor2.ok());
   ASSERT_THAT(statusor2, IsOk());
-  EXPECT_EQ(statusor1.ValueOrDie(), statusor2.ValueOrDie());
+  EXPECT_EQ(*statusor1, *statusor2);
 }
 
 // Verify that copy-assignment of a StatusOr with a non-ok status to itself is
@@ -296,7 +299,7 @@ TYPED_TEST(StatusOrTest, CopyAssignmentSelfOkStatus) {
   statusor = *&statusor;
 
   ASSERT_THAT(statusor, IsOk());
-  EXPECT_EQ(statusor.ValueOrDie(), value);
+  EXPECT_EQ(*statusor, value);
 }
 
 // Verify that StatusOr can be move-constructed from a StatusOr with a non-ok
@@ -332,7 +335,7 @@ TYPED_TEST(StatusOrTest, MoveConstructorOkStatus) {
   // The destination object should possess the value previously held by the
   // donor.
   ASSERT_THAT(statusor2, IsOk());
-  EXPECT_EQ(statusor2.ValueOrDie(), value);
+  EXPECT_EQ(*statusor2, value);
 }
 
 // Verify that move-assignment from a StatusOr with a non-ok status is working
@@ -375,7 +378,7 @@ TYPED_TEST(StatusOrTest, MoveAssignmentOperatorOkStatus) {
   // The destination object should possess the value previously held by the
   // donor.
   ASSERT_THAT(statusor2, IsOk());
-  EXPECT_EQ(statusor2.ValueOrDie(), value);
+  EXPECT_EQ(*statusor2, value);
 }
 
 // Verify that move-assignment of a StatusOr with a non-ok status to itself is
@@ -399,8 +402,22 @@ TYPED_TEST(StatusOrTest, MoveAssignmentSelfOkStatus) {
   statusor = MoveStatusOr(&statusor);
 
   ASSERT_THAT(statusor, IsOk());
-  EXPECT_EQ(statusor.ValueOrDie(), value);
+  EXPECT_EQ(*statusor, value);
 }
+
+#ifdef ABSL_HAVE_EXCEPTIONS
+// Verify that using value() on a StatusOr with a non-OK status throws an
+// exception on platforms where exceptions are enabled.
+TYPED_TEST(StatusOrTest, ValueThrowsExceptionOnNonOkStatus) {
+  Status status(kErrorCode, kErrorMessage);
+  const StatusOr<typename TypeParam::value_type> const_statusor(status);
+  StatusOr<typename TypeParam::value_type> statusor(const_statusor);
+
+  ASSERT_THROW(const_statusor.value(), absl::BadStatusOrAccess);
+  ASSERT_THROW(statusor.value(), absl::BadStatusOrAccess);
+  ASSERT_THROW(std::move(statusor).value(), absl::BadStatusOrAccess);
+}
+#endif  // ABSL_HAVE_EXCEPTIONS
 
 // Verify that the asylo::IsOk() gMock matcher works with StatusOr<T>.
 TYPED_TEST(StatusOrTest, IsOkMatcher) {
@@ -421,7 +438,7 @@ TYPED_TEST(StatusOrTest, IsOkMatcher) {
 //   the test type to support copy operations.
 //   * std::unique_ptr<> provides an equality operator that checks equality of
 //   the underlying ptr. Consequently, it is difficult to generalize existing
-//   tests that verify ValueOrDie() functionality using equality comparisons.
+//   tests that verify value access functionality using equality comparisons.
 
 // Verify that a StatusOr object can be constructed from a move-only type.
 TEST(StatusOrTest, InitializationMoveOnlyType) {
@@ -430,7 +447,7 @@ TEST(StatusOrTest, InitializationMoveOnlyType) {
   StatusOr<std::unique_ptr<std::string>> statusor(std::move(value));
 
   ASSERT_THAT(statusor, IsOk());
-  EXPECT_EQ(statusor.ValueOrDie().get(), str);
+  EXPECT_EQ(statusor->get(), str);
 }
 
 // Verify that a StatusOr object can be move-constructed from a move-only type.
@@ -448,7 +465,7 @@ TEST(StatusOrTest, MoveConstructorMoveOnlyType) {
   // The destination object should possess the value previously held by the
   // donor.
   ASSERT_THAT(statusor2, IsOk());
-  EXPECT_EQ(statusor2.ValueOrDie().get(), str);
+  EXPECT_EQ(statusor2->get(), str);
 }
 
 // Verify that a StatusOr object can be move-assigned to from a StatusOr object
@@ -471,16 +488,16 @@ TEST(StatusOrTest, MoveAssignmentMoveOnlyType) {
   // The destination object should possess the value previously held by the
   // donor.
   ASSERT_THAT(statusor2, IsOk());
-  EXPECT_EQ(statusor2.ValueOrDie().get(), str);
+  EXPECT_EQ(statusor2->get(), str);
 }
 
-// Verify that a value can be moved out of a StatusOr object via ValueOrDie().
-TEST(StatusOrTest, ValueOrDieMovedValue) {
+// Verify that a value can be moved out of a StatusOr object.
+TEST(StatusOrTest, AccessValueViaMove) {
   std::string *str = new std::string(kStringElement);
   std::unique_ptr<std::string> value(str);
   StatusOr<std::unique_ptr<std::string>> statusor(std::move(value));
 
-  std::unique_ptr<std::string> moved_value = std::move(statusor).ValueOrDie();
+  std::unique_ptr<std::string> moved_value = *std::move(statusor);
   EXPECT_EQ(moved_value.get(), str);
   EXPECT_EQ(*moved_value, kStringElement);
 
@@ -497,7 +514,7 @@ TEST(StatusOrTest, TemplateValueCopyConstruction) {
   StatusOr<ImplicitlyCopyConvertible> statusor(copy_only);
 
   EXPECT_THAT(statusor, IsOk());
-  EXPECT_EQ(statusor.ValueOrDie().copy_only.data, kIntElement);
+  EXPECT_EQ(statusor->copy_only.data, kIntElement);
 }
 
 // Verify that a StatusOr<T> is implicitly constructible from some U, where T is
@@ -507,7 +524,7 @@ TEST(StatusOrTest, TemplateValueMoveConstruction) {
   StatusOr<ImplicitlyMoveConvertible> statusor(std::move(move_only));
 
   EXPECT_THAT(statusor, IsOk());
-  EXPECT_EQ(*statusor.ValueOrDie().move_only.data, kIntElement);
+  EXPECT_EQ(*statusor->move_only.data, kIntElement);
 }
 
 // Verify that a StatusOr<U> is assignable to a StatusOr<T>, where T
@@ -519,9 +536,9 @@ TEST(StatusOrTest, TemplateCopyAssign) {
   StatusOr<ImplicitlyCopyConvertible> statusor2 = statusor;
 
   EXPECT_THAT(statusor, IsOk());
-  EXPECT_EQ(statusor.ValueOrDie().data, kIntElement);
+  EXPECT_EQ(statusor->data, kIntElement);
   EXPECT_THAT(statusor2, IsOk());
-  EXPECT_EQ(statusor2.ValueOrDie().copy_only.data, kIntElement);
+  EXPECT_EQ(statusor2->copy_only.data, kIntElement);
 }
 
 // Verify that a StatusOr<U> is assignable to a StatusOr<T>, where T is a type
@@ -533,7 +550,7 @@ TEST(StatusOrTest, TemplateMoveAssign) {
   StatusOr<ImplicitlyMoveConvertible> statusor2 = std::move(statusor);
 
   EXPECT_THAT(statusor2, IsOk());
-  EXPECT_EQ(*statusor2.ValueOrDie().move_only.data, kIntElement);
+  EXPECT_EQ(*statusor2->move_only.data, kIntElement);
 
   //  NOLINTNEXTLINE use after move.
   EXPECT_THAT(statusor, Not(IsOk()));
@@ -550,9 +567,9 @@ TEST(StatusOrTest, TemplateCopyConstruct) {
   StatusOr<ImplicitlyCopyConvertible> statusor2(statusor);
 
   EXPECT_THAT(statusor, IsOk());
-  EXPECT_EQ(statusor.ValueOrDie().data, kIntElement);
+  EXPECT_EQ(statusor->data, kIntElement);
   EXPECT_THAT(statusor2, IsOk());
-  EXPECT_EQ(statusor2.ValueOrDie().copy_only.data, kIntElement);
+  EXPECT_EQ(statusor2->copy_only.data, kIntElement);
 }
 
 // Verify that a StatusOr<U> is constructible from a StatusOr<T>, where T is a
@@ -563,7 +580,7 @@ TEST(StatusOrTest, TemplateMoveConstruct) {
   StatusOr<ImplicitlyMoveConvertible> statusor2(std::move(statusor));
 
   EXPECT_THAT(statusor2, IsOk());
-  EXPECT_EQ(*statusor2.ValueOrDie().move_only.data, kIntElement);
+  EXPECT_EQ(*statusor2->move_only.data, kIntElement);
 
   //  NOLINTNEXTLINE use after move.
   EXPECT_THAT(statusor, Not(IsOk()));

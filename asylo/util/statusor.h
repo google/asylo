@@ -20,9 +20,12 @@
 #define ASYLO_UTIL_STATUSOR_H_
 
 #include <type_traits>
+#include <utility>
 
 #include "absl/base/attributes.h"
+#include "absl/base/config.h"
 #include "absl/meta/type_traits.h"
+#include "absl/status/statusor.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/cleanup.h"
 #include "asylo/util/status.h"
@@ -39,8 +42,8 @@ ABSL_CONST_INIT extern const char kStatusMoveAssignmentMsg[];
 #else
 ABSL_CONST_INIT extern const char kValueMoveConstructorMsg[];
 ABSL_CONST_INIT extern const char kValueMoveAssignmentMsg[];
-ABSL_CONST_INIT extern const char kStatusMoveConstructorMsg[];
 ABSL_CONST_INIT extern const char kValueOrDieMovedMsg[];
+ABSL_CONST_INIT extern const char kStatusMoveConstructorMsg[];
 ABSL_CONST_INIT extern const char kStatusMoveAssignmentMsg[];
 #endif
 
@@ -55,15 +58,26 @@ ABSL_CONST_INIT extern const char kStatusMoveAssignmentMsg[];
 /// The status() method returns the internal Status object. A StatusOr object
 /// that contains a valid value will return an OK Status for a call to status().
 ///
-/// A value of type `T` may be extracted from a StatusOr object through a call
-/// to ValueOrDie(). This function should only be called if a call to ok()
-/// returns true. Sample usage:
+/// A value of type `T` may be extracted by dereferencing an OK StatusOr object,
+/// either with operator*() or operator->(). These operators should only be
+/// called if a call to ok() returns true. Sample usage:
 ///
 /// ```
 ///   asylo::StatusOr<Foo> result = CalculateFoo();
 ///   if (result.ok()) {
-///     Foo foo = result.ValueOrDie();
-///     foo->DoSomethingCool();
+///     Foo foo = *result;
+///     foo.DoSomethingCool();
+///   } else {
+///     LOG(ERROR) << result.status();
+///  }
+/// ```
+///
+/// Or more concisely:
+///
+/// ```
+///   asylo::StatusOr<Foo> result = CalculateFoo();
+///   if (result.ok()) {
+///     result->DoSomethingCool();
 ///   } else {
 ///     LOG(ERROR) << result.status();
 ///  }
@@ -76,12 +90,28 @@ ABSL_CONST_INIT extern const char kStatusMoveAssignmentMsg[];
 /// ```
 ///   asylo::StatusOr<std::unique_ptr<Foo>> result = CalculateFoo();
 ///   if (result.ok()) {
-///     std::unique_ptr<Foo> foo = std::move(result).ValueOrDie();
+///     std::unique_ptr<Foo> foo = *std::move(result);
 ///     foo->DoSomethingCool();
 ///   } else {
 ///     LOG(ERROR) << result.status();
 ///   }
 /// ```
+///
+/// If exceptions are enabled, callers can alternatively use the `value()`
+/// method to extract the contents of a StatusOr. Calls to `value()` throw
+/// `absl::BadStatusOrAccess` if the StatusOr is not OK. Sample usage:
+///
+/// ```
+///   asylo::StatusOr<Foo> result = CalculateFoo();
+///   try {
+///     result.value().DoSomethingCool();
+///   } catch (const absl::BadStatusOrAccess &bad_access) {
+///     LOG(ERROR) << bad_access.status();
+///  }
+/// ```
+///
+/// If exceptions are disabled, then calls to `value()` on a non-OK StatusOr
+/// will abort the program.
 ///
 /// StatusOr is provided for the convenience of implementing functions that
 /// return some value but may fail during execution. For instance, consider a
@@ -131,9 +161,9 @@ class StatusOr {
     }
   }
 
-  /// Constructs a StatusOr object with the given non-OK Status object. All
-  /// calls to ValueOrDie() on this object will abort. The given `status` must
-  /// not be an OK status, otherwise this constructor will abort.
+  /// Constructs a StatusOr object with the given non-OK Status object. The
+  /// given `status` must not be an OK status, otherwise this constructor will
+  /// abort.
   ///
   /// This constructor is not declared explicit so that a function with a return
   /// type of `StatusOr<T>` can return a Status object, and the status will be
@@ -149,7 +179,7 @@ class StatusOr {
 
   /// Constructs a StatusOr object that contains `value`. The resulting object
   /// is considered to have an OK status. The wrapped element can be accessed
-  /// with ValueOrDie().
+  /// by dereferencing or with value().
   ///
   /// This constructor is made implicit so that a function with a return type of
   /// `StatusOr<T>` can return an object of type `U &&`, implicitly converting
@@ -289,8 +319,8 @@ class StatusOr {
   /// Indicates whether the object contains a `T` value.
   ///
   /// \return True if this StatusOr object's status is OK (i.e. a call to ok()
-  /// returns true). If this function returns true, then it is safe to access
-  /// the wrapped element through a call to ValueOrDie().
+  /// returns true). If this function returns true, then it is safe to
+  /// dereference this StatusOr.
   bool ok() const { return has_value_; }
 
   /// Gets the stored status object, or an OK status if a `T` value is stored.
@@ -301,18 +331,56 @@ class StatusOr {
 
   /// Gets the stored `T` value.
   ///
+  /// If this StatusOr object is not OK, then this method either throws an
+  /// `absl::BadStatusOrAccess` exception or aborts the program, depending on
+  /// whether exceptions are enabled.
+  ///
+  /// \return The stored `T` value.
+  const T &value() const & {
+    if (!ok()) {
+      HandleBadValueCall();
+    }
+    return variant_.value_;
+  }
+
+  /// Gets the stored `T` value.
+  ///
+  /// If this StatusOr object is not OK, then this method either throws an
+  /// `absl::BadStatusOrAccess` exception or aborts the program, depending on
+  /// whether exceptions are enabled.
+  ///
+  /// \return The stored `T` value.
+  T &value() & {
+    if (!ok()) {
+      HandleBadValueCall();
+    }
+    return variant_.value_;
+  }
+
+  /// Moves and returns the internally-stored `T` value.
+  ///
+  /// The StatusOr object is invalidated after this call and will be updated to
+  /// contain a non-OK status with a `StatusError::MOVED` error code.
+  ///
+  /// If this StatusOr object is not OK, then this method either throws an
+  /// `absl::BadStatusOrAccess` exception or aborts the program, depending on
+  /// whether exceptions are enabled.
+  ///
+  /// \return The stored `T` value.
+  T value() && {
+    if (!ok()) {
+      HandleBadValueCall();
+    }
+    return std::move(*this).MoveValue();
+  }
+
+  /// Gets the stored `T` value.
+  ///
   /// This method should only be called if this StatusOr object's status is OK
   /// (i.e. a call to ok() returns true), otherwise this call will abort.
   ///
   /// \return The stored `T` value.
-  const T &ValueOrDie() const & {
-    if (!ok()) {
-      LOG(FATAL)
-          << "Object does not have a usable value, instead contains status: "
-          << status();
-    }
-    return variant_.value_;
-  }
+  const T &ValueOrDie() const & { return **this; }
 
   /// Gets a mutable reference to the stored `T` value.
   ///
@@ -320,14 +388,7 @@ class StatusOr {
   /// (i.e. a call to ok() returns true), otherwise this call will abort.
   ///
   /// \return The stored `T` value.
-  T &ValueOrDie() & {
-    if (!ok()) {
-      LOG(FATAL)
-          << "Object does not have a usable value, instead contains status: "
-          << status();
-    }
-    return variant_.value_;
-  }
+  T &ValueOrDie() & { return **this; }
 
   /// Moves and returns the internally-stored `T` value.
   ///
@@ -337,19 +398,78 @@ class StatusOr {
   /// contain a non-OK status with a `StatusError::MOVED` error code.
   ///
   /// \return The stored `T` value.
-  T ValueOrDie() && {
-    if (!ok()) {
-      LOG(FATAL)
-          << "Object does not have a usable value, instead contains status: "
-          << status();
-    }
+  T ValueOrDie() && { return *std::move(*this); }
 
-    // Invalidate this StatusOr object before returning control to caller.
-    Cleanup set_moved_status([this] {
-      OverwriteValueWithStatus(
-          Status(error::StatusError::MOVED, kValueOrDieMovedMsg));
-    });
-    return std::move(variant_.value_);
+  /// Gets the stored `T` value.
+  ///
+  /// This method should only be called if this StatusOr object's status is OK
+  /// (i.e. a call to ok() returns true), otherwise the behavior of this method
+  /// is undefined.
+  ///
+  /// \return The stored `T` value.
+  const T &operator*() const & {
+    if (!ok()) {
+      DieOnBadAccess();
+    }
+    return variant_.value_;
+  }
+
+  /// Gets the stored `T` value.
+  ///
+  /// This method should only be called if this StatusOr object's status is OK
+  /// (i.e. a call to ok() returns true), otherwise the behavior of this method
+  /// is undefined.
+  ///
+  /// \return The stored `T` value.
+  T &operator*() & {
+    if (!ok()) {
+      DieOnBadAccess();
+    }
+    return variant_.value_;
+  }
+
+  /// Gets the stored `T` value.
+  ///
+  /// This method should only be called if this StatusOr object's status is OK
+  /// (i.e. a call to ok() returns true), otherwise the behavior of this method
+  /// is undefined. The StatusOr object is invalidated after this call and will
+  /// be updated to contain a non-OK status with a `StatusError::MOVED` error
+  /// code.
+  ///
+  /// \return The stored `T` value.
+  T operator*() && {
+    if (!ok()) {
+      DieOnBadAccess();
+    }
+    return std::move(*this).MoveValue();
+  }
+
+  /// Aecceses the stored `T` value.
+  ///
+  /// This method should only be called if this StatusOr object's status is OK
+  /// (i.e. a call to ok() returns true), otherwise the behavior of this method
+  /// is undefined.
+  ///
+  /// \return A pointer to the stored `T` value.
+  const T *operator->() const {
+    if (!ok()) {
+      DieOnBadAccess();
+    }
+    return &variant_.value_;
+  }
+
+  /// Gets the stored `T` value.
+  ///
+  /// This method should only be called if this StatusOr object's status is OK
+  /// (i.e. a call to ok() returns true), otherwise the behavior of this method
+  /// is undefined.
+  ///
+  /// \return The stored `T` value.
+  T *operator->() {
+    if (!ok()) {
+      DieOnBadAccess();
+    }
+    return &variant_.value_;
   }
 
  private:
@@ -392,6 +512,38 @@ class StatusOr {
     }
     new (&variant_) variant(std::forward<U>(value));
     has_value_ = true;
+  }
+
+  // If exceptions are enabled, throw an absl::BadStatusOrAccess. Otherwise,
+  // crash the program.
+  //
+  // Requires this object to hold a Status.
+  void HandleBadValueCall() const {
+#ifdef ABSL_HAVE_EXCEPTIONS
+    throw absl::BadStatusOrAccess(status());
+#else
+    DieOnBadAccess();
+#endif
+  }
+
+  // If exceptions are enabled, throw an absl::BadStatusOrAccess. Otherwise,
+  // crash the program.
+  //
+  // Requires this object to hold a Status.
+  void DieOnBadAccess() const {
+    LOG(FATAL)
+        << "Object does not have a usable value, instead contains status: "
+        << status();
+  }
+
+  // Moves the value out from this object. Requires this object to hold a value.
+  T MoveValue() && {
+    // Invalidate this StatusOr object before returning control to caller.
+    Cleanup set_moved_status([this] {
+      OverwriteValueWithStatus(
+          Status(error::StatusError::MOVED, kValueOrDieMovedMsg));
+    });
+    return std::move(variant_.value_);
   }
 
   union variant {
