@@ -17,7 +17,7 @@
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("@rules_cc//cc:defs.bzl", "cc_library", "cc_proto_library")
 load("@rules_proto//proto:defs.bzl", "proto_library")
-load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
+load("//asylo/bazel:asylo.bzl", "cc_enclave_test", "cc_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])
@@ -181,6 +181,36 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/util:status",
+        "@linux_sgx//:public",
+    ],
+)
+
+cc_library(
+    name = "sgx_errors",
+    srcs = ["sgx_errors.cc"],
+    hdrs = ["sgx_errors.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":sgx_error_space",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+        "@linux_sgx//:public",
+    ],
+)
+
+cc_test(
+    name = "sgx_errors_test",
+    srcs = ["sgx_errors_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "sgx_errors_enclave_test",
+    deps = [
+        ":sgx_errors",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
         "@linux_sgx//:public",
     ],
 )
