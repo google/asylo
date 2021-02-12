@@ -19,16 +19,21 @@
 #ifndef ASYLO_UTIL_STATUS_H_
 #define ASYLO_UTIL_STATUS_H_
 
+#include <functional>
 #include <ostream>
 #include <string>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include "absl/base/attributes.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/meta/type_traits.h"
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/cord.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/error_codes.h"  // IWYU pragma: export
 #include "asylo/util/error_space.h"  // IWYU pragma: export
@@ -40,7 +45,9 @@ namespace asylo {
 
 /// Status contains information about an error. Status contains an error code
 /// from some error space and a message string suitable for logging or
-/// debugging.
+/// debugging. Status can also contain any number of (type URL -> byte string)
+/// associations called "payloads". These function similarly to payloads in
+/// `absl::Status`.
 class Status {
  public:
   /// Builds an OK Status in the canonical error space.
@@ -94,9 +101,7 @@ class Status {
         other.error_message());
   }
 
-  Status(const absl::Status &other) {
-    Set(other.code(), other.message());
-  }
+  Status(const absl::Status &other);
 
   Status &operator=(const Status &other) = default;
 
@@ -162,14 +167,10 @@ class Status {
   //    }
   //    return foo;
   //  }
-  operator ::absl::Status() {
-    Status status = ToCanonical();
-    return ::absl::Status(static_cast<::absl::StatusCode>(status.error_code_),
-                          status.message_);
-  }
+  operator ::absl::Status() const;
 
   template <class T>
-  operator absl::StatusOr<T>() {
+  operator absl::StatusOr<T>() const {
     return absl::StatusOr<T>(::absl::Status(*this));
   }
 
@@ -209,6 +210,8 @@ class Status {
   /// message if this object is a non-OK Status, or just a string containing the
   /// error code name if this object is an OK Status.
   ///
+  /// The string also contains a list of payloads contained in this Status.
+  ///
   /// \return A string representation of this object.
   std::string ToString() const;
 
@@ -220,8 +223,8 @@ class Status {
   ///   * Error code is converted to the equivalent error code in the canonical
   ///     error space.
   ///   * The new error message is set to the `ToString()` representation of the
-  ///     old Status object in order to preserve the previous error code
-  ///     information.
+  ///     old Status object, excluding any payloads, in order to preserve the
+  ///     previous error code information.
   Status ToCanonical() const;
 
   /// Gets the canonical error code for this object's error code.
@@ -235,7 +238,8 @@ class Status {
   absl::StatusCode code() const;
 
   /// Exports the contents of this object into `status_proto`. This method sets
-  /// all fields in `status_proto`.
+  /// the `space` and `canonical_code` fields in `status_proto` even if this
+  /// object is in the canonical error space.
   ///
   /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
   ///             `StatusToProto()` instead.
@@ -291,7 +295,42 @@ class Status {
   ///         `context` + ": " + the original error message.
   Status WithPrependedContext(absl::string_view context);
 
+  /// Gets the payload associated with the given type URL.
+  ///
+  /// \param type_url A type URL.
+  /// \return The payload corresponding to `type_url`, or `absl::nullopt` if no
+  ///         such payload is contained in this `Status`.
+  absl::optional<absl::Cord> GetPayload(absl::string_view type_url) const;
+
+  /// Sets the payload for a given type URL, overwriting any previous value.
+  ///
+  /// \param type_url A type URL.
+  /// \param payload The payload to assoicate with `type_url`.
+  void SetPayload(absl::string_view type_url, absl::Cord payload);
+
+  /// Removes the payload associated with a given type URL, if one exists.
+  ///
+  /// \param type_url The type URL to clear.
+  /// \return True if a payload was removed, false otherwise.
+  bool ErasePayload(absl::string_view type_url);
+
+  /// Executes a function for each payload in this `Status`.
+  ///
+  /// Specifically, calls `visitor` exactly once on each payload contained in
+  /// this `Status`. The order in which the payloads are visited is unspecified
+  /// and may change between calls to `ForEachPayload()`.
+  ///
+  /// Modifying the `Status` object from within `visitor` is disallowed and may
+  /// result in undefined behavior.
+  ///
+  /// \param visitor A function to call on each type URL and associated payload.
+  void ForEachPayload(
+      const std::function<void(absl::string_view, const absl::Cord &)> &visitor)
+      const;
+
  private:
+  friend bool operator==(const Status &lhs, const Status &rhs);
+
   // Sets this object to hold an error code |code| and error message |message|.
   template <typename Enum, typename StringT>
   void Set(Enum code, StringT &&message) {
@@ -308,12 +347,17 @@ class Status {
   // space.
   bool IsCanonical() const;
 
+  // Returns the part of ToString() that doesn't include payload information.
+  std::string ToStringWithoutPayloads() const;
+
   const error::ErrorSpace *error_space_;
   int error_code_;
 
   // An optional error-message if error_code_ is non-zero. If error_code_ is
   // zero, then message_ is empty.
   std::string message_;
+
+  absl::flat_hash_map<std::string, absl::Cord> payloads_;
 };
 
 bool operator==(const Status &lhs, const Status &rhs);

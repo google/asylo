@@ -38,6 +38,8 @@ namespace asylo {
 /// Note that all statuses are converted to the canonical error space, so
 /// additional error space information is lost.
 ///
+/// Payloads are preserved if both input and output status types support them.
+///
 /// \param from_status A status-like object to copy.
 /// \return A status-like object copied from `from_status`.
 template <typename ToStatusT, typename FromStatusT>
@@ -47,7 +49,8 @@ ToStatusT ConvertStatus(const FromStatusT &from_status) {
 }
 
 /// Exports the contents of `status` into a `StatusProto`. This function sets
-/// all fields in the returned proto.
+/// the `space` and `canonical_code` fields in `status_proto` even if `status`
+/// is in the canonical error space.
 ///
 /// \param status A `Status` to pack into a proto.
 /// \return A `StatusProto` representing `status`.

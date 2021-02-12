@@ -36,4 +36,7 @@ message StatusProto {
 
   // The equivalent error code in the Google canonical error space.
   optional int32 canonical_code = 4;
+
+  // Additional payloads in this Status.
+  map<string, bytes> payloads = 5;
 }

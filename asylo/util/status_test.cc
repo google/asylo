@@ -25,6 +25,9 @@
 #include <gtest/gtest.h>
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/cord.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/error_codes.h"
 #include "asylo/util/posix_error_space.h"
@@ -33,7 +36,10 @@
 namespace asylo {
 namespace {
 
+using ::testing::Eq;
+using ::testing::HasSubstr;
 using ::testing::Not;
+using ::testing::Optional;
 
 constexpr char kErrorMessage1[] = "Bad foo argument";
 constexpr char kErrorMessage2[] = "Internal foobar error";
@@ -43,6 +49,9 @@ constexpr char kBadErrorSpace[] = "Foo bar error space";
 constexpr char kContext[] = "At index 1";
 constexpr char kErrorMessage1WithPrependedContext[] =
     "At index 1: Bad foo argument";
+
+constexpr char kTypeUrl[] = "test.URL";
+constexpr char kPayload[] = "test payload";
 
 TEST(StatusTest, OkSuccess) { EXPECT_TRUE(::asylo::OkStatus().ok()); }
 
@@ -110,10 +119,15 @@ TEST(StatusTest, ToStringNonOkStatus) {
 TEST(StatusTest, Equality) {
   ::asylo::Status ok_status = OkStatus();
   Status error_status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  Status error_status_with_payload = error_status;
+  error_status_with_payload.SetPayload(kTypeUrl, absl::Cord(kPayload));
 
   EXPECT_TRUE(ok_status == ok_status);
   EXPECT_TRUE(error_status == error_status);
+  EXPECT_TRUE(error_status_with_payload == error_status_with_payload);
   EXPECT_FALSE(ok_status == error_status);
+  EXPECT_FALSE(error_status == error_status_with_payload);
+  EXPECT_FALSE(error_status_with_payload == ok_status);
 }
 
 TEST(StatusTest, Inequality) {
@@ -121,6 +135,8 @@ TEST(StatusTest, Inequality) {
   asylo::Status invalid_arg_status(absl::StatusCode::kInvalidArgument,
                                    kErrorMessage1);
   asylo::Status internal_status(absl::StatusCode::kInternal, kErrorMessage2);
+  asylo::Status internal_status_with_payload = internal_status;
+  internal_status_with_payload.SetPayload(kTypeUrl, absl::Cord(kPayload));
 
   EXPECT_FALSE(ok_status != ok_status);
   EXPECT_FALSE(invalid_arg_status != invalid_arg_status);
@@ -130,6 +146,7 @@ TEST(StatusTest, Inequality) {
 
   EXPECT_TRUE(invalid_arg_status != internal_status);
   EXPECT_TRUE(internal_status != invalid_arg_status);
+  EXPECT_TRUE(internal_status != internal_status_with_payload);
 }
 
 TEST(StatusTest, ToCanonicalOk) {
@@ -153,6 +170,24 @@ TEST(StatusTest, ToCanonicalNonOkNonCanonical) {
             Status(absl::StatusCode::kInvalidArgument, status.ToString()));
 }
 
+TEST(StatusTest, ToCanonicalNonOkWithPayload) {
+  ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  status.SetPayload(kTypeUrl, absl::Cord(kPayload));
+  Status canonical = status.ToCanonical();
+
+  EXPECT_EQ(canonical, status);
+}
+
+TEST(StatusTest, ToCanonicalNonOkNonCanonicalWithPayload) {
+  ::asylo::Status status(error::PosixError::P_EINVAL, kErrorMessage1);
+  status.SetPayload(kTypeUrl, absl::Cord(kPayload));
+  Status canonical = status.ToCanonical();
+
+  EXPECT_TRUE(canonical.Is(absl::StatusCode::kInvalidArgument));
+  EXPECT_THAT(status.ToString(), HasSubstr(canonical.message()));
+  EXPECT_THAT(canonical.GetPayload(kTypeUrl), Optional(absl::Cord(kPayload)));
+}
+
 TEST(StatusTest, CodeAndCanonicalCodeOk) {
   EXPECT_EQ(OkStatus().code(), absl::StatusCode::kOk);
   EXPECT_EQ(OkStatus().CanonicalCode(), error::GoogleError::OK);
@@ -172,12 +207,17 @@ TEST(StatusTest, CodeAndCanonicalCodeNonOkNonCanonical) {
 
 TEST(StatusTest, SaveTo) {
   ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  status.SetPayload(kTypeUrl, absl::Cord(kPayload));
   ::asylo::StatusProto status_proto;
   status.SaveTo(&status_proto);
 
   EXPECT_EQ(status_proto.code(), status.error_code());
   EXPECT_EQ(status_proto.error_message(), status.message());
   EXPECT_EQ(status_proto.space(), status.error_space()->SpaceName());
+  EXPECT_EQ(status_proto.payloads().size(), 1);
+  ASSERT_NE(status_proto.payloads().find(kTypeUrl),
+            status_proto.payloads().end());
+  EXPECT_EQ(status_proto.payloads().at(kTypeUrl), kPayload);
 }
 
 TEST(StatusTest, RestoreFromOk) {
@@ -200,12 +240,14 @@ TEST(StatusTest, RestoreFromNonOk) {
   status_proto.set_code(static_cast<int>(absl::StatusCode::kInvalidArgument));
   status_proto.set_error_message(kErrorMessage1);
   status_proto.set_space(error::kCanonicalErrorSpaceName);
+  (*status_proto.mutable_payloads())[kTypeUrl] = kPayload;
 
   ::asylo::Status status;
   status.RestoreFrom(status_proto);
 
   EXPECT_THAT(status, StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_EQ(status.message(), status_proto.error_message());
+  EXPECT_THAT(status.GetPayload(kTypeUrl), Optional(absl::Cord(kPayload)));
 }
 
 TEST(StatusTest, RestoreFromNonOkInvalidCanonicalCode) {
@@ -281,6 +323,19 @@ TEST(StatusTest, RestoreFromUnknownErrorSpaceInvalid) {
 
 TEST(StatusTest, SaveToRestoreFromEndToEnd) {
   ::asylo::Status status1(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+
+  ::asylo::StatusProto status_proto;
+  status1.SaveTo(&status_proto);
+
+  ::asylo::Status status2;
+  status2.RestoreFrom(status_proto);
+
+  EXPECT_EQ(status1, status2);
+}
+
+TEST(StatusTest, SaveToRestoreFromEndToEndWithPayload) {
+  ::asylo::Status status1(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  status1.SetPayload(kTypeUrl, absl::Cord(kPayload));
 
   ::asylo::StatusProto status_proto;
   status1.SaveTo(&status_proto);
@@ -408,7 +463,7 @@ TEST(StatusTest, TypeCastToAbslStatusNonOkNonCanonical) {
   EXPECT_EQ(absl_status.ok(), status.ok());
   EXPECT_EQ(absl_status.raw_code(),
             static_cast<int>(absl::StatusCode::kInvalidArgument));
-  EXPECT_EQ(absl_status.message(), status.ToString());
+  EXPECT_THAT(status.ToString(), HasSubstr(absl_status.message()));
 }
 
 TEST(StatusTest, TypeCastToAbslStatusOrNonOk) {
@@ -432,7 +487,7 @@ TEST(StatusTest, TypeCastToAbslStatusOrNonOkNonCanonical) {
   EXPECT_EQ(absl_statusor.ok(), status.ok());
   EXPECT_EQ(absl_statusor.status().raw_code(),
             static_cast<int>(absl::StatusCode::kInvalidArgument));
-  EXPECT_EQ(absl_statusor.status().message(), status.ToString());
+  EXPECT_THAT(status.ToString(), HasSubstr(absl_statusor.status().message()));
 }
 
 TEST(StatusTest, IsPositiveTest) {
@@ -488,23 +543,33 @@ TEST(StatusTest, IsOkMatcher) {
 
 TEST(StatusTest, MoveConstructorTest) {
   Status invalid_arg_status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  invalid_arg_status.SetPayload(kTypeUrl, absl::Cord(kPayload));
   EXPECT_THAT(invalid_arg_status, StatusIs(absl::StatusCode::kInvalidArgument));
+  EXPECT_THAT(invalid_arg_status.GetPayload(kTypeUrl),
+              Optional(absl::Cord(kPayload)));
 
   Status that(std::move(invalid_arg_status));
 
   EXPECT_THAT(that, StatusIs(absl::StatusCode::kInvalidArgument));
+  EXPECT_THAT(that.GetPayload(kTypeUrl), Optional(absl::Cord(kPayload)));
   EXPECT_THAT(invalid_arg_status, StatusIs(error::StatusError::MOVED));
+  EXPECT_THAT(invalid_arg_status.GetPayload(kTypeUrl), Eq(absl::nullopt));
 }
 
 TEST(StatusTest, MoveAssignmentTestNonOk) {
   Status invalid_arg_status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  invalid_arg_status.SetPayload(kTypeUrl, absl::Cord(kPayload));
   EXPECT_THAT(invalid_arg_status, StatusIs(absl::StatusCode::kInvalidArgument));
+  EXPECT_THAT(invalid_arg_status.GetPayload(kTypeUrl),
+              Optional(absl::Cord(kPayload)));
 
   Status that(absl::StatusCode::kCancelled, kErrorMessage2);
   that = std::move(invalid_arg_status);
 
   EXPECT_THAT(that, StatusIs(absl::StatusCode::kInvalidArgument));
+  EXPECT_THAT(that.GetPayload(kTypeUrl), Optional(absl::Cord(kPayload)));
   EXPECT_THAT(invalid_arg_status, StatusIs(error::StatusError::MOVED));
+  EXPECT_THAT(invalid_arg_status.GetPayload(kTypeUrl), Eq(absl::nullopt));
 }
 
 TEST(StatusTest, MoveAssignmentTestOk) {
@@ -527,11 +592,15 @@ TEST(StatusTest, CopyConstructorTestOk) {
 
 TEST(StatusTest, CopyConstructorTestNonOk) {
   Status invalid_arg_status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
+  invalid_arg_status.SetPayload(kTypeUrl, absl::Cord(kPayload));
   EXPECT_THAT(invalid_arg_status, StatusIs(absl::StatusCode::kInvalidArgument));
+  EXPECT_THAT(invalid_arg_status.GetPayload(kTypeUrl),
+              Optional(absl::Cord(kPayload)));
 
   Status that(invalid_arg_status);
 
   EXPECT_THAT(that, StatusIs(absl::StatusCode::kInvalidArgument));
+  EXPECT_THAT(that.GetPayload(kTypeUrl), Optional(absl::Cord(kPayload)));
 }
 
 TEST(StatusTest, ConstructorWithErrorSpaceOk) {
@@ -548,6 +617,51 @@ TEST(StatusTest, ConstructorWithErrorSpaceNotOk) {
               "This message is copied");
   EXPECT_THAT(that, StatusIs(absl::StatusCode::kInvalidArgument,
                              "This message is copied"));
+}
+
+TEST(StatusTest, GetPayloadReturnsNulloptIfNoTypeUrlMatch) {
+  Status status = OkStatus();
+  EXPECT_EQ(status.GetPayload(kTypeUrl), absl::nullopt);
+}
+
+TEST(StatusTest, SetPayloadsCanBeFetchedWithGetPayload) {
+  Status status = absl::InvalidArgumentError(kErrorMessage1);
+  status.SetPayload(kTypeUrl, absl::Cord(kPayload));
+  EXPECT_THAT(status.GetPayload(kTypeUrl), Optional(absl::Cord(kPayload)));
+}
+
+TEST(StatusTest, ErasePayloadReturnsFalseIfPayloadNotPresent) {
+  Status status = absl::InvalidArgumentError(kErrorMessage1);
+  EXPECT_FALSE(status.ErasePayload(kTypeUrl));
+}
+
+TEST(StatusTest, ErasePayloadReturnsTrueIfPayloadPresent) {
+  Status status = absl::InvalidArgumentError(kErrorMessage1);
+  status.SetPayload(kTypeUrl, absl::Cord(kPayload));
+  EXPECT_TRUE(status.ErasePayload(kTypeUrl));
+}
+
+TEST(StatusTest, ErasePayloadRemovesPayload) {
+  Status status = absl::InvalidArgumentError(kErrorMessage1);
+  status.SetPayload(kTypeUrl, absl::Cord(kPayload));
+  ASSERT_THAT(status.GetPayload(kTypeUrl), Optional(absl::Cord(kPayload)));
+
+  status.ErasePayload(kTypeUrl);
+  EXPECT_EQ(status.GetPayload(kTypeUrl), absl::nullopt);
+}
+
+TEST(StatusTest, ForEachPayloadVisitsEveryPayloadExactlyOnce) {
+  Status status = absl::InvalidArgumentError(kErrorMessage1);
+  status.SetPayload(kTypeUrl, absl::Cord(kPayload));
+
+  int counter = 0;
+  status.ForEachPayload(
+      [&counter](absl::string_view type_url, const absl::Cord &payload) {
+        ASSERT_EQ(type_url, kTypeUrl);
+        EXPECT_EQ(payload, kPayload);
+        ++counter;
+      });
+  EXPECT_EQ(counter, 1);
 }
 
 }  // namespace
