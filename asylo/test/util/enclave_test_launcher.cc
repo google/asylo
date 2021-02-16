@@ -70,8 +70,7 @@ Status EnclaveTestLauncher::SetUp(const std::string &enclave_path,
 Status EnclaveTestLauncher::Run(const EnclaveInput &input,
                                 EnclaveOutput *output) {
   if (!client_) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "No EnclaveClient available");
+    return absl::FailedPreconditionError("No EnclaveClient available");
   }
   return client_->EnterAndRun(input, output);
 }

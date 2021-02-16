@@ -39,6 +39,7 @@
 #include "absl/base/macros.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/flags/parse.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/blocking_counter.h"
 #include "absl/time/clock.h"
@@ -687,7 +688,7 @@ class UnknownSelectorTest : public CommunicatorTestFixture {
         .WillOnce([this](std::unique_ptr<Communicator::Invocation> invocation) {
           ASSERT_THAT(invocation->selector, Eq(kBadSelector));
           invocation->status =
-              Status(error::GoogleError::NOT_FOUND, "Bad selector");
+              Status(absl::StatusCode::kNotFound, "Bad selector");
         });
   }
 
@@ -701,7 +702,7 @@ class UnknownSelectorTest : public CommunicatorTestFixture {
         [current_thread_id](
             std::unique_ptr<Communicator::Invocation> invocation) {
           EXPECT_THAT(invocation->status,
-                      StatusIs(error::GoogleError::NOT_FOUND));
+                      StatusIs(absl::StatusCode::kNotFound));
           ASSERT_THAT(invocation->invocation_thread_id, Eq(current_thread_id));
           ASSERT_THAT(invocation->reader, IsEmpty());
         });

@@ -30,6 +30,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/asymmetric_encryption_key.h"
@@ -186,7 +187,7 @@ StatusOr<std::unique_ptr<RsaOaepDecryptionKey>> CreateDecryptionKeyFromTestDer(
     HashAlgorithm hash_alg) {
   std::string der;
   if (!absl::Base64Unescape(kRsa3072PrivateKeyDerBase64, &der)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Base64 data is not properly encoded");
   }
   std::unique_ptr<RsaOaepDecryptionKey> key;
@@ -249,7 +250,7 @@ TEST_P(RsaOaepHashAlgorithmTest, EncryptDecryptFailsOnHashMismatch) {
   CleansingVector<uint8_t> plaintext;
   ASYLO_ASSERT_OK(encryption_key->Encrypt(kPlaintext, &ciphertext));
   EXPECT_THAT(decryption_key->Decrypt(ciphertext, &plaintext),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST(RsaOaepEncryptionKeyTest, CreateWithInvalidHashAlgorithmFails) {
@@ -258,16 +259,16 @@ TEST(RsaOaepEncryptionKeyTest, CreateWithInvalidHashAlgorithmFails) {
 
   EXPECT_THAT(RsaOaepEncryptionKey::CreateFromDer(
                   pubkey_der, HashAlgorithm::UNKNOWN_HASH_ALGORITHM),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(RsaOaepEncryptionKey::CreateFromPem(
                   kRsa3072PublicKeyPem, HashAlgorithm::UNKNOWN_HASH_ALGORITHM),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(
       CreateDecryptionKeyFromTestDer(HashAlgorithm::UNKNOWN_HASH_ALGORITHM),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+      StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey(
                   HashAlgorithm::UNKNOWN_HASH_ALGORITHM),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(RsaOaepEncryptionKeyTest, CreateWithBoringSslKeyPointerSuccess) {
@@ -280,7 +281,7 @@ TEST(RsaOaepEncryptionKeyTest, CreateWithBoringSslKeyPointerSuccess) {
   ASSERT_THAT(rsa.get(), NotNull());
   EXPECT_THAT(RsaOaepEncryptionKey::Create(
                   std::move(rsa), HashAlgorithm::UNKNOWN_HASH_ALGORITHM),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   rsa.reset(RSAPublicKey_dup(encryption_key->GetRsaPublicKey()));
   ASSERT_THAT(rsa.get(), NotNull());
@@ -339,13 +340,13 @@ TEST(RsaOaepEncryptionKeyTest,
   EXPECT_THAT(
       RsaOaepEncryptionKey::CreateFromPem(kRsa1024PublicKeyPem,
                                           HashAlgorithm::SHA_1),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, "Invalid key size: 1024"));
+      StatusIs(absl::StatusCode::kInvalidArgument, "Invalid key size: 1024"));
 }
 
 TEST(RsaOaepEncryptionKeyTest, CreateFromInvalidPemSerializationFails) {
   EXPECT_THAT(RsaOaepEncryptionKey::CreateFromPem(kBadPublicKeyPem,
                                                   HashAlgorithm::SHA256),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST(RsaOaepEncryptionKeyTest, DecryptInvalidInputFails) {
@@ -363,7 +364,7 @@ TEST(RsaOaepEncryptionKeyTest, DecryptInvalidInputFails) {
   ciphertext[0] ^= 1;
   CleansingVector<uint8_t> plaintext;
   EXPECT_THAT(decryption_key->Decrypt(ciphertext, &plaintext),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST(RsaOaepEncryptionKeyTest, CreateRsa3072OaepDecryptionKeySuccess) {
@@ -419,7 +420,7 @@ TEST(RsaOaepEncryptionKeyTest, CreateFromInvalidDerSerializationFails) {
   std::vector<uint8_t> serialized_key(kBadKey, kBadKey + sizeof(kBadKey));
   EXPECT_THAT(
       RsaOaepDecryptionKey::CreateFromDer(serialized_key, HashAlgorithm::SHA_1),
-      StatusIs(error::GoogleError::INTERNAL));
+      StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST(RsaOaepEncryptionKeyTest,
@@ -427,7 +428,7 @@ TEST(RsaOaepEncryptionKeyTest,
   EXPECT_THAT(
       RsaOaepDecryptionKey::CreateFromDer(
           absl::HexStringToBytes(kRsa1024PrivateKeyDer), HashAlgorithm::SHA256),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, "Invalid key size: 1024"));
+      StatusIs(absl::StatusCode::kInvalidArgument, "Invalid key size: 1024"));
 }
 
 TEST(AsymmetricEncryptionKeyTest, CreateFromProto) {
@@ -506,7 +507,7 @@ TEST(AsymmetricEncryptionKeyTest, CreateEncryptionSchemeMismatchFailure) {
 
   EXPECT_THAT(
       RsaOaepEncryptionKey::CreateFromProto(proto, HashAlgorithm::SHA256),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("scheme")));
+      StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("scheme")));
 }
 
 TEST(AsymmetricEncryptionKeyTest, CreateWithInvalidEncryptionSchemeFailure) {
@@ -517,7 +518,7 @@ TEST(AsymmetricEncryptionKeyTest, CreateWithInvalidEncryptionSchemeFailure) {
 
   EXPECT_THAT(
       RsaOaepEncryptionKey::CreateFromProto(proto, HashAlgorithm::SHA256),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("scheme")));
+      StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("scheme")));
 }
 
 TEST(AsymmetricEncryptionKeyTest, CreateEncryptionKeyTypeMismatchFailure) {
@@ -527,7 +528,7 @@ TEST(AsymmetricEncryptionKeyTest, CreateEncryptionKeyTypeMismatchFailure) {
 
   EXPECT_THAT(
       RsaOaepEncryptionKey::CreateFromProto(proto, HashAlgorithm::SHA256),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("key type")));
+      StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("key type")));
 }
 
 TEST(AsymmetricEncryptionKeyTest, CreateInvalidEncodingFailure) {
@@ -537,7 +538,7 @@ TEST(AsymmetricEncryptionKeyTest, CreateInvalidEncodingFailure) {
 
   EXPECT_THAT(
       RsaOaepEncryptionKey::CreateFromProto(proto, HashAlgorithm::SHA256),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("encoding")));
+      StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("encoding")));
 }
 
 TEST(AsymmetricEncryptionKeyTest, CreateEncodingMismatchFailure) {
@@ -547,16 +548,15 @@ TEST(AsymmetricEncryptionKeyTest, CreateEncodingMismatchFailure) {
 
   EXPECT_THAT(
       RsaOaepEncryptionKey::CreateFromProto(proto, HashAlgorithm::SHA256),
-      StatusIs(error::GoogleError::INTERNAL, HasSubstr("BAD_ENCODING")));
+      StatusIs(absl::StatusCode::kInternal, HasSubstr("BAD_ENCODING")));
 }
 
 TEST(AsymmetricEncryptionKeyTest, CreateInvalidHashFailure) {
   AsymmetricEncryptionKeyProto proto =
       ParseTextProtoOrDie(kRsa3072PublicKeyPemTextProto);
-  EXPECT_THAT(
-      RsaOaepEncryptionKey::CreateFromProto(
-          proto, HashAlgorithm::UNKNOWN_HASH_ALGORITHM),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("hash")));
+  EXPECT_THAT(RsaOaepEncryptionKey::CreateFromProto(
+                  proto, HashAlgorithm::UNKNOWN_HASH_ALGORITHM),
+              StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("hash")));
 }
 }  // namespace
 }  // namespace asylo

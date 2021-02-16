@@ -239,6 +239,7 @@ cc_library(
         ":asn1",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:str_format",
     ],
 )
@@ -273,6 +274,7 @@ cc_library(
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/base",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:str_format",
     ],
 )
@@ -446,6 +448,7 @@ cc_library(
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",
     ],
@@ -729,6 +732,7 @@ cc_library(
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -821,6 +825,7 @@ cc_test(
         "//asylo/util:status",
         "//asylo/util:status_macros",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],

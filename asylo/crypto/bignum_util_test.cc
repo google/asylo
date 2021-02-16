@@ -168,13 +168,13 @@ TYPED_TEST(BignumUtilIntegerTest, IntegerFromBignumFailsIfBignumIsOutOfRange) {
   ASYLO_ASSERT_OK_AND_ASSIGN(bignum,
                              BignumFromBigEndianBytes(absl::MakeSpan(kBytes)));
   EXPECT_THAT(IntegerFromBignum<TypeParam>(*bignum),
-              StatusIs(error::GoogleError::OUT_OF_RANGE));
+              StatusIs(absl::StatusCode::kOutOfRange));
 
   ASYLO_ASSERT_OK_AND_ASSIGN(
       bignum,
       BignumFromBigEndianBytes(absl::MakeSpan(kBytes), Sign::kNegative));
   EXPECT_THAT(IntegerFromBignum<TypeParam>(*bignum),
-              StatusIs(error::GoogleError::OUT_OF_RANGE));
+              StatusIs(absl::StatusCode::kOutOfRange));
 }
 
 }  // namespace

@@ -26,6 +26,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -45,7 +46,7 @@ StatusOr<std::vector<uint8_t>> AbsoluteValueBigEndianBytesFromBignum(
     const BIGNUM &bignum) {
   std::vector<uint8_t> bytes(BN_num_bytes(&bignum));
   if (BN_bn2bin(&bignum, bytes.data()) != bytes.size()) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Size of BIGNUM changed unexpectedly");
   }
   return bytes;
@@ -57,14 +58,14 @@ StatusOr<std::vector<uint8_t>> PaddedAbsoluteValueBigEndianBytesFromBignum(
     const BIGNUM &bignum, size_t padded_size) {
   size_t bignum_bytes_size = BN_num_bytes(&bignum);
   if (bignum_bytes_size > padded_size) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrFormat("Number of bytes in BIGNUM (%d) is larger "
                                   "than the buffer size (%d)",
                                   bignum_bytes_size, padded_size));
   }
   std::vector<uint8_t> bytes(padded_size);
   if (BN_bn2bin_padded(bytes.data(), padded_size, &bignum) != 1) {
-    return Status(error::GoogleError::INTERNAL, "Serialization failed");
+    return Status(absl::StatusCode::kInternal, "Serialization failed");
   }
   return bytes;
 }
@@ -85,7 +86,7 @@ StatusOr<bssl::UniquePtr<BIGNUM>> BignumFromBigEndianBytes(
   bssl::UniquePtr<BIGNUM> bignum(
       BN_bin2bn(bytes.data(), bytes.size(), /*ret=*/nullptr));
   if (bignum == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   if (sign == Sign::kNegative) {
     BN_set_negative(bignum.get(), kSetNegative);

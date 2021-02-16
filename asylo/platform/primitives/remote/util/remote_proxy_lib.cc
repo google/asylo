@@ -24,6 +24,7 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
@@ -55,7 +56,7 @@ StatusOr<EnclaveLoadConfig> LocalEnclaveFactory::ParseEnclaveLoadConfig(
   constexpr uint64_t kExpectedNumArgs = 1;
   if (enclave_params->size() != kExpectedNumArgs) {
     return Status{
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrCat("Expected ", kExpectedNumArgs, " parameters, received ",
                      enclave_params->size())};
   }
@@ -70,7 +71,7 @@ StatusOr<EnclaveLoadConfig> LocalEnclaveFactory::ParseEnclaveLoadConfig(
 
   EnclaveLoadConfig load_config;
   if (!load_config.ParseFromArray(param.data(), param.size())) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Unable to parse EnclaveLoadConfig from param");
   }
   return load_config;

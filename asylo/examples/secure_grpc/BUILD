@@ -215,6 +215,7 @@ cc_library(
         "//asylo/identity:enclave_assertion_authority_configs",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
 )

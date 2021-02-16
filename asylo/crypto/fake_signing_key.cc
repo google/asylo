@@ -22,6 +22,7 @@
 #include <iterator>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -61,7 +62,7 @@ StatusOr<std::string> FakeVerifyingKey::SerializeToDer() const {
 }
 
 StatusOr<std::string> FakeVerifyingKey::SerializeToPem() const {
-  return Status(error::GoogleError::UNIMPLEMENTED,
+  return Status(absl::StatusCode::kUnimplemented,
                 "SerializeToPem unimplemented");
 }
 
@@ -71,18 +72,18 @@ Status FakeVerifyingKey::Verify(ByteContainerView message,
   const std::string &key_der = serialize_to_der_result_.ValueOrDie();
 
   if (signature.size() != key_der.size() + message.size()) {
-    return Status(error::GoogleError::UNAUTHENTICATED,
+    return Status(absl::StatusCode::kUnauthenticated,
                   "Signature does not match the expected value");
   }
 
   if (!std::equal(key_der.cbegin(), key_der.cend(), signature.cbegin())) {
-    return Status(error::GoogleError::UNAUTHENTICATED,
+    return Status(absl::StatusCode::kUnauthenticated,
                   "Signature does not match the expected value");
   }
 
   if (!std::equal(message.cbegin(), message.cend(),
                   signature.cbegin() + key_der.size())) {
-    return Status(error::GoogleError::UNAUTHENTICATED,
+    return Status(absl::StatusCode::kUnauthenticated,
                   "Signature does not match the expected value");
   }
 
@@ -91,7 +92,7 @@ Status FakeVerifyingKey::Verify(ByteContainerView message,
 
 Status FakeVerifyingKey::Verify(ByteContainerView message,
                                 const Signature &signature) const {
-  return Status(error::GoogleError::UNIMPLEMENTED,
+  return Status(absl::StatusCode::kUnimplemented,
                 "Verify overload unimplemented");
 }
 
@@ -108,7 +109,7 @@ StatusOr<CleansingVector<uint8_t>> FakeSigningKey::SerializeToDer() const {
 }
 
 StatusOr<CleansingVector<char>> FakeSigningKey::SerializeToPem() const {
-  return Status(error::GoogleError::UNIMPLEMENTED,
+  return Status(absl::StatusCode::kUnimplemented,
                 "SerializeToPem unimplemented");
 }
 
@@ -130,12 +131,12 @@ Status FakeSigningKey::Sign(ByteContainerView message,
 
 Status FakeSigningKey::Sign(ByteContainerView message,
                             Signature *signature) const {
-  return Status(error::GoogleError::UNIMPLEMENTED,
+  return Status(absl::StatusCode::kUnimplemented,
                 "Sign overload unimplemented");
 }
 
 Status FakeSigningKey::SignX509(X509 *x509) const {
-  return Status(error::GoogleError::UNIMPLEMENTED,
+  return Status(absl::StatusCode::kUnimplemented,
                 "SignX509 overload unimplemented");
 }
 

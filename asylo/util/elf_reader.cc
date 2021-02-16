@@ -20,6 +20,7 @@
 
 #include <cstring>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "asylo/util/status_macros.h"
@@ -153,18 +154,18 @@ StatusOr<absl::Span<const uint8_t>> ElfReader::GetSectionData(
 
   if (section_header_lookup == section_headers_.cend()) {
     return Status(
-        error::GoogleError::NOT_FOUND,
+        absl::StatusCode::kNotFound,
         absl::StrCat("File does not contain a section called ", section_name));
   }
 
   if (section_header_lookup->second->sh_type == SHT_NOBITS) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Section ", section_name, " has no data"));
   }
 
   auto section_data_lookup = section_data_.find(section_name_string);
   if (section_data_lookup == section_data_.cend()) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   absl::StrCat("Could not locate data associated with section ",
                                section_name));
   }
@@ -218,7 +219,7 @@ Status ElfReaderCreator::InitializeSectionMaps() {
     auto section_name_or_none = GetStringAtOffset(name_table, name_index);
 
     if (!section_name_or_none.has_value()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     absl::StrCat("Malformed ELF file: section ", i,
                                  " has invalid sh_name"));
     }
@@ -230,7 +231,7 @@ Status ElfReaderCreator::InitializeSectionMaps() {
         section_headers_.insert({std::string(section_name), section_header});
     if (!header_insertion_result.second) {
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrCat("Malformed ELF file: duplicated section name: ",
                        section_name));
     }
@@ -246,7 +247,7 @@ Status ElfReaderCreator::InitializeSectionMaps() {
           GetSubspan(elf_file_, section_start, section_size);
 
       if (!data_view_or_none.has_value()) {
-        return Status(error::GoogleError::INVALID_ARGUMENT,
+        return Status(absl::StatusCode::kInvalidArgument,
                       absl::StrCat("Malformed ELF file: section ", section_name,
                                    " exceeds boundary of file"));
       }
@@ -257,7 +258,7 @@ Status ElfReaderCreator::InitializeSectionMaps() {
       auto data_insertion_result =
           section_data_.insert({std::string(section_name), data_view});
       if (!data_insertion_result.second) {
-        return Status(error::GoogleError::INTERNAL,
+        return Status(absl::StatusCode::kInternal,
                       absl::StrCat("Failed to record data of section ",
                                    section_name, " in section data table"));
       }
@@ -271,7 +272,7 @@ StatusOr<const Elf64_Ehdr *> ElfReaderCreator::ElfHeader() const {
   auto elf_header_or_none = GetSubspanAs<Elf64_Ehdr>(elf_file_, 0);
 
   if (!elf_header_or_none.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Unsupported file format: not a 64-bit ELF file");
   }
 
@@ -282,24 +283,24 @@ StatusOr<const Elf64_Ehdr *> ElfReaderCreator::ElfHeader() const {
       elf_header->e_ident[EI_MAG2] != ELFMAG2 ||
       elf_header->e_ident[EI_MAG3] != ELFMAG3) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "Unsupported file format: file does not begin with ELF magic number");
   }
 
   if (elf_header->e_ident[EI_CLASS] != ELFCLASS64) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Unsupported file format: only 64-bit ELF is supported");
   }
 
   if (elf_header->e_ident[EI_DATA] != ELFDATA2LSB) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Unsupported file format: only little-endian ELF is "
                   "supported");
   }
 
   if (elf_header->e_ident[EI_VERSION] != EV_CURRENT ||
       elf_header->e_version != EV_CURRENT) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Unsupported file format: unknown ELF version");
   }
 
@@ -309,7 +310,7 @@ StatusOr<const Elf64_Ehdr *> ElfReaderCreator::ElfHeader() const {
 StatusOr<Elf64_Off> ElfReaderCreator::SectionTableStart(
     const Elf64_Ehdr *elf_header) const {
   if (elf_header->e_shoff == 0) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "ELF file contains no section header table");
   }
 
@@ -323,7 +324,7 @@ StatusOr<uint16_t> ElfReaderCreator::NumSections(
   // However, ElfReader does not currently support this option.
   if (elf_header->e_shnum == 0) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "ELF file contains no section header table or has too many sections");
   }
 
@@ -333,7 +334,7 @@ StatusOr<uint16_t> ElfReaderCreator::NumSections(
 StatusOr<uint16_t> ElfReaderCreator::EntrySize(
     const Elf64_Ehdr *elf_header) const {
   if (elf_header->e_shentsize < sizeof(Elf64_Shdr)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Malformed ELF file: malformed section header size");
   }
 
@@ -343,7 +344,7 @@ StatusOr<uint16_t> ElfReaderCreator::EntrySize(
 StatusOr<uint16_t> ElfReaderCreator::NameTableIndex(
     const Elf64_Ehdr *elf_header) const {
   if (elf_header->e_shstrndx == SHN_UNDEF) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "ELF file contains no section name string table section");
   }
 
@@ -358,7 +359,7 @@ StatusOr<absl::Span<const uint8_t>> ElfReaderCreator::SectionHeaderTable(
 
   if (!section_header_table_or_none.has_value()) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "Malformed ELF file: section header table exceeds boundary of file");
   }
 
@@ -372,7 +373,7 @@ StatusOr<const Elf64_Shdr *> ElfReaderCreator::NameTableHeader(
       section_header_table, name_table_index * entry_size);
 
   if (!name_table_header_or_none.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Malformed ELF file: section name string table header "
                   "lies outside "
                   "section header table");
@@ -381,7 +382,7 @@ StatusOr<const Elf64_Shdr *> ElfReaderCreator::NameTableHeader(
   const Elf64_Shdr *name_table_header = name_table_header_or_none.value();
 
   if (name_table_header->sh_type != SHT_STRTAB) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Malformed ELF file: section name string table section "
                   "is not of type "
                   "SHT_STRTAB");
@@ -398,7 +399,7 @@ StatusOr<absl::Span<const uint8_t>> ElfReaderCreator::NameTable(
       GetSubspan(elf_file_, name_table_start, name_table_size);
 
   if (!name_table_or_none.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Malformed ELF file: section name string table exceeds "
                   "boundary of "
                   "file");

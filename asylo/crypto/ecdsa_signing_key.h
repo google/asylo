@@ -38,6 +38,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -68,7 +69,7 @@ template <int32_t kCoordinateSize>
 StatusOr<UnsafeBytes<kCoordinateSize>> ToCoordinate(const BIGNUM &bignum) {
   UnsafeBytes<kCoordinateSize> coordinate;
   if (BN_bn2bin_padded(coordinate.data(), coordinate.size(), &bignum) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return coordinate;
 }
@@ -84,12 +85,12 @@ template <class Hash>
 Status BsslSignX509(X509 *x509, EC_KEY *private_key) {
   bssl::UniquePtr<EVP_PKEY> evp_pkey(EVP_PKEY_new());
   if (EVP_PKEY_set1_EC_KEY(evp_pkey.get(), private_key) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   Hash hasher;
   if (X509_sign(x509, evp_pkey.get(), hasher.GetBsslHashFunction()) == 0) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
@@ -351,7 +352,7 @@ EcdsaVerifyingKey<kSignatureScheme, kNid, kCoordinateSize, Hash>::
     default:
       break;
   }
-  return Status(error::GoogleError::UNIMPLEMENTED,
+  return Status(absl::StatusCode::kUnimplemented,
                 absl::StrFormat("Asymmetric key encoding (%s) unsupported",
                                 ProtoEnumValueName(key_proto.encoding())));
 }
@@ -365,7 +366,7 @@ EcdsaVerifyingKey<kSignatureScheme, kNid, kCoordinateSize, Hash>::Create(
     bssl::UniquePtr<EC_KEY> public_key) {
   if (GetEcCurveNid(public_key.get()) != kNid) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "public_key parameter must represent a point on the NIST  curve");
   }
 
@@ -415,26 +416,26 @@ Status EcdsaVerifyingKey<kSignatureScheme, kNid, kCoordinateSize, Hash>::Verify(
     ByteContainerView message, const Signature &signature) const {
   if (signature.signature_scheme() != GetSignatureScheme()) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrFormat("Signature scheme should be %s, instead is %s",
                         ProtoEnumValueName(GetSignatureScheme()),
                         ProtoEnumValueName(signature.signature_scheme())));
   }
 
   if (!signature.has_ecdsa_signature()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Signature does not have an ECDSA signature");
   }
 
   if (!signature.ecdsa_signature().has_r() ||
       !signature.ecdsa_signature().has_s()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Signature must include an R and an S value");
   }
 
   if (signature.ecdsa_signature().r().size() != kCoordinateSize ||
       signature.ecdsa_signature().s().size() != kCoordinateSize) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("The R and S values must each be ",
                                kCoordinateSize, " bytes"));
   }
@@ -466,7 +467,7 @@ EcdsaSigningKey<kSignatureScheme, kNid, kCoordinateSize, Hash>::CreateFromProto(
     case UNKNOWN_ASYMMETRIC_KEY_ENCODING:
       break;
   }
-  return Status(error::GoogleError::UNIMPLEMENTED,
+  return Status(absl::StatusCode::kUnimplemented,
                 absl::StrFormat("Asymmetric key encoding (%d) unsupported",
                                 key_proto.encoding()));
 }
@@ -478,7 +479,7 @@ StatusOr<std::unique_ptr<
 EcdsaSigningKey<kSignatureScheme, kNid, kCoordinateSize, Hash>::Create(
     bssl::UniquePtr<EC_KEY> private_key) {
   if (GetEcCurveNid(private_key.get()) != kNid) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "private_key parameter must be a key for the NIST  curve");
   }
 

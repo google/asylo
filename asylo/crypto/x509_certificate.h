@@ -30,6 +30,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
@@ -288,7 +289,7 @@ class X509Certificate : public CertificateInterface {
     bssl::UniquePtr<X509v3ObjectT> bssl_object(
         static_cast<X509v3ObjectT *>(X509V3_EXT_d2i(extension)));
     if (bssl_object == nullptr) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
 
     // GCC requires this std::move() invocation.

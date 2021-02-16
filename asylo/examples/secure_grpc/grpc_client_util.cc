@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/client.h"
 #include "asylo/enclave.pb.h"
@@ -89,13 +90,13 @@ asylo::StatusOr<std::string> GrpcClientEnclaveGetTranslation(
 
   if (!enclave_output.HasExtension(client_enclave_output)) {
     return asylo::Status(
-        asylo::error::GoogleError::INTERNAL,
+        absl::StatusCode::kInternal,
         "EnclaveOutput missing expected client_enclave_output extension");
   }
   const GrpcClientEnclaveOutput &output =
       enclave_output.GetExtension(client_enclave_output);
   if (output.translation_response().translated_word().empty()) {
-    return asylo::Status(asylo::error::GoogleError::INTERNAL,
+    return asylo::Status(absl::StatusCode::kInternal,
                          "GrpcClientEnclaveOutput is missing a translation");
   }
   return output.translation_response().translated_word();

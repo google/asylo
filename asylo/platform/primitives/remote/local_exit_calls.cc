@@ -19,6 +19,7 @@
 #include "asylo/platform/primitives/remote/local_exit_calls.h"
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/host_call/untrusted/host_call_handlers_util.h"
@@ -67,7 +68,7 @@ class GetTimeExitCallHandler
       return Status::OkStatus();
     }
     // Otherwise return no-value status.
-    return Status{error::GoogleError::NOT_FOUND,
+    return Status{absl::StatusCode::kNotFound,
                   "Host time not received or expired"};
   }
 

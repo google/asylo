@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/enclave.pb.h"
@@ -105,14 +106,14 @@ Status RemoteEnclaveProxyServer::Start(
           case kSelectorRemoteConnect: {
             // Load local client (exit calls possible during enclave loading).
             if (local_enclave_client_) {
-              invocation->status = Status{error::GoogleError::ALREADY_EXISTS,
+              invocation->status = Status{absl::StatusCode::kAlreadyExists,
                                           "Local enclave already loaded"};
               return;
             }
             // Retrieve enclave load config from the only input.
             if (invocation->reader.size() != 1) {
               invocation->status =
-                  Status{error::GoogleError::FAILED_PRECONDITION,
+                  Status{absl::StatusCode::kFailedPrecondition,
                          "Remote connect must have 1 parameter only "
                          "(serialized EnclaveLoadConfig)"};
               return;
@@ -122,7 +123,7 @@ Status RemoteEnclaveProxyServer::Start(
             if (!provisioned_load_config.ParseFromArray(in_config.data(),
                                                         in_config.size())) {
               invocation->status =
-                  Status{error::GoogleError::INTERNAL,
+                  Status{absl::StatusCode::kInternal,
                          "Unable to parse Remote Config from input parameter"};
               return;
             }
@@ -157,7 +158,7 @@ Status RemoteEnclaveProxyServer::Start(
           default:
             // Invoke the entry point handler of the local enclave.
             if (!local_enclave_client_) {
-              invocation->status = Status(error::GoogleError::NOT_FOUND,
+              invocation->status = Status(absl::StatusCode::kNotFound,
                                           "Local enclave not loaded");
               return;
             }

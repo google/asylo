@@ -20,9 +20,11 @@
 
 #include <openssl/mem.h>
 #include <pthread.h>
+
 #include <cstdint>
 #include <cstdio>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
 namespace asylo {
@@ -43,8 +45,8 @@ Status LaunchThreads(const int numThreads, void *(*start_routine)(void *),
     pthread_t new_thread;
     int ret = pthread_create(&new_thread, nullptr, start_routine, arg);
     if (ret != 0) {
-      return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("Failed to create thread: ", ret));
+      return absl::InternalError(
+          absl::StrCat("Failed to create thread: ", ret));
     }
     threads->emplace_back(new_thread);
   }
@@ -56,8 +58,7 @@ Status JoinThreads(const std::vector<pthread_t> &threads) {
   for (int i = 0; i < threads.size(); ++i) {
     int ret = pthread_join(threads[i], nullptr);
     if (ret != 0) {
-      return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("Failed to join thread: ", ret));
+      return absl::InternalError(absl::StrCat("Failed to join thread: ", ret));
     }
   }
 
@@ -67,8 +68,7 @@ Status JoinThreads(const std::vector<pthread_t> &threads) {
 Status CheckInRange(const int value, absl::string_view debug_name,
                     const int min_allowed, const int max_allowed) {
   if (value < min_allowed || value > max_allowed) {
-    return Status(
-        error::GoogleError::FAILED_PRECONDITION,
+    return absl::FailedPreconditionError(
         absl::StrCat("illegal value of ", debug_name, ": currently ", value,
                      "; must be in range ", min_allowed, "-", max_allowed));
   }

@@ -483,8 +483,8 @@ Status SetStrictRemoteSelfSgxExpectation(SgxIdentityExpectation *expectation) {
 Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
                         SgxIdentity *sgx_identity) {
   if (generic_identity.version() != kSgxIdentityVersionString) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Unknown identity version in EnclaveIdentity");
+    return absl::InvalidArgumentError(
+        "Unknown identity version in EnclaveIdentity");
   }
   // Parse SgxIdentity directly from serialized |identity| (the body of this
   // block is identical to the above `ParseSgxIdentity()`, but parse into
@@ -492,25 +492,21 @@ Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
   const EnclaveIdentityDescription &description =
       generic_identity.description();
   if (description.identity_type() != CODE_IDENTITY) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrCat(
-            "Invalid identity_type: Expected = CODE_IDENTITY, Actual = ",
-            ProtoEnumValueName(description.identity_type())));
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Invalid identity_type: Expected = CODE_IDENTITY, Actual = ",
+        ProtoEnumValueName(description.identity_type())));
   }
   if (description.authority_type() != kSgxAuthorizationAuthority) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Invalid authority_type: Expected = ",
-                               kSgxAuthorizationAuthority,
-                               ", Actual = ", description.authority_type()));
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Invalid authority_type: Expected = ", kSgxAuthorizationAuthority,
+        ", Actual = ", description.authority_type()));
   }
   if (!sgx_identity->ParseFromString(generic_identity.identity())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Could not parse SGX identity from the identity string");
+    return absl::InvalidArgumentError(
+        "Could not parse SGX identity from the identity string");
   }
   if (!IsValidSgxIdentity(*sgx_identity)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Parsed SGX identity is invalid");
+    return absl::InvalidArgumentError("Parsed SGX identity is invalid");
   }
   return Status::OkStatus();
 }
@@ -612,15 +608,14 @@ Status VerifyHardwareReport(const Report &report) {
                /*key_len=*/report_key.size(),
                /*in=*/reinterpret_cast<const uint8_t *>(&report.body),
                /*in_len=*/sizeof(report.body)) != 1) {
-    return Status(
-        error::GoogleError::INTERNAL,
+    return absl::InternalError(
         absl::StrCat("CMAC computation failed: ", BsslLastErrorString()));
   }
 
   // Inequality operator on a SafeBytes object performs a constant-time
   // comparison, which is required for MAC verification.
   if (actual_mac != report.mac) {
-    return Status(error::GoogleError::INTERNAL, "MAC verification failed");
+    return absl::InternalError("MAC verification failed");
   }
   return Status::OkStatus();
 }

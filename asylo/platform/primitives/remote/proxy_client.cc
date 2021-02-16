@@ -24,6 +24,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/dlopen/loader.pb.h"
 #include "asylo/platform/primitives/primitives.h"
@@ -75,7 +76,7 @@ Status RemoteEnclaveProxyClient::EnclaveCallInternal(uint64_t selector,
                                                      MessageWriter *in,
                                                      MessageReader *out) {
   if (IsClosed()) {
-    return Status{error::GoogleError::FAILED_PRECONDITION,
+    return Status{absl::StatusCode::kFailedPrecondition,
                   "No connection to remote proxy server"};
   }
 
@@ -105,7 +106,7 @@ bool RemoteEnclaveProxyClient::IsClosed() const {
 
 Status RemoteEnclaveProxyClient::Connect(const EnclaveLoadConfig &load_config) {
   if (!IsClosed()) {
-    return Status{error::GoogleError::ALREADY_EXISTS,
+    return Status{absl::StatusCode::kAlreadyExists,
                   "Client is already connected to server"};
   }
 
@@ -117,7 +118,7 @@ Status RemoteEnclaveProxyClient::Connect(const EnclaveLoadConfig &load_config) {
 
   // Provision remote enclave proxy process to load the Enclave.
   if (!provisioned_load_config.HasExtension(remote_load_config)) {
-    return Status{error::GoogleError::ALREADY_EXISTS,
+    return Status{absl::StatusCode::kAlreadyExists,
                   absl::StrCat("No SGX extension in load config found, config=",
                                provisioned_load_config.ShortDebugString())};
   }
@@ -129,7 +130,7 @@ Status RemoteEnclaveProxyClient::Connect(const EnclaveLoadConfig &load_config) {
       if (!provisioned_load_config.GetExtension(remote_load_config)
                .sgx_load_config()
                .has_file_enclave_config()) {
-        return Status{error::GoogleError::ALREADY_EXISTS,
+        return Status{absl::StatusCode::kAlreadyExists,
                       absl::StrCat("No file_enclave_config in sgx extension in "
                                    "load config found, config=",
                                    load_config.ShortDebugString())};
@@ -148,7 +149,7 @@ Status RemoteEnclaveProxyClient::Connect(const EnclaveLoadConfig &load_config) {
       break;
     default:
       return Status{
-          error::GoogleError::ALREADY_EXISTS,
+          absl::StatusCode::kAlreadyExists,
           absl::StrCat("No SGX extension in load config found, config=",
                        provisioned_load_config.ShortDebugString())};
   }
@@ -167,12 +168,12 @@ Status RemoteEnclaveProxyClient::Connect(const EnclaveLoadConfig &load_config) {
       [this](std::unique_ptr<Communicator::Invocation> invocation) {
         if (invocation->selector >= kSelectorRemote &&
             invocation->selector < kSelectorUser) {
-          invocation->status = Status{error::GoogleError::FAILED_PRECONDITION,
+          invocation->status = Status{absl::StatusCode::kFailedPrecondition,
                                       "Invalid selector received from proxy"};
           return;
         }
         if (!exit_call_provider()) {
-          invocation->status = Status{error::GoogleError::FAILED_PRECONDITION,
+          invocation->status = Status{absl::StatusCode::kFailedPrecondition,
                                       "Exit call provider not set yet."};
           return;
         }
@@ -183,7 +184,7 @@ Status RemoteEnclaveProxyClient::Connect(const EnclaveLoadConfig &load_config) {
 
   std::string buffer;
   if (!provisioned_load_config.SerializeToString(&buffer)) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Unable to serialize Remote Config to string");
   }
 

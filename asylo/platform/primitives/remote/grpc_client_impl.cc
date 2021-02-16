@@ -23,6 +23,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/util/logging.h"
@@ -53,7 +54,7 @@ namespace {
 void SerializeIntoRequest(CommunicationMessage *request,
                           Communicator::Invocation *invocation) {
   *request->mutable_status() =
-      StatusToProto(Status{error::GoogleError::UNKNOWN, "Invocation request"});
+      StatusToProto(Status{absl::StatusCode::kUnknown, "Invocation request"});
   request->set_invocation_thread_id(invocation->invocation_thread_id);
   request->set_selector(invocation->selector);
   // Parameters are OK, serialize them into request.
@@ -85,7 +86,7 @@ void DeserializeFromReply(const CommunicationMessage &reply,
 Status Communicator::ClientImpl::RunInvocation(
     Communicator::Invocation *invocation) {
   if (!communicator_->is_client_ready_.load()) {
-    return Status{error::GoogleError::CANCELLED, "Disconnected"};
+    return Status{absl::StatusCode::kCancelled, "Disconnected"};
   }
 
   // Prepare request sequence number to make certain response matches
@@ -108,7 +109,7 @@ Status Communicator::ClientImpl::RunInvocation(
 
     // Verify sequence number match.
     if (wrapped_message->request_sequence_number() != request_sequence_number) {
-      return Status{error::GoogleError::INTERNAL,
+      return Status{absl::StatusCode::kInternal,
                     "Response sequence number does not match request"};
     }
 
@@ -134,7 +135,7 @@ Communicator::ClientImpl::Create(const RemoteProxyConfig &config,
   gpr_timespec absolute_deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
   if (!client->grpc_channel_->WaitForConnected(absolute_deadline)) {
-    return Status(error::GoogleError::DEADLINE_EXCEEDED, "Failed to connect");
+    return Status(absl::StatusCode::kDeadlineExceeded, "Failed to connect");
   }
   client->grpc_stub_ =
       CommunicatorService::NewStub(client->grpc_channel_);
@@ -166,7 +167,7 @@ Status Communicator::ClientImpl::SendCommunication(
   context.set_deadline(absolute_deadline);
   auto grpc_status = grpc_stub_->Communicate(&context, message, &confirmation);
   if (!grpc_status.ok()) {
-    return Status{error::GoogleError::INTERNAL,
+    return Status{absl::StatusCode::kInternal,
                   absl::StrCat("gRPC ErrorCode=", grpc_status.error_code(),
                                ", ErrorMessage=", grpc_status.error_message())};
   }

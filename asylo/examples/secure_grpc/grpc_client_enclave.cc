@@ -60,20 +60,19 @@ asylo::StatusOr<grpc_server::GetTranslationResponse> GetTranslation(
 asylo::Status GrpcClientEnclave::Run(const asylo::EnclaveInput &input,
                                      asylo::EnclaveOutput *output) {
   if (!input.HasExtension(client_enclave_input)) {
-    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                         "Input missing client_input extension");
+    return absl::InvalidArgumentError("Input missing client_input extension");
   }
   const GrpcClientEnclaveInput &client_input =
       input.GetExtension(client_enclave_input);
 
   const std::string &address = client_input.server_address();
   if (address.empty()) {
-    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                         "Input must provide a non-empty server address");
+    return absl::InvalidArgumentError(
+        "Input must provide a non-empty server address");
   }
   if (client_input.translation_request().input_word().empty()) {
-    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                         "Input must provide a non-empty RPC input");
+    return absl::InvalidArgumentError(
+        "Input must provide a non-empty RPC input");
   }
 
   // The ::grpc::ChannelCredentials object configures the channel authentication
@@ -93,8 +92,7 @@ asylo::Status GrpcClientEnclave::Run(const asylo::EnclaveInput &input,
       gpr_time_from_micros(absl::ToInt64Microseconds(kChannelDeadline),
                            GPR_TIMESPAN));
   if (!channel->WaitForConnected(absolute_deadline)) {
-    return asylo::Status(asylo::error::GoogleError::INTERNAL,
-                         "Failed to connect to server");
+    return absl::InternalError("Failed to connect to server");
   }
 
   GrpcClientEnclaveOutput *client_output =

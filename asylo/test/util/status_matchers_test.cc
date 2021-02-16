@@ -24,6 +24,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest-spi.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -66,13 +67,13 @@ std::string MatchExplanation(const MatcherT &matcher, const MatcheeT &value) {
 
 TEST(StatusMatchersTest, IsOkMatchesStatus) {
   EXPECT_THAT(Status::OkStatus(), IsOk());
-  EXPECT_THAT(Status(error::GoogleError::UNKNOWN, "error"), Not(IsOk()));
+  EXPECT_THAT(Status(absl::StatusCode::kUnknown, "error"), Not(IsOk()));
 }
 
 TEST(StatusMatchersTest, IsOkMatchesStatusOr) {
   EXPECT_THAT(StatusOr<int>(42), IsOk());
   EXPECT_THAT(
-      StatusOr<std::string>(Status(error::GoogleError::UNKNOWN, "error")),
+      StatusOr<std::string>(Status(absl::StatusCode::kUnknown, "error")),
       Not(IsOk()));
 }
 
@@ -101,7 +102,7 @@ TEST(StatusMatchersTest, IsOkAndHoldsConvertsNonMatcherArgsToEqMatchers) {
 // regardless of the value of value_matcher.
 TEST(StatusMatchersTest, IsOkAndHoldsDoesNotMatchNonOkStatus) {
   const StatusOr<int> non_ok_statusor =
-      Status(error::GoogleError::INTERNAL, "some_error");
+      Status(absl::StatusCode::kInternal, "some_error");
 
   EXPECT_THAT(non_ok_statusor, Not(IsOkAndHolds(Lt(3))));
   EXPECT_THAT(non_ok_statusor, Not(IsOkAndHolds(Eq(3))));
@@ -166,7 +167,7 @@ TEST(StatusMatchersTest, IsOkAndHoldsDoesNotExplainSuccessfulMatch) {
 TEST(StatusMatchersTest, IsOkAndHoldsExplainsNonMatchCorrectly) {
   const std::vector<int> non_empty_vector = {8, 6, 7, 5, 3, 0, 9};
   const StatusOr<std::vector<int>> non_ok_statusor =
-      Status(error::GoogleError::INTERNAL, "some_error");
+      Status(absl::StatusCode::kInternal, "some_error");
   const StatusOr<std::vector<int>> non_matching_statusor = non_empty_vector;
 
   ASSERT_THAT(non_ok_statusor, Not(IsOkAndHolds(IsEmpty())));
@@ -184,8 +185,8 @@ TEST(StatusMatchersTest, StatusIsMatchesStatusObjects) {
   const std::string kMessage = "something very bad!";
   const std::string kWrongMessage = "this is not the same error";
 
-  constexpr auto kErrorCode = error::GoogleError::INVALID_ARGUMENT;
-  constexpr auto kWrongErrorCode = error::GoogleError::INTERNAL;
+  constexpr auto kErrorCode = absl::StatusCode::kInvalidArgument;
+  constexpr auto kWrongErrorCode = absl::StatusCode::kInternal;
   const Status kError(kErrorCode, kMessage);
 
   EXPECT_THAT(kError, StatusIs(kErrorCode));
@@ -207,8 +208,8 @@ TEST(StatusMatchersTest, StatusIsMatchesStatusObjects) {
 TEST(StatusMatchersTest, StatusIsMatchesStatusOrObjects) {
   const std::string kMessage = "oops";
   const std::string kWrongMessage = "different error message";
-  constexpr auto kErrorCode = error::GoogleError::FAILED_PRECONDITION;
-  constexpr auto kWrongErrorCode = error::GoogleError::INTERNAL;
+  constexpr auto kErrorCode = absl::StatusCode::kFailedPrecondition;
+  constexpr auto kWrongErrorCode = absl::StatusCode::kInternal;
   const StatusOr<int> kFailure = Status(kErrorCode, kMessage);
 
   EXPECT_THAT(kFailure, StatusIs(kErrorCode));
@@ -225,28 +226,28 @@ TEST(StatusMatchersTest, StatusIsMatchesStatusOrObjects) {
       EXPECT_THAT(kFailure, Not(StatusIs(kErrorCode, kMessage))), kMessage);
 
   const StatusOr<int> kSuccess = 1;
-  EXPECT_THAT(kSuccess, StatusIs(error::GoogleError::OK));
-  EXPECT_THAT(kSuccess, StatusIs(error::GoogleError::OK, ""));
+  EXPECT_THAT(kSuccess, StatusIs(absl::StatusCode::kOk));
+  EXPECT_THAT(kSuccess, StatusIs(absl::StatusCode::kOk, ""));
   EXPECT_THAT(kSuccess, Not(StatusIs(kErrorCode)));
-  EXPECT_THAT(kSuccess, Not(StatusIs(error::GoogleError::OK, kMessage)));
+  EXPECT_THAT(kSuccess, Not(StatusIs(absl::StatusCode::kOk, kMessage)));
 
   EXPECT_NONFATAL_FAILURE(EXPECT_THAT(kSuccess, StatusIs(kErrorCode)),
                           "FAILED_PRECONDITION");
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THAT(kSuccess, StatusIs(error::GoogleError::OK, kMessage)),
+      EXPECT_THAT(kSuccess, StatusIs(absl::StatusCode::kOk, kMessage)),
       kMessage);
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THAT(kSuccess, Not(StatusIs(error::GoogleError::OK))),
+      EXPECT_THAT(kSuccess, Not(StatusIs(absl::StatusCode::kOk))),
       "does not match error code OK");
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THAT(kSuccess, Not(StatusIs(error::GoogleError::OK, ""))),
+      EXPECT_THAT(kSuccess, Not(StatusIs(absl::StatusCode::kOk, ""))),
       "does not have an error message");
 }
 
 // Tests that StatusIs only matches a Status or StatusOr if its message matches
 // the message matcher.
 TEST(StatusMatchersTest, StatusIsUsesMessageMatcherToCheckMessage) {
-  constexpr auto kErrorCode = error::GoogleError::FAILED_PRECONDITION;
+  constexpr auto kErrorCode = absl::StatusCode::kFailedPrecondition;
 
   EXPECT_THAT(Status(kErrorCode, "Foobar"),
               StatusIs(kErrorCode, HasSubstr("Foo")));

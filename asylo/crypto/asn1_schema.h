@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/asn1.h"
 #include "asylo/util/status.h"
@@ -80,7 +81,7 @@ class Asn1SequenceImpl
     ASYLO_ASSIGN_OR_RETURN(elements, asn1.GetSequence());
     if (elements.size() != 2) {
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrFormat("Sequence has size %d, but size 2 was expected",
                           elements.size()));
     }
@@ -149,7 +150,7 @@ class Asn1SequenceOfImpl : public Asn1Schema<std::vector<ValueTypeT>> {
   Status VerifySize(size_t size) const {
     if (size < min_size_ || size > max_size_) {
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrFormat(
               "Sequence has size %d, but a size between %d and %d was expected",
               size, min_size_, max_size_));

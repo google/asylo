@@ -24,6 +24,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/util/status.h"
@@ -45,12 +46,12 @@ size_t RandomNonceGenerator::NonceSize() const { return nonce_size_; }
 
 Status RandomNonceGenerator::NextNonce(absl::Span<uint8_t> nonce) {
   if (nonce.size() < nonce_size_) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Invalid vector parameter size: ", nonce.size(),
                                " (vector size must be >= ", nonce_size_, ")"));
   }
   if (RAND_bytes(nonce.data(), nonce_size_) != 1) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   absl::StrCat("RAND_bytes failed: ", BsslLastErrorString()));
   }
   return Status::OkStatus();

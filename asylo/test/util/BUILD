@@ -57,6 +57,7 @@ cc_library(
     deps = [
         "//asylo/util:status",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
 )
@@ -255,6 +256,7 @@ cc_test(
         ":status_matchers",
         ":test_main",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
