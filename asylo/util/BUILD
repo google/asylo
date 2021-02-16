@@ -777,6 +777,7 @@ cc_library(
         ":http_fetcher",
         ":status",
         "@com_github_curl_curl//:curl",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
         "@com_googlesource_code_re2//:re2",

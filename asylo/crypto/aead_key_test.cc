@@ -165,7 +165,7 @@ TEST_P(AeadKeyTest, AeadKeyTestInvalidInputSeal) {
   EXPECT_THAT(test_key_->Seal(test_vector_.plaintext, /*associated_data=*/"",
                               bad_nonce, absl::MakeSpan(actual_ciphertext),
                               &actual_ciphertext_size),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verifies that Open returns a non-OK Status with invalid inputs.
@@ -180,7 +180,7 @@ TEST_P(AeadKeyTest, AeadKeyTestInvalidInputOpen) {
       test_key_->Open(test_vector_.authenticated_ciphertext, test_vector_.aad,
                       bad_nonce, absl::MakeSpan(actual_plaintext),
                       &actual_plaintext_size),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+      StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verifies that the authenticated encryption uses all relevant data.
@@ -196,21 +196,21 @@ TEST_P(AeadKeyTest, AeadKeyTestWrongInformation) {
       bad_key_->Open(test_vector_.authenticated_ciphertext, test_vector_.aad,
                      test_vector_.nonce, absl::MakeSpan(actual_plaintext),
                      &actual_plaintext_size),
-      StatusIs(error::GoogleError::INTERNAL));
+      StatusIs(absl::StatusCode::kInternal));
 
   // Verifies that Open fails with the wrong nonce.
   EXPECT_THAT(
       test_key_->Open(test_vector_.authenticated_ciphertext, test_vector_.aad,
                       bad_data_vector_.nonce, absl::MakeSpan(actual_plaintext),
                       &actual_plaintext_size),
-      StatusIs(error::GoogleError::INTERNAL));
+      StatusIs(absl::StatusCode::kInternal));
 
   // Verifies that Open fails when the associated data is incorrect.
   EXPECT_THAT(
       test_key_->Open(test_vector_.authenticated_ciphertext,
                       bad_data_vector_.aad, test_vector_.nonce,
                       absl::MakeSpan(actual_plaintext), &actual_plaintext_size),
-      StatusIs(error::GoogleError::INTERNAL));
+      StatusIs(absl::StatusCode::kInternal));
 
   // Verifies that Open fails when the ciphertext does not include the tag.
   auto unauthenticated_ciphertext_str =
@@ -222,7 +222,7 @@ TEST_P(AeadKeyTest, AeadKeyTestWrongInformation) {
       test_key_->Open(test_vector_.unauthenticated_ciphertext, test_vector_.aad,
                       test_vector_.nonce, absl::MakeSpan(actual_plaintext),
                       &actual_plaintext_size),
-      StatusIs(error::GoogleError::INTERNAL));
+      StatusIs(absl::StatusCode::kInternal));
 }
 
 // Verifies that the factory function fails when given an invalid-sized key.
@@ -236,7 +236,7 @@ TEST_P(AeadKeyTest, AeadKeyTestInvalidKey) {
   StatusOr<std::unique_ptr<AeadKey>> bad_test_key_result =
       GetParam().factory(bad_key);
   EXPECT_THAT(bad_test_key_result,
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 INSTANTIATE_TEST_SUITE_P(

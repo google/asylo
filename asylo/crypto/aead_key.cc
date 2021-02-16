@@ -19,9 +19,11 @@
 #include "asylo/crypto/aead_key.h"
 
 #include <openssl/aead.h>
+
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/bssl_util.h"
@@ -77,7 +79,7 @@ StatusOr<std::unique_ptr<AeadKey>> AeadKey::CreateAesGcmKey(
     ByteContainerView key) {
   AeadScheme scheme = GetAesGcmAeadScheme(key.size());
   if (scheme == UNKNOWN_AEAD_SCHEME) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Invalid AES-GCM key length: ", key.size(),
                                " (must be 16 or 32 bytes)"));
   }
@@ -88,7 +90,7 @@ StatusOr<std::unique_ptr<AeadKey>> AeadKey::CreateAesGcmSivKey(
     ByteContainerView key) {
   AeadScheme scheme = GetAesGcmSivAeadScheme(key.size());
   if (scheme == UNKNOWN_AEAD_SCHEME) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Invalid AES-GCM-SIV key length: ", key.size(),
                                " (must be 16 or 32 bytes)"));
   }
@@ -105,7 +107,7 @@ Status AeadKey::Seal(ByteContainerView plaintext,
                      ByteContainerView associated_data, ByteContainerView nonce,
                      absl::Span<uint8_t> ciphertext, size_t *ciphertext_size) {
   if (nonce.size() != nonce_size_) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Invalid nonce length: ", nonce.size(),
                                " (must be ", nonce_size_, " bytes)"));
   }
@@ -117,7 +119,7 @@ Status AeadKey::Seal(ByteContainerView plaintext,
                         EVP_AEAD_max_tag_len(aead_),
                         /*impl=*/nullptr) != 1) {
     return Status(
-        error::GoogleError::INTERNAL,
+        absl::StatusCode::kInternal,
         absl::StrCat("EVP_AEAD_CTX_init failed: ", BsslLastErrorString()));
   }
 
@@ -126,7 +128,7 @@ Status AeadKey::Seal(ByteContainerView plaintext,
                         plaintext.data(), plaintext.size(),
                         associated_data.data(), associated_data.size()) != 1) {
     return Status(
-        error::GoogleError::INTERNAL,
+        absl::StatusCode::kInternal,
         absl::StrCat("EVP_AEAD_CTX_seal failed: ", BsslLastErrorString()));
   }
 
@@ -137,7 +139,7 @@ Status AeadKey::Open(ByteContainerView ciphertext,
                      ByteContainerView associated_data, ByteContainerView nonce,
                      absl::Span<uint8_t> plaintext, size_t *plaintext_size) {
   if (nonce.size() != nonce_size_) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Invalid nonce length: ", nonce.size(),
                                " (must be ", nonce_size_, " bytes)"));
   }
@@ -148,7 +150,7 @@ Status AeadKey::Open(ByteContainerView ciphertext,
                         EVP_AEAD_max_tag_len(aead_),
                         /*impl=*/nullptr) != 1) {
     return Status(
-        error::GoogleError::INTERNAL,
+        absl::StatusCode::kInternal,
         absl::StrCat("EVP_AEAD_CTX_init failed: ", BsslLastErrorString()));
   }
 
@@ -157,7 +159,7 @@ Status AeadKey::Open(ByteContainerView ciphertext,
                         ciphertext.data(), ciphertext.size(),
                         associated_data.data(), associated_data.size()) != 1) {
     return Status(
-        error::GoogleError::INTERNAL,
+        absl::StatusCode::kInternal,
         absl::StrCat("EVP_AEAD_CTX_open failed: ", BsslLastErrorString()));
   }
 

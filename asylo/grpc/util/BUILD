@@ -45,6 +45,7 @@ cc_library(
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc++_codegen_base",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
     ],
@@ -100,5 +101,7 @@ cc_library(
         "//asylo/util:mutex_guarded",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
     ],
 )

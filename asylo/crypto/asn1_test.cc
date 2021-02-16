@@ -35,6 +35,7 @@
 #include <gtest/gtest.h>
 #include "absl/base/macros.h"
 #include "absl/hash/hash_testing.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -131,7 +132,7 @@ TEST(Asn1Test, ObjectIdCreateFromShortNameFailsIfNoSuchName) {
 
   for (const char *bad_name : kBadShortNames) {
     EXPECT_THAT(ObjectId::CreateFromShortName(bad_name),
-                StatusIs(error::GoogleError::NOT_FOUND));
+                StatusIs(absl::StatusCode::kNotFound));
   }
 }
 
@@ -149,7 +150,7 @@ TEST(Asn1Test, ObjectIdCreateFromLongNameFailsIfNoSuchName) {
 
   for (const char *bad_name : kBadLongNames) {
     EXPECT_THAT(ObjectId::CreateFromLongName(bad_name),
-                StatusIs(error::GoogleError::NOT_FOUND));
+                StatusIs(absl::StatusCode::kNotFound));
   }
 }
 
@@ -166,7 +167,7 @@ TEST(Asn1Test, ObjectIdCreateFromNidFailsIfNoSuchNid) {
 
   for (int bad_nid : kBadNids) {
     EXPECT_THAT(ObjectId::CreateFromNumericId(bad_nid),
-                StatusIs(error::GoogleError::NOT_FOUND));
+                StatusIs(absl::StatusCode::kNotFound));
   }
 }
 
@@ -184,7 +185,7 @@ TEST(Asn1Test, ObjectIdCreateFromOidStringFailsIfInvalidOid) {
 
   for (const char *bad_oid : kBadOids) {
     EXPECT_THAT(ObjectId::CreateFromOidString(bad_oid),
-                StatusIs(error::GoogleError::INTERNAL));
+                StatusIs(absl::StatusCode::kInternal));
   }
 }
 
@@ -195,9 +196,9 @@ TEST(Asn1Test, ObjectIdGettersFailIfIdNotInBoringssl) {
   for (const char *oid_string : kNoNameOids) {
     ObjectId oid;
     ASYLO_ASSERT_OK_AND_ASSIGN(oid, ObjectId::CreateFromOidString(oid_string));
-    EXPECT_THAT(oid.GetShortName(), StatusIs(error::GoogleError::NOT_FOUND));
-    EXPECT_THAT(oid.GetLongName(), StatusIs(error::GoogleError::NOT_FOUND));
-    EXPECT_THAT(oid.GetNumericId(), StatusIs(error::GoogleError::NOT_FOUND));
+    EXPECT_THAT(oid.GetShortName(), StatusIs(absl::StatusCode::kNotFound));
+    EXPECT_THAT(oid.GetLongName(), StatusIs(absl::StatusCode::kNotFound));
+    EXPECT_THAT(oid.GetNumericId(), StatusIs(absl::StatusCode::kNotFound));
     EXPECT_THAT(oid.GetOidString(), IsOkAndHolds(oid_string));
   }
 }
@@ -330,7 +331,6 @@ TEST(Asn1Test, ObjectIdOutputUnknown) {
   EXPECT_THAT(out.str(), Eq("UNKNOWN_OID"));
 }
 
-
 TEST(Asn1Test, CreateSequenceFromStatusOrsCreatesCorrectValueIfAllInputsAreOk) {
   Asn1Value asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs({}));
@@ -358,16 +358,16 @@ TEST(Asn1Test, CreateSequenceFromStatusOrsCreatesCorrectValueIfAllInputsAreOk) {
 
 TEST(Asn1Test, CreateSequenceFromStatusOrsFailsIfAnyInputsAreNotOk) {
   EXPECT_THAT(Asn1Value::CreateSequenceFromStatusOrs(
-                  {Status(error::GoogleError::OUT_OF_RANGE, "foobar")}),
-              StatusIs(error::GoogleError::OUT_OF_RANGE, "foobar"));
+                  {Status(absl::StatusCode::kOutOfRange, "foobar")}),
+              StatusIs(absl::StatusCode::kOutOfRange, "foobar"));
   EXPECT_THAT(Asn1Value::CreateSequenceFromStatusOrs(
                   {Asn1Value::CreateBoolean(false),
-                   Status(error::GoogleError::OUT_OF_RANGE, "foobar")}),
-              StatusIs(error::GoogleError::OUT_OF_RANGE, "foobar"));
+                   Status(absl::StatusCode::kOutOfRange, "foobar")}),
+              StatusIs(absl::StatusCode::kOutOfRange, "foobar"));
   EXPECT_THAT(Asn1Value::CreateSequenceFromStatusOrs(
-                  {Status(error::GoogleError::OUT_OF_RANGE, "foobar"),
+                  {Status(absl::StatusCode::kOutOfRange, "foobar"),
                    Asn1Value::CreateBoolean(false)}),
-              StatusIs(error::GoogleError::OUT_OF_RANGE, "foobar"));
+              StatusIs(absl::StatusCode::kOutOfRange, "foobar"));
 }
 
 TEST(Asn1Test, SetSequenceFromStatusOrsCreatesCorrectValueIfAllInputsAreOk) {
@@ -396,16 +396,16 @@ TEST(Asn1Test, SetSequenceFromStatusOrsCreatesCorrectValueIfAllInputsAreOk) {
 TEST(Asn1Test, SetSequenceFromStatusOrsFailsIfAnyInputsAreNotOk) {
   Asn1Value asn1;
   EXPECT_THAT(asn1.SetSequenceFromStatusOrs(
-                  {Status(error::GoogleError::OUT_OF_RANGE, "foobar")}),
-              StatusIs(error::GoogleError::OUT_OF_RANGE, "foobar"));
+                  {Status(absl::StatusCode::kOutOfRange, "foobar")}),
+              StatusIs(absl::StatusCode::kOutOfRange, "foobar"));
   EXPECT_THAT(asn1.SetSequenceFromStatusOrs(
                   {Asn1Value::CreateBoolean(false),
-                   Status(error::GoogleError::OUT_OF_RANGE, "foobar")}),
-              StatusIs(error::GoogleError::OUT_OF_RANGE, "foobar"));
+                   Status(absl::StatusCode::kOutOfRange, "foobar")}),
+              StatusIs(absl::StatusCode::kOutOfRange, "foobar"));
   EXPECT_THAT(asn1.SetSequenceFromStatusOrs(
-                  {Status(error::GoogleError::OUT_OF_RANGE, "foobar"),
+                  {Status(absl::StatusCode::kOutOfRange, "foobar"),
                    Asn1Value::CreateBoolean(false)}),
-              StatusIs(error::GoogleError::OUT_OF_RANGE, "foobar"));
+              StatusIs(absl::StatusCode::kOutOfRange, "foobar"));
 }
 
 // A template fixture for testing with each of the ASN.1 value types that
@@ -1015,7 +1015,7 @@ TYPED_TEST(Asn1Test, CreateCreatesAsn1ValueWithCorrectTypeAndValue) {
 TYPED_TEST(Asn1Test, CreateFailsWithBadInputs) {
   for (const auto &value : TestFixture::BadTestData()) {
     EXPECT_THAT(TestFixture::Create(value),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -1035,7 +1035,7 @@ TYPED_TEST(Asn1Test, SetterFailsWithBadInputs) {
   Asn1Value asn1;
   for (const auto &value : TestFixture::BadTestData()) {
     EXPECT_THAT(TestFixture::Set(&asn1, value),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -1168,7 +1168,7 @@ TYPED_TEST(Asn1Test, ValuesOfUnsupportedTypesHaveNulloptType) {
                        absl::HexStringToBytes(kUnsupportedValueDerHex)));
   EXPECT_THAT(unsupported.Type(), Eq(absl::nullopt));
   EXPECT_THAT(TestFixture::Get(unsupported),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TYPED_TEST(Asn1Test, ValuesOfUnsupportedTypesAreNotEqualToSupportedValues) {

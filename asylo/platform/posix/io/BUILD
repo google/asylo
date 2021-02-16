@@ -157,6 +157,7 @@ cc_enclave_test(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],

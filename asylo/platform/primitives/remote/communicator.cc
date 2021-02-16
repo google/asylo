@@ -25,6 +25,7 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -84,7 +85,7 @@ class Communicator::ThreadActivityWorkQueue {
               return message_queue.is_exiting || !message_queue.queue.empty();
             });
         if (locked_message_queue->is_exiting) {
-          return Status(error::GoogleError::CANCELLED, "Channel disconnected");
+          return Status(absl::StatusCode::kCancelled, "Channel disconnected");
         }
         wrapped_message = std::move(locked_message_queue->queue.front());
         locked_message_queue->queue.pop();
@@ -98,7 +99,7 @@ class Communicator::ThreadActivityWorkQueue {
       if (wrapped_message->has_status()) {
         message_status = StatusFromProto(wrapped_message->status());
       }
-      if (!message_status.Is(error::GoogleError::UNKNOWN)) {
+      if (!message_status.Is(absl::StatusCode::kUnknown)) {
         // Response received.
         return std::move(wrapped_message);
       }
@@ -193,7 +194,7 @@ Communicator::LocateOrCreateThreadActivityWorkQueue(
         invocation_thread_id,
         absl::make_unique<ThreadActivityWorkQueue>(invocation_thread_id));
     if (!ins.second) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Failed to add thread to the map");
     }
     it = ins.first;
@@ -227,7 +228,7 @@ Communicator::LocateOrCreateThreadActivityWorkQueue(
           });
       if (!new_worker) {
         locked_threads_map->erase(it);
-        return Status(error::GoogleError::RESOURCE_EXHAUSTED,
+        return Status(absl::StatusCode::kResourceExhausted,
                       "Failed to start worker thread to handle requests");
       }
       it->second->SetWorkerThread(std::move(new_worker));
@@ -273,8 +274,7 @@ Status Communicator::StartServer(
     int requested_port) {
   // Create gRPC server and start listening.
   if (service_) {
-    return Status(error::GoogleError::ALREADY_EXISTS,
-                  "Server already created.");
+    return Status(absl::StatusCode::kAlreadyExists, "Server already created.");
   }
   ASYLO_ASSIGN_OR_RETURN(
       service_, ServiceImpl::Create(requested_port, server_creds, this));
@@ -394,7 +394,7 @@ void Communicator::Invoke(
   }
   if (!current_thread_context_) {
     invocation->status = Status{
-        error::GoogleError::INTERNAL,
+        absl::StatusCode::kInternal,
         absl::StrCat("Thread has no cached context, thread_id=", thread_id,
                      ", is_host=", is_host())};
     return;
@@ -418,15 +418,15 @@ int Communicator::server_port() const { return service_->server_port(); }
 
 Status Communicator::IsMessageValid(const CommunicationMessage &message) {
   if (!message.has_request_sequence_number()) {
-    return Status{error::GoogleError::FAILED_PRECONDITION,
+    return Status{absl::StatusCode::kFailedPrecondition,
                   "Message has no request_sequence_number"};
   }
   if (!message.has_invocation_thread_id()) {
-    return Status{error::GoogleError::FAILED_PRECONDITION,
+    return Status{absl::StatusCode::kFailedPrecondition,
                   "Message has no invocation_thread_id"};
   }
   if (!message.has_selector()) {
-    return Status{error::GoogleError::FAILED_PRECONDITION,
+    return Status{absl::StatusCode::kFailedPrecondition,
                   "Message has no selector"};
   }
   return Status::OkStatus();

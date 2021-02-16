@@ -28,6 +28,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/time/time.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
@@ -80,9 +81,8 @@ class SgxRemoteAssertionGeneratorImplTest : public testing::Test {
   static void SetUpTestSuite() {
     // Set up assertion authority configs.
     std::vector<asylo::EnclaveAssertionAuthorityConfig> authority_configs = {
-      GetNullAssertionAuthorityTestConfig(),
-      GetSgxLocalAssertionAuthorityTestConfig()
-    };
+        GetNullAssertionAuthorityTestConfig(),
+        GetSgxLocalAssertionAuthorityTestConfig()};
 
     // Explicitly initialize all assertion authorities.
     ASSERT_THAT(InitializeEnclaveAssertionAuthorities(
@@ -101,7 +101,7 @@ class SgxRemoteAssertionGeneratorImplTest : public testing::Test {
     CertificateChain certificate_chain;
     if (!google::protobuf::TextFormat::ParseFromString(kCertificateChain1,
                                              &certificate_chain)) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Failed to parse text certificate chain proto");
     }
     certificate_chains_.push_back(certificate_chain);
@@ -152,8 +152,7 @@ class SgxRemoteAssertionGeneratorImplTest : public testing::Test {
         gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                      gpr_time_from_micros(kDeadlineMicros, GPR_TIMESPAN));
     if (!channel->WaitForConnected(absolute_deadline)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "Failed to connect to server");
+      return Status(absl::StatusCode::kInternal, "Failed to connect to server");
     }
 
     SgxRemoteAssertionGeneratorClient client(channel);
@@ -247,7 +246,7 @@ TEST_F(SgxRemoteAssertionGeneratorImplTest,
   std::shared_ptr<::grpc::ChannelCredentials> channel_credentials =
       EnclaveChannelCredentials(BidirectionalSgxLocalCredentialsOptions());
   EXPECT_THAT(GenerateSgxRemoteAssertion(channel_credentials),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 TEST_F(SgxRemoteAssertionGeneratorImplTest,
@@ -440,7 +439,7 @@ TEST_F(SgxRemoteAssertionGeneratorImplTest,
       EnclaveChannelCredentials(BidirectionalNullCredentialsOptions());
   auto result = GenerateSgxRemoteAssertion(credentials);
 
-  ASSERT_THAT(result, StatusIs(error::GoogleError::PERMISSION_DENIED));
+  ASSERT_THAT(result, StatusIs(absl::StatusCode::kPermissionDenied));
 }
 
 TEST_F(SgxRemoteAssertionGeneratorImplTest,
@@ -458,7 +457,7 @@ TEST_F(SgxRemoteAssertionGeneratorImplTest,
       ::grpc::InsecureChannelCredentials();
   auto result = GenerateSgxRemoteAssertion(credentials);
 
-  ASSERT_THAT(result, StatusIs(error::GoogleError::INTERNAL));
+  ASSERT_THAT(result, StatusIs(absl::StatusCode::kInternal));
 }
 
 }  // namespace

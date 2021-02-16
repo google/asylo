@@ -696,6 +696,7 @@ cc_test_and_cc_enclave_test(
         "//asylo/util:error_codes",
         "//asylo/util:proto_parse_util",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
         "@sgx_dcap//:quote_constants",
     ],

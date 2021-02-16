@@ -25,6 +25,7 @@
 #include <string>
 
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
@@ -73,10 +74,10 @@ class ServerInvocation : public Communicator::Invocation {
   ~ServerInvocation() override {
     // Serialize into response.
     CommunicationMessage response;
-    if (status.Is(error::GoogleError::UNKNOWN)) {
+    if (status.Is(absl::StatusCode::kUnknown)) {
       // UNKNOWN status indicates request, cannot be returned with response.
       status = Status{
-          error::GoogleError::FAILED_PRECONDITION,
+          absl::StatusCode::kFailedPrecondition,
           absl::StrCat("Unacceptable status returned ", status.ToString())};
     }
     SerializeIntoResponse(&response);
@@ -134,7 +135,7 @@ void Communicator::ServiceImpl::StartInvocation(
   // Call service-side handler handing invocation to it.
   // Note that wrapper message has already been destructed.
   if (!handler_) {
-    invocation->status = Status{error::GoogleError::FAILED_PRECONDITION,
+    invocation->status = Status{absl::StatusCode::kFailedPrecondition,
                                 "Invocation handler not set"};
     return;
   }
@@ -413,10 +414,10 @@ Communicator::ServiceImpl::Create(
   service->completion_queue_ = builder.AddCompletionQueue();
   service->server_ = builder.BuildAndStart();
   if (service->server_port_ == 0) {
-    return Status(error::GoogleError::INTERNAL, "Local_port not assigned");
+    return Status(absl::StatusCode::kInternal, "Local_port not assigned");
   }
   if (requested_port != 0 && service->server_port_ != requested_port) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Local_port does not match requested_port");
   }
   if (communicator->is_host()) {

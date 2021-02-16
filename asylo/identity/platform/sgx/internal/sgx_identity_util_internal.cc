@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -260,7 +261,7 @@ StatusOr<bool> MatchIdentityToExpectation(
     const SgxIdentity &identity, const SgxIdentityExpectation &expectation,
     std::string *explanation) {
   if (!IsValidExpectation(expectation)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
+    return Status(::absl::StatusCode::kInvalidArgument,
                   "Expectation parameter is invalid");
   }
 
@@ -269,11 +270,11 @@ StatusOr<bool> MatchIdentityToExpectation(
   // the expectation and the identity are mismatched (resulting in a success if
   // the partial match is a success).
   if (!IsValidSgxIdentity(identity)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
+    return Status(::absl::StatusCode::kInvalidArgument,
                   "Identity parameter is invalid");
   }
   if (!IsIdentityCompatibleWithMatchSpec(identity, expectation.match_spec())) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
+    return Status(::absl::StatusCode::kInvalidArgument,
                   "Identity is not compatible with specified match spec");
   }
 
@@ -325,12 +326,11 @@ Status SetExpectation(const SgxIdentityMatchSpec &match_spec,
                       const SgxIdentity &identity,
                       SgxIdentityExpectation *expectation) {
   if (!IsValidMatchSpec(match_spec)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
+    return Status(::absl::StatusCode::kInvalidArgument,
                   "Match spec is invalid");
   }
   if (!IsValidSgxIdentity(identity)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Identity is invalid");
+    return Status(::absl::StatusCode::kInvalidArgument, "Identity is invalid");
   }
 
   *expectation->mutable_match_spec() = match_spec;
@@ -518,11 +518,11 @@ Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
 Status ParseSgxMatchSpec(const std::string &generic_match_spec,
                          SgxIdentityMatchSpec *sgx_match_spec) {
   if (!sgx_match_spec->ParseFromString(generic_match_spec)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
+    return Status(::absl::StatusCode::kInvalidArgument,
                   "Could not parse SGX match spec from the match-spec string");
   }
   if (!IsValidMatchSpec(*sgx_match_spec)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
+    return Status(::absl::StatusCode::kInvalidArgument,
                   "Parsed SGX match spec is invalid");
   }
   return Status::OkStatus();
@@ -540,7 +540,7 @@ Status ParseSgxExpectation(
       generic_expectation.match_spec(), sgx_expectation->mutable_match_spec()));
   if (!IsIdentityCompatibleWithMatchSpec(sgx_expectation->reference_identity(),
                                          sgx_expectation->match_spec())) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
+    return Status(::absl::StatusCode::kInvalidArgument,
                   "Parsed SGX expectation is invalid");
   }
   return Status::OkStatus();
@@ -549,12 +549,11 @@ Status ParseSgxExpectation(
 Status SerializeSgxIdentity(const SgxIdentity &sgx_identity,
                             EnclaveIdentity *generic_identity) {
   if (!IsValidSgxIdentity(sgx_identity)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Invalid SgxIdentity");
+    return Status(::absl::StatusCode::kInvalidArgument, "Invalid SgxIdentity");
   }
   SetSgxIdentityDescription(generic_identity->mutable_description());
   if (!sgx_identity.SerializeToString(generic_identity->mutable_identity())) {
-    return Status(::asylo::error::GoogleError::INTERNAL,
+    return Status(::absl::StatusCode::kInternal,
                   "Could not serialize SGX identity to a string");
   }
   // Set version string to indicate that the serialized |identity| is an
@@ -566,11 +565,11 @@ Status SerializeSgxIdentity(const SgxIdentity &sgx_identity,
 Status SerializeSgxMatchSpec(const SgxIdentityMatchSpec &sgx_match_spec,
                              std::string *generic_match_spec) {
   if (!IsValidMatchSpec(sgx_match_spec)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
+    return Status(::absl::StatusCode::kInvalidArgument,
                   "Invalid SgxIdentityMatchSpec");
   }
   if (!sgx_match_spec.SerializeToString(generic_match_spec)) {
-    return Status(::asylo::error::GoogleError::INTERNAL,
+    return Status(::absl::StatusCode::kInternal,
                   "Could not serialize SgxIdentityMatchSpec to a string");
   }
   return Status::OkStatus();

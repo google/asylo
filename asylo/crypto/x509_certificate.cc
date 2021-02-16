@@ -39,6 +39,7 @@
 
 #include "absl/base/call_once.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -119,7 +120,7 @@ StatusOr<CrlDistributionPoints::Reasons> BitvecToReasons(
     std::vector<bool> bitvec) {
   if (bitvec.size() > kReasonFlagsMaxSize || (!bitvec.empty() && bitvec[0])) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrFormat(
             "DistributionPoint contains unrecognized reason flags: {%s}",
             absl::StrJoin(bitvec, ", ")));
@@ -175,11 +176,11 @@ StatusOr<bssl::UniquePtr<EVP_PKEY>> CreatePublicKey(
       bssl::UniquePtr<EC_KEY> ec_key(d2i_EC_PUBKEY(
           /*a=*/nullptr, &public_key_data, public_key_der.size()));
       if (!ec_key) {
-        return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+        return Status(absl::StatusCode::kInternal, BsslLastErrorString());
       }
 
       if (EVP_PKEY_assign_EC_KEY(evp_key.get(), ec_key.release()) != 1) {
-        return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+        return Status(absl::StatusCode::kInternal, BsslLastErrorString());
       }
 
       return std::move(evp_key);
@@ -193,11 +194,11 @@ StatusOr<bssl::UniquePtr<EVP_PKEY>> CreatePublicKey(
       bssl::UniquePtr<RSA> rsa_key(d2i_RSA_PUBKEY(
           /*out=*/nullptr, &public_key_data, public_key_der.size()));
       if (!rsa_key) {
-        return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+        return Status(absl::StatusCode::kInternal, BsslLastErrorString());
       }
 
       if (EVP_PKEY_assign_RSA(evp_key.get(), rsa_key.release()) != 1) {
-        return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+        return Status(absl::StatusCode::kInternal, BsslLastErrorString());
       }
 
       return std::move(evp_key);
@@ -212,7 +213,7 @@ StatusOr<bssl::UniquePtr<EVP_PKEY>> CreatePublicKey(
         signature_name = data;
       }
       return Status(
-          error::GoogleError::UNIMPLEMENTED,
+          absl::StatusCode::kUnimplemented,
           absl::StrCat("Signature algorithm not supported: ", signature_name));
     }
   }
@@ -222,12 +223,12 @@ StatusOr<bssl::UniquePtr<EVP_PKEY>> CreatePublicKey(
 StatusOr<std::string> EvpPkeyToDer(const EVP_PKEY &evp_key) {
   bssl::UniquePtr<BIO> key_bio(BIO_new(BIO_s_mem()));
   if (i2d_PUBKEY_bio(key_bio.get(), const_cast<EVP_PKEY *>(&evp_key)) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   char *public_key_data = nullptr;
   int64_t public_key_length = BIO_get_mem_data(key_bio.get(), &public_key_data);
   if (public_key_length <= 0) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   return std::string(public_key_data, public_key_length);
@@ -236,12 +237,12 @@ StatusOr<std::string> EvpPkeyToDer(const EVP_PKEY &evp_key) {
 StatusOr<std::string> ToPemEncoding(X509 *x509) {
   bssl::UniquePtr<BIO> bio(BIO_new(BIO_s_mem()));
   if (!PEM_write_bio_X509(bio.get(), x509)) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   char *data;
   long length = BIO_get_mem_data(bio.get(), &data);
   if (length <= 0) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return std::string(data, length);
 }
@@ -249,13 +250,13 @@ StatusOr<std::string> ToPemEncoding(X509 *x509) {
 StatusOr<std::string> ToDerEncoding(X509 *x509) {
   bssl::UniquePtr<BIO> x509_bio(BIO_new(BIO_s_mem()));
   if (i2d_X509_bio(x509_bio.get(), x509) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   char *data;
   long length = BIO_get_mem_data(x509_bio.get(), &data);
   if (length <= 0) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   return std::string(data, length);
@@ -284,12 +285,12 @@ StatusOr<absl::Time> AbslTimeFromAsn1Time(const ASN1_TIME &asn1_time) {
   int num_days;
   int num_seconds;
   if (ASN1_TIME_diff(&num_days, &num_seconds, unix_epoch, &asn1_time) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   absl::Time time =
       absl::UnixEpoch() + num_days * kOneDay + absl::Seconds(num_seconds);
   if (time == absl::InfinitePast() || time == absl::InfiniteFuture()) {
-    return Status(error::GoogleError::OUT_OF_RANGE,
+    return Status(absl::StatusCode::kOutOfRange,
                   "Time is too large or too small");
   }
   return time;
@@ -301,14 +302,14 @@ StatusOr<bssl::UniquePtr<ASN1_TIME>> Asn1TimeFromAbslTime(absl::Time time) {
 
   if (unix_seconds < std::numeric_limits<time_t>::min() ||
       unix_seconds > std::numeric_limits<time_t>::max()) {
-    return Status(error::GoogleError::OUT_OF_RANGE,
+    return Status(absl::StatusCode::kOutOfRange,
                   "Time value cannot fit in a time_t");
   }
 
   bssl::UniquePtr<ASN1_TIME> asn1_time(
       ASN1_TIME_set(/*s=*/nullptr, absl::ToTimeT(time)));
   if (asn1_time == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   // GCC 4.9 requires this std::move() invocation.
@@ -335,7 +336,7 @@ StatusOr<X509Name> ReadName(const X509_NAME &x509_name) {
     int value_utf8_length = ASN1_STRING_to_UTF8(
         &value_utf8_unowned, X509_NAME_ENTRY_get_data(entry));
     if (value_utf8_length < 0) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
     bssl::UniquePtr<unsigned char> value_utf8(value_utf8_unowned);
     name[i].value = std::string(
@@ -356,7 +357,7 @@ StatusOr<bssl::UniquePtr<X509_NAME>> WriteName(const X509Name &name) {
             reinterpret_cast<unsigned char *>(entry_value.data()),
             entry_value.size() - 1, /*loc=*/-1,
             /*set=*/0) != 1) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
   }
 
@@ -369,7 +370,7 @@ Status AddSingleExtension(X509_EXTENSION *x509_extension, X509 *x509) {
   constexpr int kAddExtensionToEnd = -1;
 
   if (X509_add_ext(x509, x509_extension, /*loc=*/kAddExtensionToEnd) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
@@ -377,7 +378,7 @@ Status AddSingleExtension(X509_EXTENSION *x509_extension, X509 *x509) {
 // Sets the X.509 version in |x509|.
 Status SetVersion(X509Version version, X509 *x509) {
   if (X509_set_version(x509, static_cast<long>(version)) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
@@ -385,7 +386,7 @@ Status SetVersion(X509Version version, X509 *x509) {
 // Sets the serial number in |x509|.
 Status SetSerialNumber(const BIGNUM &serial_number, X509 *x509) {
   if (BN_is_negative(&serial_number)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "X.509 certificate serial number must be positive");
   }
 
@@ -396,7 +397,7 @@ Status SetSerialNumber(const BIGNUM &serial_number, X509 *x509) {
   ASYLO_ASSIGN_OR_RETURN(serial_asn1_integer,
                          serial_asn1_value.GetBsslInteger());
   if (X509_set_serialNumber(x509, serial_asn1_integer.get()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
@@ -406,7 +407,7 @@ Status SetIssuerName(const X509Name &name, X509 *x509) {
   bssl::UniquePtr<X509_NAME> x509_name;
   ASYLO_ASSIGN_OR_RETURN(x509_name, WriteName(name));
   if (X509_set_issuer_name(x509, x509_name.get()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
@@ -416,11 +417,11 @@ Status SetValidity(X509Validity validity, X509 *x509) {
   bssl::UniquePtr<ASN1_TIME> asn1_time;
   ASYLO_ASSIGN_OR_RETURN(asn1_time, Asn1TimeFromAbslTime(validity.not_before));
   if (X509_set_notBefore(x509, asn1_time.get()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   ASYLO_ASSIGN_OR_RETURN(asn1_time, Asn1TimeFromAbslTime(validity.not_after));
   if (X509_set_notAfter(x509, asn1_time.get()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
@@ -430,7 +431,7 @@ Status SetSubjectName(const X509Name &name, X509 *x509) {
   bssl::UniquePtr<X509_NAME> x509_name;
   ASYLO_ASSIGN_OR_RETURN(x509_name, WriteName(name));
   if (X509_set_subject_name(x509, x509_name.get()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
@@ -442,10 +443,10 @@ Status SetSubjectPublicKey(absl::string_view subject_key_der, X509 *x509) {
   bssl::UniquePtr<EVP_PKEY> evp_pkey(d2i_PUBKEY(
       /*out=*/nullptr, &der_data, subject_key_der.size()));
   if (evp_pkey == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   if (X509_set_pubkey(x509, evp_pkey.get()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
@@ -465,7 +466,7 @@ Status SetAuthorityKeyId(ByteContainerView authority_key_id, X509 *x509) {
   bssl::UniquePtr<X509_EXTENSION> extension(X509V3_EXT_i2d(
       NID_authority_key_identifier, /*crit=*/0, bssl_key_id.get()));
   if (extension == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return AddSingleExtension(extension.get(), x509);
 }
@@ -489,7 +490,7 @@ Status SetSubjectKeyId(SubjectKeyIdMethod method, X509 *x509) {
           /*conf=*/nullptr, /*ctx=*/&context, NID_subject_key_identifier,
           ToCharVector(kUseSha1Hash).data()));
       if (extension == nullptr) {
-        return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+        return Status(absl::StatusCode::kInternal, BsslLastErrorString());
       }
       break;
   }
@@ -525,7 +526,7 @@ Status SetKeyUsage(KeyUsageInformation key_usage, X509 *x509) {
           absl::StrCat("critical, ", absl::StrJoin(usage_strings, ",")))
           .data()));
   if (extension == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return AddSingleExtension(extension.get(), x509);
 }
@@ -546,7 +547,7 @@ Status SetBasicConstraints(BasicConstraints basic_constraints, X509 *x509) {
   bssl::UniquePtr<X509_EXTENSION> extension(X509V3_EXT_i2d(
       NID_basic_constraints, /*crit=*/1, bssl_constraints.get()));
   if (extension == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return AddSingleExtension(extension.get(), x509);
 }
@@ -557,7 +558,7 @@ Status SetCrlDistributionPoints(
   bssl::UniquePtr<ASN1_IA5STRING> uri(ASN1_IA5STRING_new());
   if (ASN1_STRING_set(uri.get(), crl_distribution_points.uri.data(),
                       crl_distribution_points.uri.size()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   bssl::UniquePtr<GENERAL_NAME> general_name(GENERAL_NAME_new());
@@ -571,7 +572,7 @@ Status SetCrlDistributionPoints(
   dist_point->distpoint->name.fullname = GENERAL_NAMES_new();
   if (sk_GENERAL_NAME_push(dist_point->distpoint->name.fullname,
                            general_name.release()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   if (crl_distribution_points.reasons.has_value()) {
@@ -591,12 +592,12 @@ Status SetCrlDistributionPoints(
   bssl::UniquePtr<CRL_DIST_POINTS> bssl_crl_dist_points(CRL_DIST_POINTS_new());
   if (sk_DIST_POINT_push(bssl_crl_dist_points.get(), dist_point.release()) !=
       1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   bssl::UniquePtr<X509_EXTENSION> extension(X509V3_EXT_i2d(
       NID_crl_distribution_points, /*crit=*/0, bssl_crl_dist_points.get()));
   if (extension == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return AddSingleExtension(extension.get(), x509);
 }
@@ -615,7 +616,7 @@ Status AddExtensions(absl::Span<const X509Extension> extensions, X509 *x509) {
         /*ex=*/nullptr, &extension.oid.GetBsslObject(), extension.is_critical,
         data_bssl.get()));
     if (x509_extension == nullptr) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
     ASYLO_RETURN_IF_ERROR(AddSingleExtension(x509_extension.get(), x509));
   }
@@ -640,25 +641,25 @@ StatusOr<std::unique_ptr<X509Certificate>> X509CertificateBuilder::SignAndBuild(
     const X509Signer &issuer_key) const {
   if (serial_number == nullptr) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "Cannot SignAndBuild() X.509 certificate without a serial number");
   }
   if (!issuer.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Cannot SignAndBuild() X.509 certificate without an issuer");
   }
   if (!validity.has_value()) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "Cannot SignAndBuild() X.509 certificate without a validity period");
   }
   if (!subject.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Cannot SignAndBuild() X.509 certificate without a subject");
   }
   if (!subject_public_key_der.has_value()) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "Cannot SignAndBuild() X.509 certificate without a subject key");
   }
 
@@ -727,7 +728,7 @@ StatusOr<std::unique_ptr<X509Certificate>> X509Certificate::Create(
       return CreateFromDer(certificate.data());
     default:
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrCat("Transformation to X509 is not supported for: ",
                        ProtoEnumValueName(certificate.format())));
   }
@@ -741,7 +742,7 @@ StatusOr<std::unique_ptr<X509Certificate>> X509Certificate::CreateFromPem(
                                                /*cb=*/nullptr,
                                                /*u=*/nullptr));
   if (x509 == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return absl::WrapUnique<X509Certificate>(
       new X509Certificate(std::move(x509)));
@@ -753,7 +754,7 @@ StatusOr<std::unique_ptr<X509Certificate>> X509Certificate::CreateFromDer(
       BIO_new_mem_buf(der_encoded_cert.data(), der_encoded_cert.size()));
   bssl::UniquePtr<X509> x509(d2i_X509_bio(cert_bio.get(), /*x509=*/nullptr));
   if (x509 == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return absl::WrapUnique<X509Certificate>(
       new X509Certificate(std::move(x509)));
@@ -782,14 +783,14 @@ StatusOr<Certificate> X509Certificate::ToCertificateProto(
       return cert;
     case Certificate::SGX_ATTESTATION_KEY_CERTIFICATE:
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrFormat("Certificate format (%s) is not a valid encoding for "
                           "an X.509 certificate",
                           Certificate_CertificateFormat_Name(encoding)));
     case Certificate::UNKNOWN:
       break;
   }
-  return Status(error::GoogleError::INVALID_ARGUMENT,
+  return Status(absl::StatusCode::kInvalidArgument,
                 absl::StrFormat("Certificate format (%s) unknown",
                                 ProtoEnumValueName(encoding)));
 }
@@ -810,12 +811,12 @@ StatusOr<bssl::UniquePtr<X509_REQ>> CertificateSigningRequestToX509Req(
       break;
     default:
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrCat("Transformation to X509_REQ not suported for: ",
                        ProtoEnumValueName(csr.format())));
   }
   if (req == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return std::move(req);
 }
@@ -825,13 +826,13 @@ StatusOr<CertificateSigningRequest> X509ReqToDerCertificateSigningRequest(
   bssl::UniquePtr<BIO> x509_bio(BIO_new(BIO_s_mem()));
   if (i2d_X509_REQ_bio(x509_bio.get(), const_cast<X509_REQ *>(&x509_req)) !=
       1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   char *data;
   long length = BIO_get_mem_data(x509_bio.get(), &data);
   if (length <= 0) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   CertificateSigningRequest csr;
@@ -847,7 +848,7 @@ StatusOr<std::string> ExtractPkcs10SubjectKeyDer(
 
   bssl::UniquePtr<EVP_PKEY> public_key(X509_REQ_get_pubkey(x509_req.get()));
   if (public_key == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   return EvpPkeyToDer(*public_key);
@@ -864,13 +865,13 @@ Status X509Certificate::Verify(const CertificateInterface &issuer_certificate,
                          CreatePublicKey(x509_.get(), issuer_public_key_der));
 
   if (X509_verify(x509_.get(), public_key.get()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   if (config.issuer_ca) {
     absl::optional<bool> issuer_is_ca = issuer_certificate.IsCa();
     if (issuer_is_ca.has_value() && !issuer_is_ca.value()) {
-      return Status(error::GoogleError::UNAUTHENTICATED,
+      return Status(absl::StatusCode::kUnauthenticated,
                     "Issuer had a CA extension value of false");
     }
   }
@@ -880,7 +881,7 @@ Status X509Certificate::Verify(const CertificateInterface &issuer_certificate,
         issuer_certificate.KeyUsage();
     if (key_usage.has_value() && !key_usage.value().certificate_signing) {
       return Status(
-          error::GoogleError::UNAUTHENTICATED,
+          absl::StatusCode::kUnauthenticated,
           "Issuer's key usage extension did not include certificate signing");
     }
   }
@@ -891,7 +892,7 @@ Status X509Certificate::Verify(const CertificateInterface &issuer_certificate,
         within_period,
         WithinValidityPeriod(config.subject_validity_period.value()));
     if (!within_period) {
-      return Status(error::GoogleError::UNAUTHENTICATED,
+      return Status(absl::StatusCode::kUnauthenticated,
                     "Subject certificate is not valid at this time.");
     }
   }
@@ -902,7 +903,7 @@ Status X509Certificate::Verify(const CertificateInterface &issuer_certificate,
 StatusOr<std::string> X509Certificate::SubjectKeyDer() const {
   bssl::UniquePtr<EVP_PKEY> evp_key(X509_get_pubkey(x509_.get()));
   if (evp_key == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   return EvpPkeyToDer(*evp_key);
@@ -1067,7 +1068,7 @@ X509Certificate::GetCrlDistributionPoints() const {
   CrlDistributionPoints crl_distribution_points;
   if (sk_DIST_POINT_num(bssl_crl_dist_points.get()) != 1) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "Cannot represent a CrlDistributionPoints that does not have exactly "
         "one DistributionPoint");
   }
@@ -1075,30 +1076,30 @@ X509Certificate::GetCrlDistributionPoints() const {
       sk_DIST_POINT_value(bssl_crl_dist_points.get(), 0);
   if (bssl_dist_point->distpoint == nullptr) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "Cannot represent a DistributionPoint without a distributionPoint");
   }
   if (bssl_dist_point->CRLissuer != nullptr) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Cannot represent a DistributionPoint with a cRLIssuer");
   }
   // See v3_crld.c for an illustration that this |type| value corresponds to the
   // |fullname| union field.
   if (bssl_dist_point->distpoint->type != 0) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Cannot represent a DistributionPointName of the "
                   "nameRelativeToCRLIssuer variant");
   }
   if (sk_GENERAL_NAME_num(bssl_dist_point->distpoint->name.fullname) != 1) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "Cannot represent a GeneralNames that does not have exactly one "
         "GeneralName");
   }
   GENERAL_NAME *bssl_general_name =
       sk_GENERAL_NAME_value(bssl_dist_point->distpoint->name.fullname, 0);
   if (bssl_general_name->type != GEN_URI) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Cannot represent a GeneralName that is not of the "
                   "uniformResourceIdentifier variant");
   }
@@ -1106,7 +1107,7 @@ X509Certificate::GetCrlDistributionPoints() const {
   int uri_length = ASN1_STRING_to_UTF8(
       &uri_unowned, bssl_general_name->d.uniformResourceIdentifier);
   if (uri_length < 0) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   bssl::UniquePtr<unsigned char> uri(uri_unowned);
   crl_distribution_points.uri =
@@ -1133,7 +1134,7 @@ StatusOr<std::vector<X509Extension>> X509Certificate::GetOtherExtensions()
   for (int i = 0; i < extension_count; ++i) {
     X509_EXTENSION *bssl_extension = X509_get_ext(x509_.get(), i);
     if (bssl_extension == nullptr) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
     int nid = OBJ_obj2nid(X509_EXTENSION_get_object(bssl_extension));
     if (nid == NID_authority_key_identifier ||
@@ -1168,7 +1169,7 @@ StatusOr<X509_EXTENSION *> X509Certificate::GetExtensionByNid(int nid) const {
   }
   X509_EXTENSION *extension = X509_get_ext(x509_.get(), index);
   if (extension == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return extension;
 }

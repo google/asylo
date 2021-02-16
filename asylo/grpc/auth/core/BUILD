@@ -185,6 +185,7 @@ cc_library(
         "//asylo/util:proto_enum_util",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf",
         "@com_google_protobuf//:protobuf_lite",

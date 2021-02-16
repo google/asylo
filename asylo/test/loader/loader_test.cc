@@ -19,6 +19,7 @@
 #include <iostream>
 
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/client.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
@@ -57,7 +58,7 @@ class FailingLoader : public EnclaveLoader {
   StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
       absl::string_view name, void *base_address, const size_t enclave_size,
       const EnclaveConfig &config) const override {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Could not load enclave.");
   }
 

@@ -19,6 +19,7 @@
 #include <string>
 
 #include "absl/base/macros.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/aead_cryptor.h"
@@ -78,7 +79,7 @@ const StatusOr<CleansingString> DecryptMessage(
 
   if (input_bytes.size() < cryptor->NonceSize()) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrCat("Input too short: expected at least ",
                      cryptor->NonceSize(), " bytes, got ", input_bytes.size()));
   }

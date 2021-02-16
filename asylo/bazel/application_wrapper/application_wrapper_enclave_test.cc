@@ -26,6 +26,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -241,7 +242,7 @@ TEST_F(ApplicationWrapperEnclaveTest, NoArgsExtension) {
                            /*debug=*/true);
   EXPECT_THAT(
       manager_->LoadEnclave(kEnclaveName, loader),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+      StatusIs(absl::StatusCode::kInvalidArgument,
                "Expected command_line_args extension on EnclaveConfig"));
 }
 
@@ -250,7 +251,7 @@ TEST_F(ApplicationWrapperEnclaveTest, NoArgsExtension) {
 TEST_F(ApplicationWrapperEnclaveTest, NoMultipleRun) {
   ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/{}, /*envp=*/{}));
   ASYLO_EXPECT_OK(RunEnclave());
-  EXPECT_THAT(RunEnclave(), StatusIs(error::GoogleError::FAILED_PRECONDITION,
+  EXPECT_THAT(RunEnclave(), StatusIs(absl::StatusCode::kFailedPrecondition,
                                      "Application has already run"));
   ASYLO_EXPECT_OK(DestroyEnclave());
 }
@@ -265,13 +266,13 @@ TEST_F(ApplicationWrapperEnclaveTest, NoMultipleRunFromMultipleThreads) {
   // A phony Status used to initialize run_statuses so that if a thread does not
   // not update its corresponding entry in run_statuses, the un-updated Status
   // will not match the corresponding Status in expected_statuses.
-  const Status phony_status(error::GoogleError::UNKNOWN,
+  const Status phony_status(absl::StatusCode::kUnknown,
                             "Indicates that thread did not set this status");
 
   // The expected Statuses to be returned by each thread's call to RunEnclave(),
   // in no particular order.
   Matcher<const Status &> already_run_status_matcher = StatusIs(
-      error::GoogleError::FAILED_PRECONDITION, "Application has already run");
+      absl::StatusCode::kFailedPrecondition, "Application has already run");
   std::vector<Matcher<const Status &>> expected_statuses(
       kNumTestThreads - 1, already_run_status_matcher);
   expected_statuses.push_back(IsOk());

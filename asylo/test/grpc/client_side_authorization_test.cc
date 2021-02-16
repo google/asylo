@@ -22,6 +22,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "asylo/client.h"
 #include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/enclave.pb.h"
@@ -53,7 +54,6 @@ constexpr char kClientName[] = "Client";
 constexpr char kServerName[] = "Secure Server";
 
 constexpr char kClientInput[] = "Random string?";
-
 
 constexpr char kHost[] = "[::1]";
 
@@ -178,7 +178,7 @@ TEST_F(ClientSideAuthorizationTest, AuthorizationIncorrectSgxIdentityFailure) {
   *input.MutableExtension(client_enclave_input) = std::move(client_input);
 
   EXPECT_THAT(client_enclave_->EnterAndRun(input, &output),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 }  // namespace

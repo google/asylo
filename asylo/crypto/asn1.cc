@@ -31,6 +31,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/base/macros.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -202,7 +203,7 @@ StatusOr<ObjectId> ObjectId::CreateFromShortName(
     const std::string &short_name) {
   int nid = OBJ_sn2nid(short_name.c_str());
   if (nid == NID_undef) {
-    return Status(error::GoogleError::NOT_FOUND,
+    return Status(absl::StatusCode::kNotFound,
                   absl::StrFormat("No OBJECT IDENTIFIER with short name \"%s\"",
                                   short_name));
   }
@@ -212,7 +213,7 @@ StatusOr<ObjectId> ObjectId::CreateFromShortName(
 StatusOr<ObjectId> ObjectId::CreateFromLongName(const std::string &long_name) {
   int nid = OBJ_ln2nid(long_name.c_str());
   if (nid == NID_undef) {
-    return Status(error::GoogleError::NOT_FOUND,
+    return Status(absl::StatusCode::kNotFound,
                   absl::StrFormat("No OBJECT IDENTIFIER with long name \"%s\"",
                                   long_name));
   }
@@ -222,12 +223,12 @@ StatusOr<ObjectId> ObjectId::CreateFromLongName(const std::string &long_name) {
 StatusOr<ObjectId> ObjectId::CreateFromNumericId(int nid) {
   const ASN1_OBJECT *object_original = OBJ_nid2obj(nid);
   if (object_original == nullptr) {
-    return Status(error::GoogleError::NOT_FOUND,
+    return Status(absl::StatusCode::kNotFound,
                   absl::StrCat("No OBJECT IDENTIFIER with NID ", nid));
   }
   bssl::UniquePtr<ASN1_OBJECT> object(OBJ_dup(object_original));
   if (object == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return ObjectId(std::move(object));
 }
@@ -237,7 +238,7 @@ StatusOr<ObjectId> ObjectId::CreateFromOidString(
   bssl::UniquePtr<ASN1_OBJECT> oid(
       OBJ_txt2obj(oid_string.c_str(), /*dont_search_names=*/1));
   if (oid == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return ObjectId(std::move(oid));
 }
@@ -245,7 +246,7 @@ StatusOr<ObjectId> ObjectId::CreateFromOidString(
 StatusOr<ObjectId> ObjectId::CreateFromBsslObject(const ASN1_OBJECT &bssl) {
   bssl::UniquePtr<ASN1_OBJECT> object(OBJ_dup(&bssl));
   if (object == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return ObjectId(std::move(object));
 }
@@ -255,7 +256,7 @@ StatusOr<std::string> ObjectId::GetShortName() const {
   ASYLO_ASSIGN_OR_RETURN(nid, GetNumericId());
   const char *short_name = OBJ_nid2sn(nid);
   if (short_name == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return short_name;
 }
@@ -265,7 +266,7 @@ StatusOr<std::string> ObjectId::GetLongName() const {
   ASYLO_ASSIGN_OR_RETURN(nid, GetNumericId());
   const char *long_name = OBJ_nid2ln(nid);
   if (long_name == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return long_name;
 }
@@ -273,7 +274,7 @@ StatusOr<std::string> ObjectId::GetLongName() const {
 StatusOr<int> ObjectId::GetNumericId() const {
   int nid = OBJ_obj2nid(object_.get());
   if (nid == NID_undef) {
-    return Status(error::GoogleError::NOT_FOUND,
+    return Status(absl::StatusCode::kNotFound,
                   "OBJECT_IDENTIFIER does not have an NID");
   }
   return nid;
@@ -284,17 +285,17 @@ StatusOr<std::string> ObjectId::GetOidString() const {
   int length = OBJ_obj2txt(&buf, /*out_len=*/0, object_.get(),
                            /*always_return_oid=*/1);
   if (length < 0) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   std::vector<char> oid_string(length + 1);
   int length2 = OBJ_obj2txt(oid_string.data(), oid_string.size(), object_.get(),
                             /*always_return_oid=*/1);
   if (length2 != length) {
     if (length2 >= 0) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "OBJECT IDENTIFIER length changed unexpectedly");
     } else {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
   }
   return std::string(oid_string.data());
@@ -305,7 +306,7 @@ const ASN1_OBJECT &ObjectId::GetBsslObject() const { return *object_; }
 StatusOr<bssl::UniquePtr<ASN1_OBJECT>> ObjectId::GetBsslObjectCopy() const {
   bssl::UniquePtr<ASN1_OBJECT> copy(OBJ_dup(object_.get()));
   if (copy == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   // GCC 4.9 requires this std::move() invocation.
@@ -421,7 +422,7 @@ StatusOr<Asn1Value> Asn1Value::CreateFromDer(ByteContainerView asn1_der) {
   bssl::UniquePtr<ASN1_TYPE> asn1(
       d2i_ASN1_TYPE(/*a=*/nullptr, &der_data, asn1_der.size()));
   if (asn1 == nullptr) {
-    return Status(error::GoogleError::INVALID_ARGUMENT, BsslLastErrorString());
+    return Status(absl::StatusCode::kInvalidArgument, BsslLastErrorString());
   }
   return Asn1Value(std::move(asn1));
 }
@@ -437,7 +438,7 @@ StatusOr<bssl::UniquePtr<BIGNUM>> Asn1Value::GetInteger() const {
   bssl::UniquePtr<BIGNUM> result(
       ASN1_INTEGER_to_BN(value_->value.integer, /*bn=*/nullptr));
   if (result == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   // GCC 4.9 requires this std::move() invocation.
@@ -449,7 +450,7 @@ StatusOr<bssl::UniquePtr<BIGNUM>> Asn1Value::GetEnumerated() const {
   bssl::UniquePtr<BIGNUM> result(
       ASN1_ENUMERATED_to_BN(value_->value.enumerated, /*bn=*/nullptr));
   if (result == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   // GCC 4.9 requires this std::move() invocation.
@@ -492,7 +493,7 @@ StatusOr<std::vector<Asn1Value>> Asn1Value::GetSequence() const {
   bssl::UniquePtr<ASN1_SEQUENCE_ANY> sequence;
   ASYLO_ASSIGN_OR_RETURN(sequence, GetBsslSequence());
   if (sequence == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   int sequence_length = sk_ASN1_TYPE_num(sequence.get());
@@ -500,7 +501,7 @@ StatusOr<std::vector<Asn1Value>> Asn1Value::GetSequence() const {
   for (int i = sequence_length - 1; i >= 0; --i) {
     bssl::UniquePtr<ASN1_TYPE> element(sk_ASN1_TYPE_pop(sequence.get()));
     if (element == nullptr) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
     result[i] = Asn1Value(std::move(element));
   }
@@ -521,7 +522,7 @@ Status Asn1Value::SetInteger(const BIGNUM &value) {
   bssl::UniquePtr<ASN1_INTEGER> value_asn1_integer(
       BN_to_ASN1_INTEGER(&value, /*ai=*/nullptr));
   if (value_asn1_integer == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   ASN1_TYPE_set(value_.get(), V_ASN1_INTEGER, value_asn1_integer.release());
@@ -532,7 +533,7 @@ Status Asn1Value::SetEnumerated(const BIGNUM &value) {
   bssl::UniquePtr<ASN1_ENUMERATED> value_asn1_enumerated(
       BN_to_ASN1_ENUMERATED(const_cast<BIGNUM *>(&value), /*ai=*/nullptr));
   if (value_asn1_enumerated == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   ASN1_TYPE_set(value_.get(), V_ASN1_ENUMERATED,
@@ -545,7 +546,7 @@ Status Asn1Value::SetBitString(const std::vector<bool> &value) {
       CHECK_NOTNULL(ASN1_BIT_STRING_new()));
   for (int i = 0; i < value.size(); ++i) {
     if (ASN1_BIT_STRING_set_bit(bssl_bit_string.get(), i, value[i]) != 1) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
   }
 
@@ -558,7 +559,7 @@ Status Asn1Value::SetOctetString(ByteContainerView value) {
       ASN1_OCTET_STRING_new());
   if (ASN1_STRING_set(value_octet_string.get(), value.data(), value.size()) !=
       1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   ASN1_TYPE_set(value_.get(), V_ASN1_OCTET_STRING,
@@ -578,7 +579,7 @@ Status Asn1Value::SetSequence(absl::Span<const Asn1Value> elements) {
   for (const Asn1Value &element : elements) {
     if (sk_ASN1_TYPE_push(sequence.get(),
                           Asn1TypeCopy(element.value_.get()).release()) == 0) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
   }
   return SetBsslSequence(*sequence);
@@ -587,11 +588,11 @@ Status Asn1Value::SetSequence(absl::Span<const Asn1Value> elements) {
 Status Asn1Value::SetIA5String(absl::string_view value) {
   bssl::UniquePtr<ASN1_IA5STRING> ia5_string(ASN1_IA5STRING_new());
   if (ia5_string == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   if (ASN1_STRING_set(ia5_string.get(), value.data(), value.length()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   ASN1_TYPE_set(value_.get(), V_ASN1_IA5STRING, ia5_string.release());
@@ -610,13 +611,13 @@ Status Asn1Value::SetSequenceFromStatusOrs(
 
 StatusOr<std::vector<uint8_t>> Asn1Value::SerializeToDer() const {
   if (value_ == nullptr) {
-    return Status(error::GoogleError::INVALID_ARGUMENT, "Asn1Value is empty");
+    return Status(absl::StatusCode::kInvalidArgument, "Asn1Value is empty");
   }
 
   unsigned char *der_unowned = nullptr;
   int der_length = i2d_ASN1_TYPE(value_.get(), &der_unowned);
   if (der_length < 0) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   bssl::UniquePtr<unsigned char> der(der_unowned);
   std::vector<uint8_t> result(der.get(), &der.get()[der_length]);
@@ -722,7 +723,7 @@ StatusOr<bssl::UniquePtr<ASN1_SEQUENCE_ANY>> Asn1Value::GetBsslSequence()
   bssl::UniquePtr<ASN1_SEQUENCE_ANY> sequence(d2i_ASN1_SEQUENCE_ANY(
       /*a=*/nullptr, &der_data, ASN1_STRING_length(der_string)));
   if (sequence == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   // GCC 4.9 requires this std::move() invocation.
@@ -746,35 +747,35 @@ Status Asn1Value::SetBsslBoolean(ASN1_BOOLEAN bssl_value) {
 
 Status Asn1Value::SetBsslInteger(const ASN1_INTEGER &bssl_value) {
   if (ASN1_TYPE_set1(value_.get(), V_ASN1_INTEGER, &bssl_value) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
 
 Status Asn1Value::SetBsslEnumerated(const ASN1_ENUMERATED &bssl_value) {
   if (ASN1_TYPE_set1(value_.get(), V_ASN1_ENUMERATED, &bssl_value) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
 
 Status Asn1Value::SetBsslBitString(const ASN1_BIT_STRING &bssl_value) {
   if (ASN1_TYPE_set1(value_.get(), V_ASN1_BIT_STRING, &bssl_value) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
 
 Status Asn1Value::SetBsslOctetString(const ASN1_OCTET_STRING &bssl_value) {
   if (ASN1_TYPE_set1(value_.get(), V_ASN1_OCTET_STRING, &bssl_value) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
 
 Status Asn1Value::SetBsslObjectId(const ASN1_OBJECT &bssl_value) {
   if (ASN1_TYPE_set1(value_.get(), V_ASN1_OBJECT, &bssl_value) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
@@ -783,14 +784,14 @@ Status Asn1Value::SetBsslSequence(const ASN1_SEQUENCE_ANY &bssl_value) {
   unsigned char *der_unowned = nullptr;
   int der_length = i2d_ASN1_SEQUENCE_ANY(&bssl_value, &der_unowned);
   if (der_length < 0) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   bssl::UniquePtr<unsigned char> der(der_unowned);
 
   bssl::UniquePtr<ASN1_STRING> der_string(
       ASN1_STRING_type_new(V_ASN1_SEQUENCE));
   if (ASN1_STRING_set(der_string.get(), der.get(), der_length) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   ASN1_TYPE_set(value_.get(), V_ASN1_SEQUENCE, der_string.release());
@@ -799,7 +800,7 @@ Status Asn1Value::SetBsslSequence(const ASN1_SEQUENCE_ANY &bssl_value) {
 
 Status Asn1Value::SetBsslIA5String(const ASN1_IA5STRING &bssl_value) {
   if (ASN1_TYPE_set1(value_.get(), V_ASN1_IA5STRING, &bssl_value) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
@@ -809,12 +810,12 @@ Asn1Value::Asn1Value(bssl::UniquePtr<ASN1_TYPE> value)
 
 Status Asn1Value::CheckIsType(Asn1Type type) const {
   if (value_ == nullptr) {
-    return Status(error::GoogleError::INVALID_ARGUMENT, "Asn1Value is empty");
+    return Status(absl::StatusCode::kInvalidArgument, "Asn1Value is empty");
   }
 
   int openssl_type = ToOpensslType(type);
   if (value_->type != openssl_type) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrFormat("Asn1Value is a %s, not a %s",
                                   OpensslTypeName(value_->type),
                                   OpensslTypeName(openssl_type)));

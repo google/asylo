@@ -26,6 +26,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
@@ -241,7 +242,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest, InitializeSucceedsOnce) {
   SgxIntelEcdsaQeRemoteAssertionVerifier verifier;
   ASYLO_EXPECT_OK(verifier.Initialize(valid_config_));
   EXPECT_THAT(verifier.Initialize(valid_config_),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
@@ -275,7 +276,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
        InitializeFailsWithUnparsableConfig) {
   SgxIntelEcdsaQeRemoteAssertionVerifier verifier;
   EXPECT_THAT(verifier.Initialize("!@#!@"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
@@ -288,7 +289,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
 
   SgxIntelEcdsaQeRemoteAssertionVerifier verifier;
   EXPECT_THAT(verifier.Initialize(serialized_config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
@@ -297,7 +298,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
 
   AssertionRequest request;
   EXPECT_THAT(verifier.CreateAssertionRequest(&request),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION,
+              StatusIs(absl::StatusCode::kFailedPrecondition,
                        HasSubstr("CreateAssertionRequest")));
 }
 
@@ -320,9 +321,9 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   SgxIntelEcdsaQeRemoteAssertionVerifier verifier;
 
   AssertionOffer offer = ParseTextProtoOrDie(kValidAssertionDescriptionProto);
-  EXPECT_THAT(verifier.CanVerify(offer),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION,
-                       HasSubstr("CanVerify")));
+  EXPECT_THAT(
+      verifier.CanVerify(offer),
+      StatusIs(absl::StatusCode::kFailedPrecondition, HasSubstr("CanVerify")));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
@@ -336,7 +337,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
       authority_type: "bad authority"
     })pb");
   EXPECT_THAT(verifier.CanVerify(offer),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("Assertion description does not match")));
 }
 
@@ -351,7 +352,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
       authority_type: "SGX Intel ECDSA QE"
     })pb");
   EXPECT_THAT(verifier.CanVerify(offer),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("Assertion description does not match")));
 }
 
@@ -370,7 +371,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   EnclaveIdentity identity;
   EXPECT_THAT(
       verifier.Verify("user data", assertion, &identity),
-      StatusIs(error::GoogleError::FAILED_PRECONDITION, HasSubstr("Verify")));
+      StatusIs(absl::StatusCode::kFailedPrecondition, HasSubstr("Verify")));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
@@ -385,7 +386,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
     })pb");
   EnclaveIdentity identity;
   EXPECT_THAT(verifier.Verify("user data", assertion, &identity),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("Assertion description does not match")));
 }
 
@@ -398,7 +399,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   assertion.set_assertion("can't parse this");
   EnclaveIdentity identity;
   EXPECT_THAT(verifier.Verify("user data", assertion, &identity),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
@@ -409,7 +410,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   Assertion assertion = CreateAssertion(GenerateValidQuote("user data"));
   EnclaveIdentity identity;
   EXPECT_THAT(verifier.Verify("not the user data", assertion, &identity),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("quote data does not match")));
 }
 
@@ -424,7 +425,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
       CreateAssertion(GenerateValidQuote("data to be quoted"));
   EnclaveIdentity identity;
   EXPECT_THAT(verifier.Verify("data to be quoted", assertion, &identity),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("quote data does not match")));
 }
 
@@ -440,7 +441,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   EnclaveIdentity identity;
   EXPECT_THAT(
       verifier.Verify("user data", assertion, &identity),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("version")));
+      StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("version")));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
@@ -455,7 +456,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   EnclaveIdentity identity;
   EXPECT_THAT(
       verifier.Verify("user data", assertion, &identity),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("algorithm")));
+      StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("algorithm")));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
@@ -470,7 +471,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   EnclaveIdentity identity;
   EXPECT_THAT(
       verifier.Verify("user data", assertion, &identity),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("vendor ID")));
+      StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("vendor ID")));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
@@ -488,7 +489,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   Assertion assertion = CreateAssertion(quote);
   EnclaveIdentity identity;
   EXPECT_THAT(verifier.Verify("user data", assertion, &identity),
-              StatusIs(error::GoogleError::INTERNAL,
+              StatusIs(absl::StatusCode::kInternal,
                        HasSubstr("elliptic curve routines")));
 }
 
@@ -504,7 +505,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   EnclaveIdentity identity;
   EXPECT_THAT(
       verifier.Verify("user data", assertion, &identity),
-      StatusIs(error::GoogleError::INTERNAL, HasSubstr("BAD_SIGNATURE")));
+      StatusIs(absl::StatusCode::kInternal, HasSubstr("BAD_SIGNATURE")));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
@@ -519,7 +520,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   EnclaveIdentity identity;
   EXPECT_THAT(
       verifier.Verify("user data", assertion, &identity),
-      StatusIs(error::GoogleError::INTERNAL, HasSubstr("BAD_SIGNATURE")));
+      StatusIs(absl::StatusCode::kInternal, HasSubstr("BAD_SIGNATURE")));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
@@ -538,7 +539,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   EnclaveIdentity identity;
   EXPECT_THAT(
       verifier.Verify("user data", assertion, &identity),
-      StatusIs(error::GoogleError::INTERNAL, HasSubstr("BAD_SIGNATURE")));
+      StatusIs(absl::StatusCode::kInternal, HasSubstr("BAD_SIGNATURE")));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
@@ -564,7 +565,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   Assertion assertion = CreateAssertion(quote);
   EnclaveIdentity identity;
   EXPECT_THAT(verifier.Verify("user data", assertion, &identity),
-              StatusIs(error::GoogleError::UNAUTHENTICATED,
+              StatusIs(absl::StatusCode::kUnauthenticated,
                        HasSubstr("Unrecognized root certificate")));
 }
 
@@ -580,7 +581,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest,
   Assertion assertion = CreateAssertion(quote);
   EnclaveIdentity identity;
   EXPECT_THAT(verifier.Verify("user data", assertion, &identity),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest, VerifySuccess) {
@@ -617,9 +618,10 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionVerifierTest, VerifySuccess) {
                                             .hash()
                                             .size());
   EXPECT_THAT(peer_identity.code_identity()
-                   .signer_assigned_identity()
-                   .mrsigner()
-                   .hash().data(),
+                  .signer_assigned_identity()
+                  .mrsigner()
+                  .hash()
+                  .data(),
               MemEq(quote.body.mrsigner.data(), quote.body.mrsigner.size()));
 
   EXPECT_EQ(

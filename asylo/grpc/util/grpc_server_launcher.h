@@ -120,7 +120,7 @@ class GrpcServerLauncher {
   State GetState();
 
  private:
-  Status MakeStatus(error::GoogleError code, const std::string &message) const {
+  Status MakeStatus(absl::StatusCode code, const std::string &message) const {
     return Status(code, absl::StrCat("Server ", name_, ": ", message));
   }
 

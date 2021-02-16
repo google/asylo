@@ -24,6 +24,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "asylo/crypto/hash_interface.h"
 #include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/crypto/util/bssl_util.h"
@@ -77,18 +78,18 @@ Status ShaHash<HashOptions>::CumulativeHash(
   // future calls to Update.
   bssl::UniquePtr<EVP_MD_CTX> context_snapshot(EVP_MD_CTX_new());
   if (context_snapshot == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   if (EVP_MD_CTX_copy_ex(context_snapshot.get(), context_.get()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   digest->resize(DigestSize());
   unsigned int digest_len;
   if (EVP_DigestFinal(context_snapshot.get(), digest->data(), &digest_len) !=
           1 ||
       digest_len != DigestSize()) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }

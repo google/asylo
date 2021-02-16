@@ -28,6 +28,7 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/sha256_hash.h"
@@ -49,15 +50,13 @@
 #include "include/grpcpp/security/server_credentials.h"
 #include "include/grpcpp/server_builder.h"
 
-
 ABSL_FLAG(std::string, remote_proxy, "",
           "Path to binary for running RemoteEnclaveProxyServer");
 
 namespace asylo {
 
 grpc::Status ProvisionServiceImpl::Provision(
-    grpc::ServerContext *context,
-    grpc::ServerReader<ProvisionRequest> *reader,
+    grpc::ServerContext *context, grpc::ServerReader<ProvisionRequest> *reader,
     ProvisionResponse *response) {
   auto filename_or_status = PrepareEnclave(reader);
   if (!filename_or_status.ok()) {
@@ -77,12 +76,12 @@ StatusOr<std::string> ProvisionServiceImpl::PrepareEnclave(
   {
     ProvisionRequest request;
     if (!reader->Read(&request)) {
-      return Status{error::GoogleError::INVALID_ARGUMENT,
+      return Status{absl::StatusCode::kInvalidArgument,
                     "Could not read the request."};
     }
 
     if (request.client_address().empty()) {
-      return Status{error::GoogleError::INVALID_ARGUMENT,
+      return Status{absl::StatusCode::kInvalidArgument,
                     "Client_address absent"};
     }
     pid_t remote_target_pid;
@@ -114,8 +113,7 @@ StatusOr<std::string> ProvisionServiceImpl::PrepareEnclave(
         hasher.CumulativeHash(&hash);
         if (ByteContainerView(request.cumulative_sha256()) !=
             ByteContainerView(hash)) {
-          return Status{error::GoogleError::DATA_LOSS,
-                        "SHA256 hash mismatch"};
+          return Status{absl::StatusCode::kDataLoss, "SHA256 hash mismatch"};
         }
         int write_res = write(fd, request.enclave_binary().data(),
                               request.enclave_binary().size());
@@ -126,7 +124,7 @@ StatusOr<std::string> ProvisionServiceImpl::PrepareEnclave(
       }
       if (!request.client_address().empty()) {
         return Status{
-            error::GoogleError::FAILED_PRECONDITION,
+            absl::StatusCode::kFailedPrecondition,
             "Client address present in more than on streamed request"};
       }
     } while (reader->Read(&request));
@@ -139,10 +137,10 @@ StatusOr<std::string> ProvisionServiceImpl::PrepareEnclave(
 }
 
 StatusOr<std::unique_ptr<RemoteProvisionServer>> RemoteProvisionServer::Create(
-      ::grpc::ServerBuilder *builder, absl::string_view temporary_directory) {
+    ::grpc::ServerBuilder *builder, absl::string_view temporary_directory) {
   // Check flags.
   if (absl::GetFlag(FLAGS_remote_proxy).empty()) {
-    return Status{error::GoogleError::FAILED_PRECONDITION,
+    return Status{absl::StatusCode::kFailedPrecondition,
                   "No --remote_proxy flag specified"};
   }
   // Create provision server.
@@ -153,4 +151,3 @@ StatusOr<std::unique_ptr<RemoteProvisionServer>> RemoteProvisionServer::Create(
 }
 
 }  // namespace asylo
-

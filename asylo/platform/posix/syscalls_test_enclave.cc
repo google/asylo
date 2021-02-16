@@ -38,6 +38,7 @@
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/host_call/serializer_functions.h"
@@ -60,13 +61,12 @@ class SyscallsEnclave : public EnclaveTestCase {
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
     if (!input.HasExtension(syscalls_test_input)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     "Missing input extension");
     }
     SyscallsTestInput test_input = input.GetExtension(syscalls_test_input);
     if (!test_input.has_test_target()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Missing test_target");
+      return Status(absl::StatusCode::kInvalidArgument, "Missing test_target");
     }
 
     SyscallsTestOutput output_ret;
@@ -181,7 +181,7 @@ class SyscallsEnclave : public EnclaveTestCase {
 
     regex_t regex;
     if (regcomp(&regex, "", 0)) {
-      return Status(error::GoogleError::INTERNAL, "recomp error");
+      return Status(absl::StatusCode::kInternal, "recomp error");
     }
     regfree(&regex);
 
@@ -295,7 +295,7 @@ class SyscallsEnclave : public EnclaveTestCase {
 
   StatusOr<int> OpenFile(const std::string &path, int flags, mode_t mode) {
     if (path.empty()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT, "File path is empty");
+      return Status(absl::StatusCode::kInvalidArgument, "File path is empty");
     }
     int fd = open(path.c_str(), flags, mode);
     if (fd < 0) {
@@ -318,7 +318,7 @@ class SyscallsEnclave : public EnclaveTestCase {
       }
     }
     if (read_bytes != size) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Bytes read from file does not match specified size");
     }
     return Status::OkStatus();
@@ -343,7 +343,7 @@ class SyscallsEnclave : public EnclaveTestCase {
 
     if (memcmp(buf1, buf2, size) != 0) {
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           absl::StrCat("Fd:", fd1, " and fd:", fd2, " are different"));
     }
     return Status::OkStatus();
@@ -361,13 +361,13 @@ class SyscallsEnclave : public EnclaveTestCase {
     // TEST F_SETFL and F_GETFL.
     if (fcntl(fd, F_SETFL, O_NONBLOCK | O_APPEND) == -1) {
       close(fd);
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("Fcntl set flags for file ", path,
                                  " failed: ", strerror(errno)));
     }
     int flags = fcntl(fd, F_GETFL);
     if (!(flags & O_NONBLOCK) || !(flags & O_APPEND)) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("Fcntl get flags of file ", path,
                                  " returned unexpected result: ", flags));
     }
@@ -375,14 +375,14 @@ class SyscallsEnclave : public EnclaveTestCase {
     // TEST F_SETFD and F_GETFD.
     if (fcntl(fd, F_SETFD, FD_CLOEXEC) == -1) {
       close(fd);
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("Fcntl set FD flags for file ", path,
                                  "failed: ", strerror(errno)));
     }
     int fd_flags = fcntl(fd, F_GETFD);
     if (!(fd_flags & FD_CLOEXEC)) {
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           absl::StrCat("Fcntl get FD flags for file ", path,
                        "returned unexpected result: ", strerror(errno)));
     }
@@ -398,14 +398,14 @@ class SyscallsEnclave : public EnclaveTestCase {
 
     int dup_fd = fcntl(fd, F_DUPFD, -1);
     if (dup_fd != -1 || errno != EINVAL) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "fcntl F_DUPFD with negative arg succeeded");
     }
 
     static constexpr int kMaxOpenFiles = 1024;
     dup_fd = fcntl(fd, F_DUPFD, kMaxOpenFiles);
     if (dup_fd != -1 || errno != EINVAL) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "fcntl F_DUPFD with over ranged arg succeeded");
     }
 
@@ -416,7 +416,7 @@ class SyscallsEnclave : public EnclaveTestCase {
           absl::StrCat("fcntl dup fd:", fd, " failed: ", strerror(errno)));
     }
     if (dup_fd <= fd) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("fcntl dup fd:", dup_fd,
                                  " is smaller than or equal to arg:", fd));
     }
@@ -456,12 +456,12 @@ class SyscallsEnclave : public EnclaveTestCase {
     int saved_errno = errno;
 
     if (retval != -1) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("Expected retval of -1, got ", retval));
     }
 
     if (saved_errno != expected_errno) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("Expected errno of ", expected_errno, "; got ",
                                  saved_errno));
     }
@@ -493,7 +493,7 @@ class SyscallsEnclave : public EnclaveTestCase {
       }
       if (memcmp(addr->ifa_name, ifname, strlen(ifname)) != 0) {
         return Status(
-            error::GoogleError::INTERNAL,
+            absl::StatusCode::kInternal,
             "The ifname from if_indextoname does not match original value");
       }
     }
@@ -527,7 +527,7 @@ class SyscallsEnclave : public EnclaveTestCase {
   Status RunGetPWUidTest(EnclaveOutput *output) {
     SyscallsTestOutput output_ret;
     if (!EncodePassWdInTestOutput(getpwuid(getuid()), &output_ret)) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Failed to encode passwd into proto");
     }
 
@@ -549,7 +549,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     CPU_ZERO(&mask);
     for (int cpu = 0; cpu < CPU_SETSIZE; ++cpu) {
       if (CPU_ISSET(cpu, &mask)) {
-        return Status(error::GoogleError::INTERNAL,
+        return Status(absl::StatusCode::kInternal,
                       absl::StrCat("CPU ", cpu, " is set after CPU_ZERO."));
       }
     }
@@ -565,10 +565,10 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
     for (int cpu = 0; cpu < CPU_SETSIZE; ++cpu) {
       if (!CPU_ISSET(cpu, &mask) && test_cpu_set_cpus.count(cpu)) {
-        return Status(error::GoogleError::INTERNAL,
+        return Status(absl::StatusCode::kInternal,
                       absl::StrCat("CPU ", cpu, " is not set after CPU_SET."));
       } else if (CPU_ISSET(cpu, &mask) && !test_cpu_set_cpus.count(cpu)) {
-        return Status(error::GoogleError::INTERNAL,
+        return Status(absl::StatusCode::kInternal,
                       absl::StrCat("CPU ", cpu, " is set without CPU_SET."));
       }
     }
@@ -589,12 +589,12 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
     for (int cpu : test_cpu_clr_cpus_to_set) {
       if (CPU_ISSET(cpu, &mask) && test_cpu_clr_cpus_to_clear.count(cpu)) {
-        return Status(error::GoogleError::INTERNAL,
+        return Status(absl::StatusCode::kInternal,
                       absl::StrCat("CPU ", cpu, " is set after CPU_CLR."));
       } else if (!CPU_ISSET(cpu, &mask) &&
                  !test_cpu_clr_cpus_to_clear.count(cpu)) {
         return Status(
-            error::GoogleError::INTERNAL,
+            absl::StatusCode::kInternal,
             absl::StrCat("CPU ", cpu, " is not set without CPU_CLR."));
       }
     }
@@ -612,7 +612,7 @@ class SyscallsEnclave : public EnclaveTestCase {
           (cpu % 10 == 1 || cpu % 10 == 3 || cpu % 10 == 7 || cpu % 10 == 9);
       if (static_cast<bool>(CPU_ISSET(cpu, &mask)) != expected_value) {
         return Status(
-            error::GoogleError::INTERNAL,
+            absl::StatusCode::kInternal,
             absl::StrCat("CPU_ISSET(", cpu, ") returns ", !expected_value,
                          "but should return ", expected_value, "."));
       }
@@ -629,7 +629,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     const int cpu_count = CPU_COUNT(&mask);
     if (cpu_count != test_cpu_count_expected_count) {
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           absl::StrCat("CPU_COUNT returns ", cpu_count, " but should return ",
                        test_cpu_count_expected_count, "."));
     }
@@ -644,7 +644,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
     if (!CPU_EQUAL(&mask, &mask)) {
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           absl::StrCat("CPU_EQUAL claims a mask is not equal to itself."));
     }
 
@@ -655,7 +655,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
     if (CPU_EQUAL(&mask, &different_mask)) {
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           absl::StrCat("CPU_EQUAL claims two different masks are equal."));
     }
 
@@ -706,7 +706,7 @@ class SyscallsEnclave : public EnclaveTestCase {
 
   Status RunRenameTest(const std::string &path) {
     if (path.empty()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
+      return Status(absl::StatusCode::kInvalidArgument, "File path not set");
     }
 
     // Create a file and rename it.
@@ -740,12 +740,12 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
     intptr_t address = reinterpret_cast<intptr_t>(ptr);
     if ((address & 4095) != 0) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "mmap(MAP_ANONYMOUS) returned non-page-aligned memory");
     }
     char *cptr = static_cast<char *>(ptr);
     if (std::count(cptr, cptr + 10000, '\0') != 10000) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "mmap(MAP_ANONYMOUS) returned uninitialized memory");
     }
     if (munmap(ptr, 10000) != 0) {
@@ -774,7 +774,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                     absl::StrCat("getrlimit failed:", strerror(errno)));
     }
     if (get_limit.rlim_cur != soft_limit || get_limit.rlim_max != hard_limit) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "The file descriptor number limit from getrlimit is "
                     "different from the value set");
     }
@@ -794,7 +794,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
     auto fd_or_error = OpenFile(path, O_CREAT | O_RDWR, 0644);
     if (fd_or_error.ok()) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("File descriptor: ", fd_or_error.ValueOrDie(),
                                  " is used while the rlimit is set to: ",
                                  file_descriptor_used));
@@ -818,7 +818,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     // There are already 3 file descriptors open: stdin, stdout, stderr, setting
     // the limit to 2 should not succeed.
     if (setrlimit(RLIMIT_NOFILE, &set_limit) != -1) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "setrlimit to limit lower than current used file "
                     "descriptors unexpectedly succeeded");
     }
@@ -832,7 +832,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     set_limit.rlim_cur = 200;
     set_limit.rlim_max = 100;
     if (setrlimit(RLIMIT_NOFILE, &set_limit) != -1) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "setrlimit with soft limit higher than hard limit "
                     "unexpectedly succeeded");
     }
@@ -842,14 +842,14 @@ class SyscallsEnclave : public EnclaveTestCase {
     set_limit.rlim_cur = 2000;
     set_limit.rlim_max = 2000;
     if (setrlimit(RLIMIT_NOFILE, &set_limit) != -1) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "setrlimit with limit higher than the maximum allowed "
                     "unexpectedly succeeded");
     }
 
     if (get_limit.rlim_cur != old_soft_limit ||
         get_limit.rlim_max != old_hard_limit) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("NOFILE limit has changed after a series of"
                                  "failed setrlimits. Original soft limit: ",
                                  old_soft_limit,
@@ -870,7 +870,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     set_limit.rlim_max = 200;
     if (setrlimit(RLIMIT_NOFILE, &set_limit) != -1) {
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           "setrlimit to increase the hard limit unexpectedly succeeded");
     }
 
@@ -899,7 +899,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     int fd = socket(AF_INET6, SOCK_STREAM, 0);
 
     if (fd < 0) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("couldn't create socket, errno ", errno));
     }
 
@@ -913,7 +913,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     int fd = socket(AF_INET6, SOCK_STREAM, 0);
 
     if (fd < 0) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("couldn't create socket, errno ", errno));
     }
 
@@ -927,7 +927,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     int fd = socket(AF_INET6, SOCK_STREAM, 0);
 
     if (fd < 0) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("couldn't create socket, errno ", errno));
     }
 
@@ -957,7 +957,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     int fd = socket(AF_UNIX, SOCK_STREAM, 0);
 
     if (fd < 0) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("couldn't create socket, errno ", errno));
     }
 
@@ -983,7 +983,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     int fd = socket(AF_INET6, SOCK_STREAM, 0);
 
     if (fd < 0) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("couldn't create socket, errno ", errno));
     }
 
@@ -997,7 +997,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     int fd = socket(AF_INET6, SOCK_STREAM, 0);
 
     if (fd < 0) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("couldn't create socket, errno ", errno));
     }
 
@@ -1085,13 +1085,13 @@ class SyscallsEnclave : public EnclaveTestCase {
 
   Status RunMkdirTest(const std::string &path) {
     if (path.empty()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
+      return Status(absl::StatusCode::kInvalidArgument, "File path not set");
     }
 
     // Test that trying to mkdir() in registered random path fails.
     std::string random_path = "/dev/random";
     if (mkdir(random_path.c_str(), 0644) != -1) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("Mkdir in registered random path:",
                                  random_path, "should be forbidden."));
     }
@@ -1129,7 +1129,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                     absl::StrCat("stat failed:", strerror(errno)));
     }
     if (st.st_mode & S_IWGRP || st.st_mode & S_IWOTH) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Mkdir creates a directory with masked file modes");
     }
     const std::string file_path = path + "OpenWithUmask";
@@ -1142,7 +1142,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                     absl::StrCat("fstat failed:", strerror(errno)));
     }
     if (st.st_mode & S_IWGRP || st.st_mode & S_IWOTH) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Open creates a file with masked file modes");
     }
     return Status::OkStatus();
@@ -1162,7 +1162,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     // Set a timer value.
     if (setitimer(ITIMER_REAL, &timer_val, nullptr) != 0) {
       perror("setitimer");
-      return Status(error::GoogleError::INTERNAL, "setitimer failure 1");
+      return Status(absl::StatusCode::kInternal, "setitimer failure 1");
     }
 
     // Call setitimer again and make sure the old value was returned with the
@@ -1170,24 +1170,24 @@ class SyscallsEnclave : public EnclaveTestCase {
     itimerval time_till_next;
     if (setitimer(ITIMER_REAL, &timer_val, &time_till_next) != 0) {
       perror("setitimer");
-      return Status(error::GoogleError::INTERNAL, "setitimer failure 2");
+      return Status(absl::StatusCode::kInternal, "setitimer failure 2");
     }
     if (time_till_next.it_interval.tv_sec != timer_val.it_interval.tv_sec ||
         time_till_next.it_interval.tv_usec != timer_val.it_interval.tv_usec) {
-      return Status(error::GoogleError::INTERNAL, "setitimer failure 3");
+      return Status(absl::StatusCode::kInternal, "setitimer failure 3");
     }
     if (time_till_next.it_value.tv_sec >= timer_val.it_interval.tv_sec) {
-      return Status(error::GoogleError::INTERNAL, "setitimer failure 4");
+      return Status(absl::StatusCode::kInternal, "setitimer failure 4");
     }
 
     // Make sure getitimer works too.
     itimerval curr_val;
     if (getitimer(ITIMER_REAL, &curr_val) != 0) {
-      return Status(error::GoogleError::INTERNAL, "getitimer failure 1");
+      return Status(absl::StatusCode::kInternal, "getitimer failure 1");
     }
     if (curr_val.it_interval.tv_sec != timer_val.it_interval.tv_sec ||
         curr_val.it_interval.tv_usec != timer_val.it_interval.tv_usec) {
-      return Status(error::GoogleError::INTERNAL, "getitimer failure 2");
+      return Status(absl::StatusCode::kInternal, "getitimer failure 2");
     }
 
     return Status::OkStatus();
@@ -1207,7 +1207,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     const std::string message = message1 + message2;
     ssize_t rc = write(fd, message.c_str(), message.size());
     if (rc != message.size()) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Bytes written to file does not match message size");
     }
     if (lseek(fd, 0, SEEK_SET) == -1) {
@@ -1226,7 +1226,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     rc = readv(fd, iov, num_messages);
     if (rc != message.size()) {
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           absl::StrCat("readv return:", rc,
                        " does not match message size:", message.size()));
     }
@@ -1234,7 +1234,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                iov[0].iov_len) ||
         memcmp(reinterpret_cast<char *>(iov[1].iov_base), message2.c_str(),
                iov[1].iov_len)) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Messages from readv do not match the expected message.");
     }
     return Status::OkStatus();
@@ -1271,7 +1271,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     char buf[1024];
     ASYLO_RETURN_IF_ERROR(ReadFile(fd, buf, size));
     if (memcmp(buf, message.c_str(), message.size()) != 0) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("Message read from fd:", fd, ":", buf,
                                  " is different from the message of writev."));
     }
@@ -1325,7 +1325,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
     if (dup_fd == fd) {
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           absl::StrCat("dup fd:", dup_fd, " is the same as original fd:", fd));
     }
     ASYLO_RETURN_IF_ERROR(CompareFiles(fd, dup_fd, message.size()));
@@ -1459,7 +1459,7 @@ class SyscallsEnclave : public EnclaveTestCase {
 
   Status RunLinkTest(const std::string &path) {
     if (path.empty()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
+      return Status(absl::StatusCode::kInvalidArgument, "File path not set");
     }
     const std::string from_path = std::string(path) + "from";
     const std::string to_path = std::string(path) + "to";
@@ -1487,7 +1487,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     ASYLO_RETURN_IF_ERROR(ReadFile(to_fd, buf, path.size()));
     if (memcmp(buf, path.c_str(), path.size()) != 0) {
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           absl::StrCat("The content:", buf, " from linked path:", to_path,
                        " is different from the original path:", from_path));
     }
@@ -1503,7 +1503,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     const std::string message = message1 + message2;
     ssize_t rc = write(fd, message.c_str(), message.size());
     if (rc != message.size()) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Bytes written to file does not match message size");
     }
 
@@ -1512,13 +1512,13 @@ class SyscallsEnclave : public EnclaveTestCase {
         pread(fd, buf.data(), message2.size(), message1.size());
     if (bytes_read != message2.size()) {
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           absl::StrCat("pread returns: ", bytes_read,
                        " does not match message size: ", message2.size()));
     }
     if (!std::equal(buf.begin(), buf.end(), message2.begin())) {
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           absl::StrCat("Message from pread: ", buf.data(),
                        " does not match expected: ", message2.data()));
     }
@@ -1528,7 +1528,7 @@ class SyscallsEnclave : public EnclaveTestCase {
 
   Status RunRmDirTest(const std::string &path) {
     if (path.empty()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
+      return Status(absl::StatusCode::kInvalidArgument, "File path not set");
     }
 
     if (rmdir(path.c_str()) != 0) {
@@ -1582,7 +1582,7 @@ class SyscallsEnclave : public EnclaveTestCase {
         memcmp(buf1, truncated_message.c_str(), truncated_message.size()) !=
             0) {
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           absl::StrCat("Message read from truncated file is: ", buf1,
                        " and does not match expected: ", truncated_message));
     }
@@ -1605,7 +1605,7 @@ class SyscallsEnclave : public EnclaveTestCase {
         memcmp(buf2, truncated_message.c_str(), truncated_message.size()) !=
             0) {
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           absl::StrCat("Message read from truncated file is: ", buf1,
                        " and does not match expected: ", truncated_message));
     }
@@ -1625,7 +1625,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (fd >= 0) {
       close(fd);
       return Status(
-          error::GoogleError::INTERNAL,
+          absl::StatusCode::kInternal,
           absl::StrCat("File ", path, " is still available after unlink"));
     }
     return Status::OkStatus();
@@ -1633,7 +1633,7 @@ class SyscallsEnclave : public EnclaveTestCase {
 
   Status RunUtimesTest(const std::string &path) {
     if (path.empty()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
+      return Status(absl::StatusCode::kInvalidArgument, "File path not set");
     }
 
     if (open(path.c_str(), O_RDWR | O_CREAT, 0777) < 0) {
@@ -1669,12 +1669,12 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
 
     if (stat_buffer.st_atime != times[0].tv_sec) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Access time is not set correctly");
     }
 
     if (stat_buffer.st_mtime != times[1].tv_sec) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Modification time is not set correctly");
     }
 

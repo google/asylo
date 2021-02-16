@@ -234,7 +234,7 @@ The peer is unauthorized for GetTranslation: ISVPRODID value 2 does not match ex
 The authorization failure is also reported by the client:
 
 ```
-2019-11-20 01:51:21  QFATAL  grpc_client_main.cc : 64 : Getting translation for asylo failed: ::asylo::error::GoogleErrorSpace::PERMISSION_DENIED: Peer is unauthorized for GetTranslation: ACL failed to match:
+2019-11-20 01:51:21  QFATAL  grpc_client_main.cc : 64 : Getting translation for asylo failed: ::error::GoogleError::PERMISSION_DENIED: Peer is unauthorized for GetTranslation: ACL failed to match:
   ISVPRODID value 2 does not match expected ISVPRODID value 3
 ```
 

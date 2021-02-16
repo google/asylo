@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/random_nonce_generator.h"
 #include "asylo/util/status_macros.h"
@@ -68,7 +69,7 @@ StatusOr<size_t> AeadCryptor::MaxMessageSize(AeadScheme scheme) {
     case AES256_GCM_SIV:
       return kAesGcmSivMaxMessageSize;
     default:
-      return Status(error::GoogleError::UNIMPLEMENTED,
+      return Status(absl::StatusCode::kUnimplemented,
                     "Given scheme is not supported");
   }
 }
@@ -82,7 +83,7 @@ StatusOr<uint64_t> AeadCryptor::MaxSealedMessages(AeadScheme scheme) {
     case AES256_GCM_SIV:
       return kAesGcmSivMaxSealedMessages;
     default:
-      return Status(error::GoogleError::UNIMPLEMENTED,
+      return Status(absl::StatusCode::kUnimplemented,
                     "Given scheme is not supported");
   }
 }
@@ -101,13 +102,13 @@ Status AeadCryptor::Seal(ByteContainerView plaintext,
                          absl::Span<uint8_t> ciphertext,
                          size_t *ciphertext_size) {
   if (plaintext.size() > max_message_size_) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Plaintext size ", plaintext.size(),
                                " exceeds maximum message size (",
                                max_message_size_, " bytes)"));
   }
   if (number_of_sealed_messages_ >= max_sealed_messages_) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
+    return Status(absl::StatusCode::kFailedPrecondition,
                   absl::StrCat("Reached maximum number of sealed messages (",
                                max_sealed_messages_, ")"));
   }

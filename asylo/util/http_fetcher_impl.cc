@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <cstring>
 
+#include "absl/status/status.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
@@ -95,7 +96,7 @@ class CurlImpl : public Curl {
     if (error_code == CURLE_OK) {
       return Status::OkStatus();
     }
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   absl::StrFormat(
                       "Call to libcurl failed with error code %s and msg '%s'",
                       curl_easy_strerror(error_code), err_msg_));

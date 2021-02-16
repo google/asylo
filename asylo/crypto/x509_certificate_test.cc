@@ -32,6 +32,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -337,13 +338,13 @@ TEST_F(X509CertificateTest, CertificateX509CreateValidDer) {
 // Verifies that Create fails with an non-X509 certificate format.
 TEST_F(X509CertificateTest, CreateFromNonX509CertificateFails) {
   EXPECT_THAT(CreateX509Cert(Certificate::UNKNOWN, kOtherIntermediateCertPem),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verifies that Create fails when the data is malformed.
 TEST_F(X509CertificateTest, CreateFromMalformedX509CertificateFails) {
   EXPECT_THAT(CreateX509Cert(Certificate::X509_PEM, kNotACert),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 // Verifies that X509Certificate::CreateFromPem returns an OK Status with a
@@ -357,7 +358,7 @@ TEST_F(X509CertificateTest, CreateFromPemSuccess) {
 TEST_F(X509CertificateTest, CreateFromPemFailure) {
   EXPECT_THAT(X509Certificate::CreateFromPem(
                   absl::HexStringToBytes(kTestIntermediateCertDerHex)),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 // Verifies that X509Certificate::CreateFromDer returns an OK Status with a
 // valid DER-encoded X.509 string.
@@ -369,7 +370,7 @@ TEST_F(X509CertificateTest, CreateFromDerSuccess) {
 // DER-encoding.
 TEST_F(X509CertificateTest, CreateFromDerFailure) {
   EXPECT_THAT(X509Certificate::CreateFromDer(kTestRootCertPem),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST_F(X509CertificateTest, CreateAndToDerCertificateSuccess) {
@@ -411,7 +412,7 @@ TEST_F(X509CertificateTest, ToCertificateProtoInvalidEncodingFailure) {
 
   EXPECT_THAT(x509_cert->ToCertificateProto(
                   Certificate::SGX_ATTESTATION_KEY_CERTIFICATE),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(X509CertificateTest, ToCertificateProtoUnknownFailure) {
@@ -422,7 +423,7 @@ TEST_F(X509CertificateTest, ToCertificateProtoUnknownFailure) {
                      absl::HexStringToBytes(kTestIntermediateCertDerHex)));
 
   EXPECT_THAT(x509_cert->ToCertificateProto(Certificate::UNKNOWN),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(X509CertificateTest, EqualsSuccess) {
@@ -472,7 +473,7 @@ TEST_F(X509CertificateTest, CertificateSigningRequestToX509ReqMalformedData) {
   csr.set_data(kNotACert);
 
   EXPECT_THAT(CertificateSigningRequestToX509Req(csr),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 // Verifies that CertificateSigningRequestToX509Req returns an INVALID_ARGUMENT
@@ -483,7 +484,7 @@ TEST_F(X509CertificateTest, CertificateSigningRequestToX509ReqInvalidFormat) {
   csr.set_data(kCsrDerHex);
 
   EXPECT_THAT(CertificateSigningRequestToX509Req(csr),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verifies that CertificateSigningRequestToX509Req then
@@ -523,7 +524,7 @@ TEST_F(X509CertificateTest, ExtractPkcs10SubjectKeyDerCsrMalformedData) {
   csr.set_data(kNotACert);
 
   EXPECT_THAT(ExtractPkcs10SubjectKeyDer(csr),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 // Verifies that ExtractPkcs10SubjectKeyDer(csr) returns an INVALID_ARGUMENT
@@ -534,7 +535,7 @@ TEST_F(X509CertificateTest, ExtractPkcs10SubjectKeyDerCsrInvalidFormat) {
   csr.set_data(kCsrPem);
 
   EXPECT_THAT(ExtractPkcs10SubjectKeyDer(csr),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verifies that a certificate signed by the signing-key counterpart to the
@@ -568,7 +569,7 @@ TEST_F(X509CertificateTest, VerifyCertificateFailsWithDifferentIssuer) {
 
   VerificationConfig config = VerificationConfig();
   EXPECT_THAT(x509_intermediate->Verify(*x509_root, config),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 // Verifies that Verify returns an UNAUTHENTICATED error when the issuer_ca
@@ -587,7 +588,7 @@ TEST_F(X509CertificateTest, VerifyCertificateFailedIsCaCheck) {
   VerificationConfig config(/*all_fields=*/false);
   config.issuer_ca = true;
   EXPECT_THAT(x509_intermediate->Verify(*x509_root, config),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 // Verifies that Verify succeeds with invalid extensions when the issuer_ca
@@ -641,7 +642,7 @@ TEST_F(X509CertificateTest, VerifyCertificateFailedKeyUsageCheck) {
   VerificationConfig config(/*all_fields=*/false);
   config.issuer_key_usage = true;
   EXPECT_THAT(x509_intermediate->Verify(*x509_root, config),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 // Verifies that Verify returns an OK Status when the key_usage check is
@@ -679,7 +680,7 @@ TEST_F(X509CertificateTest, VerifyCertificateValidityPeriodFails) {
   config.subject_validity_period =
       absl::FromCivil(absl::CivilDay(2020, 9, 30), absl::UTCTimeZone());
   EXPECT_THAT(x509_subject->Verify(*x509_issuer, config),
-              StatusIs(error::GoogleError::UNAUTHENTICATED, HasSubstr("time")));
+              StatusIs(absl::StatusCode::kUnauthenticated, HasSubstr("time")));
 }
 
 // Verify success case with additional verification checks.
@@ -713,7 +714,7 @@ TEST_F(X509CertificateTest, VerifyWithUnsupportedSignatureAlgorithmFails) {
 
   VerificationConfig config = VerificationConfig();
   EXPECT_THAT(unsupported_sig_alg_cert->Verify(*root_cert, config),
-              StatusIs(error::GoogleError::UNIMPLEMENTED));
+              StatusIs(absl::StatusCode::kUnimplemented));
 }
 
 // Verifies that SubjectKeyDer() returns the expected key value.
@@ -1006,27 +1007,27 @@ TEST_F(X509CertificateTest, SignAndBuildFailsWithMissingFields) {
   X509CertificateBuilder builder = CreateMinimalBuilder();
   BN_set_negative(builder.serial_number.get(), /*sign=*/1);
   EXPECT_THAT(builder.SignAndBuild(*signing_key),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   builder = CreateMinimalBuilder();
   builder.issuer.reset();
   EXPECT_THAT(builder.SignAndBuild(*signing_key),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   builder = CreateMinimalBuilder();
   builder.validity.reset();
   EXPECT_THAT(builder.SignAndBuild(*signing_key),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   builder = CreateMinimalBuilder();
   builder.subject.reset();
   EXPECT_THAT(builder.SignAndBuild(*signing_key),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   builder = CreateMinimalBuilder();
   builder.subject_public_key_der.reset();
   EXPECT_THAT(builder.SignAndBuild(*signing_key),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(X509CertificateTest, X509NameEntryEqualityComparisonSucceeds) {

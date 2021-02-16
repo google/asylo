@@ -453,6 +453,7 @@ cc_unsigned_enclave(
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
 )
@@ -480,6 +481,7 @@ enclave_test(
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],

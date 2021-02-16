@@ -1084,6 +1084,7 @@ cc_library(
         "//asylo/util:mutex_guarded",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -1123,6 +1124,7 @@ cc_test_and_cc_enclave_test(
         "//asylo/util:thread",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",

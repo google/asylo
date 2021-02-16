@@ -34,6 +34,7 @@
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
 #include "absl/functional/bind_front.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/algorithms.pb.h"
@@ -175,7 +176,7 @@ TYPED_TEST_P(VerifyingKeyTest,
   key_proto.set_signature_scheme(UNKNOWN_SIGNATURE_SCHEME);
 
   EXPECT_THAT(TestFixture::VerifyingKeyType::CreateFromProto(key_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that CreateFromProto() fails when the key type is incorrect.
@@ -187,7 +188,7 @@ TYPED_TEST_P(VerifyingKeyTest,
   key_proto.set_key_type(AsymmetricSigningKeyProto::SIGNING_KEY);
 
   EXPECT_THAT(TestFixture::VerifyingKeyType::CreateFromProto(key_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that CreateFromProto() fails when the key encoding is invalid.
@@ -199,7 +200,7 @@ TYPED_TEST_P(VerifyingKeyTest,
   key_proto.set_encoding(UNKNOWN_ASYMMETRIC_KEY_ENCODING);
 
   EXPECT_THAT(TestFixture::VerifyingKeyType::CreateFromProto(key_proto),
-              StatusIs(error::GoogleError::UNIMPLEMENTED));
+              StatusIs(absl::StatusCode::kUnimplemented));
 }
 
 // Verify that CreateFromProto() fails when the key does not match the encoding.
@@ -211,7 +212,7 @@ TYPED_TEST_P(VerifyingKeyTest,
   pem_key_proto.set_encoding(ASYMMETRIC_KEY_DER);
 
   EXPECT_THAT(TestFixture::VerifyingKeyType::CreateFromProto(pem_key_proto),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 // Verify that keys created from CreateFromProto() match equivalent keys
@@ -283,7 +284,7 @@ TYPED_TEST_P(VerifyingKeyTest, SerializeToKeyProtoUnknownFailure) {
     ASYLO_ASSERT_OK_AND_ASSIGN(param_key, param.factory(param.key_data));
 
     EXPECT_THAT(param_key->SerializeToKeyProto(UNKNOWN_ASYMMETRIC_KEY_ENCODING),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -350,7 +351,7 @@ TYPED_TEST_P(VerifyingKeyTest, VerifyWithIncorrectSignatureSchemeFails) {
     ASYLO_ASSERT_OK_AND_ASSIGN(param_key, param.factory(param.key_data));
 
     EXPECT_THAT(param_key->Verify(valid_message, signature),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -366,7 +367,7 @@ TYPED_TEST_P(VerifyingKeyTest, VerifyWithMissingEcdsaSignatureFails) {
     ASYLO_ASSERT_OK_AND_ASSIGN(param_key, param.factory(param.key_data));
 
     EXPECT_THAT(param_key->Verify(valid_message, signature),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -382,7 +383,7 @@ TYPED_TEST_P(VerifyingKeyTest, VerifyWithMissingRFieldFails) {
 
   EXPECT_THAT(verifying_key->Verify(
                   absl::HexStringToBytes(this->test_message_hex_), signature),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that Verify() with Signature overload fails without an S field.
@@ -397,7 +398,7 @@ TYPED_TEST_P(VerifyingKeyTest, VerifyWithMissingSFieldFails) {
 
   EXPECT_THAT(verifying_key->Verify(
                   absl::HexStringToBytes(this->test_message_hex_), signature),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 // Verify that Verify() with Signature overload fails a short R field.
 TYPED_TEST_P(VerifyingKeyTest, VerifyWithShortRFieldFails) {
@@ -411,7 +412,7 @@ TYPED_TEST_P(VerifyingKeyTest, VerifyWithShortRFieldFails) {
 
   EXPECT_THAT(verifying_key->Verify(
                   absl::HexStringToBytes(this->test_message_hex_), signature),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that Verify() with Signature overload fails with a long S field.
@@ -427,7 +428,7 @@ TYPED_TEST_P(VerifyingKeyTest, VerifyWithLongSFieldFails) {
 
   EXPECT_THAT(verifying_key->Verify(
                   absl::HexStringToBytes(this->test_message_hex_), signature),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that Verify() with Signature overload passes with valid signature.
@@ -621,7 +622,7 @@ TYPED_TEST_P(SigningKeyTest,
   key_proto.set_signature_scheme(UNKNOWN_SIGNATURE_SCHEME);
 
   EXPECT_THAT(TestFixture::SigningKeyType::CreateFromProto(key_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that CreateFromProto() fails when the key type is incorrect.
@@ -633,7 +634,7 @@ TYPED_TEST_P(SigningKeyTest,
   key_proto.set_key_type(AsymmetricSigningKeyProto::VERIFYING_KEY);
 
   EXPECT_THAT(TestFixture::SigningKeyType::CreateFromProto(key_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that CreateFromProto() fails when the key encoding is invalid.
@@ -645,7 +646,7 @@ TYPED_TEST_P(SigningKeyTest,
   key_proto.set_encoding(UNKNOWN_ASYMMETRIC_KEY_ENCODING);
 
   EXPECT_THAT(TestFixture::SigningKeyType::CreateFromProto(key_proto),
-              StatusIs(error::GoogleError::UNIMPLEMENTED));
+              StatusIs(absl::StatusCode::kUnimplemented));
 }
 
 // Verify that CreateFromProto() fails when the key does not match the
@@ -658,7 +659,7 @@ TYPED_TEST_P(SigningKeyTest,
   pem_key_proto.set_encoding(ASYMMETRIC_KEY_DER);
 
   EXPECT_THAT(TestFixture::SigningKeyType::CreateFromProto(pem_key_proto),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TYPED_TEST_P(SigningKeyTest, SigningKeyCreateFromProtoSuccess) {
@@ -718,7 +719,7 @@ TYPED_TEST_P(SigningKeyTest, CreateSigningKeyFromDerMatchesPem) {
 TYPED_TEST_P(SigningKeyTest, SerializeToKeyProtoUnknownFailure) {
   EXPECT_THAT(
       this->signing_key_->SerializeToKeyProto(UNKNOWN_ASYMMETRIC_KEY_ENCODING),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+      StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TYPED_TEST_P(SigningKeyTest, SerializeToKeyProtoSuccess) {

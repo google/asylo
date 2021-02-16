@@ -19,8 +19,10 @@
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
+
 #include <future>
 
+#include "absl/status/status.h"
 #include "asylo/test/misc/signal_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/posix_error_space.h"
@@ -64,12 +66,12 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
     if (!input.HasExtension(signal_test_input)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     "Missing input extension");
     }
     SignalTestInput test_input = input.GetExtension(signal_test_input);
     if (!test_input.has_signal_test_type()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     "Missing signal_test_type");
     }
     Status status;
@@ -96,8 +98,7 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
       case SignalTestInput::RESETHANDLER:
         return RunSignalTest(SignalTestInput::RESETHANDLER);
       default:
-        return Status(error::GoogleError::INVALID_ARGUMENT,
-                      "No vaild test type");
+        return Status(absl::StatusCode::kInvalidArgument, "No vaild test type");
     }
   }
 
@@ -147,8 +148,7 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
         act.sa_flags |= SA_RESETHAND;
         break;
       default:
-        return Status(error::GoogleError::INVALID_ARGUMENT,
-                      "No valid test type");
+        return Status(absl::StatusCode::kInvalidArgument, "No valid test type");
     }
     if (test_type != SignalTestInput::SIGNAL) {
       sigaction(SIGUSR1, &act, &oldact);
@@ -174,7 +174,7 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
     }
     if (test_type == SignalTestInput::SIGACTIONMASK &&
         signal_handler_interrupted) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Signal handler interrupted by a masked signal");
     }
     // For signal tests other then SIGMASK, the signal should have been handled
@@ -182,12 +182,12 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
     if (test_type != SignalTestInput::SIGMASK) {
       return all_signals_handled
                  ? Status::OkStatus()
-                 : Status(error::GoogleError::INTERNAL, "Signal not received");
+                 : Status(absl::StatusCode::kInternal, "Signal not received");
     }
     // For signal mask test, signal should not have been handled since it's
     // blocked.
     if (signal_handled) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Signal received when it's blocked");
     }
     if (sigprocmask(SIG_UNBLOCK, &set, &oldset) != 0) {
@@ -196,7 +196,7 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
     }
     // The queued signal should have been handled by now.
     return signal_handled ? Status::OkStatus()
-                          : Status(error::GoogleError::INTERNAL,
+                          : Status(absl::StatusCode::kInternal,
                                    "Signal not received after unblocked");
   }
 

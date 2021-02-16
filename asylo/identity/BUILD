@@ -77,6 +77,7 @@ cc_library(
         "//asylo/identity/attestation:enclave_assertion_verifier",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
 )

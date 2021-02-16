@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "absl/base/macros.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/aead_cryptor.h"
 #include "asylo/crypto/util/bssl_util.h"
@@ -153,11 +154,10 @@ Status BlockAndWaitOnEntries(int calling_thread_entry_count, int timeout) {
        ++i) {
     nanosleep(&ts, /*rem=*/nullptr);
   }
-  if (active_entry_count() >
-      blocked_entry_count() + active_exit_count() +
-      calling_thread_entry_count) {
+  if (active_entry_count() > blocked_entry_count() + active_exit_count() +
+                                 calling_thread_entry_count) {
     enc_unblock_entries();
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Timeout while waiting for other TCS to exit the enclave");
   }
 
@@ -179,14 +179,14 @@ Status EncryptToUntrustedMemory(AeadCryptor *cryptor, const void *source_base,
       maximum_ciphertext_size);
   size_t destination_size;
   if (!destination_base) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Failed to allocate untrusted memory for snapshot");
   }
   size_t nonce_size = cryptor->NonceSize();
   void *nonce_base =
       primitives::TrustedPrimitives::UntrustedLocalAlloc(nonce_size);
   if (!nonce_base) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Failed to allocate untrusted memory for snapshot nonce");
   }
 
@@ -225,14 +225,14 @@ Status DecryptFromUntrustedMemory(AeadCryptor *cryptor,
   size_t source_size = static_cast<size_t>(snapshot_entry.ciphertext_size());
   if (!primitives::TrustedPrimitives::IsOutsideEnclave(source_base,
                                                        source_size)) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "snapshot is not outside the enclave");
   }
   void *nonce_base = reinterpret_cast<void *>(snapshot_entry.nonce_base());
   size_t nonce_size = static_cast<size_t>(snapshot_entry.nonce_size());
   if (!primitives::TrustedPrimitives::IsOutsideEnclave(nonce_base,
                                                        nonce_size)) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "snapshot nonce is not outside the enclave");
   }
   ByteContainerView ciphertext(source_base, source_size);
@@ -249,10 +249,9 @@ Status DecryptFromUntrustedMemory(AeadCryptor *cryptor,
       actual_plaintext_size);
 }
 
-void CopyNonOkStatus(const Status &non_ok_status,
-                     error::GoogleError *error_code, char *error_message,
-                     size_t message_buffer_size) {
-  *error_code = non_ok_status.CanonicalCode();
+void CopyNonOkStatus(const Status &non_ok_status, absl::StatusCode *error_code,
+                     char *error_message, size_t message_buffer_size) {
+  *error_code = non_ok_status.code();
   strncpy(error_message, non_ok_status.error_message().data(),
           std::min(message_buffer_size, non_ok_status.error_message().size()));
 }
@@ -298,7 +297,7 @@ Status DecryptFromSnapshot(
     // We should not decrypt to any untrusted memory.
     if (!current_position || !primitives::TrustedPrimitives::IsInsideEnclave(
                                  current_position, expected_plaintext_size)) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "enclave memory is not found or unexpected");
     }
 
@@ -307,7 +306,7 @@ Status DecryptFromSnapshot(
         cryptor, entry[i], current_position, expected_plaintext_size,
         &actual_plaintext_size));
     if (actual_plaintext_size != expected_plaintext_size) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "The snapshot size does not match expectation");
     }
     bytes_left -= actual_plaintext_size;
@@ -340,12 +339,12 @@ void SetForkRequested() { fork_requested = true; }
 Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
   // A snapshot is not allowed unless fork is requested from inside an enclave.
   if (!ClearForkRequested()) {
-    return Status(error::GoogleError::PERMISSION_DENIED,
+    return Status(absl::StatusCode::kPermissionDenied,
                   "Snapshot is not allowed unless fork is requested");
   }
 
   if (!snapshot_layout) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Snapshot layout is nullptr");
   }
 
@@ -353,47 +352,47 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
   struct EnclaveMemoryLayout enclave_layout;
   enc_get_memory_layout(&enclave_layout);
   if (!enclave_layout.data_base || enclave_layout.data_size <= 0) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Can't find enclave data section");
   }
   if (!enclave_layout.bss_base || enclave_layout.bss_size <= 0) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Can't find enclave bss section");
   }
   if (!enclave_layout.heap_base || enclave_layout.heap_size <= 0) {
-    return Status(error::GoogleError::INTERNAL, "Can't find enclave heap");
+    return Status(absl::StatusCode::kInternal, "Can't find enclave heap");
   }
 
   struct ThreadMemoryLayout thread_layout = GetThreadLayoutForSnapshot();
   if (!thread_layout.thread_base || thread_layout.thread_size <= 0) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Can't locate the thread calling fork");
   }
   if (!thread_layout.stack_base || !thread_layout.stack_limit) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Can't locate the stack of the thread calling fork");
   }
 
   if (enclave_layout.reserved_data_size < enclave_layout.data_size) {
     return Status(
-        error::GoogleError::INTERNAL,
+        absl::StatusCode::kInternal,
         "Reserved data section can not hold the enclave data section");
   }
 
   if (enclave_layout.reserved_bss_size < enclave_layout.bss_size) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Reserved bss section can not hold the enclave bss section");
   }
 
   // Generate an AES256-GCM-SIV snapshot key.
   CleansingVector<uint8_t> snapshot_key(kSnapshotKeySize);
   if (!RAND_bytes(snapshot_key.data(), kSnapshotKeySize)) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   absl::StrCat("Can not generate the snapshot key: ",
                                BsslLastErrorString()));
   }
   if (!SetSnapshotKey(snapshot_key)) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Failed to save snapshot key inside enclave");
   }
 
@@ -419,7 +418,7 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
 
   // Stack-allocated error code and error message. A Status object is later
   // created from these components after the heap has been switched back.
-  error::GoogleError error_code = error::GoogleError::OK;
+  absl::StatusCode error_code = absl::StatusCode::kOk;
   char error_message[1024];
 
   // Switch heap allocation to a reserved memory section to avoid modifying
@@ -519,7 +518,7 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
 
   // Switch heap back before creating the return status.
   heap_switch(/*address=*/nullptr, /*size=*/0);
-  if (error_code != error::GoogleError::OK) {
+  if (error_code != absl::StatusCode::kOk) {
     enc_unblock_entries();
     return Status(error_code, error_message);
   }
@@ -624,7 +623,7 @@ Status RestoreForFork(const char *input, size_t input_len) {
   // this moment.
   if (active_entry_count() != 1) {
     return Status(
-        error::GoogleError::FAILED_PRECONDITION,
+        absl::StatusCode::kFailedPrecondition,
         "There are other enclave entries while restoring the enclave");
   }
 
@@ -632,7 +631,7 @@ Status RestoreForFork(const char *input, size_t input_len) {
   struct EnclaveMemoryLayout enclave_layout;
   enc_get_memory_layout(&enclave_layout);
 
-  error::GoogleError error_code = error::GoogleError::OK;
+  absl::StatusCode error_code = absl::StatusCode::kOk;
   char error_message[1024];
 
   // Switch heap allocation to a reserved memory section so that we are not
@@ -649,7 +648,7 @@ Status RestoreForFork(const char *input, size_t input_len) {
   do {
     asylo::SnapshotLayout snapshot_layout;
     if (!snapshot_layout.ParseFromArray(input, input_len)) {
-      Status status(error::GoogleError::INVALID_ARGUMENT,
+      Status status(absl::StatusCode::kInvalidArgument,
                     "Failed to parse SnapshotLayout");
       CopyNonOkStatus(status, &error_code, error_message,
                       ABSL_ARRAYSIZE(error_message));
@@ -660,7 +659,7 @@ Status RestoreForFork(const char *input, size_t input_len) {
     CleansingVector<uint8_t> snapshot_key;
 
     if (!GetSnapshotKey(&snapshot_key)) {
-      Status status(error::GoogleError::INTERNAL,
+      Status status(absl::StatusCode::kInternal,
                     "Failed to get the snapshot key");
       CopyNonOkStatus(status, &error_code, error_message,
                       ABSL_ARRAYSIZE(error_message));
@@ -690,7 +689,7 @@ Status RestoreForFork(const char *input, size_t input_len) {
 
   // Switch back to real heap.
   heap_switch(/*address=*/nullptr, /*size=*/0);
-  if (error_code != error::GoogleError::OK) {
+  if (error_code != absl::StatusCode::kOk) {
     return Status(error_code, error_message);
   }
 
@@ -710,7 +709,7 @@ Status RunEkepHandshake(EkepHandshaker *handshaker, bool is_parent,
   if (is_parent) {
     result = handshaker->NextHandshakeStep(nullptr, 0, &outgoing_bytes);
     if (result == EkepHandshaker::Result::ABORTED) {
-      return Status(error::GoogleError::INTERNAL, "EKEP handshake has aborted");
+      return Status(absl::StatusCode::kInternal, "EKEP handshake has aborted");
     }
 
     // The socket is passed directly as a host file descriptor, so call
@@ -755,7 +754,7 @@ Status RunEkepHandshake(EkepHandshaker *handshaker, bool is_parent,
     } while (result == EkepHandshaker::Result::NOT_ENOUGH_DATA);
 
     if (result == EkepHandshaker::Result::ABORTED) {
-      return Status(error::GoogleError::INTERNAL, "EKEP handshake has aborted");
+      return Status(absl::StatusCode::kInternal, "EKEP handshake has aborted");
     }
 
     if (result == EkepHandshaker::Result::COMPLETED && !is_parent) {
@@ -796,7 +795,7 @@ Status ComparePeerAndSelfIdentity(const EnclaveIdentity &peer_identity) {
                                       &explanation));
   if (!acl_result) {
     return Status(
-        error::GoogleError::INTERNAL,
+        absl::StatusCode::kInternal,
         absl::StrCat(
             "The identity of the peer enclave does not match expectation: ",
             explanation));
@@ -810,7 +809,7 @@ Status EncryptAndSendSnapshotKey(std::unique_ptr<AeadCryptor> cryptor,
   Cleanup delete_snapshot_key(DeleteSnapshotKey);
   CleansingVector<uint8_t> snapshot_key(kSnapshotKeySize);
   if (!GetSnapshotKey(&snapshot_key)) {
-    return Status(error::GoogleError::INTERNAL, "Failed to get snapshot key");
+    return Status(absl::StatusCode::kInternal, "Failed to get snapshot key");
   }
 
   // Encrypts the snapshot key.
@@ -837,7 +836,7 @@ Status EncryptAndSendSnapshotKey(std::unique_ptr<AeadCryptor> cryptor,
   std::string encrypted_snapshot_key_string;
   if (!encrypted_snapshot_key.SerializeToString(
           &encrypted_snapshot_key_string)) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Failed to serialize EncryptedSnapshotKey");
   }
 
@@ -861,7 +860,7 @@ Status ReceiveSnapshotKey(std::unique_ptr<AeadCryptor> cryptor, int socket) {
 
   EncryptedSnapshotKey encrypted_snapshot_key;
   if (!encrypted_snapshot_key.ParseFromArray(buf, rc)) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Failed to parse EncryptedSnapshotKey");
   }
 
@@ -885,7 +884,7 @@ Status ReceiveSnapshotKey(std::unique_ptr<AeadCryptor> cryptor, int socket) {
   // Save the snapshot key inside the enclave for decrypting and restoring the
   // enclave.
   if (!SetSnapshotKey(snapshot_key)) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Failed to save snapshot key inside enclave");
   }
   return Status::OkStatus();
@@ -900,12 +899,12 @@ Status TransferSecureSnapshotKey(
   if (!fork_handshake_config.has_is_parent() ||
       !fork_handshake_config.has_socket()) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "Both the is_parent and socket field should be set for handshake");
   }
 
   if (fork_handshake_config.socket() < 0) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "The socket field for handshake is invalid");
   }
 
@@ -920,7 +919,7 @@ Status TransferSecureSnapshotKey(
   // The parent should only start a key transfer if it's requested by a fork
   // request inside an enclave.
   if (is_parent && !ClearSnapshotKeyTransferRequested()) {
-    return Status(error::GoogleError::PERMISSION_DENIED,
+    return Status(absl::StatusCode::kPermissionDenied,
                   "Snapshot key transfer is not allowed unless requested by "
                   "fork inside an enclave");
   }

@@ -60,6 +60,7 @@ cc_library(
         "//asylo/platform/system_call:untrusted_invoke",
         "//asylo/util:hex_util",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
     ],
 )
 

@@ -25,6 +25,7 @@
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/hash_interface.h"
 #include "asylo/crypto/util/bssl_util.h"
@@ -204,7 +205,7 @@ Status EkepHandshaker::ParseFrameMessage(uint32_t message_size,
 
 StatusOr<std::string> EkepHandshaker::GetUnusedBytes() {
   if (!IsHandshakeCompleted()) {
-    return Status(asylo::error::GoogleError::FAILED_PRECONDITION,
+    return Status(::absl::StatusCode::kFailedPrecondition,
                   "Cannot retrieve unused bytes before handshake is complete");
   }
 
@@ -214,7 +215,7 @@ StatusOr<std::string> EkepHandshaker::GetUnusedBytes() {
 StatusOr<std::unique_ptr<EnclaveIdentities>>
 EkepHandshaker::GetPeerIdentities() {
   if (!IsHandshakeCompleted()) {
-    return Status(asylo::error::GoogleError::FAILED_PRECONDITION,
+    return Status(::absl::StatusCode::kFailedPrecondition,
                   "Cannot retrieve peer identity before handshake is "
                   "complete");
   }
@@ -224,7 +225,7 @@ EkepHandshaker::GetPeerIdentities() {
 
 StatusOr<RecordProtocol> EkepHandshaker::GetRecordProtocol() {
   if (!IsHandshakeCompleted()) {
-    return Status(asylo::error::GoogleError::FAILED_PRECONDITION,
+    return Status(::absl::StatusCode::kFailedPrecondition,
                   "Cannot retrieve record protocol before handshake is "
                   "complete");
   }
@@ -234,7 +235,7 @@ StatusOr<RecordProtocol> EkepHandshaker::GetRecordProtocol() {
 
 StatusOr<CleansingVector<uint8_t>> EkepHandshaker::GetRecordProtocolKey() {
   if (!IsHandshakeCompleted()) {
-    return Status(asylo::error::GoogleError::FAILED_PRECONDITION,
+    return Status(::absl::StatusCode::kFailedPrecondition,
                   "Cannot retrieve record protocol key before handshake is "
                   "complete");
   }

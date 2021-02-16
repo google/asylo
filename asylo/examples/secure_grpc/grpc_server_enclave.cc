@@ -20,6 +20,7 @@
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/synchronization/notification.h"
@@ -78,18 +79,16 @@ asylo::Status GrpcServerEnclave::Initialize(
     const asylo::EnclaveConfig &enclave_config) LOCKS_EXCLUDED(server_mutex_) {
   // Fail if there is no server_address available.
   if (!enclave_config.HasExtension(grpc_server::server_address)) {
-    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                         "Expected a server_address extension on config.");
+    return absl::InvalidArgumentError(
+        "Expected a server_address extension on config.");
   }
 
   if (!enclave_config.HasExtension(grpc_server::port)) {
-    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                         "Expected a port extension on config.");
+    return absl::InvalidArgumentError("Expected a port extension on config.");
   }
 
   if (!enclave_config.HasExtension(identity_expectation)) {
-    return asylo::Status(
-        asylo::error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         "Expected an identity_expectation extension on config.");
   }
 
@@ -98,8 +97,7 @@ asylo::Status GrpcServerEnclave::Initialize(
 
   // Check that the server is not already running.
   if (server_) {
-    return asylo::Status(asylo::error::GoogleError::ALREADY_EXISTS,
-                         "Server is already started");
+    return absl::AlreadyExistsError("Server is already started");
   }
 
   // Create a ServerBuilder object to set up the server.
@@ -137,8 +135,7 @@ asylo::Status GrpcServerEnclave::Initialize(
   // Start the server.
   server_ = builder.BuildAndStart();
   if (!server_) {
-    return asylo::Status(asylo::error::GoogleError::INTERNAL,
-                         "Failed to start server");
+    return absl::InternalError("Failed to start server");
   }
 
   return asylo::Status::OkStatus();

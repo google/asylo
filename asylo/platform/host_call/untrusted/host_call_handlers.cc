@@ -32,6 +32,7 @@
 #include <cstdint>
 #include <ctime>
 
+#include "absl/status/status.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/host_call/serializer_functions.h"
 #include "asylo/platform/host_call/untrusted/host_call_handlers_util.h"
@@ -386,7 +387,7 @@ Status InetPtonHandler(const std::shared_ptr<primitives::Client> &client,
   } else if (klinux_af == AF_INET6) {
     dst_len = sizeof(struct in6_addr);
   } else {
-    return {error::GoogleError::INVALID_ARGUMENT,
+    return {absl::StatusCode::kInvalidArgument,
             "InetPtonHandler: Unrecognized af_family encountered."};
   }
   auto dst = absl::make_unique<char[]>(dst_len);

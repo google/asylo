@@ -21,6 +21,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "asylo/grpc/auth/enclave_auth_context.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_util.h"
 #include "asylo/identity/descriptions.h"
@@ -41,7 +42,7 @@ Status ExtractSgxIdentity(const EnclaveAuthContext &auth_context,
       auth_context.FindEnclaveIdentity(enclave_identity_description);
   if (!identity_result.ok()) {
     LOG(ERROR) << "FindEnclaveIdentity failed: " << identity_result.status();
-    return Status(error::GoogleError::PERMISSION_DENIED,
+    return Status(absl::StatusCode::kPermissionDenied,
                   "Peer does not have SGX identity");
   }
 

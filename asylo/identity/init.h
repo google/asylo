@@ -21,6 +21,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/attestation/enclave_assertion_generator.h"
 #include "asylo/identity/attestation/enclave_assertion_verifier.h"
@@ -122,10 +123,9 @@ Status InitializeEnclaveAssertionAuthorities(ConfigIteratorT configs_begin,
     }
   }
 
-
   return ok ? Status::OkStatus()
             : Status(
-                  error::GoogleError::INTERNAL,
+                  absl::StatusCode::kInternal,
                   "One or more errors occurred while attempting to initialize "
                   "assertion generators and assertion verifiers");
 }

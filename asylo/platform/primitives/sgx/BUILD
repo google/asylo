@@ -325,6 +325,7 @@ cc_library(
     ],
     deps = [
         ":fork_cc_proto",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "//asylo:enclave_cc_proto",
         "//asylo/platform/core:trusted_core",

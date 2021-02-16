@@ -37,6 +37,7 @@
 #include <gtest/gtest.h>
 #include "absl/container/flat_hash_set.h"
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/host_call/serializer_functions.h"
 #include "asylo/platform/posix/syscalls_test.pb.h"
@@ -97,7 +98,7 @@ Status RunEnclaveSyscall(EnclaveClient *client,
   }
   if (test_output) {
     if (!enclave_output.HasExtension(syscalls_test_output)) {
-      return Status(error::GoogleError::INTERNAL, "No expected enclave output");
+      return Status(absl::StatusCode::kInternal, "No expected enclave output");
     }
     *test_output = enclave_output.GetExtension(syscalls_test_output);
   }

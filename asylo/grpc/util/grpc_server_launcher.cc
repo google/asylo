@@ -17,6 +17,8 @@
  */
 
 #include "asylo/grpc/util/grpc_server_launcher.h"
+
+#include "absl/status/status.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
 
@@ -26,7 +28,7 @@ Status GrpcServerLauncher::RegisterService(
     std::unique_ptr<::grpc::Service> service) {
   absl::MutexLock lock(&mu_);
   if (state_ != State::NOT_LAUNCHED) {
-    return MakeStatus(error::GoogleError::FAILED_PRECONDITION,
+    return MakeStatus(absl::StatusCode::kFailedPrecondition,
                       "Cannot add services after the server has started");
   }
   builder_.RegisterService(service.get());
@@ -40,7 +42,7 @@ Status GrpcServerLauncher::AddListeningPort(
   absl::MutexLock lock(&mu_);
   if (state_ != State::NOT_LAUNCHED) {
     return MakeStatus(
-        error::GoogleError::FAILED_PRECONDITION,
+        absl::StatusCode::kFailedPrecondition,
         "Cannot add address and creds after the server has started");
   }
   builder_.AddListeningPort(address, std::move(creds), selected_port);
@@ -51,13 +53,13 @@ Status GrpcServerLauncher::AddListeningPort(
 Status GrpcServerLauncher::Start() {
   absl::MutexLock lock(&mu_);
   if (state_ != State::NOT_LAUNCHED) {
-    return MakeStatus(error::GoogleError::FAILED_PRECONDITION,
+    return MakeStatus(absl::StatusCode::kFailedPrecondition,
                       "Cannot start server more than once");
   }
   server_ = builder_.BuildAndStart();
   if (!server_) {
     state_ = State::TERMINATED;
-    return MakeStatus(error::GoogleError::INTERNAL,
+    return MakeStatus(absl::StatusCode::kInternal,
                       "Failed to start the server ");
   }
   state_ = State::LAUNCHED;
@@ -70,7 +72,7 @@ Status GrpcServerLauncher::Shutdown() {
     // Prevent further attempts to launch the server once Shutdown() has been
     // called.
     state_ = State::TERMINATED;
-    return MakeStatus(error::GoogleError::FAILED_PRECONDITION,
+    return MakeStatus(absl::StatusCode::kFailedPrecondition,
                       "Cannot shutdown, the server has not started");
   }
 
@@ -87,7 +89,7 @@ Status GrpcServerLauncher::Wait() const {
     // server_->Wait() makes it impossible to shut down the server.
     absl::MutexLock lock(&mu_);
     if (state_ != State::LAUNCHED) {
-      return MakeStatus(error::GoogleError::FAILED_PRECONDITION,
+      return MakeStatus(absl::StatusCode::kFailedPrecondition,
                         "Cannot wait, the server is not running");
     }
   }

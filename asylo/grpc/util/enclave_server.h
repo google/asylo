@@ -22,6 +22,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/grpc/util/enclave_server.pb.h"
@@ -81,12 +82,12 @@ class EnclaveServer final : public TrustedApplication {
         config.GetExtension(server_input_config);
     if (!config_server_proto.has_host()) {
       return Status(
-          error::GoogleError::FAILED_PRECONDITION,
+          absl::StatusCode::kFailedPrecondition,
           "No host was set in server_input_config extension of EnclaveConfig");
     }
     if (!config_server_proto.has_port()) {
       return Status(
-          error::GoogleError::FAILED_PRECONDITION,
+          absl::StatusCode::kFailedPrecondition,
           "No port was set in server_input_config extension of EnclaveConfig");
     }
     host_ = config_server_proto.host();
@@ -138,13 +139,12 @@ class EnclaveServer final : public TrustedApplication {
       service_ = std::move(service_result).ValueOrDie();
     }
     if (service_ == nullptr) {
-      return Status(error::GoogleError::INTERNAL, "No gRPC service configured");
+      return Status(absl::StatusCode::kInternal, "No gRPC service configured");
     }
     builder.RegisterService(service_.get());
     std::unique_ptr<::grpc::Server> server = builder.BuildAndStart();
     if (!server) {
-      return Status(error::GoogleError::INTERNAL,
-                    "Failed to start gRPC server");
+      return Status(absl::StatusCode::kInternal, "Failed to start gRPC server");
     }
 
     port_ = port;
@@ -173,7 +173,7 @@ class EnclaveServer final : public TrustedApplication {
   }
 
   static StatusOr<std::unique_ptr<::grpc::Service>> NoFactory() {
-    return Status(error::GoogleError::INTERNAL, "No factory configured");
+    return Status(absl::StatusCode::kInternal, "No factory configured");
   }
 
   // A gRPC server hosting |messenger_|.

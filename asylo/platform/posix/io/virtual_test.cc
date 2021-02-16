@@ -19,11 +19,13 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
+
 #include <string>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/posix/io/io_manager.h"
@@ -53,14 +55,14 @@ class VirtualHandlerTest : public ::testing::Test {
   StatusOr<std::string> Read(const std::string &path) {
     int fd = open(path.c_str(), O_RDONLY);
     if (fd < 0) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     absl::StrCat("Error: Cannot open ", path));
     }
 
     char buf[128] = {};
     int count = read(fd, buf, sizeof(buf));
     if (count < 0) {
-      return Status(error::GoogleError::INTERNAL, "Cannot read path");
+      return Status(absl::StatusCode::kInternal, "Cannot read path");
     }
     buf[sizeof(buf) - 1] = '\0';
     close(fd);
@@ -144,7 +146,7 @@ TEST_F(VirtualHandlerTest, PartialFileMatch) {
   // Verify that handler isn't matched.
   auto result_or_error = Read(path + "x");
   ASSERT_THAT(result_or_error, Not(IsOk()));
-  EXPECT_THAT(result_or_error, StatusIs(error::GoogleError::INTERNAL,
+  EXPECT_THAT(result_or_error, StatusIs(absl::StatusCode::kInternal,
                                         "Error: Cannot open /test/foo/qux"));
 
   // Cleanup registered handler.
