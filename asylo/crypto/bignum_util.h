@@ -30,6 +30,7 @@
 #include <vector>
 
 #include "absl/base/call_once.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -128,7 +129,7 @@ StatusOr<IntT> IntegerFromBignum(const BIGNUM &bignum) {
   });
 
   if (BN_cmp(&bignum, int_t_min) == -1 || BN_cmp(&bignum, int_t_max) == 1) {
-    return Status(error::GoogleError::OUT_OF_RANGE,
+    return Status(absl::StatusCode::kOutOfRange,
                   "BIGNUM cannot fit in the desired type");
   }
 

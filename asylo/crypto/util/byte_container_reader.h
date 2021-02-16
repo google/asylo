@@ -20,10 +20,12 @@
 #define ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_READER_H_
 
 #include <openssl/mem.h>
+
 #include <cstring>
 #include <iterator>
 #include <type_traits>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/status.h"
@@ -107,10 +109,10 @@ class ByteContainerReader {
 
  private:
   Status CreateReadTooLargeStatus(size_t size) const {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrFormat(
-                      "Attempted to read %d bytes, but only %d are available",
-                      size, BytesRemaining()));
+    return Status(
+        absl::StatusCode::kInvalidArgument,
+        absl::StrFormat("Attempted to read %d bytes, but only %d are available",
+                        size, BytesRemaining()));
   }
 
   const ByteContainerView source_;

@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
@@ -34,15 +35,15 @@ namespace asylo {
 Status ValidateCertificateSigningRequest(const CertificateSigningRequest &csr) {
   if (!csr.has_format()) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "CertificateSigningRequest missing required \"format\" field");
   }
   if (!csr.has_data()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "CertificateSigningRequest missing required \"data\" field");
   }
   if (csr.format() == asylo::CertificateSigningRequest::UNKNOWN) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "CertificateSigningRequest has an unknown format");
   }
 
@@ -62,23 +63,23 @@ Status FullyValidateCertificate(const Certificate &certificate) {
       break;
   }
 
-  return Status(error::GoogleError::INVALID_ARGUMENT,
+  return Status(absl::StatusCode::kInvalidArgument,
                 absl::StrCat("Certificate has an unknown format: ",
                              ProtoEnumValueName(certificate.format())));
 }
 
 Status ValidateCertificate(const Certificate &certificate) {
   if (!certificate.has_format()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Certificate missing required \"format\" field");
   }
   if (!certificate.has_data()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Certificate missing required \"data\" field");
   }
 
   if (certificate.format() == asylo::Certificate::UNKNOWN) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Certificate has an unknown format");
   }
 
@@ -96,15 +97,15 @@ Status ValidateCertificateChain(const CertificateChain &certificate_chain) {
 Status ValidateCertificateRevocationList(const CertificateRevocationList &crl) {
   if (!crl.has_format()) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "CertificateRevocationList missing required \"format\" field");
   }
   if (!crl.has_data()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "CertificateRevocationList missing required \"data\" field");
   }
   if (crl.format() == asylo::CertificateRevocationList::UNKNOWN) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "CertificateRevocationList has an unknown format");
   }
 
@@ -115,7 +116,7 @@ StatusOr<std::unique_ptr<CertificateInterface>> CreateCertificateInterface(
     const CertificateFactoryMap &factory_map, const Certificate &certificate) {
   auto factory_iter = factory_map.find(certificate.format());
   if (factory_iter == factory_map.end()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("No mapping from format to factory for format ",
                                ProtoEnumValueName(certificate.format())));
   }
@@ -131,7 +132,7 @@ StatusOr<CertificateInterfaceVector> CreateCertificateChain(
     auto factory_iter = factory_map.find(cert.format());
     if (factory_iter == factory_map.end()) {
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrCat("At index ", i,
                        " no mapping from format to factory for format ",
                        ProtoEnumValueName(cert.format())));
@@ -151,7 +152,7 @@ StatusOr<CertificateInterfaceVector> CreateCertificateChain(
 Status VerifyCertificateChain(CertificateInterfaceSpan certificate_chain,
                               const VerificationConfig &verification_config) {
   if (certificate_chain.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Certificate chain must include at least one certificate");
   }
 
@@ -167,7 +168,7 @@ Status VerifyCertificateChain(CertificateInterfaceSpan certificate_chain,
       absl::optional<int64_t> max_pathlength = issuer->CertPathLength();
       if (max_pathlength.has_value() && max_pathlength.value() < ca_count) {
         return asylo::Status(
-            error::GoogleError::UNAUTHENTICATED,
+            absl::StatusCode::kUnauthenticated,
             absl::StrCat(
                 "Maximum pathlength of certificate at index ", i,
                 " exceeded. Maximum pathlength: ", max_pathlength.value(),
@@ -225,7 +226,7 @@ StatusOr<CertificateChain> GetCertificateChainFromPem(
 
   if (cert_chain.certificates_size() == 0) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrCat(
             "The certificate chain string does not contain any pair of '",
             kBeginCertLabel, "' and '", kEndCertLabel, "'"));

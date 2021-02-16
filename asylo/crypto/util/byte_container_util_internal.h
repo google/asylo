@@ -20,6 +20,7 @@
 #define ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_UTIL_INTERNAL_H_
 
 #include <endian.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <iterator>
@@ -27,6 +28,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/status.h"
 
@@ -53,7 +55,7 @@ Status AppendSerializedByteContainers(
 
   for (const ByteContainerView &view : views) {
     if (view.size() > std::numeric_limits<uint32_t>::max()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     "Container size exceeds max size");
     }
 

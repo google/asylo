@@ -24,6 +24,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/test/util/status_matchers.h"
@@ -57,10 +58,10 @@ TEST(FakeSigningKeyTest, VerifyingKeySerializeToDer) {
 TEST(FakeSigningKeyTest, VerifyingKeyFailsSerializeToDer) {
   FakeVerifyingKey verifying_key(
       UNKNOWN_SIGNATURE_SCHEME,
-      Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+      Status(absl::StatusCode::kFailedPrecondition, kTestMessage));
 
   EXPECT_THAT(verifying_key.SerializeToDer().status(),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+              StatusIs(absl::StatusCode::kFailedPrecondition, kTestMessage));
 }
 
 TEST(FakeSigningKeyTest, VerifyingKeySerializeToKeyProtoSuccess) {
@@ -78,7 +79,7 @@ TEST(FakeSigningKeyTest, VerifyingKeySerializeToKeyProtoPemFailure) {
   FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
   AsymmetricSigningKeyProto key_proto;
   EXPECT_THAT(verifying_key.SerializeToKeyProto(ASYMMETRIC_KEY_PEM),
-              StatusIs(error::GoogleError::UNIMPLEMENTED));
+              StatusIs(absl::StatusCode::kUnimplemented));
 }
 
 TEST(FakeSigningKeyTest, VerifyingKeySerializeToKeyProtoUnknownFailure) {
@@ -86,7 +87,7 @@ TEST(FakeSigningKeyTest, VerifyingKeySerializeToKeyProtoUnknownFailure) {
   AsymmetricSigningKeyProto key_proto;
   EXPECT_THAT(
       verifying_key.SerializeToKeyProto(UNKNOWN_ASYMMETRIC_KEY_ENCODING),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+      StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that a FakeVerifyingKey with a status passed at construction for the
@@ -94,10 +95,10 @@ TEST(FakeSigningKeyTest, VerifyingKeySerializeToKeyProtoUnknownFailure) {
 TEST(FakeSigningKeyTest, VerifyingKeyConstructedWithStatusVerify) {
   FakeVerifyingKey verifying_key(
       UNKNOWN_SIGNATURE_SCHEME,
-      Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+      Status(absl::StatusCode::kFailedPrecondition, kTestMessage));
 
   EXPECT_THAT(verifying_key.Verify(kTestMessage, kTestMessageSignature),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+              StatusIs(absl::StatusCode::kFailedPrecondition, kTestMessage));
 }
 
 // Verify that a FakeVerifyingKey verifies a valid signature.
@@ -113,7 +114,7 @@ TEST(FakeSigningKeyTest, VerifyWithOtherKeySignatureFails) {
   FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
 
   EXPECT_THAT(verifying_key.Verify(kTestMessage, kOtherKeySignature),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 // Verify that a FakeVerifyingKey does not verify a signature for a different
@@ -122,7 +123,7 @@ TEST(FakeSigningKeyTest, VerifyOtherMessageSignatureFails) {
   FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
 
   EXPECT_THAT(verifying_key.Verify(kTestMessage, kOtherMessageSignature),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 // Verify that operator== passes when given keys with the same non-OK Status
@@ -130,10 +131,10 @@ TEST(FakeSigningKeyTest, VerifyOtherMessageSignatureFails) {
 TEST(FakeSigningKeyTest, EqualsSucceedsWithEquivalentNonOkKeys) {
   FakeVerifyingKey verifying_key(
       UNKNOWN_SIGNATURE_SCHEME,
-      Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+      Status(absl::StatusCode::kFailedPrecondition, kTestMessage));
   FakeVerifyingKey other_key(
       UNKNOWN_SIGNATURE_SCHEME,
-      Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+      Status(absl::StatusCode::kFailedPrecondition, kTestMessage));
 
   EXPECT_TRUE(verifying_key == other_key);
 }
@@ -143,10 +144,10 @@ TEST(FakeSigningKeyTest, EqualsSucceedsWithEquivalentNonOkKeys) {
 TEST(FakeSigningKeyTest, EqualsFailsWithEquivalentNonOkKeysDifferentSchemes) {
   FakeVerifyingKey verifying_key(
       UNKNOWN_SIGNATURE_SCHEME,
-      Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+      Status(absl::StatusCode::kFailedPrecondition, kTestMessage));
   FakeVerifyingKey other_key(
       ECDSA_P256_SHA256,
-      Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+      Status(absl::StatusCode::kFailedPrecondition, kTestMessage));
 
   EXPECT_FALSE(verifying_key == other_key);
 }
@@ -241,14 +242,14 @@ TEST(FakeSigningKeyTest, SigningKeySerializeToKeyProtoPemFailure) {
   FakeSigningKey signing_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
   AsymmetricSigningKeyProto key_proto;
   EXPECT_THAT(signing_key.SerializeToKeyProto(ASYMMETRIC_KEY_PEM),
-              StatusIs(error::GoogleError::UNIMPLEMENTED));
+              StatusIs(absl::StatusCode::kUnimplemented));
 }
 
 TEST(FakeSigningKeyTest, SigningKeySerializeToKeyProtoUnknownFailure) {
   FakeSigningKey signing_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
   AsymmetricSigningKeyProto key_proto;
   EXPECT_THAT(signing_key.SerializeToKeyProto(UNKNOWN_ASYMMETRIC_KEY_ENCODING),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that a FakeSigningKey returns the non-OK Status passed at construction
@@ -256,10 +257,10 @@ TEST(FakeSigningKeyTest, SigningKeySerializeToKeyProtoUnknownFailure) {
 TEST(FakeSigningKeyTest, SigningKeySerializeToDerFailure) {
   FakeSigningKey signing_key(
       UNKNOWN_SIGNATURE_SCHEME,
-      Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+      Status(absl::StatusCode::kFailedPrecondition, kTestMessage));
 
   EXPECT_THAT(signing_key.SerializeToDer(),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+              StatusIs(absl::StatusCode::kFailedPrecondition, kTestMessage));
 }
 
 // Verify that a FakeSigningKey returns the status passed at construction as the
@@ -267,11 +268,11 @@ TEST(FakeSigningKeyTest, SigningKeySerializeToDerFailure) {
 TEST(FakeSigningKeyTest, SigningKeySignFailure) {
   FakeSigningKey signing_key(
       UNKNOWN_SIGNATURE_SCHEME,
-      Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+      Status(absl::StatusCode::kFailedPrecondition, kTestMessage));
 
   std::vector<uint8_t> signature;
   EXPECT_THAT(signing_key.Sign(kTestMessage, &signature),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+              StatusIs(absl::StatusCode::kFailedPrecondition, kTestMessage));
 }
 
 // Verify that GetVerifyingKey produces the correct FakeVerifyingKey.

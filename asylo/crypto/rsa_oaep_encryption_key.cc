@@ -27,6 +27,7 @@
 #include <openssl/rsa.h>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/asymmetric_encryption_key.h"
@@ -46,7 +47,7 @@ StatusOr<bssl::UniquePtr<RSA>> CreateRsaKey(int number_of_bits) {
   if (!BN_set_word(e.get(), RSA_F4) ||
       !RSA_generate_key_ex(rsa.get(), number_of_bits, e.get(),
                            /*cb=*/nullptr)) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return std::move(rsa);
 }
@@ -64,7 +65,7 @@ AsymmetricEncryptionScheme GetAsymmetricEncryptionScheme(int number_of_bits) {
 
 Status CheckKeySize(int key_size) {
   if (key_size != 2048 && key_size != 3072) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Invalid key size: ", key_size));
   }
   return Status::OkStatus();
@@ -73,7 +74,7 @@ Status CheckKeySize(int key_size) {
 // Checks if |hash_alg| is a valid hash and returns an error if it's not.
 Status CheckHashAlgorithm(HashAlgorithm hash_alg) {
   if (hash_alg == HashAlgorithm::UNKNOWN_HASH_ALGORITHM) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "UNKNOWN_HASH_ALGORITHM is not valid for RSA-OAEP hashing.");
   }
   return Status::OkStatus();
@@ -89,7 +90,7 @@ Status CheckEncryptionScheme(AsymmetricEncryptionScheme scheme) {
   }
 
   return Status(
-      error::GoogleError::INVALID_ARGUMENT,
+      absl::StatusCode::kInvalidArgument,
       absl::StrCat("Invalid encryption scheme: ", ProtoEnumValueName(scheme)));
 }
 
@@ -116,35 +117,35 @@ class RsaOaepOperation {
 
     bssl::UniquePtr<EVP_PKEY> evp_key(EVP_PKEY_new());
     if (EVP_PKEY_set1_RSA(evp_key.get(), rsa) != 1) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
 
     bssl::UniquePtr<EVP_PKEY_CTX> ctx(
         EVP_PKEY_CTX_new(evp_key.get(), /*ENGINE e=*/nullptr));
     if (ctx == nullptr) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
 
     if (init_func_(ctx.get()) != 1) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
     if (EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_OAEP_PADDING) != 1) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
     if (EVP_PKEY_CTX_set_rsa_oaep_md(ctx.get(), md) != 1) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
 
     size_t out_len = 0;
     if (crypto_func_(ctx.get(), /*out=*/nullptr, &out_len, input.data(),
                      input.size()) != 1) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
 
     output->resize(out_len);
     if (crypto_func_(ctx.get(), output->data(), &out_len, input.data(),
                      input.size()) != 1) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
     output->resize(out_len);
     return Status::OkStatus();
@@ -171,7 +172,7 @@ class RsaOaepOperation {
     }
 
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrCat("Invalid hash algorithm in RSA key object: ", hash_alg));
   }
 
@@ -195,7 +196,7 @@ RsaOaepEncryptionKey::CreateFromDer(ByteContainerView serialized_key,
   bssl::UniquePtr<RSA> public_key(
       RSA_public_key_from_bytes(serialized_key.data(), serialized_key.size()));
   if (!public_key) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   ASYLO_RETURN_IF_ERROR(CheckKeySize(RSA_bits(public_key.get())));
 
@@ -215,7 +216,7 @@ RsaOaepEncryptionKey::CreateFromPem(ByteContainerView serialized_key,
   bssl::UniquePtr<RSA> public_key(PEM_read_bio_RSA_PUBKEY(
       key_bio.get(), /*x=*/nullptr, /*cb=*/nullptr, /*u=*/nullptr));
   if (!public_key) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   ASYLO_RETURN_IF_ERROR(CheckKeySize(RSA_bits(public_key.get())));
 
@@ -226,7 +227,7 @@ StatusOr<std::unique_ptr<RsaOaepEncryptionKey>>
 RsaOaepEncryptionKey::CreateFromProto(
     const AsymmetricEncryptionKeyProto &key_proto, HashAlgorithm hash_alg) {
   if (key_proto.key_type() != AsymmetricEncryptionKeyProto::ENCRYPTION_KEY) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Invalid key type: ",
                                ProtoEnumValueName(key_proto.key_type())));
   }
@@ -242,14 +243,14 @@ RsaOaepEncryptionKey::CreateFromProto(
       ASYLO_ASSIGN_OR_RETURN(key, CreateFromPem(key_proto.key(), hash_alg));
       break;
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     absl::StrCat("Invalid key encoding: ",
                                  ProtoEnumValueName(key_proto.encoding())));
   }
 
   if (key->GetEncryptionScheme() != key_proto.encryption_scheme()) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrCat(
             "Mismatched encryption scheme. Expected (based on input): ",
             ProtoEnumValueName(key_proto.encryption_scheme()),
@@ -266,8 +267,7 @@ StatusOr<std::unique_ptr<RsaOaepEncryptionKey>> RsaOaepEncryptionKey::Create(
   const BIGNUM *e;
   RSA_get0_key(public_key.get(), &n, &e, /*out_d=*/nullptr);
   if (n == nullptr || e == nullptr) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Public key is invalid");
+    return Status(absl::StatusCode::kInvalidArgument, "Public key is invalid");
   }
 
   return absl::WrapUnique<RsaOaepEncryptionKey>(
@@ -286,7 +286,7 @@ StatusOr<std::string> RsaOaepEncryptionKey::SerializeToDer() const {
   uint8_t *buffer = nullptr;
   size_t out_len;
   if (RSA_public_key_to_bytes(&buffer, &out_len, public_key_.get()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   bssl::UniquePtr<uint8_t> deleter(buffer);
   return CopyToByteContainer<std::string>({buffer, out_len});
@@ -319,7 +319,7 @@ RsaOaepDecryptionKey::CreateFromDer(ByteContainerView serialized_key,
   bssl::UniquePtr<RSA> private_key(
       RSA_private_key_from_bytes(serialized_key.data(), serialized_key.size()));
   if (!private_key) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   ASYLO_RETURN_IF_ERROR(CheckKeySize(RSA_bits(private_key.get())));
 
@@ -336,7 +336,7 @@ Status RsaOaepDecryptionKey::SerializeToDer(
   uint8_t *buffer = nullptr;
   size_t out_len;
   if (RSA_private_key_to_bytes(&buffer, &out_len, private_key_.get()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   bssl::UniquePtr<uint8_t> deleter(buffer);
   serialized_key->assign(buffer, buffer + out_len);
@@ -347,7 +347,7 @@ StatusOr<std::unique_ptr<AsymmetricEncryptionKey>>
 RsaOaepDecryptionKey::GetEncryptionKey() const {
   bssl::UniquePtr<RSA> public_key_copy(RSAPublicKey_dup(private_key_.get()));
   if (!public_key_copy) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return RsaOaepEncryptionKey::Create(std::move(public_key_copy), hash_alg_);
 }

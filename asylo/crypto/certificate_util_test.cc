@@ -25,6 +25,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "asylo/crypto/certificate.pb.h"
@@ -424,7 +425,7 @@ TEST(CertificateUtilTest,
   CertificateSigningRequest csr = CreateValidCertificateSigningRequest();
   csr.clear_format();
   EXPECT_THAT(ValidateCertificateSigningRequest(csr),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest,
@@ -432,7 +433,7 @@ TEST(CertificateUtilTest,
   CertificateSigningRequest csr = CreateValidCertificateSigningRequest();
   csr.set_format(CertificateSigningRequest::UNKNOWN);
   EXPECT_THAT(ValidateCertificateSigningRequest(csr),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest,
@@ -440,7 +441,7 @@ TEST(CertificateUtilTest,
   CertificateSigningRequest csr = CreateValidCertificateSigningRequest();
   csr.clear_data();
   EXPECT_THAT(ValidateCertificateSigningRequest(csr),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest,
@@ -453,27 +454,27 @@ TEST(CertificateUtilTest, ValidateCertificateReturnsErrorIfNoFormat) {
   Certificate certificate = CreateValidCertificate();
   certificate.clear_format();
   EXPECT_THAT(ValidateCertificate(certificate),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(FullyValidateCertificate(certificate),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest, ValidateCertificateReturnsErrorIfUnknownFormat) {
   Certificate certificate = CreateValidCertificate();
   certificate.set_format(Certificate::UNKNOWN);
   EXPECT_THAT(ValidateCertificate(certificate),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(FullyValidateCertificate(certificate),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest, ValidateCertificateReturnsErrorIfNoData) {
   Certificate certificate = CreateValidCertificate();
   certificate.clear_data();
   EXPECT_THAT(ValidateCertificate(certificate),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(FullyValidateCertificate(certificate),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest,
@@ -482,7 +483,7 @@ TEST(CertificateUtilTest,
                 format: X509_PEM
                 data: "nope, not valid"
               )pb")),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST(CertificateUtilTest,
@@ -491,7 +492,7 @@ TEST(CertificateUtilTest,
                 format: X509_DER
                 data: "junk data"
               )pb")),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST(CertificateUtilTest,
@@ -500,7 +501,7 @@ TEST(CertificateUtilTest,
                 format: SGX_ATTESTATION_KEY_CERTIFICATE
                 data: "totally bogus"
               )pb")),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest, FullyValidateCertificateSucceedsWithValidPem) {
@@ -528,12 +529,12 @@ TEST(CertificateUtilTest,
   CertificateChain certificate_chain = CreateValidCertificateChain(1);
   certificate_chain.mutable_certificates(0)->clear_format();
   EXPECT_THAT(ValidateCertificateChain(certificate_chain),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   certificate_chain = CreateValidCertificateChain(5);
   certificate_chain.mutable_certificates(1)->clear_format();
   EXPECT_THAT(ValidateCertificateChain(certificate_chain),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest,
@@ -548,7 +549,7 @@ TEST(CertificateUtilTest,
   CertificateRevocationList crl = CreateValidCertificateRevocationList();
   crl.clear_format();
   EXPECT_THAT(ValidateCertificateRevocationList(crl),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest,
@@ -556,7 +557,7 @@ TEST(CertificateUtilTest,
   CertificateRevocationList crl = CreateValidCertificateRevocationList();
   crl.set_format(CertificateRevocationList::UNKNOWN);
   EXPECT_THAT(ValidateCertificateRevocationList(crl),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest,
@@ -564,7 +565,7 @@ TEST(CertificateUtilTest,
   CertificateRevocationList crl = CreateValidCertificateRevocationList();
   crl.clear_data();
   EXPECT_THAT(ValidateCertificateRevocationList(crl),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest,
@@ -666,7 +667,7 @@ TEST(CertificateUtilTest, VerifyCertificateChainVerificationErrorForwarded) {
 
   VerificationConfig config(/*all_fields=*/false);
   EXPECT_THAT(VerifyCertificateChain(absl::MakeConstSpan(chain), config),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 TEST(CertificateUtilTest, VerifyCertificateChainBadRootPathlen) {
@@ -683,7 +684,7 @@ TEST(CertificateUtilTest, VerifyCertificateChainBadRootPathlen) {
 
   VerificationConfig config(/*all_fields=*/true);
   EXPECT_THAT(VerifyCertificateChain(absl::MakeConstSpan(chain), config),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 TEST(CertificateUtilTest, VerifyCertificateChainBadIntermediatePathlen) {
@@ -703,7 +704,7 @@ TEST(CertificateUtilTest, VerifyCertificateChainBadIntermediatePathlen) {
 
   VerificationConfig config(/*all_fields=*/true);
   EXPECT_THAT(VerifyCertificateChain(absl::MakeConstSpan(chain), config),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 TEST(CertificateUtilTest, VerifyCertificateChainBadPathlenNoCheck) {
@@ -753,7 +754,7 @@ TEST(CertificateUtilTest, CreateCertificateInterfaceMissingFormat) {
   CertificateFactoryMap factory_map = CreateFactoryMap({Certificate::X509_DER});
 
   EXPECT_THAT(CreateCertificateInterface(factory_map, cert),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest, CreateCertificateInterfaceMalformedCertificate) {
@@ -764,7 +765,7 @@ TEST(CertificateUtilTest, CreateCertificateInterfaceMalformedCertificate) {
   CertificateFactoryMap factory_map = CreateFactoryMap({Certificate::X509_DER});
 
   EXPECT_THAT(CreateCertificateInterface(factory_map, cert),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest, CreateCertificateInterfaceSuccess) {
@@ -791,7 +792,7 @@ TEST(CertificateUtilTest, CreateCertificateInterfaceSuccess) {
 TEST(CertificateUtilTest, CreateCertificateChainMissingFormat) {
   CertificateFactoryMap factory_map = CreateFactoryMap({Certificate::X509_PEM});
   EXPECT_THAT(CreateCertificateChain(factory_map, TestCertificateChain()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest, CreateCertificateChainMalformedCertificate) {
@@ -802,7 +803,7 @@ TEST(CertificateUtilTest, CreateCertificateChainMalformedCertificate) {
   malformed_cert->set_data(kMalformedCertData);
 
   EXPECT_THAT(CreateCertificateChain(factory_map, chain),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest, CreateCertificateChainSuccess) {
@@ -836,7 +837,7 @@ TEST(CertificateUtilTest, GetCertificateFromPem_Success) {
 
 TEST(GetCertFromPemTest, GetCertificateFromPem_NonPemCertFailsToParse) {
   EXPECT_THAT(GetCertificateFromPem("Not a PEM cert"),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST(CertificateUtilTest, GetCertificateChain_Success) {
@@ -863,13 +864,13 @@ TEST(CertificateUtilTest,
 TEST(CertificateUtilTest,
      GetCertificateChainFromPem_NonPemCertChainFailsToParse) {
   EXPECT_THAT(GetCertificateChainFromPem("Not a PEM cert chain"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(CertificateUtilTest,
      GetCertificateChainFromPem_CertChainWithOneInvalidCertFailsToParse) {
   EXPECT_THAT(GetCertificateChainFromPem(kPemCertChainWithOneInvalidCert),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST(CertificateUtilTest, GetCrlFromPemTest_Success) {

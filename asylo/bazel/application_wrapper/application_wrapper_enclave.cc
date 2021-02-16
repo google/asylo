@@ -19,6 +19,7 @@
 #include <atomic>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/bazel/application_wrapper/application_wrapper.pb.h"
 #include "asylo/bazel/application_wrapper/argv.h"
@@ -41,7 +42,7 @@ class ApplicationWrapperEnclave final : public TrustedApplication {
   // not have a command_line_args extension.
   Status Initialize(const EnclaveConfig &config) override {
     if (!config.HasExtension(command_line_args)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     "Expected command_line_args extension on EnclaveConfig");
     }
     args_unmarshaler_ =
@@ -58,7 +59,7 @@ class ApplicationWrapperEnclave final : public TrustedApplication {
   Status Run(const EnclaveInput &input, EnclaveOutput *output) override {
     // Do not allow the application to run more than once.
     if (has_run_.exchange(true)) {
-      return Status(error::GoogleError::FAILED_PRECONDITION,
+      return Status(absl::StatusCode::kFailedPrecondition,
                     "Application has already run");
     }
 

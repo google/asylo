@@ -22,6 +22,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/time/time.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/examples/grpc_server/translator_server.grpc.pb.h"

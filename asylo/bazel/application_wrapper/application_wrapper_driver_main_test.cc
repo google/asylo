@@ -19,12 +19,14 @@
 #include "asylo/bazel/application_wrapper/application_wrapper_driver_main.h"
 
 #include <unistd.h>
+
 #include <array>
 #include <memory>
 #include <string>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/bazel/application_wrapper/application_wrapper.pb.h"
 #include "asylo/bazel/application_wrapper/argv.h"
@@ -106,7 +108,7 @@ TEST_F(ApplicationWrapperDriverMainTest,
 // Tests that ApplicationWrapperDriverMain() returns the same status as
 // LoadEnclave() if the LoadEnclave() call fails.
 TEST_F(ApplicationWrapperDriverMainTest, ForwardsFailureStatusFromLoadEnclave) {
-  const Status load_enclave_failure(error::GoogleError::INTERNAL, "foobar");
+  const Status load_enclave_failure(absl::StatusCode::kInternal, "foobar");
 
   EXPECT_CALL(*client_, EnterAndInitialize(_))
       .WillOnce(Return(load_enclave_failure));
@@ -124,7 +126,7 @@ TEST_F(ApplicationWrapperDriverMainTest, ForwardsFailureStatusFromLoadEnclave) {
 // Tests that ApplicationWrapperDriverMain() returns the same status as
 // EnterAndRun() if the EnterAndRun() call fails.
 TEST_F(ApplicationWrapperDriverMainTest, ForwardsFailureStatusFromEnterAndRun) {
-  const Status enter_and_run_failure(error::GoogleError::INTERNAL, "foobar");
+  const Status enter_and_run_failure(absl::StatusCode::kInternal, "foobar");
 
   // The enclave should still be destroyed even in EnterAndRun() fails.
   EXPECT_CALL(*client_, EnterAndInitialize(_));
@@ -153,7 +155,7 @@ TEST_F(ApplicationWrapperDriverMainTest,
   EXPECT_THAT(
       ApplicationWrapperDriverMain(Loader(), "no_extension", /*argc=*/0,
                                    /*argv=*/&arg),
-      StatusIs(error::GoogleError::INTERNAL,
+      StatusIs(absl::StatusCode::kInternal,
                "EnclaveOutput does not have a main_return_value extension"));
 }
 
@@ -161,8 +163,8 @@ TEST_F(ApplicationWrapperDriverMainTest,
 // to DestroyEnclave() when processing another error fails.
 TEST_F(ApplicationWrapperDriverMainTest,
        LogsErrorMessageIfDestroyEnclaveFailsDuringErrorProcessing) {
-  const Status enter_and_run_failure(error::GoogleError::INTERNAL, "foobar");
-  const Status destroy_enclave_failure(error::GoogleError::INTERNAL, "bazzle");
+  const Status enter_and_run_failure(absl::StatusCode::kInternal, "foobar");
+  const Status destroy_enclave_failure(absl::StatusCode::kInternal, "bazzle");
 
   EXPECT_CALL(*client_, EnterAndInitialize(_));
   EXPECT_CALL(*client_, EnterAndRun(_, _))
@@ -187,7 +189,7 @@ TEST_F(ApplicationWrapperDriverMainTest,
 // DestroyEnclave() if the DestroyEnclave() call fails.
 TEST_F(ApplicationWrapperDriverMainTest,
        ForwardsFailureStatusFromDestroyEnclave) {
-  const Status destroy_enclave_failure(error::GoogleError::INTERNAL, "foobar");
+  const Status destroy_enclave_failure(absl::StatusCode::kInternal, "foobar");
 
   EnclaveOutput enclave_output;
   enclave_output.SetExtension(main_return_value, 0);

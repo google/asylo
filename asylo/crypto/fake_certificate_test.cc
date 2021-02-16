@@ -23,6 +23,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/certificate_interface.h"
@@ -44,7 +45,7 @@ TEST(FakeCertificateTest, CreateFailsWithMalformedData) {
   cert.set_data("bad data 1-k");
 
   EXPECT_THAT(FakeCertificate::Create(cert),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(FakeCertificateTest, CreateSucceedsWithCorrectIncludedData) {
@@ -143,7 +144,7 @@ TEST(FakeCertificateTest, VerifySuccess) {
                           /*subject_name=*/absl::nullopt);
   FakeCertificate issuer(issuer_subject_key, /*issuer_key=*/"f00d",
                          /*is_ca=*/absl::nullopt, /*pathlength=*/absl::nullopt,
-                          /*subject_name=*/absl::nullopt);
+                         /*subject_name=*/absl::nullopt);
 
   VerificationConfig config(/*all_fields=*/true);
   ASYLO_EXPECT_OK(subject.Verify(issuer, config));
@@ -175,7 +176,7 @@ TEST(FakeCertificateTest, VerifyFailure) {
 
   VerificationConfig config(/*all_fields=*/true);
   EXPECT_THAT(subject.Verify(subject, config),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 TEST(FakeCertificateTest, ToCertificateProtoCreateRoundTrip) {

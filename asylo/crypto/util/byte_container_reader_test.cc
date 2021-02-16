@@ -23,6 +23,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/base/macros.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/test/util/status_matchers.h"
@@ -95,7 +96,7 @@ TYPED_TEST(ByteContainerReadSingleTests, ReadTooManyObjects) {
 
   TypeParam *obj = nullptr;
   ASSERT_THAT(reader.ReadSingle(obj),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(reader.BytesRemaining(), Eq(sizeof(TypeParam) - 1));
 }
 
@@ -116,7 +117,7 @@ TYPED_TEST(ByteContainerReadSingleTests, ReadRawTooManyBytes) {
 
   TypeParam *output = nullptr;
   ASSERT_THAT(reader.ReadRaw(sizeof(TypeParam), output),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(reader.BytesRemaining(), Eq(kSize));
 }
 
@@ -177,7 +178,7 @@ TYPED_TEST(ByteContainerReadMultipleTests, ReadPastEnd) {
 
   TypeParam output;
   EXPECT_THAT(reader.ReadMultiple(2, &output),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   // Ensure that, after error, we can still read successfully
   EXPECT_THAT(reader.ReadMultiple(1, &output), IsOk());

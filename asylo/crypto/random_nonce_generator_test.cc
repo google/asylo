@@ -23,6 +23,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_join.h"
 #include "absl/types/span.h"
 #include "asylo/test/util/status_matchers.h"
@@ -81,7 +82,7 @@ TEST(RandomNonceGeneratorTest, RandomNonceGeneratorIncorrectNonceSize) {
       RandomNonceGenerator::CreateAesGcmNonceGenerator();
   std::vector<uint8_t> nonce(kBadNonceSize);
   EXPECT_THAT(nonce_generator->NextNonce(absl::MakeSpan(nonce)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 }  // namespace

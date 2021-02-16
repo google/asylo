@@ -21,6 +21,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/test/util/status_matchers.h"
@@ -116,7 +117,7 @@ TEST(AsymmetricEncryptionKeyTest, DecryptionKeyToProto) {
 }
 
 TEST(AsymmetricEncryptionKeyTest, DecryptionKeyToProtoWithFailure) {
-  const Status kError(::asylo::error::GoogleError::ABORTED, "Nope");
+  const Status kError(::absl::StatusCode::kAborted, "Nope");
 
   MockAsymmetricDecryptionKey key;
   EXPECT_CALL(key, GetEncryptionKey).WillOnce(Return(ByMove(kError)));

@@ -18,6 +18,7 @@
 
 #include "asylo/bazel/application_wrapper/application_wrapper_driver_main.h"
 
+#include "absl/status/status.h"
 #include "asylo/bazel/application_wrapper/application_wrapper.pb.h"
 #include "asylo/bazel/application_wrapper/argv.h"
 #include "asylo/client.h"
@@ -60,7 +61,7 @@ StatusOr<int> ApplicationWrapperDriverMain(const EnclaveLoader &loader,
   EnclaveOutput output;
   ASYLO_RETURN_IF_ERROR(client->EnterAndRun(EnclaveInput(), &output));
   if (!output.HasExtension(main_return_value)) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "EnclaveOutput does not have a main_return_value extension");
   }
   int main_return = output.GetExtension(main_return_value);

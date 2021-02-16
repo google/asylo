@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/time.h"
 #include "asylo/crypto/fake_certificate.pb.h"
@@ -44,15 +45,15 @@ StatusOr<std::unique_ptr<FakeCertificate>> FakeCertificate::Create(
     const Certificate &certificate) {
   FakeCertificateProto fake_cert;
   if (!fake_cert.ParseFromString(certificate.data())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Could not parse certificate");
   }
   if (!fake_cert.has_subject_key()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Certificate must include subject key");
   }
   if (!fake_cert.has_issuer_key()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Certificate must include issuer key");
   }
 
@@ -95,7 +96,7 @@ Status FakeCertificate::Verify(const CertificateInterface &issuer_certificate,
   ASYLO_ASSIGN_OR_RETURN(issuer_subject_key,
                          issuer_certificate.SubjectKeyDer());
   if (issuer_key_ != issuer_subject_key) {
-    return Status(error::GoogleError::UNAUTHENTICATED,
+    return Status(absl::StatusCode::kUnauthenticated,
                   absl::StrFormat("Verification failed: issuer's subject key "
                                   "(%s) is not the issuer key (%s)",
                                   issuer_subject_key, issuer_key_));
@@ -145,7 +146,7 @@ StatusOr<Certificate> FakeCertificate::ToCertificateProto(
   Certificate cert;
   cert.set_format(encoding);
   if (!fake_cert.SerializeToString(cert.mutable_data())) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Failed to serialize FakeCertificateProto");
   }
 

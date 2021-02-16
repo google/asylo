@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/keys.pb.h"
@@ -50,7 +51,7 @@ StatusOr<AsymmetricSigningKeyProto> VerifyingKey::SerializeToKeyProto(
       ASYLO_ASSIGN_OR_RETURN(*key_proto.mutable_key(), SerializeToPem());
       break;
     case UNKNOWN_ASYMMETRIC_KEY_ENCODING:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     absl::StrFormat("Encoding (%s) is unsupported",
                                     ProtoEnumValueName(encoding)));
   }
@@ -79,7 +80,7 @@ StatusOr<AsymmetricSigningKeyProto> SigningKey::SerializeToKeyProto(
       break;
     }
     case UNKNOWN_ASYMMETRIC_KEY_ENCODING:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     absl::StrFormat("Encoding (%s) is unsupported",
                                     ProtoEnumValueName(encoding)));
   }

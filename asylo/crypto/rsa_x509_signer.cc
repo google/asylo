@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -43,7 +44,7 @@ StatusOr<std::unique_ptr<RsaX509Signer>> RsaX509Signer::CreateFromPem(
   bssl::UniquePtr<RSA> private_key(PEM_read_bio_RSAPrivateKey(
       private_key_bio.get(), /*x=*/nullptr, /*cb=*/nullptr, /*u=*/nullptr));
   if (!private_key) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   return absl::WrapUnique<RsaX509Signer>(
@@ -56,9 +57,9 @@ int RsaX509Signer::KeySizeInBits() const {
 }
 
 StatusOr<CleansingVector<char>> RsaX509Signer::SerializeToPem() const {
-  BIO *new_key_bio = BIO_new(BIO_s_mem());
+  BIO* new_key_bio = BIO_new(BIO_s_mem());
   if (new_key_bio == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   bssl::UniquePtr<BIO> key_bio(new_key_bio);
@@ -66,13 +67,13 @@ StatusOr<CleansingVector<char>> RsaX509Signer::SerializeToPem() const {
                                    /*enc=*/nullptr, /*kstr=*/nullptr,
                                    /*klen=*/0,
                                    /*cb=*/nullptr, /*u=*/nullptr)) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   size_t key_data_size;
   const uint8_t* key_data = nullptr;
   if (BIO_mem_contents(key_bio.get(), &key_data, &key_data_size) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   CleansingVector<char> serialized_key(key_data, key_data + key_data_size);
@@ -85,11 +86,11 @@ StatusOr<CleansingVector<char>> RsaX509Signer::SerializeToPem() const {
 Status RsaX509Signer::SignX509(X509* x509) const {
   bssl::UniquePtr<EVP_PKEY> evp_pkey(EVP_PKEY_new());
   if (EVP_PKEY_set1_RSA(evp_pkey.get(), private_key_.get()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   if (X509_sign(x509, evp_pkey.get(), hash_) == 0) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }

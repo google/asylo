@@ -20,9 +20,11 @@
 #define ASYLO_CRYPTO_UTIL_TRIVIAL_OBJECT_UTIL_H_
 
 #include <openssl/rand.h>
+
 #include <string>
 #include <type_traits>
 
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -37,19 +39,19 @@ Status SetTrivialObjectFromHexString(absl::string_view view, T *obj) {
   // Make sure that the string has correct number of hex characters
   // to exactly fill obj, and that obj is not a nullptr.
   if (obj == nullptr) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Output container must not be a nullptr");
   }
   if (view.size() != sizeof(T) * 2) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrCat("The size of the output container: ", sizeof(T),
                      " must be the size of the string / 2: ", view.size() / 2));
   }
   for (auto ch : view) {
     if (std::isxdigit(ch) == 0) {
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           "The given string must be made of only valid hex characters");
     }
   }
@@ -103,7 +105,7 @@ Status SetTrivialObjectFromBinaryString(absl::string_view view, T *obj) {
   static_assert(std::is_trivially_copy_assignable<T>::value,
                 "Template parameter is not trivially copy-assignable.");
   if (view.size() != sizeof(*obj)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Cannot set a ", sizeof(*obj), "byte object",
                                " from a string of size ", view.size()));
   }

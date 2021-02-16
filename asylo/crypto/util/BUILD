@@ -43,6 +43,7 @@ cc_library(
     deps = [
         ":byte_container_view",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -104,6 +105,7 @@ cc_library(
         ":byte_container_view",
         "//asylo/util:status",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:str_format",
     ],
 )
@@ -120,6 +122,7 @@ cc_test(
         "//asylo/test/util:test_main",
         "//asylo/util:cleansing_types",
         "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -161,6 +164,7 @@ cc_library(
     deps = [
         "//asylo/util:status",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
 )

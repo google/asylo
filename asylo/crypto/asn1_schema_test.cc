@@ -28,6 +28,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/asn1.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
@@ -105,11 +106,11 @@ TEST(Asn1SchemaTest, Asn1ObjectIdReadInvalidValues) {
   Asn1Value asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateBoolean(false));
   EXPECT_THAT(Asn1ObjectId()->Read(asn1),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateIntegerFromInt(-7));
   EXPECT_THAT(Asn1ObjectId()->Read(asn1),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(Asn1SchemaTest, Asn1ObjectIdWriteValidValues) {
@@ -148,30 +149,30 @@ TEST(Asn1SchemaTest, Asn1SequenceReadInvalidValues) {
   Asn1Value asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateObjectId(some_oid));
   EXPECT_THAT(Asn1Sequence(Asn1ObjectId(), Asn1ObjectId())->Read(asn1),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
                                        {Asn1Value::CreateObjectId(some_oid)}));
   EXPECT_THAT(Asn1Sequence(Asn1ObjectId(), Asn1ObjectId())->Read(asn1),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
                                        {Asn1Value::CreateIntegerFromInt(55),
                                         Asn1Value::CreateBoolean(false)}));
   EXPECT_THAT(Asn1Sequence(Asn1ObjectId(), Asn1ObjectId())->Read(asn1),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
                                        {Asn1Value::CreateObjectId(some_oid),
                                         Asn1Value::CreateIntegerFromInt(55)}));
   EXPECT_THAT(Asn1Sequence(Asn1ObjectId(), Asn1ObjectId())->Read(asn1),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
                                        {Asn1Value::CreateIntegerFromInt(55),
                                         Asn1Value::CreateObjectId(some_oid)}));
   EXPECT_THAT(Asn1Sequence(Asn1ObjectId(), Asn1ObjectId())->Read(asn1),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(Asn1SchemaTest, Asn1SequenceWriteValidValues) {
@@ -191,7 +192,7 @@ TEST(Asn1SchemaTest, Asn1SequenceWriteValidValues) {
 }
 
 TEST(Asn1SchemaTest, Asn1SequenceWriteInvalidValues) {
-  Status status(error::GoogleError::FAILED_PRECONDITION, "bazzle");
+  Status status(absl::StatusCode::kFailedPrecondition, "bazzle");
   EXPECT_THAT(Asn1Sequence(Asn1Any(), FailSchema<int>(status))
                   ->Write(std::make_tuple(Asn1Value(), 5))
                   .status(),
@@ -270,14 +271,14 @@ TEST(Asn1SchemaTest, Asn1SequenceOfReadInvalidValues) {
   ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
                                        {Asn1Value::CreateIntegerFromInt(12)}));
   EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId())->Read(asn1),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
                                        {Asn1Value::CreateObjectId(some_oid),
                                         Asn1Value::CreateIntegerFromInt(-1),
                                         Asn1Value::CreateObjectId(some_oid)}));
   EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId())->Read(asn1),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   for (int i = 0; i < 3; ++i) {
     ASYLO_ASSERT_OK_AND_ASSIGN(
@@ -285,7 +286,7 @@ TEST(Asn1SchemaTest, Asn1SequenceOfReadInvalidValues) {
         Asn1Value::CreateSequenceFromStatusOrs(std::vector<StatusOr<Asn1Value>>(
             i, Asn1Value::CreateObjectId(some_oid))));
     EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId(), /*min_size=*/3)->Read(asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
   for (int i = 4; i <= kMaxTestSequenceElements; ++i) {
     ASYLO_ASSERT_OK_AND_ASSIGN(
@@ -295,7 +296,7 @@ TEST(Asn1SchemaTest, Asn1SequenceOfReadInvalidValues) {
     EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId(), /*min_size=*/0,
                                /*max_size=*/3)
                     ->Read(asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
   for (int i = 0; i <= kMaxTestSequenceElements; ++i) {
     if (i != 3) {
@@ -306,7 +307,7 @@ TEST(Asn1SchemaTest, Asn1SequenceOfReadInvalidValues) {
       EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId(), /*min_size=*/3,
                                  /*max_size=*/3)
                       ->Read(asn1),
-                  StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                  StatusIs(absl::StatusCode::kInvalidArgument));
     }
   }
 }
@@ -364,7 +365,7 @@ TEST(Asn1SchemaTest, Asn1SequenceOfWriteInvalidValues) {
 
   ObjectId some_oid;
   ASYLO_ASSERT_OK_AND_ASSIGN(some_oid, ObjectId::CreateFromNumericId(NID_md5));
-  Status status(error::GoogleError::DATA_LOSS, "foobar");
+  Status status(absl::StatusCode::kDataLoss, "foobar");
 
   EXPECT_THAT(Asn1SequenceOf(FailSchema<int>(status))->Write({4}).status(),
               Eq(status));
@@ -372,18 +373,18 @@ TEST(Asn1SchemaTest, Asn1SequenceOfWriteInvalidValues) {
   for (int i = 0; i < 3; ++i) {
     EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId(), /*min_size=*/3)
                     ->Write(std::vector<ObjectId>(i, some_oid)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
   for (int i = 4; i <= kMaxTestSequenceElements; ++i) {
     EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId(), /*min_size=*/0, /*max_size=*/3)
                     ->Write(std::vector<ObjectId>(i, some_oid)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
   for (int i = 0; i <= kMaxTestSequenceElements; ++i) {
     if (i != 3) {
       EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId(), /*min_size=*/3, /*max_size=*/3)
                       ->Write(std::vector<ObjectId>(i, some_oid)),
-                  StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                  StatusIs(absl::StatusCode::kInvalidArgument));
     }
   }
 }
@@ -406,7 +407,7 @@ TEST(Asn1SchemaTest, NamedSchemaReadInvalidValues) {
   ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateOctetString("bad"));
   auto oid_read_result =
       NamedSchema("OBJECT IDENTIFIER", Asn1ObjectId())->Read(asn1);
-  EXPECT_THAT(oid_read_result, StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(oid_read_result, StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(std::string(oid_read_result.status().error_message()),
               HasSubstr("Failed to read OBJECT IDENTIFIER"));
 
@@ -414,7 +415,7 @@ TEST(Asn1SchemaTest, NamedSchemaReadInvalidValues) {
   auto sequence_read_result =
       NamedSchema("SEQUENCE OF ANY", Asn1SequenceOf(Asn1Any()))->Read(asn1);
   EXPECT_THAT(sequence_read_result,
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(std::string(sequence_read_result.status().error_message()),
               HasSubstr("Failed to read SEQUENCE OF ANY"));
 }
@@ -435,7 +436,7 @@ TEST(Asn1SchemaTest, NamedSchemaWriteValidValues) {
 }
 
 TEST(Asn1SchemaTest, NamedSchemaWriteInvalidValues) {
-  Status expected(error::GoogleError::UNAVAILABLE, "barfoo");
+  Status expected(absl::StatusCode::kUnavailable, "barfoo");
 
   auto write_result = NamedSchema("Fail", FailSchema<int>(expected))->Write(12);
   EXPECT_THAT(write_result, StatusIs(expected.CanonicalCode()));
