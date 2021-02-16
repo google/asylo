@@ -19,6 +19,7 @@
 #include "asylo/identity/attestation/sgx/internal/sgx_remote_assertion_generator_client.h"
 
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "include/grpcpp/client_context.h"
 
 namespace asylo {
@@ -43,7 +44,7 @@ SgxRemoteAssertionGeneratorClient::GenerateSgxRemoteAssertion(
   ::grpc::Status status =
       stub_->GenerateSgxRemoteAssertion(&context, request, &response);
   if (!status.ok()) {
-    return Status(status);
+    return ConvertStatus<asylo::Status>(status);
   }
 
   return response.assertion();

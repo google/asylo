@@ -27,6 +27,7 @@
 #include "asylo/examples/grpc_server/translator_server.grpc.pb.h"
 #include "asylo/examples/grpc_server/translator_server.pb.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 #include "include/grpc/impl/codegen/gpr_types.h"
@@ -47,8 +48,8 @@ asylo::StatusOr<GetTranslationResponse> GetTranslation(
   GetTranslationResponse response;
 
   ::grpc::ClientContext context;
-  ASYLO_RETURN_IF_ERROR(
-      asylo::Status(stub->GetTranslation(&context, request, &response)));
+  ASYLO_RETURN_IF_ERROR(asylo::ConvertStatus<asylo::Status>(
+      stub->GetTranslation(&context, request, &response)));
   return response;
 }
 
@@ -61,7 +62,7 @@ asylo::StatusOr<std::unique_ptr<TranslatorClient>> TranslatorClient::Create(
                          "Must provide a non-empty server address");
   }
   std::shared_ptr<::grpc::ChannelCredentials> channel_credentials =
-      ::grpc::InsecureChannelCredentials();
+  ::grpc::InsecureChannelCredentials();
 
   // Connect a gRPC channel to the server.
   std::shared_ptr<::grpc::Channel> channel =

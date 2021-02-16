@@ -30,6 +30,7 @@
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/asylo_macros.h"
+#include "asylo/util/status_helpers.h"
 #include "include/grpc/support/time.h"
 #include "include/grpcpp/support/status.h"
 
@@ -57,7 +58,7 @@ class ProcSystemServiceClientTest : public ::testing::Test {
     MockProcSystemService mock_service(std::move(mock_parser),
                                        comparison_parser->kExpectedPid);
 
-    ASYLO_ASSERT_OK(Status(mock_service.GetProcStat(
+    ASYLO_ASSERT_OK(ConvertStatus<asylo::Status>(mock_service.GetProcStat(
         &context_, &proc_stat_request_, &proc_stat_response_)));
   }
 

@@ -184,9 +184,10 @@ cc_library(
     hdrs = ["translator_client.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "//asylo/examples/grpc_server:translator_server",
-        "//asylo/examples/grpc_server:translator_server_cc_proto",
+        ":translator_server",
+        ":translator_server_cc_proto",
         "//asylo/util:status",
+        "//asylo/util:status_helpers",
         "@com_github_grpc_grpc//:grpc",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/memory",

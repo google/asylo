@@ -83,6 +83,7 @@ cc_library(
         ":service",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "//asylo/util:status_helpers",
         "@com_github_grpc_grpc//:grpc++",
     ],
 )

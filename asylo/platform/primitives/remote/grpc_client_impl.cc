@@ -185,7 +185,8 @@ void Communicator::ClientImpl::SendDisconnect() {
   // Do not set deadline - Disconnect may take an arbitrarily long time.
   const auto grpc_status = grpc_stub_->Disconnect(&context, request, &reply);
   if (!grpc_status.ok()) {
-    LOG(ERROR) << "SendDisconnect error=" << Status(grpc_status);
+    LOG(ERROR) << "SendDisconnect error="
+               << ConvertStatus<absl::Status>(grpc_status);
   }
 }
 
@@ -200,7 +201,8 @@ void Communicator::ClientImpl::SendEndPointAddress(absl::string_view address) {
   const auto grpc_status =
       grpc_stub_->EndPointAddress(&context, request, &reply);
   if (!grpc_status.ok()) {
-    LOG(ERROR) << "SendEndPointAddress error=" << Status(grpc_status);
+    LOG(ERROR) << "SendEndPointAddress error="
+               << ConvertStatus<absl::Status>(grpc_status);
   }
 }
 
@@ -214,7 +216,8 @@ void Communicator::ClientImpl::SendDisposeOfThread(
   const auto grpc_status =
       grpc_stub_->DisposeOfThread(&context, request, &reply);
   if (!grpc_status.ok()) {
-    LOG(ERROR) << "SendDisposeOfThread error=" << Status(grpc_status);
+    LOG(ERROR) << "SendDisposeOfThread error="
+               << ConvertStatus<absl::Status>(grpc_status);
   }
 }
 

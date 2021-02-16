@@ -28,6 +28,7 @@
 #include "asylo/identity/platform/sgx/sgx_identity_util.h"
 #include "asylo/util/mutex_guarded.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 #include "include/grpcpp/support/status.h"
 
@@ -81,7 +82,7 @@ SgxRemoteAssertionGeneratorImpl::SgxRemoteAssertionGeneratorImpl(
   SgxIdentity sgx_identity;
   Status status = ExtractSgxIdentity(auth_context, &sgx_identity);
   if (!status.ok()) {
-    return status.ToOtherStatus<::grpc::Status>();
+    return ConvertStatus<::grpc::Status>(status);
   }
   auto signing_key_locked = signing_key_.ReaderLock();
 

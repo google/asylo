@@ -1042,6 +1042,7 @@ cc_library(
         ":sgx_remote_assertion_generator_service",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:status",
+        "//asylo/util:status_helpers",
         "@com_github_grpc_grpc//:grpc++",
     ],
 )
@@ -1083,6 +1084,7 @@ cc_library(
         "//asylo/identity/platform/sgx:sgx_identity_util",
         "//asylo/util:mutex_guarded",
         "//asylo/util:status",
+        "//asylo/util:status_helpers",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/status",
     ],

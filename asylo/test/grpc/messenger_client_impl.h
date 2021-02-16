@@ -26,6 +26,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/test/grpc/service.grpc.pb.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/statusor.h"
 #include "include/grpcpp/grpcpp.h"
 
@@ -56,7 +57,7 @@ class MessengerClient {
     ::grpc::Status grpc_status =
         stub_->Hello(&client_context, request, &response);
     if (!grpc_status.ok()) {
-      return Status(grpc_status);
+      return ConvertStatus<asylo::Status>(grpc_status);
     }
     LOG(INFO) << "Response from server: " << response.message();
 

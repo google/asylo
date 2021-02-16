@@ -26,6 +26,7 @@
 #include "asylo/platform/primitives/remote/metrics/mocks/mock_proc_system_parser.h"
 #include "asylo/platform/primitives/remote/metrics/mocks/mock_proc_system_service.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/status_helpers.h"
 
 namespace asylo {
 namespace primitives {
@@ -62,7 +63,7 @@ TEST_F(ProcSystemServiceTest, SuccessfullyBuildsResponse) {
 
   ASSERT_THAT(pid, Gt(0));
   ProcSystemServiceImpl proc_system_service_(pid);
-  ASYLO_ASSERT_OK(Status(proc_system_service_.GetProcStat(
+  ASYLO_ASSERT_OK(ConvertStatus<asylo::Status>(proc_system_service_.GetProcStat(
       &context_, &proc_stat_request_, &proc_stat_response_)));
 
   auto proc_stat = proc_stat_response_.proc_stat();
@@ -83,7 +84,7 @@ TEST_F(ProcSystemServiceTest, ResponseIsSuccessfulParse) {
   MockProcSystemService mock_service(std::move(mock_parser),
                                      comparison_parser->kExpectedPid);
 
-  ASYLO_ASSERT_OK(Status(mock_service.GetProcStat(
+  ASYLO_ASSERT_OK(ConvertStatus<asylo::Status>(mock_service.GetProcStat(
       &context_, &proc_stat_request_, &proc_stat_response_)));
   auto response_proc_stat = proc_stat_response_.proc_stat();
 

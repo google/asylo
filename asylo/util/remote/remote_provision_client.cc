@@ -33,6 +33,7 @@
 #include "asylo/util/remote/remote_provision.grpc.pb.h"
 #include "asylo/util/remote/remote_provision.pb.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 #include "include/grpc/support/time.h"
@@ -153,7 +154,7 @@ class RemoteProvisionClient : public RemoteProvision {
       }
     }
 
-    ASYLO_RETURN_IF_ERROR(Status(stream->Finish()));
+    ASYLO_RETURN_IF_ERROR(ConvertStatus<asylo::Status>(stream->Finish()));
     if (response.enclave_path().empty()) {
       return Status{error::GoogleError::NOT_FOUND, "No enclave file path"};
     }

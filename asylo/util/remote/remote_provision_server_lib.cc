@@ -41,6 +41,7 @@
 #include "asylo/util/remote/process_main_wrapper.h"
 #include "asylo/util/remote/remote_provision.grpc.pb.h"
 #include "asylo/util/remote/remote_provision.pb.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/thread.h"
 #include "include/grpc/support/time.h"
@@ -60,7 +61,7 @@ grpc::Status ProvisionServiceImpl::Provision(
     ProvisionResponse *response) {
   auto filename_or_status = PrepareEnclave(reader);
   if (!filename_or_status.ok()) {
-    return filename_or_status.status().ToOtherStatus<grpc::Status>();
+    return ConvertStatus<::grpc::Status>(filename_or_status.status());
   }
   // Return location of the enclave in the file system, accessible by the
   // proxy.

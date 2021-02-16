@@ -103,6 +103,7 @@ cc_test(
         "//asylo/platform/primitives/remote/metrics/mocks:mock_proc_system_service",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "//asylo/util:status_helpers",
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
     ],
