@@ -56,7 +56,7 @@
 /// ```
 ///
 /// \param severity The severity of the log message, one of `LogSeverity`. The
-///        FATAL severity will terminate the program after the log is emitted.
+///        FATAL severity will end the program after the log is emitted.
 #define LOG(severity) COMPACT_ASYLO_LOG_##severity.stream()
 
 /// A command to LOG only if a condition is true. If the condition is false,
@@ -68,7 +68,7 @@
 /// ```
 ///
 /// \param severity The severity of the log message, one of `LogSeverity`. The
-///        FATAL severity will terminate the program after the log is emitted.
+///        FATAL severity will end the program after the log is emitted.
 /// \param condition The condition that determines whether to log the message.
 #define LOG_IF(severity, condition) \
   !(condition) ? (void)0 : asylo::LogMessageVoidify() & LOG(severity)
@@ -87,7 +87,7 @@
 /// \param level The numeric level that determines whether to log the message.
 #define VLOG(level) LOG_IF(INFO, (level) <= get_vlog_level())
 
-/// Terminates the program with a fatal error if the specified condition is
+/// Ends the program with a fatal error if the specified condition is
 /// false.
 ///
 /// Example:

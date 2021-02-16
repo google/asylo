@@ -289,7 +289,7 @@ EkepHandshaker::Result EkepHandshaker::DecodeAndHandleFrame(
   if (!status.ok()) {
     if (message_type == ABORT) {
       // The peer sent an Abort message that could not be parsed. There is not
-      // much else to do but log the error and terminate the handshake.
+      // much else to do but log the error and stop the handshake.
       HandleAbortMessage(nullptr);
       LOG(ERROR) << "Failed to deserialize peer's Abort: " << status;
     } else {

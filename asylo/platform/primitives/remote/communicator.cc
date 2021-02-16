@@ -320,8 +320,8 @@ Communicator::~Communicator() {
     }
   }
   // For target Communicator or the last active Communicator in host: signal
-  // created threads that they need to terminate (when thread contexts are
-  // destructed on target, they will wait for termination to happen).
+  // created threads that they need to stop (when thread contexts are
+  // destructed on target, they will wait for stoppage to occur).
   ThreadActivityWorkQueue::map()->Release().clear();
 }
 

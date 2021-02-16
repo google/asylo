@@ -79,7 +79,7 @@ message EkepVersion {
 
 // An Abort messages is sent if a participant encounters an error during an
 // EKEP handshake. Aborts are always fatal. If an EKEP participant receives an
-// Abort message, it must immediately terminate the handshake without sending
+// Abort message, it must immediately end the handshake without sending
 // any other messages.
 message Abort {
   enum ErrorCode {
