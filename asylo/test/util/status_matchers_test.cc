@@ -20,11 +20,14 @@
 
 #include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest-spi.h>
 #include <gtest/gtest.h>
 #include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -41,6 +44,8 @@ using ::testing::Matcher;
 using ::testing::Not;
 using ::testing::SafeMatcherCast;
 using ::testing::StringMatchResultListener;
+using ::testing::Test;
+using ::testing::Types;
 
 // Returns the description of |matcher| as a matcher for MatcheeT.
 template <typename MatcheeT, typename MatcherT>
@@ -65,23 +70,62 @@ std::string MatchExplanation(const MatcherT &matcher, const MatcheeT &value) {
   return listener.str();
 }
 
-TEST(StatusMatchersTest, IsOkMatchesStatus) {
-  EXPECT_THAT(Status::OkStatus(), IsOk());
-  EXPECT_THAT(Status(absl::StatusCode::kUnknown, "error"), Not(IsOk()));
+// A typed test fixture for testing status matchers. Each specialization must
+// expose four type aliases:
+//
+//   * StatusType: a Status-like type
+//   * StatusOrInt: a type like StatusOr<int>
+//   * StatusOrString: a type like StatusOr<std::string>
+//   * StatusOrVectorInt: a type like StatusOr<std::vector<int>>
+template <typename StatusT>
+class StatusMatchersTest;
+
+template <>
+class StatusMatchersTest<Status> : public Test {
+ public:
+  using StatusType = Status;
+  using StatusOrInt = StatusOr<int>;
+  using StatusOrString = StatusOr<std::string>;
+  using StatusOrVectorInt = StatusOr<std::vector<int>>;
+};
+
+template <>
+class StatusMatchersTest<absl::Status> : public Test {
+ public:
+  using StatusType = absl::Status;
+  using StatusOrInt = absl::StatusOr<int>;
+  using StatusOrString = absl::StatusOr<std::string>;
+  using StatusOrVectorInt = absl::StatusOr<std::vector<int>>;
+};
+
+using StatusTypes = Types<Status, absl::Status>;
+TYPED_TEST_SUITE(StatusMatchersTest, StatusTypes);
+
+TYPED_TEST(StatusMatchersTest, IsOkMatchesStatus) {
+  using StatusType = typename TestFixture::StatusType;
+
+  EXPECT_THAT(StatusType(), IsOk());
+  EXPECT_THAT(StatusType(absl::StatusCode::kUnknown, "error"), Not(IsOk()));
 }
 
-TEST(StatusMatchersTest, IsOkMatchesStatusOr) {
-  EXPECT_THAT(StatusOr<int>(42), IsOk());
-  EXPECT_THAT(
-      StatusOr<std::string>(Status(absl::StatusCode::kUnknown, "error")),
-      Not(IsOk()));
+TYPED_TEST(StatusMatchersTest, IsOkMatchesStatusOr) {
+  using StatusType = typename TestFixture::StatusType;
+  using StatusOrInt = typename TestFixture::StatusOrInt;
+  using StatusOrString = typename TestFixture::StatusOrString;
+
+  EXPECT_THAT(StatusOrInt(42), IsOk());
+  EXPECT_THAT(StatusOrString(StatusType(absl::StatusCode::kUnknown, "error")),
+              Not(IsOk()));
 }
 
 // Tests that IsOkAndHolds(value_matcher) matches an OK StatusOr<T> when the
 // contained value matches value_matcher.
-TEST(StatusMatchersTest, IsOkAndHoldsMatchesOkStatusWithMatchingValue) {
-  const StatusOr<int> int_statusor = 5;
-  const StatusOr<std::string> string_statusor = std::string("foobar");
+TYPED_TEST(StatusMatchersTest, IsOkAndHoldsMatchesOkStatusWithMatchingValue) {
+  using StatusOrInt = typename TestFixture::StatusOrInt;
+  using StatusOrString = typename TestFixture::StatusOrString;
+
+  const StatusOrInt int_statusor = 5;
+  const StatusOrString string_statusor = std::string("foobar");
 
   EXPECT_THAT(int_statusor, IsOkAndHolds(Eq(5)));
   EXPECT_THAT(int_statusor, IsOkAndHolds(Gt(2)));
@@ -90,9 +134,12 @@ TEST(StatusMatchersTest, IsOkAndHoldsMatchesOkStatusWithMatchingValue) {
 
 // Tests that IsOkAndHolds(some_value) matches an OK StatusOr<T> when the
 // contained value equals some_value.
-TEST(StatusMatchersTest, IsOkAndHoldsConvertsNonMatcherArgsToEqMatchers) {
-  const StatusOr<int> int_statusor = 5;
-  const StatusOr<std::string> string_statusor = std::string("foobar");
+TYPED_TEST(StatusMatchersTest, IsOkAndHoldsConvertsNonMatcherArgsToEqMatchers) {
+  using StatusOrInt = typename TestFixture::StatusOrInt;
+  using StatusOrString = typename TestFixture::StatusOrString;
+
+  const StatusOrInt int_statusor = 5;
+  const StatusOrString string_statusor = std::string("foobar");
 
   EXPECT_THAT(int_statusor, IsOkAndHolds(5));
   EXPECT_THAT(string_statusor, IsOkAndHolds("foobar"));
@@ -100,9 +147,12 @@ TEST(StatusMatchersTest, IsOkAndHoldsConvertsNonMatcherArgsToEqMatchers) {
 
 // Tests that IsOkAndHolds(value_matcher) does not match a non-OK StatusOr<T>,
 // regardless of the value of value_matcher.
-TEST(StatusMatchersTest, IsOkAndHoldsDoesNotMatchNonOkStatus) {
-  const StatusOr<int> non_ok_statusor =
-      Status(absl::StatusCode::kInternal, "some_error");
+TYPED_TEST(StatusMatchersTest, IsOkAndHoldsDoesNotMatchNonOkStatus) {
+  using StatusType = typename TestFixture::StatusType;
+  using StatusOrInt = typename TestFixture::StatusOrInt;
+
+  const StatusOrInt non_ok_statusor =
+      StatusType(absl::StatusCode::kInternal, "some_error");
 
   EXPECT_THAT(non_ok_statusor, Not(IsOkAndHolds(Lt(3))));
   EXPECT_THAT(non_ok_statusor, Not(IsOkAndHolds(Eq(3))));
@@ -111,9 +161,12 @@ TEST(StatusMatchersTest, IsOkAndHoldsDoesNotMatchNonOkStatus) {
 
 // Tests that IsOkAndHolds(value_matcher) does not match an OK StatusOr<T> if
 // the contained value does not match value_matcher.
-TEST(StatusMatchersTest, IsOkAndHoldsDoesNotMatchIfValueMatcherFails) {
-  const StatusOr<int> int_statusor = 5;
-  const StatusOr<std::string> string_statusor = std::string("foobar");
+TYPED_TEST(StatusMatchersTest, IsOkAndHoldsDoesNotMatchIfValueMatcherFails) {
+  using StatusOrInt = typename TestFixture::StatusOrInt;
+  using StatusOrString = typename TestFixture::StatusOrString;
+
+  const StatusOrInt int_statusor = 5;
+  const StatusOrString string_statusor = std::string("foobar");
 
   EXPECT_THAT(int_statusor, Not(IsOkAndHolds(Lt(4))));
   EXPECT_THAT(int_statusor, Not(IsOkAndHolds(Eq(7))));
@@ -123,52 +176,61 @@ TEST(StatusMatchersTest, IsOkAndHoldsDoesNotMatchIfValueMatcherFails) {
 
 // Tests that IsOkAndHolds(value_matcher) describes a successful matchee as
 // being OK and matching value_matcher.
-TEST(StatusMatchersTest,
-     IsOkAndHoldsDescribesMatchAsOkAndMatchingValueMatcher) {
-  EXPECT_EQ(MatcherDescription<StatusOr<int>>(IsOkAndHolds(Eq(5))),
+TYPED_TEST(StatusMatchersTest,
+           IsOkAndHoldsDescribesMatchAsOkAndMatchingValueMatcher) {
+  using StatusOrInt = typename TestFixture::StatusOrInt;
+  using StatusOrString = typename TestFixture::StatusOrString;
+
+  EXPECT_EQ(MatcherDescription<StatusOrInt>(IsOkAndHolds(Eq(5))),
             absl::StrCat("is OK and contains a value that ",
                          MatcherDescription<int>(Eq(5))));
-  EXPECT_EQ(MatcherDescription<StatusOr<int>>(IsOkAndHolds(Lt(7))),
+  EXPECT_EQ(MatcherDescription<StatusOrInt>(IsOkAndHolds(Lt(7))),
             absl::StrCat("is OK and contains a value that ",
                          MatcherDescription<int>(Lt(7))));
-  EXPECT_EQ(
-      MatcherDescription<StatusOr<std::string>>(IsOkAndHolds(HasSubstr("foo"))),
-      absl::StrCat("is OK and contains a value that ",
-                   MatcherDescription<std::string>(HasSubstr("foo"))));
+  EXPECT_EQ(MatcherDescription<StatusOrString>(IsOkAndHolds(HasSubstr("foo"))),
+            absl::StrCat("is OK and contains a value that ",
+                         MatcherDescription<std::string>(HasSubstr("foo"))));
 }
 
 // Tests that IsOkAndHolds(value_matcher) describes a failed matchee as being
 // non-OK or not matching value_matcher.
-TEST(StatusMatchersTest,
-     IsOkAndHoldsDescribesNonMatchAsNonOkOrNotMatchingValueMatcher) {
-  EXPECT_EQ(MatcherDescription<StatusOr<int>>(Not(IsOkAndHolds(Eq(5)))),
+TYPED_TEST(StatusMatchersTest,
+           IsOkAndHoldsDescribesNonMatchAsNonOkOrNotMatchingValueMatcher) {
+  using StatusOrInt = typename TestFixture::StatusOrInt;
+  using StatusOrString = typename TestFixture::StatusOrString;
+
+  EXPECT_EQ(MatcherDescription<StatusOrInt>(Not(IsOkAndHolds(Eq(5)))),
             absl::StrCat("is not OK or contains a value that ",
                          MatcherDescription<int>(Not(Eq(5)))));
-  EXPECT_EQ(MatcherDescription<StatusOr<int>>(Not(IsOkAndHolds(Lt(7)))),
+  EXPECT_EQ(MatcherDescription<StatusOrInt>(Not(IsOkAndHolds(Lt(7)))),
             absl::StrCat("is not OK or contains a value that ",
                          MatcherDescription<int>(Not(Lt(7)))));
   EXPECT_EQ(
-      MatcherDescription<StatusOr<std::string>>(
-          Not(IsOkAndHolds(HasSubstr("foo")))),
+      MatcherDescription<StatusOrString>(Not(IsOkAndHolds(HasSubstr("foo")))),
       absl::StrCat("is not OK or contains a value that ",
                    MatcherDescription<std::string>(Not(HasSubstr("foo")))));
 }
 
 // Tests that IsOkAndHolds() offers no explanation for a successful match.
-TEST(StatusMatchersTest, IsOkAndHoldsDoesNotExplainSuccessfulMatch) {
+TYPED_TEST(StatusMatchersTest, IsOkAndHoldsDoesNotExplainSuccessfulMatch) {
+  using StatusOrVectorInt = typename TestFixture::StatusOrVectorInt;
+
   const std::vector<int> empty_vector;
-  const StatusOr<std::vector<int>> matching_statusor = empty_vector;
+  const StatusOrVectorInt matching_statusor = empty_vector;
 
   ASSERT_THAT(matching_statusor, IsOkAndHolds(IsEmpty()));
   EXPECT_EQ(MatchExplanation(IsOkAndHolds(IsEmpty()), matching_statusor), "");
 }
 
 // Tests that IsOkAndHolds() explains a failed match correctly.
-TEST(StatusMatchersTest, IsOkAndHoldsExplainsNonMatchCorrectly) {
+TYPED_TEST(StatusMatchersTest, IsOkAndHoldsExplainsNonMatchCorrectly) {
+  using StatusType = typename TestFixture::StatusType;
+  using StatusOrVectorInt = typename TestFixture::StatusOrVectorInt;
+
   const std::vector<int> non_empty_vector = {8, 6, 7, 5, 3, 0, 9};
-  const StatusOr<std::vector<int>> non_ok_statusor =
-      Status(absl::StatusCode::kInternal, "some_error");
-  const StatusOr<std::vector<int>> non_matching_statusor = non_empty_vector;
+  const StatusOrVectorInt non_ok_statusor =
+      StatusType(absl::StatusCode::kInternal, "some_error");
+  const StatusOrVectorInt non_matching_statusor = non_empty_vector;
 
   ASSERT_THAT(non_ok_statusor, Not(IsOkAndHolds(IsEmpty())));
   EXPECT_EQ(MatchExplanation(IsOkAndHolds(IsEmpty()), non_ok_statusor),
@@ -181,13 +243,15 @@ TEST(StatusMatchersTest, IsOkAndHoldsExplainsNonMatchCorrectly) {
 }
 
 // Tests that StatusIs matches Status objects correctly.
-TEST(StatusMatchersTest, StatusIsMatchesStatusObjects) {
+TYPED_TEST(StatusMatchersTest, StatusIsMatchesStatusObjects) {
+  using StatusType = typename TestFixture::StatusType;
+
   const std::string kMessage = "something very bad!";
   const std::string kWrongMessage = "this is not the same error";
 
   constexpr auto kErrorCode = absl::StatusCode::kInvalidArgument;
   constexpr auto kWrongErrorCode = absl::StatusCode::kInternal;
-  const Status kError(kErrorCode, kMessage);
+  const StatusType kError(kErrorCode, kMessage);
 
   EXPECT_THAT(kError, StatusIs(kErrorCode));
   EXPECT_THAT(kError, StatusIs(kErrorCode, kMessage));
@@ -205,12 +269,16 @@ TEST(StatusMatchersTest, StatusIsMatchesStatusObjects) {
 }
 
 // Tests that StatusIs matches StatusOr objects correctly.
-TEST(StatusMatchersTest, StatusIsMatchesStatusOrObjects) {
+TYPED_TEST(StatusMatchersTest, StatusIsMatchesStatusOrObjects) {
+  using StatusType = typename TestFixture::StatusType;
+  using StatusOrInt = typename TestFixture::StatusOrInt;
+
   const std::string kMessage = "oops";
   const std::string kWrongMessage = "different error message";
+
   constexpr auto kErrorCode = absl::StatusCode::kFailedPrecondition;
   constexpr auto kWrongErrorCode = absl::StatusCode::kInternal;
-  const StatusOr<int> kFailure = Status(kErrorCode, kMessage);
+  const StatusOrInt kFailure = StatusType(kErrorCode, kMessage);
 
   EXPECT_THAT(kFailure, StatusIs(kErrorCode));
   EXPECT_THAT(kFailure, StatusIs(kErrorCode, kMessage));
@@ -225,7 +293,7 @@ TEST(StatusMatchersTest, StatusIsMatchesStatusOrObjects) {
   EXPECT_NONFATAL_FAILURE(
       EXPECT_THAT(kFailure, Not(StatusIs(kErrorCode, kMessage))), kMessage);
 
-  const StatusOr<int> kSuccess = 1;
+  const StatusOrInt kSuccess = 1;
   EXPECT_THAT(kSuccess, StatusIs(absl::StatusCode::kOk));
   EXPECT_THAT(kSuccess, StatusIs(absl::StatusCode::kOk, ""));
   EXPECT_THAT(kSuccess, Not(StatusIs(kErrorCode)));
@@ -246,29 +314,32 @@ TEST(StatusMatchersTest, StatusIsMatchesStatusOrObjects) {
 
 // Tests that StatusIs only matches a Status or StatusOr if its message matches
 // the message matcher.
-TEST(StatusMatchersTest, StatusIsUsesMessageMatcherToCheckMessage) {
+TYPED_TEST(StatusMatchersTest, StatusIsUsesMessageMatcherToCheckMessage) {
+  using StatusType = typename TestFixture::StatusType;
+  using StatusOrInt = typename TestFixture::StatusOrInt;
+
   constexpr auto kErrorCode = absl::StatusCode::kFailedPrecondition;
 
-  EXPECT_THAT(Status(kErrorCode, "Foobar"),
+  EXPECT_THAT(StatusType(kErrorCode, "Foobar"),
               StatusIs(kErrorCode, HasSubstr("Foo")));
-  EXPECT_THAT(StatusOr<int>(Status(kErrorCode, "Foobar")),
+  EXPECT_THAT(StatusOrInt(StatusType(kErrorCode, "Foobar")),
               StatusIs(kErrorCode, HasSubstr("Foo")));
-  EXPECT_THAT(Status(kErrorCode, ""), StatusIs(kErrorCode, IsEmpty()));
-  EXPECT_THAT(StatusOr<int>(Status(kErrorCode, "")),
+  EXPECT_THAT(StatusType(kErrorCode, ""), StatusIs(kErrorCode, IsEmpty()));
+  EXPECT_THAT(StatusOrInt(StatusType(kErrorCode, "")),
               StatusIs(kErrorCode, IsEmpty()));
 
-  EXPECT_NONFATAL_FAILURE(EXPECT_THAT(Status(kErrorCode, "Barbaz"),
+  EXPECT_NONFATAL_FAILURE(EXPECT_THAT(StatusType(kErrorCode, "Barbaz"),
                                       StatusIs(kErrorCode, HasSubstr("Foo"))),
                           "which has an error message");
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THAT(StatusOr<int>(Status(kErrorCode, "Barbaz")),
+      EXPECT_THAT(StatusOrInt(StatusType(kErrorCode, "Barbaz")),
                   StatusIs(kErrorCode, HasSubstr("Foo"))),
       "which has an error message");
-  EXPECT_NONFATAL_FAILURE(EXPECT_THAT(Status(kErrorCode, "Barbaz"),
+  EXPECT_NONFATAL_FAILURE(EXPECT_THAT(StatusType(kErrorCode, "Barbaz"),
                                       StatusIs(kErrorCode, IsEmpty())),
                           "which has an error message");
   EXPECT_NONFATAL_FAILURE(
-      EXPECT_THAT(StatusOr<int>(Status(kErrorCode, "Barbaz")),
+      EXPECT_THAT(StatusOrInt(StatusType(kErrorCode, "Barbaz")),
                   StatusIs(kErrorCode, IsEmpty())),
       "which has an error message");
 }

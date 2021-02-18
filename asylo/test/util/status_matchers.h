@@ -24,6 +24,7 @@
 
 #include <gmock/gmock-matchers.h>
 #include <gtest/gtest.h>
+#include "absl/status/statusor.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
 #include "asylo/util/status.h"
@@ -32,15 +33,19 @@
 namespace asylo {
 namespace internal {
 
-// Implements a gMock matcher that checks that an asylo::StaturOr<T> has an OK
-// status and that the contained T value matches another matcher.
-template <typename T>
+// Implements a gMock matcher that checks that an asylo::StaturOr<T> or
+// absl::StatusOr<T> has an OK status and that the contained T value matches
+// another matcher.
+template <typename StatusOrT>
 class IsOkAndHoldsMatcher
-    : public ::testing::MatcherInterface<const StatusOr<T> &> {
+    : public ::testing::MatcherInterface<const StatusOrT &> {
+  using ValueType = typename StatusOrT::value_type;
+
  public:
   template <typename MatcherT>
-  IsOkAndHoldsMatcher(MatcherT &&value_matcher)
-      : value_matcher_(::testing::SafeMatcherCast<const T &>(value_matcher)) {}
+  explicit IsOkAndHoldsMatcher(MatcherT &&value_matcher)
+      : value_matcher_(
+            ::testing::SafeMatcherCast<const ValueType &>(value_matcher)) {}
 
   // From testing::MatcherInterface.
   void DescribeTo(std::ostream *os) const override {
@@ -56,7 +61,7 @@ class IsOkAndHoldsMatcher
 
   // From testing::MatcherInterface.
   bool MatchAndExplain(
-      const StatusOr<T> &status_or,
+      const StatusOrT &status_or,
       ::testing::MatchResultListener *listener) const override {
     if (!status_or.ok()) {
       *listener << "which is not OK";
@@ -65,7 +70,7 @@ class IsOkAndHoldsMatcher
 
     ::testing::StringMatchResultListener value_listener;
     bool is_a_match =
-        value_matcher_.MatchAndExplain(status_or.ValueOrDie(), &value_listener);
+        value_matcher_.MatchAndExplain(*status_or, &value_listener);
     std::string value_explanation = value_listener.str();
     if (!value_explanation.empty()) {
       *listener << absl::StrCat("which contains a value ", value_explanation);
@@ -75,7 +80,7 @@ class IsOkAndHoldsMatcher
   }
 
  private:
-  const ::testing::Matcher<const T &> value_matcher_;
+  const ::testing::Matcher<const ValueType &> value_matcher_;
 };
 
 // A polymorphic IsOkAndHolds() matcher.
@@ -95,7 +100,14 @@ class IsOkAndHoldsGenerator {
 
   template <typename T>
   operator ::testing::Matcher<const StatusOr<T> &>() const {
-    return ::testing::MakeMatcher(new IsOkAndHoldsMatcher<T>(value_matcher_));
+    return ::testing::MakeMatcher(
+        new IsOkAndHoldsMatcher<StatusOr<T>>(value_matcher_));
+  }
+
+  template <typename T>
+  operator ::testing::Matcher<const absl::StatusOr<T> &>() const {
+    return ::testing::MakeMatcher(
+        new IsOkAndHoldsMatcher<absl::StatusOr<T>>(value_matcher_));
   }
 
  private:
@@ -167,6 +179,11 @@ class StatusMatcher {
     return status_or.status();
   }
 
+  template <typename ValueT>
+  static Status GetStatus(const absl::StatusOr<ValueT> &status_or) {
+    return status_or.status();
+  }
+
   static Status GetStatus(const Status &status) { return status; }
 
   // To extend this type to support additional types, add a new GetStatus
@@ -210,8 +227,9 @@ class IsOkMatcher {
 
 }  // namespace internal
 
-// Returns a gMock matcher that expects an asylo::StatusOr<T> object to have an
-// OK status and for the contained T object to match |value_matcher|.
+// Returns a gMock matcher that expects an asylo::StatusOr<T> or
+// absl::StatusOr<T> object to have an OK status and for the contained T object
+// to match |value_matcher|.
 //
 // Example:
 //
@@ -232,8 +250,8 @@ internal::IsOkAndHoldsGenerator<ValueMatcherT> IsOkAndHolds(
   return internal::IsOkAndHoldsGenerator<ValueMatcherT>(value_matcher);
 }
 
-// Returns a gMock matcher that expects an asylo::Status object to have the
-// given |code|.
+// Returns a gMock matcher that expects an asylo::Status or absl::Status object
+// to have the given |code|.
 template <typename Enum>
 ::testing::PolymorphicMatcher<internal::StatusMatcher<Enum>> StatusIs(
     Enum code) {
@@ -241,8 +259,8 @@ template <typename Enum>
       internal::StatusMatcher<Enum>(code, ::testing::_));
 }
 
-// Returns a gMock matcher that expects an asylo::Status object to have the
-// given |code| and an error message matching |message_matcher|.
+// Returns a gMock matcher that expects an asylo::Status or absl::Status object
+// to have the given |code| and an error message matching |message_matcher|.
 template <typename Enum, typename MessageMatcherT>
 ::testing::PolymorphicMatcher<internal::StatusMatcher<Enum>> StatusIs(
     Enum code, MessageMatcherT message_matcher) {
@@ -251,21 +269,22 @@ template <typename Enum, typename MessageMatcherT>
 }
 
 // Returns an internal::IsOkMatcherGenerator, which may be typecast to a
-// Matcher<asylo::Status> or Matcher<asylo::StatusOr<T>>. These gMock
-// matchers test that a given status container has an OK status.
+// Matcher<asylo::Status>, Matcher<absl::Status>, Matcher<asylo::StatusOr<T>>,
+// or Matcher<absl::StatusOr<T>>. These gMock matchers test that a given status
+// container has an OK status.
 inline ::testing::PolymorphicMatcher<internal::IsOkMatcher> IsOk() {
   return ::testing::MakePolymorphicMatcher(internal::IsOkMatcher());
 }
 
-// Macros for testing the results of functions that return asylo::Status or
-// asylo::StatusOr<T> (for any type T).
+// Macros for testing the results of functions that return asylo::Status,
+// absl::Status, asylo::StatusOr<T>, or absl::StatusOr<T> (for any type T).
 #define ASYLO_EXPECT_OK(rexpr) EXPECT_THAT(rexpr, ::asylo::IsOk())
 #define ASYLO_ASSERT_OK(rexpr) ASSERT_THAT(rexpr, ::asylo::IsOk())
 
-// Executes an expression that returns an asylo::StatusOr<T>, and assigns the
-// contained variable to lhs if the error code is OK.
-// If the Status is non-OK, generates a test failure and returns from the
-// current function, which must have a void return type.
+// Executes an expression that returns an asylo::StatusOr<T> or
+// absl::StatusOr<T>, and assigns the contained variable to lhs if the error
+// code is OK. If the Status is non-OK, generates a test failure and returns
+// from the current function, which must have a void return type.
 //
 // Example: Assigning to an existing value
 //   ValueType value;
@@ -274,21 +293,21 @@ inline ::testing::PolymorphicMatcher<internal::IsOkMatcher> IsOk() {
 // The value assignment example might expand into:
 //   StatusOr<ValueType> status_or_value = MaybeGetValue(arg);
 //   ASYLO_ASSERT_OK(status_or_value.status());
-//   value = status_or_value.ValueOrDie();
-#define ASYLO_ASSERT_OK_AND_ASSIGN(lhs, rexpr)                           \
-  do {                                                                   \
-    auto _asylo_status_to_verify = rexpr;                                \
-    if (!_asylo_status_to_verify.ok()) {                                 \
-      FAIL() << #rexpr                                                   \
-             << " returned error: " << _asylo_status_to_verify.status(); \
-    }                                                                    \
-    lhs = std::move(_asylo_status_to_verify).ValueOrDie();               \
+//   value = *status_or_value;
+#define ASYLO_ASSERT_OK_AND_ASSIGN(lhs, rexpr)                                 \
+  do {                                                                         \
+    auto _statusor_to_verify = rexpr;                                          \
+    if (!_statusor_to_verify.ok()) {                                           \
+      FAIL() << #rexpr << " returned error: " << _statusor_to_verify.status(); \
+    }                                                                          \
+    lhs = *std::move(_statusor_to_verify);                                     \
   } while (false)
 
-// Implements the PrintTo() method for asylo::StatusOr<T>. This method is
-// used by gtest to print asylo::StatusOr<T> objects for debugging. The
-// implementation relies on gtest for printing values of T when a
-// asylo::StatusOr<T> object is OK and contains a value.
+// Implementations of the PrintTo() method for asylo::StatusOr<T> and
+// absl::StatusOr<T>. This function is used by gtest to print StatusOr objects
+// for debugging. The implementation relies on gtest for printing values of T
+// when a StatusOr object is OK and contains a value.
+
 template <typename T>
 void PrintTo(const StatusOr<T> &statusor, std::ostream *os) {
   if (!statusor.ok()) {
@@ -296,6 +315,15 @@ void PrintTo(const StatusOr<T> &statusor, std::ostream *os) {
   } else {
     *os << absl::StrCat("OK: ",
                         ::testing::PrintToString(statusor.ValueOrDie()));
+  }
+}
+
+template <typename T>
+void PrintTo(const absl::StatusOr<T> &statusor, std::ostream *os) {
+  if (!statusor.ok()) {
+    *os << statusor.status();
+  } else {
+    *os << absl::StrCat("OK: ", ::testing::PrintToString(*statusor));
   }
 }
 

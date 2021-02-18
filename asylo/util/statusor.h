@@ -140,6 +140,9 @@ class StatusOr {
                           std::is_convertible<V, U> > {};
 
  public:
+  /// An alias for T. Useful for generic programming.
+  using value_type = T;
+
   /// Constructs a StatusOr object that contains a non-OK status.
   /// The non-OK status has an error code of -1. This is a non-standard POSIX
   /// error code and is used in this context to indicate an unknown error.
