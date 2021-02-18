@@ -29,6 +29,7 @@
 #include <cstdint>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/sha256_hash.h"
@@ -71,7 +72,7 @@ StatusOr<std::string> GetPerBootUuid() {
   }
   if (retval != kFormattedUuidSize) {
     return Status(
-        error::GoogleError::INTERNAL,
+        absl::StatusCode::kInternal,
         absl::StrFormat("Failed to read expected number of bytes from %s "
                         "(expected %d, got %d)",
                         kBootUuidFile, kFormattedUuidSize, retval));

@@ -19,6 +19,7 @@
 #include <cstdint>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/examples/remote/bouncing_circles/circles.pb.h"
@@ -100,30 +101,26 @@ class CirclesEnclave : public TrustedApplication {
           bouncing_circles::enclave_update_position_output));
     }
 
-    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                         "Missing extension on EnclaveInput.");
+    return absl::InvalidArgumentError("Missing extension on EnclaveInput.");
   }
 
  private:
   Status HandleSetup(const bouncing_circles::CirclesSetupInput &input) {
     if (input.height() >= input.width()) {
-      return Status{
-          error::GoogleError::FAILED_PRECONDITION,
-          absl::StrCat("Height=", input.height(), " weight=", input.width())};
+      return absl::FailedPreconditionError(
+          absl::StrCat("Height=", input.height(), " weight=", input.width()));
     }
     if (managed_circle_) {
-      return Status{error::GoogleError::ALREADY_EXISTS,
-                    "Circle already created"};
+      return absl::AlreadyExistsError("Circle already created");
     }
     managed_circle_ =
         absl::make_unique<CircleStatus>(input.width(), input.height());
-    return asylo::Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status HandleUpdate(bouncing_circles::CirclesUpdatePositionOutput *output) {
     if (!managed_circle_) {
-      return Status{error::GoogleError::NOT_FOUND,
-                    "Calling Update before Setup"};
+      return absl::NotFoundError("Calling Update before Setup");
     }
     managed_circle_->Update();
     output->set_x(managed_circle_->x());

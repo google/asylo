@@ -28,6 +28,7 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 #include "asylo/client.h"
@@ -140,7 +141,7 @@ StatusOr<EnclaveClient *> CircleStatusImpl::LoadEnclave(
 
   const std::string enclave_name = absl::StrCat(enclave_prefix, id);
   if (manager_->GetClient(enclave_name) != nullptr) {
-    return Status(error::GoogleError::ALREADY_EXISTS,
+    return Status(absl::StatusCode::kAlreadyExists,
                   absl::StrCat("Enclave already loaded: ", enclave_name));
   }
 

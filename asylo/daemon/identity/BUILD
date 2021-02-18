@@ -32,6 +32,7 @@ cc_library(
         "//asylo/crypto/util:bssl_util",
         "//asylo/util:status",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
     ],

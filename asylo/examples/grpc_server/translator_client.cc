@@ -22,6 +22,7 @@
 #include <string>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "asylo/examples/grpc_server/translator_server.grpc.pb.h"
@@ -58,7 +59,7 @@ asylo::StatusOr<GetTranslationResponse> GetTranslation(
 asylo::StatusOr<std::unique_ptr<TranslatorClient>> TranslatorClient::Create(
     absl::string_view address) {
   if (address.empty()) {
-    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
+    return asylo::Status(absl::StatusCode::kInvalidArgument,
                          "Must provide a non-empty server address");
   }
   std::shared_ptr<::grpc::ChannelCredentials> channel_credentials =
@@ -73,7 +74,7 @@ asylo::StatusOr<std::unique_ptr<TranslatorClient>> TranslatorClient::Create(
       gpr_time_from_micros(absl::ToInt64Microseconds(kChannelDeadline),
                            GPR_TIMESPAN));
   if (!channel->WaitForConnected(absolute_deadline)) {
-    return asylo::Status(asylo::error::GoogleError::INTERNAL,
+    return asylo::Status(absl::StatusCode::kInternal,
                          "Failed to connect to server");
   }
 
@@ -83,7 +84,7 @@ asylo::StatusOr<std::unique_ptr<TranslatorClient>> TranslatorClient::Create(
 asylo::StatusOr<std::string> TranslatorClient::GrpcGetTranslation(
     absl::string_view word_to_translate) {
   if (word_to_translate.empty()) {
-    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
+    return asylo::Status(absl::StatusCode::kInvalidArgument,
                          "Must provide a non-empty RPC input");
   }
 

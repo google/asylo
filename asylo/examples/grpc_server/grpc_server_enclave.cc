@@ -20,6 +20,7 @@
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/synchronization/notification.h"
@@ -72,13 +73,12 @@ asylo::Status GrpcServerEnclave::Initialize(
     const asylo::EnclaveConfig &enclave_config) LOCKS_EXCLUDED(server_mutex_) {
   // Fail if there is no server_address available.
   if (!enclave_config.HasExtension(server_address)) {
-    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                         "Expected a server_address extension on config.");
+    return absl::InvalidArgumentError(
+        "Expected a server_address extension on config.");
   }
 
   if (!enclave_config.HasExtension(port)) {
-    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                         "Expected a port extension on config.");
+    return absl::InvalidArgumentError("Expected a port extension on config.");
   }
 
   // Lock |server_mutex_| so that we can start setting up the server.
@@ -86,15 +86,14 @@ asylo::Status GrpcServerEnclave::Initialize(
 
   // Check that the server is not already running.
   if (server_) {
-    return asylo::Status(asylo::error::GoogleError::ALREADY_EXISTS,
-                         "Server is already started");
+    return absl::AlreadyExistsError("Server is already started");
   }
 
   // Create a ServerBuilder object to set up the server.
   ::grpc::ServerBuilder builder;
 
   std::shared_ptr<::grpc::ServerCredentials> server_credentials =
-      ::grpc::InsecureServerCredentials();
+  ::grpc::InsecureServerCredentials();
 
   // Add a listening port to the server.
   builder.AddListeningPort(
