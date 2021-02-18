@@ -24,6 +24,7 @@
 
 #include <google/protobuf/util/message_differencer.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/time/time.h"
@@ -62,7 +63,7 @@ StatusOr<std::unique_ptr<VerifyingKey>> CreateVerifyingKey(
     case UNKNOWN_SIGNATURE_SCHEME:
       break;
   }
-  return Status(error::GoogleError::INVALID_ARGUMENT,
+  return Status(absl::StatusCode::kInvalidArgument,
                 absl::StrCat("Signature scheme unsupported: ",
                              ProtoEnumValueName(signature_scheme)));
 }
@@ -71,7 +72,7 @@ StatusOr<std::string> VerifyingKeyToDer(
     AsymmetricSigningKeyProto asymmetric_key) {
   if (asymmetric_key.key_type() != AsymmetricSigningKeyProto::VERIFYING_KEY) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrFormat(
             "Key type of the attestation public key (%s) does not match "
             "expected key type (VERIFYING_KEY)",
@@ -93,7 +94,7 @@ StatusOr<std::string> VerifyingKeyToDer(
         case ECDSA_P384_SHA384:
         case UNKNOWN_SIGNATURE_SCHEME:
           return Status(
-              error::GoogleError::INVALID_ARGUMENT,
+              absl::StatusCode::kInvalidArgument,
               absl::StrCat(
                   "Could not DER encode a key with an unknown or unsupported "
                   "signature scheme: ",
@@ -102,8 +103,7 @@ StatusOr<std::string> VerifyingKeyToDer(
     case UNKNOWN_ASYMMETRIC_KEY_ENCODING:
       break;
   }
-  return Status(error::GoogleError::INTERNAL,
-                "Asymmetric key encoding unknown");
+  return Status(absl::StatusCode::kInternal, "Asymmetric key encoding unknown");
 }
 
 }  // namespace
@@ -112,7 +112,7 @@ StatusOr<std::unique_ptr<AttestationKeyCertificateImpl>>
 AttestationKeyCertificateImpl::Create(const Certificate &certificate) {
   if (certificate.format() != Certificate::SGX_ATTESTATION_KEY_CERTIFICATE) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrFormat(
             "The certificate format (%s) does not match the expected format "
             "(SGX_ATTESTATION_KEY_CERTIFICATE)",
@@ -122,14 +122,14 @@ AttestationKeyCertificateImpl::Create(const Certificate &certificate) {
   AttestationKeyCertificate attestation_key_cert;
   if (!attestation_key_cert.ParseFromString(certificate.data())) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         "Could not parse Attestation Key Certificate from certificate data");
   }
 
   if (!attestation_key_cert.has_pce_sign_report_payload() ||
       !attestation_key_cert.has_report() ||
       !attestation_key_cert.has_signature()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Attestation Key Certificate is missing required data");
   }
 
@@ -137,13 +137,13 @@ AttestationKeyCertificateImpl::Create(const Certificate &certificate) {
   if (!pce_sign_report_payload.ParseFromString(
           attestation_key_cert.pce_sign_report_payload())) {
     return Status(
-        error::GoogleError::INTERNAL,
+        absl::StatusCode::kInternal,
         "Could not parse the serialized PceSignReportPayload message");
   }
 
   if (pce_sign_report_payload.version() != kPceSignReportPayloadVersion) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrFormat(
             "PceSignReportPayload version (%s) does not match the expected "
             "version (%s)",
@@ -158,7 +158,7 @@ AttestationKeyCertificateImpl::Create(const Certificate &certificate) {
   const Signature &signature = attestation_key_cert.signature();
   if (signature.signature_scheme() != kExpectedSignatureScheme) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrFormat(
             "Signature scheme of signature (%s) does not match the signature "
             "scheme used by the PCE implementation (%s)",
@@ -169,14 +169,14 @@ AttestationKeyCertificateImpl::Create(const Certificate &certificate) {
   // Check the purpose and version values of the AttestationPublicKey.
   if (public_key.version() != kAttestationPublicKeyVersion) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrFormat("Version of attestation public key (%s) does "
                         "not match the expected version (%s)",
                         public_key.version(), kAttestationPublicKeyVersion));
   }
   if (public_key.purpose() != kAttestationPublicKeyPurpose) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrFormat("Purpose of the attestation public key (%s) "
                         "does not match the expected purpose (%s)",
                         public_key.purpose(), kAttestationPublicKeyPurpose));
@@ -194,7 +194,7 @@ AttestationKeyCertificateImpl::Create(const Certificate &certificate) {
                                      attestation_key_cert.report()));
   if (report.body.reportdata.data != expected_aad) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrFormat(
             "Additional authenticated data generated from the PCE "
             "Sign Report payload (%s) should be consistent with "
@@ -274,7 +274,7 @@ StatusOr<bool> AttestationKeyCertificateImpl::WithinValidityPeriod(
 StatusOr<Certificate> AttestationKeyCertificateImpl::ToCertificateProto(
     Certificate::CertificateFormat encoding) const {
   if (encoding != Certificate::SGX_ATTESTATION_KEY_CERTIFICATE) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrFormat("Certificate format (%s) unsupported",
                                   ProtoEnumValueName(encoding)));
   }
@@ -305,7 +305,7 @@ StatusOr<Certificate> CreateAttestationKeyCertificate(
   certificate.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
   if (!attestation_key_certificate.SerializeToString(
           certificate.mutable_data())) {
-    return Status(asylo::error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Failed to serialize attestation key certificate");
   }
   return certificate;

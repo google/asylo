@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_generator.h"
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_generator.h"
@@ -41,9 +42,9 @@ class SgxRemoteAssertionGeneratorTestEnclave final : public TrustedApplication {
   Status Initialize(const EnclaveConfig &config) override {
     if (!config.HasExtension(
             sgx_remote_assertion_generator_test_enclave_config)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "EnclaveConfig is missing "
-                    "SgxRemoteAssertionGeneratorTestEnclaveConfig extension");
+      return absl::InvalidArgumentError(
+          "EnclaveConfig is missing "
+          "SgxRemoteAssertionGeneratorTestEnclaveConfig extension");
     }
 
     AssertionDescription assertion_description =
@@ -57,9 +58,9 @@ class SgxRemoteAssertionGeneratorTestEnclave final : public TrustedApplication {
              EnclaveOutput *enclave_output) override {
     if (!enclave_input.HasExtension(
             sgx_remote_assertion_generator_test_enclave_input)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "EnclaveInput is missing "
-                    "SgxRemoteAssertionGeneratorTestEnclaveInput extension");
+      return absl::InvalidArgumentError(
+          "EnclaveInput is missing "
+          "SgxRemoteAssertionGeneratorTestEnclaveInput extension");
     }
 
     const SgxRemoteAssertionGeneratorTestEnclaveInput &input =
@@ -108,8 +109,8 @@ class SgxRemoteAssertionGeneratorTestEnclave final : public TrustedApplication {
             output->mutable_generate_output()->mutable_assertion());
 
       default:
-        return Status(error::GoogleError::INVALID_ARGUMENT,
-                      "SgxRemoteAssertionGeneratorTestEnclaveInput not set");
+        return absl::InvalidArgumentError(
+            "SgxRemoteAssertionGeneratorTestEnclaveInput not set");
     }
   }
 
@@ -127,13 +128,11 @@ class SgxRemoteAssertionGeneratorTestEnclave final : public TrustedApplication {
       }
     }
 
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrFormat(
-            R"(SgxRemoteAssertionGeneratorTestEnclave was configured with an "
+    return absl::InvalidArgumentError(absl::StrFormat(
+        R"(SgxRemoteAssertionGeneratorTestEnclave was configured with an "
             "unsupported assertion identity %d "%s" and type "%s")",
-            identity_type, EnclaveIdentityType_Name(identity_type),
-            authority_type));
+        identity_type, EnclaveIdentityType_Name(identity_type),
+        authority_type));
   }
 
   std::unique_ptr<EnclaveAssertionGenerator> generator_;

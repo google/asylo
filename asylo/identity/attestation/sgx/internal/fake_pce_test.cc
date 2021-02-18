@@ -23,6 +23,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/asymmetric_encryption_key.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
@@ -139,7 +140,7 @@ TEST(FakePceTest, GetQeTargetinfoIsUnimplemented) {
   ASYLO_ASSERT_OK_AND_ASSIGN(fake_pce, FakePce::CreateFromFakePki());
 
   EXPECT_THAT(fake_pce->GetQeTargetinfo(),
-              StatusIs(error::GoogleError::UNIMPLEMENTED));
+              StatusIs(absl::StatusCode::kUnimplemented));
 }
 
 TEST(FakePceTest, GetQeQuoteIsUnimplemented) {
@@ -148,7 +149,7 @@ TEST(FakePceTest, GetQeQuoteIsUnimplemented) {
 
   Report report = TrivialRandomObject<Report>();
   EXPECT_THAT(fake_pce->GetQeQuote(report),
-              StatusIs(error::GoogleError::UNIMPLEMENTED));
+              StatusIs(absl::StatusCode::kUnimplemented));
 }
 
 }  // namespace

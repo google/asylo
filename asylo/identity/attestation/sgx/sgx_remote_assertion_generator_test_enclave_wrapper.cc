@@ -19,6 +19,7 @@
 #include "asylo/identity/attestation/sgx/sgx_remote_assertion_generator_test_enclave_wrapper.h"
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/client.h"
 #include "asylo/enclave.pb.h"
@@ -49,7 +50,7 @@ StatusOr<sgx::SgxRemoteAssertionGeneratorTestEnclaveOutput> CallTestEnclave(
   ASYLO_RETURN_IF_ERROR(client->EnterAndRun(enclave_input, &enclave_output));
   if (!enclave_output.HasExtension(
           sgx::sgx_remote_assertion_generator_test_enclave_output)) {
-    return Status(error::GoogleError::NOT_FOUND,
+    return Status(absl::StatusCode::kNotFound,
                   absl::StrCat("The test enclave did not return the expected "
                                "extension to EnclaveOutput: ",
                                enclave_output.ShortDebugString()));

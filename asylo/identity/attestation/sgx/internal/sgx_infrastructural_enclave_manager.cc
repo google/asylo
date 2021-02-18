@@ -20,6 +20,7 @@
 
 #include <utility>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/enclave.pb.h"
@@ -39,11 +40,11 @@ namespace {
 
 Status CheckEnclaveOutputExtension(EnclaveOutput output) {
   if (!output.HasExtension(sgx::remote_assertion_generator_enclave_output)) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Enclave output invalid: did not contain remote assertion "
-                  "generator enclave output");
+    return absl::InternalError(
+        "Enclave output invalid: did not contain remote assertion "
+        "generator enclave output");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace
@@ -237,8 +238,7 @@ Status SgxInfrastructuralEnclaveManager::AgeStartServer(
   return assertion_generator_enclave_->EnterAndRun(input, &output);
 }
 
-StatusOr<SgxIdentity>
-SgxInfrastructuralEnclaveManager::AgeGetSgxIdentity() {
+StatusOr<SgxIdentity> SgxInfrastructuralEnclaveManager::AgeGetSgxIdentity() {
   EnclaveInput input;
   *input.MutableExtension(sgx::remote_assertion_generator_enclave_input)
        ->mutable_get_enclave_identity_input() =

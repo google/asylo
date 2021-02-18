@@ -25,6 +25,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/grpc/auth/core/enclave_grpc_security_constants.h"
 #include "asylo/grpc/auth/core/handshake.pb.h"
 #include "asylo/identity/identity.pb.h"
@@ -32,8 +33,8 @@
 #include "asylo/platform/common/static_map.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
-#include "asylo/util/statusor.h"
 #include "asylo/util/status_macros.h"
+#include "asylo/util/statusor.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/cpp/common/secure_auth_context.h"
@@ -169,7 +170,7 @@ TEST_F(EnclaveAuthContextTest, CreateFailsBadIdentityProto) {
                                   "foobar");
 
   EXPECT_THAT(EnclaveAuthContext::CreateFromAuthContext(secure_auth_context),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that CreateFromAuthContext() fails when the auth context has an
@@ -186,7 +187,7 @@ TEST_F(EnclaveAuthContextTest, CreateFailsBadTransportSecurityType) {
                                   "foobar");
 
   EXPECT_THAT(EnclaveAuthContext::CreateFromAuthContext(secure_auth_context),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that CreateFromAuthContext() fails when the auth context has an
@@ -196,7 +197,7 @@ TEST_F(EnclaveAuthContextTest, CreateFailsUnrecognizedAuthProperty) {
   secure_auth_context_->AddProperty("foo property", "foobar");
 
   EXPECT_THAT(EnclaveAuthContext::CreateFromAuthContext(*secure_auth_context_),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that CreateFromAuthContext() fails when the auth context does not
@@ -208,7 +209,7 @@ TEST_F(EnclaveAuthContextTest, CreateFailsPeerUnauthenticated) {
       grpc_core::MakeRefCounted<grpc_auth_context>(/*chained=*/nullptr).get());
 
   EXPECT_THAT(EnclaveAuthContext::CreateFromAuthContext(secure_auth_context),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that HasEnclaveIdentity() works as expected for identities that are
@@ -252,7 +253,7 @@ TEST_F(EnclaveAuthContextTest, FindEnclaveIdentityNotFound) {
       auth_context.FindEnclaveIdentity(bad_identity_description_);
 
   EXPECT_THAT(auth_context.FindEnclaveIdentity(bad_identity_description_),
-              StatusIs(error::GoogleError::NOT_FOUND));
+              StatusIs(absl::StatusCode::kNotFound));
 }
 
 // Verify that GetRecordProtocol() returns the record protocol.

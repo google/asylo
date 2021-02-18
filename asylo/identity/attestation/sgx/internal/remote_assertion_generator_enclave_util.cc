@@ -22,6 +22,7 @@
 #include <utility>
 
 #include <google/protobuf/repeated_field.h>
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/certificate.pb.h"
@@ -74,18 +75,18 @@ void SetAsymmetricSigningKeyProto(
 Status CheckRemoteAssertionGeneratorEnclaveSecretHeader(
     const SealedSecretHeader &header) {
   if (header.secret_name() != kSecretName) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Invalid sealed secret header: incorrect secret name");
+    return absl::InvalidArgumentError(
+        "Invalid sealed secret header: incorrect secret name");
   }
   if (header.secret_version() != kSecretVersion) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Invalid sealed secret header: incorrect secret version");
+    return absl::InvalidArgumentError(
+        "Invalid sealed secret header: incorrect secret version");
   }
   if (header.secret_purpose() != kSecretPurpose) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Invalid sealed secret header: incorrect secret purpose");
+    return absl::InvalidArgumentError(
+        "Invalid sealed secret header: incorrect secret purpose");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 SealedSecretHeader GetRemoteAssertionGeneratorEnclaveSecretHeader() {
@@ -117,12 +118,12 @@ StatusOr<SealedSecret> CreateSealedSecret(
 
   std::string serialized_enclave_secret = enclave_secret.SerializeAsString();
   if (serialized_enclave_secret.empty()) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Enclave secret serialization failed");
   }
   std::string serialized_aad = aad.SerializeAsString();
   if (serialized_aad.empty()) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Enclave additional authenticated data serialization failed");
   }
   SealedSecret sealed_secret;
@@ -138,7 +139,7 @@ ExtractAttestationKeyAndCertificateChainsFromSealedSecret(
     std::vector<CertificateChain> *certificate_chains) {
   SealedSecretHeader header;
   if (!header.ParseFromString(sealed_secret.sealed_secret_header())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Cannot parse the sealed secret header");
   }
   ASYLO_RETURN_IF_ERROR(
@@ -151,13 +152,13 @@ ExtractAttestationKeyAndCertificateChainsFromSealedSecret(
   RemoteAssertionGeneratorEnclaveSecret enclave_secret;
   if (!enclave_secret.ParseFromArray(serialized_secret.data(),
                                      serialized_secret.size())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Cannot parse the sealed secret");
   }
 
   RemoteAssertionGeneratorEnclaveSecretAad aad;
   if (!aad.ParseFromString(sealed_secret.additional_authenticated_data())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Cannot parse the additional authenticated data");
   }
   *certificate_chains = {aad.certificate_chains().cbegin(),
@@ -172,7 +173,7 @@ ExtractAttestationKeyFromAsymmetricSigningKeyProto(
     const AsymmetricSigningKeyProto &asymmetric_signing_key_proto) {
   if (asymmetric_signing_key_proto.key_type() !=
       AsymmetricSigningKeyProto::SIGNING_KEY) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("The sealed secret key has invalid key type: ",
                                ProtoEnumValueName(
                                    asymmetric_signing_key_proto.key_type())));
@@ -183,10 +184,10 @@ ExtractAttestationKeyFromAsymmetricSigningKeyProto(
           {asymmetric_signing_key_proto.key()});
     case AsymmetricKeyEncoding::ASYMMETRIC_KEY_PEM:
       return Status(
-          error::GoogleError::UNIMPLEMENTED,
+          absl::StatusCode::kUnimplemented,
           "Create attestation key from a PEM-encoded key is not supported");
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     "AsymmetricSigningKeyProto has unknown encoding format");
   }
 }
@@ -247,7 +248,7 @@ StatusOr<std::unique_ptr<::grpc::Server>> CreateAndStartServer(
                            credentials);
   std::unique_ptr<::grpc::Server> server(builder.BuildAndStart());
   if (!server) {
-    return Status(error::GoogleError::INTERNAL, "Failed to start server");
+    return Status(absl::StatusCode::kInternal, "Failed to start server");
   }
 
   LOG(INFO) << "RemoteAssertionGenerator server started at address: "
@@ -262,8 +263,8 @@ Status CheckCertificateChainsForAttestationPublicKey(
     const CertificateFactoryMap &certificate_factories,
     const VerificationConfig &verification_config) {
   if (certificate_chains.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Must provide at least one certificate chain");
+    return absl::InvalidArgumentError(
+        "Must provide at least one certificate chain");
   }
 
   std::string attestation_public_key_der;
@@ -272,8 +273,7 @@ Status CheckCertificateChainsForAttestationPublicKey(
 
   for (const auto &certificate_chain : certificate_chains) {
     if (certificate_chain.certificates().empty()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Certificate chain cannot be empty");
+      return absl::InvalidArgumentError("Certificate chain cannot be empty");
     }
 
     CertificateInterfaceVector certificate_chain_interface;
@@ -285,9 +285,9 @@ Status CheckCertificateChainsForAttestationPublicKey(
     ASYLO_ASSIGN_OR_RETURN(subject_key_der,
                            certificate_chain_interface[0]->SubjectKeyDer());
     if (subject_key_der != attestation_public_key_der) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Certificate chain's end-entity key does not match"
-                    "attestation key");
+      return absl::InvalidArgumentError(
+          "Certificate chain's end-entity key does not match"
+          "attestation key");
     }
 
     ASYLO_RETURN_IF_ERROR(VerifyCertificateChain(certificate_chain_interface,

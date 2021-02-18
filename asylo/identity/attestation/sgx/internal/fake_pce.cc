@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
@@ -97,8 +98,7 @@ Status FakePce::GetPceInfo(const Report &report,
                            uint16_t *pce_id,
                            SignatureScheme *signature_scheme) {
   if (ppid_encryption_scheme != RSA3072_OAEP) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Unsupported PPID encryption scheme");
+    return absl::InvalidArgumentError("Unsupported PPID encryption scheme");
   }
 
   bssl::UniquePtr<RSA> ppidek_rsa;
@@ -122,11 +122,11 @@ Status FakePce::GetPceInfo(const Report &report,
 }
 
 StatusOr<Targetinfo> FakePce::GetQeTargetinfo() {
-  return Status(error::GoogleError::UNIMPLEMENTED, "Not implemented");
+  return Status(absl::StatusCode::kUnimplemented, "Not implemented");
 }
 
 StatusOr<std::vector<uint8_t>> FakePce::GetQeQuote(const Report &report) {
-  return Status(error::GoogleError::UNIMPLEMENTED, "Not implemented");
+  return Status(absl::StatusCode::kUnimplemented, "Not implemented");
 }
 
 }  // namespace sgx

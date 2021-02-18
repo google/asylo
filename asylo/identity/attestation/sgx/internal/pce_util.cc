@@ -25,6 +25,7 @@
 #include <utility>
 
 #include "absl/base/macros.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/algorithms.pb.h"
@@ -58,7 +59,7 @@ StatusOr<std::vector<uint8_t>> SerializeRsa3072Ppidek(
                                  ppidek.key(), kPpidRsaOaepHashAlgorithm));
       break;
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     absl::StrCat("Unsupported key encoding: ",
                                  ProtoEnumValueName(encoding)));
   }
@@ -110,7 +111,7 @@ StatusOr<uint32_t> GetEncryptedDataSize(AsymmetricEncryptionScheme scheme) {
   }
 
   return Status(
-      asylo::error::GoogleError::INVALID_ARGUMENT,
+      absl::StatusCode::kInvalidArgument,
       absl::StrCat("Invalid encryption scheme: ", ProtoEnumValueName(scheme)));
 }
 
@@ -141,7 +142,7 @@ StatusOr<Signature> CreateSignatureFromPckEcdsaP256Sha256Signature(
     ByteContainerView pck_signature) {
   if (pck_signature.size() != kEcdsaP256SignatureSize) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrCat("Signature is the wrong size for ECDSA-P256-SHA256: ",
                      pck_signature.size(), " (expected ",
                      kEcdsaP256SignatureSize, ")"));
@@ -161,23 +162,23 @@ StatusOr<bssl::UniquePtr<RSA>> ParseRsa3072PublicKey(
     absl::Span<const uint8_t> public_key) {
   if (public_key.size() !=
       kRsa3072ModulusSize + kRsa3072SerializedExponentSize) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Invalid public key size: ", public_key.size()));
   }
 
   bssl::UniquePtr<BIGNUM> modulus(BN_new());
   if (!modulus) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   bssl::UniquePtr<BIGNUM> exponent(BN_new());
   if (!exponent) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   bssl::UniquePtr<RSA> rsa(RSA_new());
   if (!rsa) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   BN_bin2bn(public_key.data(), /*len=*/kRsa3072ModulusSize, modulus.get());
@@ -187,7 +188,7 @@ StatusOr<bssl::UniquePtr<RSA>> ParseRsa3072PublicKey(
   // Takes ownership of |modulus| and |exponent|.
   if (RSA_set0_key(rsa.get(), modulus.release(), exponent.release(),
                    /*d=*/nullptr) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
   return std::move(rsa);
@@ -196,7 +197,7 @@ StatusOr<bssl::UniquePtr<RSA>> ParseRsa3072PublicKey(
 StatusOr<std::vector<uint8_t>> SerializeRsa3072PublicKey(const RSA *rsa) {
   size_t rsa_size = RSA_size(rsa);
   if (rsa_size != kRsa3072ModulusSize) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Invalid public key size: ", rsa_size));
   }
 
@@ -211,7 +212,7 @@ StatusOr<std::vector<uint8_t>> SerializeRsa3072PublicKey(const RSA *rsa) {
   if (!BN_bn2bin_padded(output.data(), /*len=*/kRsa3072ModulusSize, n) ||
       !BN_bn2bin_padded(output.data() + kRsa3072ModulusSize,
                         /*len=*/kRsa3072SerializedExponentSize, e)) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Failed to serialize public key");
   }
   return output;
@@ -220,14 +221,14 @@ StatusOr<std::vector<uint8_t>> SerializeRsa3072PublicKey(const RSA *rsa) {
 StatusOr<std::vector<uint8_t>> SerializePpidek(
     const AsymmetricEncryptionKeyProto &ppidek) {
   if (ppidek.key_type() != AsymmetricEncryptionKeyProto::ENCRYPTION_KEY) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "PPIDEK must be an encryption key");
   }
 
   AsymmetricEncryptionScheme encryption_scheme = ppidek.encryption_scheme();
   if (!AsymmetricEncryptionSchemeToPceCryptoSuite(encryption_scheme)
            .has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Unsupported encryption scheme: ",
                                ProtoEnumValueName(encryption_scheme)));
   }
@@ -235,7 +236,7 @@ StatusOr<std::vector<uint8_t>> SerializePpidek(
     case AsymmetricEncryptionScheme::RSA3072_OAEP:
       return SerializeRsa3072Ppidek(ppidek);
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     absl::StrCat("Unsupported encryption scheme: ",
                                  ProtoEnumValueName(encryption_scheme)));
   }

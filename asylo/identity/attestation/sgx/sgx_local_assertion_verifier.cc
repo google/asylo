@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bytes.h"
@@ -43,19 +44,16 @@ SgxLocalAssertionVerifier::SgxLocalAssertionVerifier() : initialized_(false) {}
 
 Status SgxLocalAssertionVerifier::Initialize(const std::string &config) {
   if (IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Already initialized");
+    return absl::FailedPreconditionError("Already initialized");
   }
 
   SgxLocalAssertionAuthorityConfig authority_config;
   if (!authority_config.ParseFromString(config)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Could not parse input config");
+    return absl::InvalidArgumentError("Could not parse input config");
   }
 
   if (!authority_config.has_attestation_domain()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Config is missing attestation domain");
+    return absl::InvalidArgumentError("Config is missing attestation domain");
   }
 
   attestation_domain_ = authority_config.attestation_domain();
@@ -82,7 +80,7 @@ std::string SgxLocalAssertionVerifier::AuthorityType() const {
 Status SgxLocalAssertionVerifier::CreateAssertionRequest(
     AssertionRequest *request) const {
   if (!IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return absl::FailedPreconditionError("Not initialized");
   }
 
   request->mutable_description()->set_identity_type(IdentityType());
@@ -105,8 +103,8 @@ Status SgxLocalAssertionVerifier::CreateAssertionRequest(
 
   if (!additional_info.SerializeToString(
           request->mutable_additional_information())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed to serialize LocalAssertionRequestAdditionalInfo");
+    return absl::InternalError(
+        "Failed to serialize LocalAssertionRequestAdditionalInfo");
   }
 
   return Status::OkStatus();
@@ -115,17 +113,17 @@ Status SgxLocalAssertionVerifier::CreateAssertionRequest(
 StatusOr<bool> SgxLocalAssertionVerifier::CanVerify(
     const AssertionOffer &offer) const {
   if (!IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return Status(absl::StatusCode::kFailedPrecondition, "Not initialized");
   }
 
   if (!IsCompatibleAssertionDescription(offer.description())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "AssertionOffer has incompatible assertion description");
   }
 
   sgx::LocalAssertionOfferAdditionalInfo additional_info;
   if (!additional_info.ParseFromString(offer.additional_information())) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Failed to parse offer additional information");
   }
 
@@ -136,18 +134,17 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
                                          const Assertion &assertion,
                                          EnclaveIdentity *peer_identity) const {
   if (!IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return absl::FailedPreconditionError("Not initialized");
   }
 
   if (!IsCompatibleAssertionDescription(assertion.description())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Assertion has incompatible assertion description");
+    return absl::InvalidArgumentError(
+        "Assertion has incompatible assertion description");
   }
 
   sgx::LocalAssertion local_assertion;
   if (!local_assertion.ParseFromString(assertion.assertion())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed to parse LocalAssertion");
+    return absl::InternalError("Failed to parse LocalAssertion");
   }
 
   // First, verify the hardware REPORT embedded in the assertion. This will only
@@ -177,8 +174,8 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
   expected_reportdata.data.replace(/*pos=*/0, digest);
 
   if (expected_reportdata.data != report.body.reportdata.data) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Assertion is not bound to the provided user-data");
+    return absl::InternalError(
+        "Assertion is not bound to the provided user-data");
   }
 
   // Serialize the protobuf representation of the peer's SGX identity and save

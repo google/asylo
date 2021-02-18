@@ -18,6 +18,7 @@
 
 #include "asylo/identity/attestation/null/null_assertion_verifier.h"
 
+#include "absl/status/status.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/attestation/null/internal/null_assertion.pb.h"
@@ -36,8 +37,7 @@ NullAssertionVerifier::NullAssertionVerifier() : initialized_(false) {}
 Status NullAssertionVerifier::Initialize(const std::string &config) {
   // Verify that this verifier has not already been initialized.
   if (IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Already initialized");
+    return absl::FailedPreconditionError("Already initialized");
   }
 
   absl::MutexLock lock(&initialized_mu_);
@@ -62,7 +62,7 @@ Status NullAssertionVerifier::CreateAssertionRequest(
     AssertionRequest *request) const {
   // Verify that this verifier has been initialized.
   if (!IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return absl::FailedPreconditionError("Not initialized");
   }
 
   // Set the identity type and authority type of the requested assertion to be
@@ -81,7 +81,7 @@ StatusOr<bool> NullAssertionVerifier::CanVerify(
     const AssertionOffer &offer) const {
   // Verify that this verifier has been initialized.
   if (!IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return Status(absl::StatusCode::kFailedPrecondition, "Not initialized");
   }
 
   // Check that the identity type and authority type of the offered assertion
@@ -95,26 +95,23 @@ Status NullAssertionVerifier::Verify(const std::string &user_data,
                                      EnclaveIdentity *peer_identity) const {
   // Verify that this verifier has been initialized.
   if (!IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return absl::FailedPreconditionError("Not initialized");
   }
 
   // Check that the assertion has the identity type and authority type of this
   // verifier.
   if (!IsCompatibleAssertionDescription(assertion.description())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Invalid assertion description");
+    return absl::InvalidArgumentError("Invalid assertion description");
   }
 
   // Verify that the body of the assertion is a serialized NullAssertion
   // containing the user-provided data blob.
   NullAssertion null_assertion;
   if (!null_assertion.ParseFromString(assertion.assertion())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Assertion deserialization failed");
+    return absl::InternalError("Assertion deserialization failed");
   }
   if (null_assertion.user_data() != user_data) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         "Assertion verification failed: assertion is not bound to user_data");
   }
 

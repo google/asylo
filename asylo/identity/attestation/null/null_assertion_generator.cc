@@ -18,6 +18,7 @@
 
 #include "asylo/identity/attestation/null/null_assertion_generator.h"
 
+#include "absl/status/status.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/attestation/null/internal/null_assertion.pb.h"
@@ -34,8 +35,7 @@ NullAssertionGenerator::NullAssertionGenerator() : initialized_(false) {}
 Status NullAssertionGenerator::Initialize(const std::string &config) {
   // Verify that this generator has not already been initialized.
   if (IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Already initialized");
+    return absl::FailedPreconditionError("Already initialized");
   }
 
   absl::MutexLock lock(&initialized_mu_);
@@ -60,7 +60,7 @@ Status NullAssertionGenerator::CreateAssertionOffer(
     AssertionOffer *offer) const {
   // Verify that this generator has been initialized.
   if (!IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return absl::FailedPreconditionError("Not initialized");
   }
 
   // Set the identity type and authority type of the offered assertion to be
@@ -79,7 +79,7 @@ StatusOr<bool> NullAssertionGenerator::CanGenerate(
     const AssertionRequest &request) const {
   // Verify that this generator has been initialized.
   if (!IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return Status(absl::StatusCode::kFailedPrecondition, "Not initialized");
   }
 
   return IsValidAssertionRequest(request);
@@ -90,7 +90,7 @@ Status NullAssertionGenerator::Generate(const std::string &user_data,
                                         Assertion *assertion) const {
   // Verify that this generator has been initialized.
   if (!IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return absl::FailedPreconditionError("Not initialized");
   }
 
   // This generator simply checks that |request| contains the expected identity
@@ -98,8 +98,7 @@ Status NullAssertionGenerator::Generate(const std::string &user_data,
   // would perform the former two checks, but might also incorporate the
   // request's additional information into the generated assertion.
   if (!IsValidAssertionRequest(request)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Invalid assertion request");
+    return absl::InvalidArgumentError("Invalid assertion request");
   }
 
   // Set the assertion's description to indicate the identity type and
@@ -116,8 +115,7 @@ Status NullAssertionGenerator::Generate(const std::string &user_data,
   NullAssertion null_assertion;
   null_assertion.set_user_data(user_data);
   if (!null_assertion.SerializeToString(assertion->mutable_assertion())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Assertion serialization failed");
+    return absl::InternalError("Assertion serialization failed");
   }
   return Status::OkStatus();
 }

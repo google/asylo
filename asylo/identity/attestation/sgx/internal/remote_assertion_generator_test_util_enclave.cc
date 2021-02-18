@@ -19,6 +19,7 @@
 #include <memory>
 
 #include <google/protobuf/repeated_field.h>
+#include "absl/status/status.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/grpc/auth/enclave_channel_credentials.h"
 #include "asylo/grpc/auth/sgx_local_credentials_options.h"
@@ -40,8 +41,8 @@ namespace {
 Status GetRemoteAssertion(const GetRemoteAssertionInput &input,
                           GetRemoteAssertionOutput *output) {
   if (!input.has_server_address()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "EnclaveConfig is missing server_address extension");
+    return absl::InvalidArgumentError(
+        "EnclaveConfig is missing server_address extension");
   }
   const std::string &server_address = input.server_address();
   LOG(INFO) << "Server address: " << server_address;
@@ -93,9 +94,9 @@ class RemoteAssertionGeneratorTestUtilEnclave final
   Status Run(const EnclaveInput &input, EnclaveOutput *output) override {
     if (!input.HasExtension(
             remote_assertion_generator_test_util_enclave_input)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "EnclaveInput is missing "
-                    "RemoteAssertionGeneratorTestUtilEnclaveInput extension");
+      return absl::InvalidArgumentError(
+          "EnclaveInput is missing "
+          "RemoteAssertionGeneratorTestUtilEnclaveInput extension");
     }
 
     const RemoteAssertionGeneratorTestUtilEnclaveInput &enclave_input =
@@ -119,8 +120,8 @@ class RemoteAssertionGeneratorTestUtilEnclave final
             enclave_input.get_sealed_secret_input(),
             enclave_output->mutable_get_sealed_secret_output());
       default:
-        return Status(error::GoogleError::INVALID_ARGUMENT,
-                      "RemoteAssertionGeneratorTestUtilEnclaveInput not set");
+        return absl::InvalidArgumentError(
+            "RemoteAssertionGeneratorTestUtilEnclaveInput not set");
     }
   }
 };

@@ -25,6 +25,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/certificate.pb.h"
@@ -139,13 +140,13 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests, InitializeWorksOnce) {
   EXPECT_THAT(generator_.Initialize(valid_config_), IsOk());
   EXPECT_TRUE(generator_.IsInitialized());
   EXPECT_THAT(generator_.Initialize(valid_config_),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
        InitializeFailsWithBadConfig) {
   EXPECT_THAT(generator_.Initialize("BAD CONFIG !@#$%^"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
@@ -166,23 +167,22 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
   ASSERT_TRUE(config.SerializeToString(&serialized_config));
 
   EXPECT_THAT(generator_.Initialize(serialized_config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
        InitializeFailsWhenSetPckCertificateChainFails) {
   EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
-      .WillOnce(Return(Status(error::GoogleError::INTERNAL, "kaboom")));
+      .WillOnce(Return(Status(absl::StatusCode::kInternal, "kaboom")));
   EXPECT_THAT(generator_.Initialize(valid_config_),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
        InitializeSetsPckCertificateChain) {
   auto expected_certs = sgx::GetFakePckCertificateChain();
-  EXPECT_CALL(
-      *mock_intel_enclaves_,
-      SetPckCertificateChain(EqualsProto(expected_certs)))
+  EXPECT_CALL(*mock_intel_enclaves_,
+              SetPckCertificateChain(EqualsProto(expected_certs)))
       .WillOnce(Return(Status::OkStatus()));
   EXPECT_THAT(generator_.Initialize(valid_config_), IsOk());
 }
@@ -214,7 +214,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
   ASSERT_FALSE(generator_.IsInitialized());
   AssertionOffer assertion_offer;
   EXPECT_THAT(generator_.CreateAssertionOffer(&assertion_offer),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests, CanGenerateSuccess) {
@@ -230,7 +230,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
        CanGenerateFailsIfNotInitialized) {
   ASSERT_FALSE(generator_.IsInitialized());
   EXPECT_THAT(generator_.CanGenerate(AssertionRequest{}),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
@@ -296,7 +296,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
   Assertion assertion;
   EXPECT_THAT(
       generator_.Generate(/*user_data=*/"", AssertionRequest{}, &assertion),
-      StatusIs(error::GoogleError::FAILED_PRECONDITION));
+      StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
@@ -311,13 +311,13 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
   request.mutable_description()->mutable_authority_type()->append("nope");
   EXPECT_THAT(
       generator_.Generate(/*user_data=*/"", AssertionRequest{}, &assertion),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+      StatusIs(absl::StatusCode::kInvalidArgument));
 
   *request.mutable_description() = CreateValidAssertionDescription();
   request.mutable_description()->set_identity_type(UNKNOWN_IDENTITY);
   EXPECT_THAT(
       generator_.Generate(/*user_data=*/"", AssertionRequest{}, &assertion),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+      StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,

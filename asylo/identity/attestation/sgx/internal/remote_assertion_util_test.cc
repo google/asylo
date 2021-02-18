@@ -28,6 +28,7 @@
 #include <google/protobuf/text_format.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -148,7 +149,7 @@ StatusOr<std::unique_ptr<CertificateInterface>> CreateX509Certificate(
   constexpr int kMaxNumBitsInSerialNumber = 160;
   if (BN_rand(serial_number.get(), kMaxNumBitsInSerialNumber, /*top=*/-1,
               /*bottom=*/0) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   builder.serial_number = std::move(serial_number);
 
@@ -319,7 +320,7 @@ StatusOr<RemoteAssertionInputs> GenerateRemoteAssertionInputs() {
   SgxIdentity age_identity;
   if (!google::protobuf::TextFormat::ParseFromString(kAttestationKeyCertAssertedIdentity,
                                            &age_identity)) {
-    return Status(error::GoogleError::INTERNAL, "Failed to parse AGE identity");
+    return Status(absl::StatusCode::kInternal, "Failed to parse AGE identity");
   }
   *age_identity.mutable_machine_configuration() = CreateMachineConfiguration();
 
@@ -398,7 +399,7 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMissingRequiredChain) {
   EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
                                     inputs.required_roots,
                                     inputs.age_expectation, &actual_identity),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(RemoteAssertionUtilTest,
@@ -418,7 +419,7 @@ TEST(RemoteAssertionUtilTest,
   EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
                                     inputs.required_roots,
                                     inputs.age_expectation, &actual_identity),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMissingIntelChain) {
@@ -436,7 +437,7 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMissingIntelChain) {
   EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
                                     inputs.required_roots,
                                     inputs.age_expectation, &actual_identity),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 TEST(RemoteAssertionUtilTest,
@@ -459,7 +460,7 @@ TEST(RemoteAssertionUtilTest,
   EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
                                     inputs.required_roots,
                                     inputs.age_expectation, &actual_identity),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionIntelChainMissingAgeCert) {
@@ -489,7 +490,7 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionIntelChainMissingAgeCert) {
   EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
                                     inputs.required_roots,
                                     inputs.age_expectation, &actual_identity),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionIntelChainMissingPckCert) {
@@ -510,7 +511,7 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionIntelChainMissingPckCert) {
   EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
                                     inputs.required_roots,
                                     inputs.age_expectation, &actual_identity),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionInvalidSignature) {
@@ -527,7 +528,7 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionInvalidSignature) {
   EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
                                     inputs.required_roots,
                                     inputs.age_expectation, &actual_identity),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMismatchedUserData) {
@@ -543,7 +544,7 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMismatchedUserData) {
   EXPECT_THAT(VerifyRemoteAssertion("Different user data", assertion,
                                     *inputs.intel_root, inputs.required_roots,
                                     inputs.age_expectation, &actual_identity),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMismatchedSignatureScheme) {
@@ -561,7 +562,7 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionMismatchedSignatureScheme) {
   EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
                                     inputs.required_roots,
                                     inputs.age_expectation, &actual_identity),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionUnknownSignatureScheme) {
@@ -578,7 +579,7 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionUnknownSignatureScheme) {
   EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
                                     inputs.required_roots,
                                     inputs.age_expectation, &actual_identity),
-              StatusIs(error::GoogleError::UNIMPLEMENTED));
+              StatusIs(absl::StatusCode::kUnimplemented));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionInvalidCertificateChain) {
@@ -595,7 +596,7 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionInvalidCertificateChain) {
   EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
                                     inputs.required_roots,
                                     inputs.age_expectation, &actual_identity),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionInvalidAgeIdentity) {
@@ -626,7 +627,7 @@ TEST(RemoteAssertionUtilTest, VerifyRemoteAssertionInvalidAgeIdentity) {
   EXPECT_THAT(VerifyRemoteAssertion(kUserData, assertion, *inputs.intel_root,
                                     inputs.required_roots,
                                     inputs.age_expectation, &actual_identity),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(absl::StatusCode::kUnauthenticated));
 }
 
 }  // namespace

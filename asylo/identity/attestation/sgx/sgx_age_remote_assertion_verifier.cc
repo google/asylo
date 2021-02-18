@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/certificate_util.h"
 #include "asylo/crypto/x509_certificate.h"
@@ -45,7 +46,7 @@ StatusOr<sgx::RemoteAssertionOfferAdditionalInfo> ParseAdditionalInfo(
     const AssertionOffer &offer) {
   sgx::RemoteAssertionOfferAdditionalInfo offer_additional_info;
   if (!offer_additional_info.ParseFromString(offer.additional_information())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Failed to parse offer additional information");
   }
 
@@ -57,24 +58,22 @@ StatusOr<sgx::RemoteAssertionOfferAdditionalInfo> ParseAdditionalInfo(
 Status SgxAgeRemoteAssertionVerifier::Initialize(const std::string &config) {
   auto members_view = members_.Lock();
   if (members_view->initialized) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Already initialized");
+    return absl::FailedPreconditionError("Already initialized");
   }
 
   SgxAgeRemoteAssertionAuthorityConfig authority_config;
 
   if (!authority_config.ParseFromString(config)) {
-    return Status(error::GoogleError::INTERNAL, "Could not parse input config");
+    return absl::InternalError("Could not parse input config");
   }
 
   if (!authority_config.has_intel_root_certificate()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Configuration must include the Intel root certificate");
+    return absl::InvalidArgumentError(
+        "Configuration must include the Intel root certificate");
   }
 
   if (!authority_config.has_age_identity_expectation()) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         "Configuration must include identity expectation for the AGE");
   }
 
@@ -112,8 +111,8 @@ Status SgxAgeRemoteAssertionVerifier::Initialize(const std::string &config) {
 
   if (!additional_info.SerializeToString(
           members_view->assertion_request.mutable_additional_information())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed to serialize RemoteAssertionRequestAdditionalInfo");
+    return absl::InternalError(
+        "Failed to serialize RemoteAssertionRequestAdditionalInfo");
   }
 
   members_view->initialized = true;
@@ -140,7 +139,7 @@ Status SgxAgeRemoteAssertionVerifier::CreateAssertionRequest(
   auto members_view = members_.ReaderLock();
 
   if (!members_view->initialized) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return absl::FailedPreconditionError("Not initialized");
   }
 
   *request = members_view->assertion_request;
@@ -152,11 +151,11 @@ StatusOr<bool> SgxAgeRemoteAssertionVerifier::CanVerify(
   auto members_view = members_.ReaderLock();
 
   if (!members_view->initialized) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return Status(absl::StatusCode::kFailedPrecondition, "Not initialized");
   }
 
   if (!IsCompatibleAssertionDescription(offer.description())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "AssertionOffer has incompatible assertion description");
   }
   sgx::RemoteAssertionOfferAdditionalInfo offer_additional_info;
@@ -206,18 +205,17 @@ Status SgxAgeRemoteAssertionVerifier::Verify(
   auto members_view = members_.ReaderLock();
 
   if (!members_view->initialized) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return absl::FailedPreconditionError("Not initialized");
   }
 
   if (!IsCompatibleAssertionDescription(assertion.description())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Assertion has incompatible assertion description");
+    return absl::InvalidArgumentError(
+        "Assertion has incompatible assertion description");
   }
 
   sgx::RemoteAssertion remote_assertion;
   if (!remote_assertion.ParseFromString(assertion.assertion())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Error parsing assertion data");
+    return absl::InvalidArgumentError("Error parsing assertion data");
   }
 
   SgxIdentity sgx_peer_identity;

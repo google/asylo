@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
@@ -50,15 +51,15 @@ Status RemoteAssertionGeneratorEnclave::Initialize(
     const EnclaveConfig &config) {
   // Validate the enclave config.
   if (!config.HasExtension(remote_assertion_generator_enclave_config)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "EnclaveConfig is missing server_address field");
+    return absl::InvalidArgumentError(
+        "EnclaveConfig is missing server_address field");
   }
   remote_assertion_generator_server_address_ =
       config.GetExtension(remote_assertion_generator_enclave_config)
           .remote_assertion_generator_server_address();
   if (remote_assertion_generator_server_address_.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "EnclaveConfig does not include a server address");
+    return absl::InvalidArgumentError(
+        "EnclaveConfig does not include a server address");
   }
   return Status::OkStatus();
 }
@@ -66,8 +67,7 @@ Status RemoteAssertionGeneratorEnclave::Initialize(
 Status RemoteAssertionGeneratorEnclave::Run(const EnclaveInput &input,
                                             EnclaveOutput *output) {
   if (!input.HasExtension(remote_assertion_generator_enclave_input)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "EnclaveInput format is not valid");
+    return absl::InvalidArgumentError("EnclaveInput format is not valid");
   }
   const RemoteAssertionGeneratorEnclaveInput &enclave_input =
       input.GetExtension(remote_assertion_generator_enclave_input);
@@ -96,8 +96,8 @@ Status RemoteAssertionGeneratorEnclave::Run(const EnclaveInput &input,
                              ->mutable_sgx_identity());
       return Status::OkStatus();
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "EnclaveInput invalid: did not contain a valid input");
+      return absl::InvalidArgumentError(
+          "EnclaveInput invalid: did not contain a valid input");
   }
 }
 
@@ -118,9 +118,9 @@ Status RemoteAssertionGeneratorEnclave::StartRemoteAssertionGeneratorGrpcServer(
   auto attestation_key_certs_pair_locked = attestation_key_certs_pair_.Lock();
 
   if (server_service_pair_locked->server) {
-    return Status(error::GoogleError::ALREADY_EXISTS,
-                  "Cannot start remote assertion generator gRPC server: server "
-                  "already exists");
+    return absl::AlreadyExistsError(
+        "Cannot start remote assertion generator gRPC server: server "
+        "already exists");
   }
 
   if (input.has_sealed_secret()) {
@@ -152,12 +152,10 @@ Status RemoteAssertionGeneratorEnclave::GeneratePceInfoSgxHardwareReport(
     const GeneratePceInfoSgxHardwareReportInput &input,
     GeneratePceInfoSgxHardwareReportOutput *output) {
   if (!input.has_pce_target_info()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Input is missing pce_target_info");
+    return absl::InvalidArgumentError("Input is missing pce_target_info");
   }
   if (!input.has_ppid_encryption_key()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Input is missing ppid_encryption_key");
+    return absl::InvalidArgumentError("Input is missing ppid_encryption_key");
   }
   AlignedReportdataPtr reportdata;
   ASYLO_ASSIGN_OR_RETURN(
@@ -212,8 +210,8 @@ Status RemoteAssertionGeneratorEnclave::UpdateCerts(
   auto server_service_pair_locked = server_service_pair_.Lock();
   auto attestation_key_certs_pair_locked = attestation_key_certs_pair_.Lock();
   if (!attestation_key_certs_pair_locked->attestation_key) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Cannot update certificates: no attestation key available");
+    return absl::FailedPreconditionError(
+        "Cannot update certificates: no attestation key available");
   }
 
   std::unique_ptr<VerifyingKey> attestation_public_key;

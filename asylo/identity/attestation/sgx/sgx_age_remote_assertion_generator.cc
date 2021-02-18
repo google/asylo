@@ -25,6 +25,7 @@
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/util/message_differencer.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/time/time.h"
 #include "asylo/crypto/certificate_interface.h"
 #include "asylo/crypto/certificate_util.h"
@@ -47,7 +48,7 @@ StatusOr<sgx::RemoteAssertionRequestAdditionalInfo> ParseAdditionalInfo(
     const AssertionRequest &request) {
   sgx::RemoteAssertionRequestAdditionalInfo additional_info;
   if (!additional_info.ParseFromString(request.additional_information())) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Failed to parse request additional information");
   }
 
@@ -65,20 +66,18 @@ SgxAgeRemoteAssertionGenerator::SgxAgeRemoteAssertionGenerator()
 Status SgxAgeRemoteAssertionGenerator::Initialize(const std::string &config) {
   auto members_view = members_.Lock();
   if (members_view->initialized) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Already initialized");
+    return absl::FailedPreconditionError("Already initialized");
   }
 
   SgxAgeRemoteAssertionAuthorityConfig authority_config;
 
   if (!authority_config.ParseFromString(config)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Could not parse input config");
+    return absl::InvalidArgumentError("Could not parse input config");
   }
 
   if (!authority_config.has_intel_root_certificate()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Config does not contain the Intel root certificate");
+    return absl::InvalidArgumentError(
+        "Config does not contain the Intel root certificate");
   }
 
   ASYLO_RETURN_IF_ERROR(
@@ -89,8 +88,7 @@ Status SgxAgeRemoteAssertionGenerator::Initialize(const std::string &config) {
   }
 
   if (!authority_config.has_server_address()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Config is missing server address");
+    return absl::InvalidArgumentError("Config is missing server address");
   }
 
   members_view->root_ca_certificates.reserve(
@@ -103,12 +101,11 @@ Status SgxAgeRemoteAssertionGenerator::Initialize(const std::string &config) {
   members_view->server_address = authority_config.server_address();
   members_view->initialized = true;
 
-
   for (auto &cert : members_view->root_ca_certificates) {
     std::unique_ptr<CertificateInterface> cert_interface;
     ASYLO_ASSIGN_OR_RETURN(
-        cert_interface, CreateCertificateInterface(
-            *sgx::GetSgxCertificateFactories(), cert));
+        cert_interface,
+        CreateCertificateInterface(*sgx::GetSgxCertificateFactories(), cert));
 
     members_view->root_ca_certificate_interfaces.emplace_back(
         std::move(cert_interface));
@@ -134,7 +131,7 @@ Status SgxAgeRemoteAssertionGenerator::CreateAssertionOffer(
   auto members_view = members_.ReaderLock();
 
   if (!members_view->initialized) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return absl::FailedPreconditionError("Not initialized");
   }
 
   offer->mutable_description()->set_identity_type(IdentityType());
@@ -146,8 +143,8 @@ Status SgxAgeRemoteAssertionGenerator::CreateAssertionOffer(
   }
   if (!additional_info.SerializeToString(
           offer->mutable_additional_information())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed to serialize RemoteAssertionOfferAdditionalInfo");
+    return absl::InternalError(
+        "Failed to serialize RemoteAssertionOfferAdditionalInfo");
   }
 
   return Status::OkStatus();
@@ -158,14 +155,14 @@ StatusOr<bool> SgxAgeRemoteAssertionGenerator::CanGenerate(
   auto members_view = members_.ReaderLock();
 
   if (!members_view->initialized) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return Status(absl::StatusCode::kFailedPrecondition, "Not initialized");
   }
 
   sgx::RemoteAssertionRequestAdditionalInfo additional_info;
   ASYLO_ASSIGN_OR_RETURN(additional_info, ParseAdditionalInfo(request));
 
   if (additional_info.root_ca_certificates_size() == 0) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Assertion request must specify at least one CA.");
   }
 
@@ -178,14 +175,14 @@ StatusOr<bool> SgxAgeRemoteAssertionGenerator::CanGenerate(
 
   for (const Certificate &info_cert : additional_info.root_ca_certificates()) {
     std::unique_ptr<CertificateInterface> info_cert_if;
-    ASYLO_ASSIGN_OR_RETURN(info_cert_if, CreateCertificateInterface(
-        *sgx::GetSgxCertificateFactories(), info_cert));
+    ASYLO_ASSIGN_OR_RETURN(info_cert_if,
+                           CreateCertificateInterface(
+                               *sgx::GetSgxCertificateFactories(), info_cert));
 
     if (std::none_of(members_view->root_ca_certificate_interfaces.begin(),
                      members_view->root_ca_certificate_interfaces.end(),
-                     [&info_cert_if]
-                     (const std::unique_ptr<CertificateInterface> &other)
-                     {
+                     [&info_cert_if](
+                         const std::unique_ptr<CertificateInterface> &other) {
                        return *info_cert_if == *other;
                      })) {
       return false;
@@ -201,8 +198,8 @@ Status SgxAgeRemoteAssertionGenerator::Generate(const std::string &user_data,
   ASYLO_ASSIGN_OR_RETURN(can_generate, CanGenerate(request));
 
   if (!can_generate) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Cannot generate assertion for the given assertion request.");
+    return absl::InvalidArgumentError(
+        "Cannot generate assertion for the given assertion request.");
   }
 
   auto members_view = members_.ReaderLock();
@@ -220,7 +217,7 @@ Status SgxAgeRemoteAssertionGenerator::Generate(const std::string &user_data,
                    gpr_time_from_micros(kDeadlineMicros, GPR_TIMESPAN));
 
   if (!channel->WaitForConnected(absolute_deadline)) {
-    return Status(error::GoogleError::INTERNAL, "Failed to connect to server");
+    return absl::InternalError("Failed to connect to server");
   }
 
   SgxRemoteAssertionGeneratorClient client(channel);
@@ -229,8 +226,7 @@ Status SgxAgeRemoteAssertionGenerator::Generate(const std::string &user_data,
                          client.GenerateSgxRemoteAssertion(user_data));
 
   if (!remote_assertion.SerializeToString(assertion->mutable_assertion())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed to serialize remote assertion");
+    return absl::InternalError("Failed to serialize remote assertion");
   }
 
   assertion->mutable_description()->set_identity_type(IdentityType());

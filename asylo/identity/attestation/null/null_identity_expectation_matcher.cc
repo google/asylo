@@ -19,6 +19,7 @@
 #include "asylo/identity/attestation/null/null_identity_expectation_matcher.h"
 
 #include <google/protobuf/util/message_differencer.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "asylo/identity/attestation/null/null_identity_util.h"
 #include "asylo/identity/descriptions.h"
@@ -37,7 +38,7 @@ StatusOr<bool> NullIdentityExpectationMatcher::MatchAndExplain(
                                                       self_description) ||
       !::google::protobuf::util::MessageDifferencer::Equivalent(
           reference_identity.description(), self_description)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Input parameter identity has incompatible description");
   }
 

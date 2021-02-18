@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/types/variant.h"
@@ -84,14 +85,13 @@ Status SgxIntelEcdsaQeRemoteAssertionGenerator::Initialize(
   auto members_view = members_.Lock();
 
   if (members_view->is_initialized) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Already initialized");
+    return absl::FailedPreconditionError("Already initialized");
   }
 
   SgxIntelEcdsaQeRemoteAssertionAuthorityConfig parsed_config;
   if (!parsed_config.ParseFromString(config)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Unable to parse assertion authority config");
+    return absl::InvalidArgumentError(
+        "Unable to parse assertion authority config");
   }
 
   // If the client did not pass generator initialization info, then do not
@@ -112,8 +112,8 @@ Status SgxIntelEcdsaQeRemoteAssertionGenerator::ReadCertificationData(
     const SgxIntelEcdsaQeRemoteAssertionAuthorityConfig &config) const {
   switch (config.generator_info().certification_case()) {
     case GeneratorInfo::CERTIFICATION_NOT_SET:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Generator info is missing certification info");
+      return absl::InvalidArgumentError(
+          "Generator info is missing certification info");
 
     case GeneratorInfo::kPckCertificateChain:
       return intel_enclaves_->SetPckCertificateChain(
@@ -123,12 +123,10 @@ Status SgxIntelEcdsaQeRemoteAssertionGenerator::ReadCertificationData(
       return Status::OkStatus();
   }
 
-  return Status(
-      error::GoogleError::INVALID_ARGUMENT,
-      absl::StrCat(
-          "Assertion authority config does not contain a known certification "
-          "data type: ",
-          config.generator_info().certification_case()));
+  return absl::InvalidArgumentError(absl::StrCat(
+      "Assertion authority config does not contain a known certification "
+      "data type: ",
+      config.generator_info().certification_case()));
 }
 
 bool SgxIntelEcdsaQeRemoteAssertionGenerator::IsInitialized() const {
@@ -147,8 +145,7 @@ std::string SgxIntelEcdsaQeRemoteAssertionGenerator::AuthorityType() const {
 Status SgxIntelEcdsaQeRemoteAssertionGenerator::CreateAssertionOffer(
     AssertionOffer *offer) const {
   if (!IsInitialized()) {
-    return Status(
-        error::GoogleError::FAILED_PRECONDITION,
+    return absl::FailedPreconditionError(
         "The Intel ECDSA assertion generator has not been initialized.");
   }
 
@@ -163,7 +160,7 @@ StatusOr<bool> SgxIntelEcdsaQeRemoteAssertionGenerator::CanGenerate(
     const AssertionRequest &request) const {
   if (!IsInitialized()) {
     return Status(
-        error::GoogleError::FAILED_PRECONDITION,
+        absl::StatusCode::kFailedPrecondition,
         "The Intel ECDSA assertion generator has not been initialized.");
   }
 
@@ -177,9 +174,8 @@ Status SgxIntelEcdsaQeRemoteAssertionGenerator::Generate(
   bool can_generate;
   ASYLO_ASSIGN_OR_RETURN(can_generate, CanGenerate(request));
   if (!can_generate) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrFormat("Cannot generate assertions for '%s'",
-                                  request.ShortDebugString()));
+    return absl::InvalidArgumentError(absl::StrFormat(
+        "Cannot generate assertions for '%s'", request.ShortDebugString()));
   }
 
   AlignedReportdataPtr reportdata;

@@ -25,6 +25,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/certificate.pb.h"
@@ -214,7 +215,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGenerateKeyAndCsrSuccess) {
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGenerateKeyAndCsrFailure) {
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
-      .WillOnce(Return(Status(error::GoogleError::INVALID_ARGUMENT,
+      .WillOnce(Return(Status(absl::StatusCode::kInvalidArgument,
                               kInputMissingPceTargetInfoErrorMessage)));
 
   sgx::TargetInfoProto pce_target_info;
@@ -225,7 +226,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGenerateKeyAndCsrFailure) {
   EXPECT_THAT(
       sgx_infrastructural_enclave_manager_->AgeGenerateKeyAndCsr(
           pce_target_info, &report, &pce_sign_report_payload, &targeted_csr),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+      StatusIs(absl::StatusCode::kInvalidArgument,
                kInputMissingPceTargetInfoErrorMessage));
 }
 
@@ -252,7 +253,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest,
 TEST_F(SgxInfrastructuralEnclaveManagerTest,
        AgeGeneratePceInfoSgxHardwareReportFailure) {
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
-      .WillOnce(Return(Status(error::GoogleError::INVALID_ARGUMENT,
+      .WillOnce(Return(Status(absl::StatusCode::kInvalidArgument,
                               kInputMissingPpidEncryptionKeyErrorMessage)));
 
   asylo::AsymmetricEncryptionKeyProto ppidek = Ppidek();
@@ -260,7 +261,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest,
   EXPECT_THAT(
       sgx_infrastructural_enclave_manager_->AgeGeneratePceInfoSgxHardwareReport(
           pce_target_info, ppidek),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+      StatusIs(absl::StatusCode::kInvalidArgument,
                kInputMissingPpidEncryptionKeyErrorMessage));
 }
 
@@ -284,14 +285,14 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeUpdateCertsSuccess) {
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeUpdateCertsFailure) {
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
-      .WillOnce(Return(Status(error::GoogleError::FAILED_PRECONDITION,
+      .WillOnce(Return(Status(absl::StatusCode::kFailedPrecondition,
                               kNoAttestationKeyErrorMessage)));
 
   std::vector<CertificateChain> certificate_chains;
   SetCertificateChain(&certificate_chains);
   EXPECT_THAT(
       sgx_infrastructural_enclave_manager_->AgeUpdateCerts(certificate_chains),
-      StatusIs(error::GoogleError::FAILED_PRECONDITION,
+      StatusIs(absl::StatusCode::kFailedPrecondition,
                kNoAttestationKeyErrorMessage));
 }
 
@@ -305,11 +306,11 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest,
 TEST_F(SgxInfrastructuralEnclaveManagerTest,
        AgeStartServerWithoutSecretFailure) {
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
-      .WillOnce(Return(Status(error::GoogleError::ALREADY_EXISTS,
+      .WillOnce(Return(Status(absl::StatusCode::kAlreadyExists,
                               kServerAlreadyExistErrorMessage)));
 
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->AgeStartServer(),
-              StatusIs(error::GoogleError::ALREADY_EXISTS,
+              StatusIs(absl::StatusCode::kAlreadyExists,
                        kServerAlreadyExistErrorMessage));
 }
 
@@ -324,12 +325,12 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeStartServerWithSecretSuccess) {
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeStartServerWithSecretFailure) {
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
-      .WillOnce(Return(Status(error::GoogleError::ALREADY_EXISTS,
+      .WillOnce(Return(Status(absl::StatusCode::kAlreadyExists,
                               kServerAlreadyExistErrorMessage)));
 
   SealedSecret sealed_secret = GetSealedSecret();
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->AgeStartServer(),
-              StatusIs(error::GoogleError::ALREADY_EXISTS,
+              StatusIs(absl::StatusCode::kAlreadyExists,
                        kServerAlreadyExistErrorMessage));
 }
 
@@ -355,10 +356,10 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGetSgxIdentitySuccess) {
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGetSgxIdentityFails) {
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
-      .WillOnce(Return(Status(error::GoogleError::UNKNOWN, "UNKNOWN")));
+      .WillOnce(Return(Status(absl::StatusCode::kUnknown, "UNKNOWN")));
 
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->AgeGetSgxIdentity(),
-              StatusIs(error::GoogleError::UNKNOWN, "UNKNOWN"));
+              StatusIs(absl::StatusCode::kUnknown, "UNKNOWN"));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetTargetInfoSuccess) {
@@ -379,13 +380,13 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetTargetInfoSuccess) {
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetTargetInfoFailure) {
   EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
       .WillOnce(
-          Return(Status(error::GoogleError::UNKNOWN, kUnknownErrorMessage)));
+          Return(Status(absl::StatusCode::kUnknown, kUnknownErrorMessage)));
 
   sgx::TargetInfoProto pce_target_info;
   sgx::PceSvn pce_svn;
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->PceGetTargetInfo(
                   &pce_target_info, &pce_svn),
-              StatusIs(error::GoogleError::UNKNOWN));
+              StatusIs(absl::StatusCode::kUnknown));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetInfoSuccess) {
@@ -416,7 +417,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetInfoFailure) {
   EXPECT_CALL(*mock_intel_ae_,
               GetPceInfo(_, _, _, NotNull(), NotNull(), NotNull(), NotNull()))
       .WillOnce(
-          Return(Status(error::GoogleError::UNKNOWN, kUnknownErrorMessage)));
+          Return(Status(absl::StatusCode::kUnknown, kUnknownErrorMessage)));
 
   sgx::ReportProto report = Report();
   asylo::AsymmetricEncryptionKeyProto ppidek = Ppidek();
@@ -428,7 +429,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetInfoFailure) {
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->PceGetInfo(
                   report, ppidek, &pce_svn, &pce_id, &pck_signature_scheme,
                   &encrypted_ppid),
-              StatusIs(error::GoogleError::UNKNOWN));
+              StatusIs(absl::StatusCode::kUnknown));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetInfoWithInvalidReportFails) {
@@ -477,14 +478,14 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportSuccess) {
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportFailure) {
   EXPECT_CALL(*mock_intel_ae_, PceSignReport(_, _, _, _))
       .WillOnce(
-          Return(Status(error::GoogleError::UNKNOWN, kUnknownErrorMessage)));
+          Return(Status(absl::StatusCode::kUnknown, kUnknownErrorMessage)));
 
   sgx::PceSvn pck_target_pce_svn = PceSvn();
   sgx::CpuSvn pck_target_cpu_svn = CreateCpuSvn();
   sgx::ReportProto report = Report();
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->PceSignReport(
                   pck_target_pce_svn, pck_target_cpu_svn, report),
-              StatusIs(error::GoogleError::UNKNOWN));
+              StatusIs(absl::StatusCode::kUnknown));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportWithBadPceSvnFails) {
@@ -520,10 +521,10 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignWithBadReportFails) {
 TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgeGetTargetInfoFailure) {
   EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
       .WillOnce(
-          Return(Status(error::GoogleError::UNKNOWN, kUnknownErrorMessage)));
+          Return(Status(absl::StatusCode::kUnknown, kUnknownErrorMessage)));
 
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->CertifyAge(),
-              StatusIs(error::GoogleError::UNKNOWN));
+              StatusIs(absl::StatusCode::kUnknown));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest,
@@ -534,10 +535,10 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest,
                       Return(Status::OkStatus())));
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
       .WillOnce(
-          Return(Status(error::GoogleError::UNKNOWN, kUnknownErrorMessage)));
+          Return(Status(absl::StatusCode::kUnknown, kUnknownErrorMessage)));
 
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->CertifyAge(),
-              StatusIs(error::GoogleError::UNKNOWN));
+              StatusIs(absl::StatusCode::kUnknown));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgeGetSgxIdentityFailure) {
@@ -558,10 +559,10 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgeGetSgxIdentityFailure) {
       .WillOnce(DoAll(SetArgPointee<1>(expected_enclave_output),
                       Return(Status::OkStatus())))
       .WillOnce(
-          Return(Status(error::GoogleError::UNKNOWN, kUnknownErrorMessage)));
+          Return(Status(absl::StatusCode::kUnknown, kUnknownErrorMessage)));
 
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->CertifyAge(),
-              StatusIs(error::GoogleError::UNKNOWN));
+              StatusIs(absl::StatusCode::kUnknown));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgePceSignReportFailure) {
@@ -607,10 +608,10 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgePceSignReportFailure) {
                       age_identity.machine_configuration().cpu_svn().value()),
                   NotNull()))
       .WillOnce(
-          Return(Status(error::GoogleError::UNKNOWN, kUnknownErrorMessage)));
+          Return(Status(absl::StatusCode::kUnknown, kUnknownErrorMessage)));
 
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->CertifyAge(),
-              StatusIs(error::GoogleError::UNKNOWN));
+              StatusIs(absl::StatusCode::kUnknown));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgeSuccess) {

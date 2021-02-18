@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/attestation/sgx/internal/report_oracle_enclave.pb.h"
@@ -37,8 +38,7 @@ class ReportOracleEnclave : public TrustedApplication {
  public:
   Status Run(const EnclaveInput &input, EnclaveOutput *output) override {
     if (!input.HasExtension(report_oracle_enclave_input)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Expected ReportOracleEnclaveInput.");
+      return absl::InvalidArgumentError("Expected ReportOracleEnclaveInput.");
     }
 
     const ReportOracleEnclaveInput &enclave_input =
@@ -54,8 +54,7 @@ class ReportOracleEnclave : public TrustedApplication {
         break;
     }
 
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         absl::StrCat("Invalid input case: ", enclave_input.input_case()));
   }
 
@@ -66,15 +65,14 @@ class ReportOracleEnclave : public TrustedApplication {
         *target_info, ConvertTargetInfoProtoToTargetinfo(input.target_info()));
 
     if (input.reportdata().size() != kReportdataSize) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    absl::StrCat("Invalid report data size: ",
-                                 input.reportdata().size()));
+      return absl::InvalidArgumentError(absl::StrCat(
+          "Invalid report data size: ", input.reportdata().size()));
     }
 
     AlignedReportdataPtr reportdata;
     if (reportdata->data.assign(input.reportdata()) != kReportdataSize) {
-      return Status(error::GoogleError::INTERNAL,
-                    "Error copying data into to report data container");
+      return absl::InternalError(
+          "Error copying data into to report data container");
     }
 
     Report report;
@@ -85,7 +83,7 @@ class ReportOracleEnclave : public TrustedApplication {
     output->mutable_report()->set_value(
         ConvertTrivialObjectToBinaryString(report));
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

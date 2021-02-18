@@ -24,6 +24,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/identity.pb.h"
@@ -89,24 +90,22 @@ TEST_F(IntelEcdsaQuoteTest, ParseQuoteSucceedsWithoutOptionalAuthnData) {
 }
 
 TEST_F(IntelEcdsaQuoteTest, ParseQuoteFailsDueToInputBufferBeingTooLarge) {
-  std::vector<uint8_t> packed_quote =
-      PackDcapQuote(CreateRandomValidQuote());
+  std::vector<uint8_t> packed_quote = PackDcapQuote(CreateRandomValidQuote());
   packed_quote.push_back('x');
 
   Status status = ParseDcapPackedQuote(packed_quote).status();
-  EXPECT_THAT(status, StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status, StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(
       std::string(status.error_message().begin(), status.error_message().end()),
       HasSubstr("Expected signature data size of "));
 }
 
 TEST_F(IntelEcdsaQuoteTest, ParseQuoteFailsDueToInputBufferBeingTooSmall) {
-  std::vector<uint8_t> packed_quote =
-      PackDcapQuote(CreateRandomValidQuote());
+  std::vector<uint8_t> packed_quote = PackDcapQuote(CreateRandomValidQuote());
   do {
     packed_quote.pop_back();
     EXPECT_THAT(ParseDcapPackedQuote(packed_quote),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   } while (!packed_quote.empty());
 }
 
@@ -123,7 +122,7 @@ TEST_F(IntelEcdsaQuoteTest, PackedQuoteToAssertionFailsWithBadQuote) {
   auto packed_quote = PackDcapQuote(CreateRandomValidQuote());
   packed_quote.push_back('k');
   EXPECT_THAT(PackedQuoteToAssertion(packed_quote),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(IntelEcdsaQuoteTest, AssertionToPackedQuoteFailsBadIdentity) {
@@ -134,7 +133,7 @@ TEST_F(IntelEcdsaQuoteTest, AssertionToPackedQuoteFailsBadIdentity) {
   assertion.mutable_description()->set_identity_type(NULL_IDENTITY);
 
   EXPECT_THAT(AssertionToPackedQuote(assertion),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(IntelEcdsaQuoteTest, AssertionToPackedQuoteFailsBadAuthority) {
@@ -146,7 +145,7 @@ TEST_F(IntelEcdsaQuoteTest, AssertionToPackedQuoteFailsBadAuthority) {
       kSgxAgeRemoteAssertionAuthority);
 
   EXPECT_THAT(AssertionToPackedQuote(assertion),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(IntelEcdsaQuoteTest, AssertionToPackedQuoteFailsBadQuote) {
@@ -157,7 +156,7 @@ TEST_F(IntelEcdsaQuoteTest, AssertionToPackedQuoteFailsBadQuote) {
   assertion.clear_assertion();
 
   EXPECT_THAT(AssertionToPackedQuote(assertion),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(IntelEcdsaQuoteTest, RoundTripQuoteAssertion) {

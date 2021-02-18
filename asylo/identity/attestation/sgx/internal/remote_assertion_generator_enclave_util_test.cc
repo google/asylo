@@ -86,7 +86,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   SealedSecretHeader header = GetRemoteAssertionGeneratorEnclaveSecretHeader();
   header.set_secret_name(kIncorrectSecretName);
   EXPECT_THAT(CheckRemoteAssertionGeneratorEnclaveSecretHeader(header),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "Invalid sealed secret header: incorrect secret name"));
 }
 
@@ -96,7 +96,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   header.set_secret_version(kIncorrectSecretVersion);
   EXPECT_THAT(
       CheckRemoteAssertionGeneratorEnclaveSecretHeader(header),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+      StatusIs(absl::StatusCode::kInvalidArgument,
                "Invalid sealed secret header: incorrect secret version"));
 }
 
@@ -106,7 +106,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   header.set_secret_purpose(kIncorrectSecretPurpose);
   EXPECT_THAT(
       CheckRemoteAssertionGeneratorEnclaveSecretHeader(header),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+      StatusIs(absl::StatusCode::kInvalidArgument,
                "Invalid sealed secret header: incorrect secret purpose"));
 }
 
@@ -151,7 +151,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
       ExtractAttestationKeyFromAsymmetricSigningKeyProto(
           asymmetric_signing_key),
       StatusIs(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrCat("The sealed secret key has invalid key type: ",
                        ProtoEnumValueName(asymmetric_signing_key.key_type()))));
 }
@@ -174,7 +174,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
       ExtractAttestationKeyFromAsymmetricSigningKeyProto(
           asymmetric_signing_key),
       StatusIs(
-          error::GoogleError::UNIMPLEMENTED,
+          absl::StatusCode::kUnimplemented,
           "Create attestation key from a PEM-encoded key is not supported"));
 }
 
@@ -199,7 +199,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   EXPECT_THAT(
       ExtractAttestationKeyAndCertificateChainsFromSealedSecret(
           sealed_secret, &certificate_chains_extracted),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+      StatusIs(absl::StatusCode::kInvalidArgument,
                "Invalid sealed secret header: incorrect secret purpose"));
 }
 
@@ -224,7 +224,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   std::vector<CertificateChain> certificate_chains_extracted;
   EXPECT_THAT(ExtractAttestationKeyAndCertificateChainsFromSealedSecret(
                   sealed_secret, &certificate_chains_extracted),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "Cannot parse the additional authenticated data"));
 }
 
@@ -245,7 +245,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   std::vector<CertificateChain> certificate_chains_extracted;
   EXPECT_THAT(ExtractAttestationKeyAndCertificateChainsFromSealedSecret(
                   sealed_secret, &certificate_chains_extracted),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "Cannot parse the sealed secret"));
 }
 
@@ -382,7 +382,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   EXPECT_THAT(CheckCertificateChainsForAttestationPublicKey(
                   public_key, update_certs_input.certificate_chains(),
                   factories, verification_config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "Must provide at least one certificate chain"));
 }
 
@@ -399,7 +399,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   EXPECT_THAT(CheckCertificateChainsForAttestationPublicKey(
                   public_key, update_certs_input.certificate_chains(),
                   factories, verification_config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "Certificate chain cannot be empty"));
 }
 
@@ -431,7 +431,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   EXPECT_THAT(CheckCertificateChainsForAttestationPublicKey(
                   public_key, update_certs_input.certificate_chains(),
                   factories, verification_config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "Certificate chain's end-entity key does not match"
                        "attestation key"));
 }

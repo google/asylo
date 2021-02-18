@@ -119,6 +119,7 @@ cc_library(
     deps = [
         ":handshake_cc_proto",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -256,6 +257,7 @@ cc_library(
         "//asylo/identity/attestation:enclave_assertion_generator",
         "//asylo/identity/attestation:enclave_assertion_verifier",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf",
     ],

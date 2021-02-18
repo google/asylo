@@ -27,6 +27,7 @@
 
 #include <google/protobuf/util/message_differencer.h>
 #include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -72,12 +73,12 @@ StatusOr<std::unique_ptr<VerifyingKey>> CreateVerifyingKey(
     case ECDSA_P384_SHA384:
     case UNKNOWN_SIGNATURE_SCHEME:
       return Status(
-          error::GoogleError::UNIMPLEMENTED,
+          absl::StatusCode::kUnimplemented,
           absl::StrFormat("Asymmetric key signature scheme (%s) unsupported",
                           SignatureScheme_Name(key_proto.signature_scheme())));
   }
   return Status(
-      error::GoogleError::UNIMPLEMENTED,
+      absl::StatusCode::kUnimplemented,
       absl::StrFormat("Asymmetric key signature scheme (%d) unsupported",
                       key_proto.signature_scheme()));
 }
@@ -126,7 +127,7 @@ VerifyCertificateChainsAndExtractIntelCertificateChain(
   }
 
   if (intel_cert_chain.empty()) {
-    return Status(error::GoogleError::UNAUTHENTICATED,
+    return Status(absl::StatusCode::kUnauthenticated,
                   "Intel certificate chain not found");
   }
 
@@ -143,7 +144,7 @@ VerifyCertificateChainsAndExtractIntelCertificateChain(
       std::string subject_key;
       ASYLO_ASSIGN_OR_RETURN(subject_key,
                              required_root_certificate->SubjectKeyDer());
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     absl::StrCat("Remote attestation missing certificate chain "
                                  "for root certificate with subject key: ",
                                  absl::BytesToHexString(subject_key)));
@@ -160,9 +161,9 @@ Status VerifyAgeExpectation(const IdentityAclPredicate &age_expectation,
   AttestationKeyCertificateImpl const *ak_cert =
       dynamic_cast<AttestationKeyCertificateImpl const *>(attestation_key_cert);
   if (ak_cert == nullptr) {
-    return Status(error::GoogleError::UNAUTHENTICATED,
-                  "Attestation key certificate not provided as part of the "
-                  "Intel certificate chain");
+    return absl::UnauthenticatedError(
+        "Attestation key certificate not provided as part of the "
+        "Intel certificate chain");
   }
 
   SgxIdentity age_sgx_identity = ak_cert->GetAssertedSgxIdentity();
@@ -179,8 +180,7 @@ Status VerifyAgeExpectation(const IdentityAclPredicate &age_expectation,
         "Error evaluating AGE identity expectation");
   }
   if (!age_match_result.ValueOrDie()) {
-    return Status(
-        error::GoogleError::UNAUTHENTICATED,
+    return absl::UnauthenticatedError(
         absl::StrCat("AGE identity did not match expectation: ", explanation));
   }
   return Status::OkStatus();
@@ -211,7 +211,7 @@ Status MakeRemoteAssertion(const std::string &user_data,
   *payload.mutable_identity() = identity;
 
   if (!payload.SerializeToString(assertion->mutable_payload())) {
-    return Status(error::GoogleError::INTERNAL, "Serialization failed");
+    return absl::InternalError("Serialization failed");
   }
 
   std::vector<uint8_t> signature;
@@ -229,12 +229,11 @@ Status VerifyRemoteAssertion(
   // Verify that the user data matches the user data in the payload.
   RemoteAssertionPayload payload;
   if (!payload.ParseFromString(assertion.payload())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Could not parse payload");
+    return absl::InvalidArgumentError("Could not parse payload");
   }
   if (payload.user_data() != user_data) {
-    return Status(error::GoogleError::UNAUTHENTICATED,
-                  "User data in payload does not match |user_data|");
+    return absl::UnauthenticatedError(
+        "User data in payload does not match |user_data|");
   }
 
   const AsymmetricSigningKeyProto &verifying_key_proto =
@@ -243,13 +242,11 @@ Status VerifyRemoteAssertion(
   // Verify that the signature scheme in the payload matches the signature
   // scheme in the remote assertion.
   if (payload.signature_scheme() != verifying_key_proto.signature_scheme()) {
-    return Status(
-        error::GoogleError::UNAUTHENTICATED,
-        absl::StrFormat(
-            "Signature scheme in assertion (%s) does not match signature "
-            "scheme in payload (%s)",
-            SignatureScheme_Name(verifying_key_proto.signature_scheme()),
-            SignatureScheme_Name(payload.signature_scheme())));
+    return absl::UnauthenticatedError(absl::StrFormat(
+        "Signature scheme in assertion (%s) does not match signature "
+        "scheme in payload (%s)",
+        SignatureScheme_Name(verifying_key_proto.signature_scheme()),
+        SignatureScheme_Name(payload.signature_scheme())));
   }
 
   // Verify the remote assertion signature with the public key.
@@ -267,8 +264,7 @@ Status VerifyRemoteAssertion(
                              assertion.certificate_chains(), intel_root,
                              additional_root_certificates, verifying_key_der));
   if (intel_cert_chain.size() < kIntelCertChainMinimumLength) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         absl::StrFormat("Length of Intel certificate chain (%d) is shorter "
                         "than the minimum length (%d)",
                         intel_cert_chain.size(), kIntelCertChainMinimumLength));

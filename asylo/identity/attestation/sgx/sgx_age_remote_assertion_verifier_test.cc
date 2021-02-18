@@ -22,6 +22,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
@@ -210,7 +211,7 @@ StatusOr<Assertion> CreateValidAssertion() {
   Assertion assertion;
   SetSgxAgeRemoteAssertionDescription(assertion.mutable_description());
   if (!remote_assertion.SerializeToString(assertion.mutable_assertion())) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Could not serialize remote assertion to string");
   }
   return assertion;
@@ -229,7 +230,7 @@ TEST(SgxAgeRemoteAssertionVerifierTest, VerifierFoundInStaticMap) {
 TEST(SgxAgeRemoteAssertionVerifierTest, InitializeFailsWithBadConfig) {
   SgxAgeRemoteAssertionVerifier verifier;
   EXPECT_THAT(verifier.Initialize("Google makes good falafels"),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST(SgxAgeRemoteAssertionVerifierTest, InitializeFailsWithBadCerts) {
@@ -240,13 +241,13 @@ TEST(SgxAgeRemoteAssertionVerifierTest, InitializeFailsWithBadCerts) {
   // Test with bad Intel cert.
   config.mutable_intel_root_certificate()->set_data("Beet yogurt is nice");
   EXPECT_THAT(verifier.Initialize(config.SerializeAsString()),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 
   // Test with bad additional cert.
   *config.mutable_intel_root_certificate() = GetFakeIntelRoot();
   config.mutable_root_ca_certificates(0)->set_data("Lemon yogurt too");
   EXPECT_THAT(verifier.Initialize(config.SerializeAsString()),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST(SgxAgeRemoteAssertionVerifierTest, InitializeFailsWithoutIntelCert) {
@@ -256,7 +257,7 @@ TEST(SgxAgeRemoteAssertionVerifierTest, InitializeFailsWithoutIntelCert) {
 
   SgxAgeRemoteAssertionVerifier verifier;
   EXPECT_THAT(verifier.Initialize(config.SerializeAsString()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SgxAgeRemoteAssertionVerifierTest,
@@ -267,7 +268,7 @@ TEST(SgxAgeRemoteAssertionVerifierTest,
 
   SgxAgeRemoteAssertionVerifier verifier;
   EXPECT_THAT(verifier.Initialize(config.SerializeAsString()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SgxAgeRemoteAssertionVerifierTest, InitializesSucceedsAtMostOnce) {
@@ -277,7 +278,7 @@ TEST(SgxAgeRemoteAssertionVerifierTest, InitializesSucceedsAtMostOnce) {
   ASYLO_ASSERT_OK(verifier.Initialize(config.SerializeAsString()));
 
   EXPECT_THAT(verifier.Initialize(config.SerializeAsString()),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 TEST(SgxAgeRemoteAssertionVerifierTest, InitializeSuccess) {
@@ -301,7 +302,7 @@ TEST(SgxAgeRemoteAssertionVerifierTest, CreateAssertionRequestUninitialized) {
   SgxAgeRemoteAssertionVerifier verifier;
   AssertionRequest request;
   EXPECT_THAT(verifier.CreateAssertionRequest(&request),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 TEST(SgxAgeRemoteAssertionVerifierTest, CreateAssertionRequestSuccess) {
@@ -329,7 +330,7 @@ TEST(SgxAgeRemoteAssertionVerifierTest, CanVerifyUninitialized) {
   SgxAgeRemoteAssertionVerifier verifier;
   AssertionOffer offer = CreateValidOffer();
   EXPECT_THAT(verifier.CanVerify(offer),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 TEST(SgxAgeRemoteAssertionVerifierTest, CanVerifyIncompatibleRootCaSets) {
@@ -359,7 +360,7 @@ TEST(SgxAgeRemoteAssertionVerifierTest,
   AssertionOffer offer = CreateValidOffer();
   SetSgxLocalAssertionDescription(offer.mutable_description());
   EXPECT_THAT(verifier.CanVerify(offer),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SgxAgeRemoteAssertionVerifierTest, CanVerifySuccess) {
@@ -378,7 +379,7 @@ TEST(SgxAgeRemoteAssertionVerifierTest, VerifyUninitialized) {
   ASYLO_ASSERT_OK_AND_ASSIGN(assertion, CreateValidAssertion());
   EnclaveIdentity peer_identity;
   EXPECT_THAT(verifier.Verify(kUserData, assertion, &peer_identity),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 TEST(SgxAgeRemoteAssertionVerifierTest,
@@ -393,7 +394,7 @@ TEST(SgxAgeRemoteAssertionVerifierTest,
   SetSgxLocalAssertionDescription(assertion.mutable_description());
   EnclaveIdentity peer_identity;
   EXPECT_THAT(verifier.Verify(kUserData, assertion, &peer_identity),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SgxAgeRemoteAssertionVerifierTest, VerifyInvalidAssertion) {

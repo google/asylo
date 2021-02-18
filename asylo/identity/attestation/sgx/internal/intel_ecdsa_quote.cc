@@ -20,6 +20,7 @@
 
 #include <algorithm>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/byte_container_reader.h"
 #include "asylo/crypto/util/byte_container_util.h"
@@ -42,7 +43,7 @@ StatusOr<IntelQeQuote> ParseDcapPackedQuote(ByteContainerView packed_quote) {
   uint32_t signature_size = 0;
   ASYLO_RETURN_IF_ERROR(reader.ReadSingle(&signature_size));
   if (signature_size != reader.BytesRemaining()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrFormat(
                       "Expected signature data size of %d, actual value was %d",
                       reader.BytesRemaining(), signature_size));
@@ -65,7 +66,7 @@ StatusOr<IntelQeQuote> ParseDcapPackedQuote(ByteContainerView packed_quote) {
 
   if (reader.BytesRemaining() != 0) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrFormat("Expected no bytes left, but %d bytes are remaining",
                         reader.BytesRemaining()));
   }
@@ -110,14 +111,14 @@ StatusOr<Assertion> PackedQuoteToAssertion(ByteContainerView packed_quote) {
 StatusOr<std::vector<uint8_t>> AssertionToPackedQuote(
     const Assertion &assertion) {
   if (assertion.description().identity_type() != CODE_IDENTITY) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Assertion contained invalid identity type: ",
                                assertion.description().identity_type()));
   }
 
   if (assertion.description().authority_type() !=
       kSgxIntelEcdsaQeRemoteAssertionAuthority) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Assertion contained invalid authority type: ",
                                assertion.description().authority_type()));
   }

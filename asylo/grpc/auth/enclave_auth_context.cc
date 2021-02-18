@@ -19,6 +19,7 @@
 #include "asylo/grpc/auth/enclave_auth_context.h"
 
 #include <google/protobuf/io/coded_stream.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/grpc/auth/core/enclave_grpc_security_constants.h"
 #include "asylo/identity/identity_acl_evaluator.h"
@@ -36,7 +37,7 @@ StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromServerContext(
 StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromAuthContext(
     const ::grpc::AuthContext &auth_context) {
   if (!auth_context.IsPeerAuthenticated()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Peer is not authenticated");
   }
 
@@ -48,7 +49,7 @@ StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromAuthContext(
     if (auth_property.first == GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME) {
       if (auth_property.second !=
           tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY)) {
-        return Status(error::GoogleError::INVALID_ARGUMENT,
+        return Status(absl::StatusCode::kInvalidArgument,
                       absl::StrCat("Invalid transport security level: ",
                                    std::string(auth_property.second.data(),
                                                auth_property.second.size()),
@@ -65,14 +66,14 @@ StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromAuthContext(
                auth_context.GetPeerIdentityPropertyName()) {
       if (!identities.ParseFromArray(auth_property.second.data(),
                                      auth_property.second.length())) {
-        return Status(error::GoogleError::INVALID_ARGUMENT,
+        return Status(absl::StatusCode::kInvalidArgument,
                       "Ill-formed peer identity in auth context");
       }
     } else if (auth_property.first ==
                GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME) {
       if (auth_property.second != GRPC_ENCLAVE_TRANSPORT_SECURITY_TYPE) {
         return Status(
-            error::GoogleError::INVALID_ARGUMENT,
+            absl::StatusCode::kInvalidArgument,
             absl::StrCat("Invalid transport security type: ",
                          std::string(auth_property.second.data(),
                                      auth_property.second.size()),
@@ -82,7 +83,7 @@ StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromAuthContext(
       std::string auth_property_name =
           std::string(auth_property.first.data(), auth_property.first.length());
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrCat("Unrecognized AuthProperty: ", auth_property_name));
     }
   }
@@ -108,16 +109,16 @@ bool EnclaveAuthContext::HasEnclaveIdentity(
 
 StatusOr<const EnclaveIdentity *> EnclaveAuthContext::FindEnclaveIdentity(
     const EnclaveIdentityDescription &description) const {
-  auto it = std::find_if(
-      identities_.cbegin(), identities_.cend(),
-      [&description](const EnclaveIdentity &identity) -> bool {
-        return identity.description().identity_type() ==
-                   description.identity_type() &&
-               identity.description().authority_type() ==
-                   description.authority_type();
-      });
+  auto it =
+      std::find_if(identities_.cbegin(), identities_.cend(),
+                   [&description](const EnclaveIdentity &identity) -> bool {
+                     return identity.description().identity_type() ==
+                                description.identity_type() &&
+                            identity.description().authority_type() ==
+                                description.authority_type();
+                   });
   if (it == identities_.cend()) {
-    return Status(error::GoogleError::NOT_FOUND, "No matching identity");
+    return Status(absl::StatusCode::kNotFound, "No matching identity");
   }
   return &*it;
 }

@@ -27,6 +27,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
@@ -131,9 +132,8 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     // Establish a random UDS address for the AGE.
     char path[] = "/tmp/SgxRemoteAssertionGeneratorEnclaveTest.XXXXXX";
     if (mkdtemp(path) == nullptr) {
-      return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("Failed to create random test directory: ",
-                                 strerror(errno)));
+      return absl::InternalError(absl::StrCat(
+          "Failed to create random test directory: ", strerror(errno)));
     }
     server_address_ = new std::string(absl::StrCat("unix:", path, ".sock"));
 
@@ -218,7 +218,7 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     if (!additional_info.SerializeToString(
             assertion_request.mutable_additional_information())) {
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           "Failed to serialize additional_info for remote assertion request");
     }
 
@@ -249,7 +249,7 @@ Certificate *SgxAgeRemoteAssertionGeneratorTest::intel_root_cert_;
 TEST_F(SgxAgeRemoteAssertionGeneratorTest,
        InitializeFailsWithUnparsableConfig) {
   EXPECT_THAT(test_enclave_wrapper_->Initialize(kBadConfig),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, GeneratorFoundInStaticMap) {
@@ -269,7 +269,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithNoServerAddress) {
   ASSERT_TRUE(authority_config.SerializeToString(&config));
 
   EXPECT_THAT(test_enclave_wrapper_->Initialize(config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithoutIntelCert) {
@@ -280,7 +280,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithoutIntelCert) {
   ASSERT_TRUE(authority_config.SerializeToString(&config));
 
   EXPECT_THAT(test_enclave_wrapper_->Initialize(config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithBadIntelCert) {
@@ -296,13 +296,13 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithBadIntelCert) {
   ASSERT_TRUE(authority_config.SerializeToString(&config));
 
   EXPECT_THAT(test_enclave_wrapper_->Initialize(config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, OneInitializationSingleThreaded) {
   ASYLO_EXPECT_OK(test_enclave_wrapper_->Initialize(config_));
   EXPECT_THAT(test_enclave_wrapper_->Initialize(config_),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, OneInitializationMultiThreaded) {
@@ -336,7 +336,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, GenerateFailsIfNotInitialized) {
   EXPECT_THAT(test_enclave_wrapper_->IsInitialized(), IsOkAndHolds(false));
   EXPECT_THAT(
       test_enclave_wrapper_->CanGenerate(AssertionRequest::default_instance()),
-      StatusIs(error::GoogleError::FAILED_PRECONDITION));
+      StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, CreateAssertionOfferSuccess) {
@@ -391,7 +391,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, CanGenerateFailureNoCerts) {
   ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request, MakeAssertionRequest({}));
 
   EXPECT_THAT(test_enclave_wrapper_->CanGenerate(assertion_request),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest,
@@ -426,7 +426,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, GenerateFailureBadAssertionRequest) {
 
   Assertion assertion;
   EXPECT_THAT(test_enclave_wrapper_->Generate(kUserData, assertion_request),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, GenerateSuccess) {

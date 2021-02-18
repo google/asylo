@@ -24,6 +24,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
@@ -61,7 +62,7 @@ TEST(ReportOracleEnclaveWrapperTest, LoadFromFileThenGetReport) {
 
 TEST(ReportOracleEnclaveWrapperTest, LoadFromSectionFailsWithInvalidPath) {
   EXPECT_THAT(ReportOracleEnclaveWrapper::LoadFromSection("totally bogus"),
-              StatusIs(error::GoogleError::NOT_FOUND));
+              StatusIs(absl::StatusCode::kNotFound));
 }
 
 TEST(ReportOracleEnclaveWrapperTest, GetReport) {

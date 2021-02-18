@@ -31,6 +31,7 @@
 #include <gtest/gtest.h>
 #include "absl/base/macros.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -205,11 +206,11 @@ class PceUtilTest : public ::testing::Test {
     bssl::UniquePtr<BIGNUM> e(BN_new());
 
     if (BN_set_word(e.get(), RSA_F4) != 1) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
     if (RSA_generate_key_ex(rsa.get(), number_of_bits, e.get(),
                             /*cb=*/nullptr) != 1) {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+      return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
     return std::move(rsa);
   }
@@ -261,9 +262,9 @@ TEST_F(PceUtilTest, GetEncryptedDataSizeInvalidInput) {
   EXPECT_THAT(
       GetEncryptedDataSize(
           AsymmetricEncryptionScheme::UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME),
-      StatusIs(asylo::error::GoogleError::INVALID_ARGUMENT));
+      StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(GetEncryptedDataSize((AsymmetricEncryptionScheme)-1234),
-              StatusIs(asylo::error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(PceUtilTest, SignatureSchemeToPceSignatureSchemeSupported) {
@@ -303,7 +304,7 @@ TEST_F(
   EXPECT_THAT(
       CreateSignatureFromPckEcdsaP256Sha256Signature(kBadSignature),
       StatusIs(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrCat("Signature is the wrong size for ECDSA-P256-SHA256: ",
                        kBadSignature.size(), " (expected ",
                        kEcdsaP256SignatureSize, ")")));
@@ -384,7 +385,7 @@ TEST_F(PceUtilTest, SerializePpidekWithDecryptionKeyFails) {
   ppidek.set_key_type(AsymmetricEncryptionKeyProto::DECRYPTION_KEY);
 
   EXPECT_THAT(SerializePpidek(ppidek),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "PPIDEK must be an encryption key"));
 }
 
@@ -393,7 +394,7 @@ TEST_F(PceUtilTest, SerializePpidekWithUnsupportedEncryptionSchemeFails) {
   ppidek.set_encryption_scheme(AsymmetricEncryptionScheme::RSA2048_OAEP);
 
   EXPECT_THAT(SerializePpidek(ppidek),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "Unsupported encryption scheme: RSA2048_OAEP"));
 }
 
@@ -403,7 +404,7 @@ TEST_F(PceUtilTest, SerializePpidekWithUnsupportedKeyEncodingFails) {
 
   EXPECT_THAT(
       SerializePpidek(ppidek),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+      StatusIs(absl::StatusCode::kInvalidArgument,
                "Unsupported key encoding: UNKNOWN_ASYMMETRIC_KEY_ENCODING"));
 }
 
@@ -479,7 +480,7 @@ TEST_F(PceUtilTest,
 
   EXPECT_THAT(
       CreateReportdataForGetPceInfo(ppidek),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+      StatusIs(absl::StatusCode::kInvalidArgument,
                absl::StrCat("Unsupported encryption scheme: ",
                             ProtoEnumValueName(
                                 AsymmetricEncryptionScheme::RSA2048_OAEP))));
@@ -490,7 +491,7 @@ TEST_F(PceUtilTest, CreateReportdataForGetPceInfoInvalidKeyTypeFails) {
   ppidek.set_key_type(AsymmetricEncryptionKeyProto::DECRYPTION_KEY);
 
   EXPECT_THAT(CreateReportdataForGetPceInfo(ppidek),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "PPIDEK must be an encryption key"));
 }
 
@@ -501,7 +502,7 @@ TEST_F(PceUtilTest, CreateReportdataForGetPceInfoInvalidEncodingFails) {
   EXPECT_THAT(
       CreateReportdataForGetPceInfo(ppidek),
       StatusIs(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrCat(
               "Unsupported key encoding: ",
               ProtoEnumValueName(

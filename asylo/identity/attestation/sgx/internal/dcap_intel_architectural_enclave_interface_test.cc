@@ -27,6 +27,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/certificate.pb.h"
@@ -63,10 +64,10 @@ bool operator==(const Report &lhs, const Report &rhs) {
 
 namespace {
 
-using ::testing::HasSubstr;
 using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Eq;
+using ::testing::HasSubstr;
 using ::testing::Not;
 using ::testing::NotNull;
 using ::testing::Pointee;
@@ -216,9 +217,8 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
        SetPckCertificateChainWithEmptyChainFails) {
   CertificateChain chain;
   EXPECT_CALL(*dcap_library_, SetQuoteConfig(_)).Times(0);
-  EXPECT_THAT(
-      dcap_.SetPckCertificateChain(chain),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("empty")));
+  EXPECT_THAT(dcap_.SetPckCertificateChain(chain),
+              StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("empty")));
 }
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
@@ -228,7 +228,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
   EXPECT_CALL(*dcap_library_, SetQuoteConfig(_)).Times(0);
   EXPECT_THAT(
       dcap_.SetPckCertificateChain(chain),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("UNKNOWN")));
+      StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("UNKNOWN")));
 }
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
@@ -244,7 +244,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
   EXPECT_CALL(*dcap_library_, SetQuoteConfig(_)).Times(0);
   EXPECT_THAT(
       dcap_.SetPckCertificateChain(chain),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("OPENSSL")));
+      StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("OPENSSL")));
 }
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
@@ -269,7 +269,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
   EXPECT_CALL(*dcap_library_, SetQuoteConfig(_)).Times(0);
   EXPECT_THAT(
       dcap_.SetPckCertificateChain(chain),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+      StatusIs(absl::StatusCode::kInvalidArgument,
                HasSubstr("PCK certificate does not contain SGX extensions")));
 }
 
@@ -277,7 +277,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, SetQuoteConfigFailure) {
   EXPECT_CALL(*dcap_library_, SetQuoteConfig(_))
       .WillOnce(Return(SGX_QL_ERROR_INVALID_PRIVILEGE));
   EXPECT_THAT(dcap_.SetPckCertificateChain(GetFakePckCertificateChain()),
-              StatusIs(error::GoogleError::PERMISSION_DENIED));
+              StatusIs(absl::StatusCode::kPermissionDenied));
 }
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, SetEnclaveDirSuccess) {
@@ -366,7 +366,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
       dcap_.GetPceInfo(Report{}, /*ppid_encryption_key=*/{1},
                        AsymmetricEncryptionScheme::RSA2048_OAEP,
                        &ppid_encrypted, &pce_svn, &pce_id, &signature_scheme),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+      StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_TRUE(ppid_encrypted.empty());
 }
 
@@ -432,7 +432,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, QeGetTargetinfoSuccess) {
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, QeGetTargetinfoFailure) {
   EXPECT_CALL(*dcap_library_, QeGetTargetInfo(NotNull()))
       .WillOnce(Return(SGX_QL_ERROR_UNEXPECTED));
-  EXPECT_THAT(dcap_.GetQeTargetinfo(), StatusIs(error::GoogleError::INTERNAL));
+  EXPECT_THAT(dcap_.GetQeTargetinfo(), StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
@@ -453,7 +453,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetQeQuoteSizeFailure) {
   EXPECT_CALL(*dcap_library_, QeGetQuoteSize(NotNull()))
       .WillOnce(Return(SGX_QL_ERROR_INVALID_PRIVILEGE));
   EXPECT_THAT(dcap_.GetQeQuote(Report{}),
-              StatusIs(error::GoogleError::PERMISSION_DENIED));
+              StatusIs(absl::StatusCode::kPermissionDenied));
 }
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetQeQuoteFailure) {
@@ -464,7 +464,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetQeQuoteFailure) {
   EXPECT_CALL(*dcap_library_, QeGetQuote(NotNull(), kFakeQuoteSize, NotNull()))
       .WillOnce(Return(SGX_QL_ERROR_INVALID_PRIVILEGE));
   EXPECT_THAT(dcap_.GetQeQuote(Report{}),
-              StatusIs(error::GoogleError::PERMISSION_DENIED));
+              StatusIs(absl::StatusCode::kPermissionDenied));
 }
 
 }  // namespace

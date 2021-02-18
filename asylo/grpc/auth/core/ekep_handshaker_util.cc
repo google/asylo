@@ -19,6 +19,7 @@
 #include "asylo/grpc/auth/core/ekep_handshaker_util.h"
 
 #include <google/protobuf/util/message_differencer.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/grpc/auth/core/ekep_handshaker.h"
@@ -51,24 +52,23 @@ const EnclaveAssertionVerifier *GetEnclaveAssertionVerifier(
 
 Status EkepHandshakerOptions::Validate() const {
   if (max_frame_size > EkepHandshaker::kFrameSizeLimit) {
-    return Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("max_frame_size cannot exceed ",
-                               EkepHandshaker::kFrameSizeLimit));
+    return absl::InvalidArgumentError(absl::StrCat(
+        "max_frame_size cannot exceed ", EkepHandshaker::kFrameSizeLimit));
   }
 
   if (additional_authenticated_data.size() > max_frame_size) {
-    return Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "additional_authenticated_data size cannot be more than "
-                  "max_frame_size");
+    return absl::InvalidArgumentError(
+        "additional_authenticated_data size cannot be more than "
+        "max_frame_size");
   }
 
   if (self_assertions.empty()) {
-    return Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Must supply at least one self assertion");
+    return absl::InvalidArgumentError(
+        "Must supply at least one self assertion");
   }
   if (accepted_peer_assertions.empty()) {
-    return Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Must supply at least one accepted peer assertion");
+    return absl::InvalidArgumentError(
+        "Must supply at least one accepted peer assertion");
   }
 
   for (const AssertionDescription &description : self_assertions) {
@@ -76,18 +76,15 @@ Status EkepHandshakerOptions::Validate() const {
         EnclaveAssertionAuthority::GenerateAuthorityId(
             description.identity_type(), description.authority_type());
     if (!authority_id_result.ok()) {
-      return Status(asylo::error::GoogleError::INTERNAL,
-                    "Failed to generate authority id");
+      return absl::InternalError("Failed to generate authority id");
     }
 
     std::string authority_id = authority_id_result.ValueOrDie();
     if (AssertionGeneratorMap::GetValue(authority_id) ==
         AssertionGeneratorMap::value_end()) {
-      return Status(
-          asylo::error::GoogleError::INVALID_ARGUMENT,
-          absl::StrCat(
-              "Could not find EnclaveAssertionGenerator library for: {",
-              description.ShortDebugString(), "}"));
+      return absl::InvalidArgumentError(absl::StrCat(
+          "Could not find EnclaveAssertionGenerator library for: {",
+          description.ShortDebugString(), "}"));
     }
   }
 
@@ -96,15 +93,13 @@ Status EkepHandshakerOptions::Validate() const {
         EnclaveAssertionAuthority::GenerateAuthorityId(
             description.identity_type(), description.authority_type());
     if (!authority_id_result.ok()) {
-      return Status(asylo::error::GoogleError::INTERNAL,
-                    "Failed to generate authority id");
+      return absl::InternalError("Failed to generate authority id");
     }
 
     std::string authority_id = authority_id_result.ValueOrDie();
     if (AssertionVerifierMap::GetValue(authority_id) ==
         AssertionVerifierMap::value_end()) {
-      return Status(
-          asylo::error::GoogleError::INVALID_ARGUMENT,
+      return absl::InvalidArgumentError(
           absl::StrCat("Could not find EnclaveAssertionVerifier library for: {",
                        description.ShortDebugString(), "}"));
     }
@@ -116,11 +111,11 @@ Status EkepHandshakerOptions::Validate() const {
 std::vector<AssertionDescription>::const_iterator FindAssertionDescription(
     const std::vector<AssertionDescription> &list,
     const AssertionDescription &description) {
-  return std::find_if(
-      list.cbegin(), list.cend(),
-      [&description](const AssertionDescription &desc) -> bool {
-        return google::protobuf::util::MessageDifferencer::Equals(desc, description);
-      });
+  return std::find_if(list.cbegin(), list.cend(),
+                      [&description](const AssertionDescription &desc) -> bool {
+                        return google::protobuf::util::MessageDifferencer::Equals(
+                            desc, description);
+                      });
 }
 
 bool MakeEkepContextBlob(const std::string &public_key,

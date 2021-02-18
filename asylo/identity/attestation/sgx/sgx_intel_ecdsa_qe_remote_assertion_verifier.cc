@@ -24,6 +24,7 @@
 #include <iterator>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -82,8 +83,7 @@ Status CheckDescription(const AssertionDescription &description) {
   if (description.identity_type() != CODE_IDENTITY ||
       description.authority_type() !=
           sgx::kSgxIntelEcdsaQeRemoteAssertionAuthority) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Assertion description does not match");
+    return absl::InvalidArgumentError("Assertion description does not match");
   }
 
   return Status::OkStatus();
@@ -97,30 +97,25 @@ StatusOr<CertificateChain> GetPckCertificateChainFromCertData(
 
 Status VerifyQuoteHeader(const sgx::IntelQeQuote &quote) {
   if (quote.header.version != intel::sgx::qvl::constants::QUOTE_VERSION) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrFormat("Invalid quote version '%d'. Expected '%d'",
-                                  quote.header.version,
-                                  intel::sgx::qvl::constants::QUOTE_VERSION));
+    return absl::InvalidArgumentError(absl::StrFormat(
+        "Invalid quote version '%d'. Expected '%d'", quote.header.version,
+        intel::sgx::qvl::constants::QUOTE_VERSION));
   }
 
   if (quote.header.algorithm !=
       intel::sgx::qvl::constants::ECDSA_256_WITH_P256_CURVE) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrFormat("Invalid quote algorithm '%d'. Expected '%d'",
-                        quote.header.algorithm,
-                        intel::sgx::qvl::constants::ECDSA_256_WITH_P256_CURVE));
+    return absl::InvalidArgumentError(absl::StrFormat(
+        "Invalid quote algorithm '%d'. Expected '%d'", quote.header.algorithm,
+        intel::sgx::qvl::constants::ECDSA_256_WITH_P256_CURVE));
   }
 
   if (!quote.header.qe_vendor_id.Equals(
           intel::sgx::qvl::constants::INTEL_QE_VENDOR_ID)) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrFormat(
-            "Invalid vendor ID '%s'. Expected '%s'",
-            ConvertTrivialObjectToHexString(quote.header.qe_vendor_id),
-            ConvertTrivialObjectToHexString(
-                intel::sgx::qvl::constants::INTEL_QE_VENDOR_ID)));
+    return absl::InvalidArgumentError(absl::StrFormat(
+        "Invalid vendor ID '%s'. Expected '%s'",
+        ConvertTrivialObjectToHexString(quote.header.qe_vendor_id),
+        ConvertTrivialObjectToHexString(
+            intel::sgx::qvl::constants::INTEL_QE_VENDOR_ID)));
   }
 
   return Status::OkStatus();
@@ -132,8 +127,8 @@ Status VerifyQuoteBodySignature(
   UnsafeBytes<kAdditionalAuthenticatedDataSize> expected_auth_data;
   ASYLO_ASSIGN_OR_RETURN(expected_auth_data, aad_generator.Generate(user_data));
   if (!expected_auth_data.Equals(quote.body.reportdata.data)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Authenticated quote data does not match expected user data");
+    return absl::InvalidArgumentError(
+        "Authenticated quote data does not match expected user data");
   }
 
   std::unique_ptr<EcdsaP256Sha256VerifyingKey> verifying_key;
@@ -168,9 +163,9 @@ Status VerifyQeReportDataMatchesQuoteSigningKey(
   report_data.resize(sgx::kReportdataSize, kDefaultValue);
 
   if (!quote.signature.qe_report.reportdata.data.Equals(report_data)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Quoting enclave report data does not match quote signing "
-                  "key and authenticated data");
+    return absl::InvalidArgumentError(
+        "Quoting enclave report data does not match quote signing "
+        "key and authenticated data");
   }
 
   return Status::OkStatus();
@@ -209,8 +204,7 @@ Status VerifyPckSignatureOverQuotingEnclave(const sgx::IntelQeQuote &quote) {
       return VerifyPckSignatureFromPckCertChain(quote.cert_data.qe_cert_data,
                                                 quote.signature);
   }
-  return Status(
-      error::GoogleError::UNIMPLEMENTED,
+  return absl::UnimplementedError(
       absl::StrFormat("Verification not supported for QE cert data type %d",
                       quote.cert_data.qe_cert_data_type));
 }
@@ -241,8 +235,7 @@ Status VerifyPckCertificateChain(
               const std::unique_ptr<CertificateInterface> &trusted_root) {
             return root_certificate == *trusted_root;
           })) {
-    return Status(
-        error::GoogleError::UNAUTHENTICATED,
+    return absl::UnauthenticatedError(
         absl::StrCat("Unrecognized root certificate: ",
                      root_certificate.SubjectName().value_or("Unknown CA")));
   }
@@ -282,10 +275,10 @@ Status ParseEnclaveIdentityFromQuote(const sgx::ReportBody &report_body,
     }
   }
 
-  return Status(error::GoogleError::UNIMPLEMENTED,
-                absl::StrFormat("Extracting peer machine identity not "
-                                "supported for QE cert data type %d",
-                                cert_data.qe_cert_data_type));
+  return absl::UnimplementedError(
+      absl::StrFormat("Extracting peer machine identity not "
+                      "supported for QE cert data type %d",
+                      cert_data.qe_cert_data_type));
 }
 
 Status VerifyQeIdentityMatchesExpectation(
@@ -304,8 +297,7 @@ Status VerifyQeIdentityMatchesExpectation(
                                              matcher, &explanation));
 
   if (!qe_match_result) {
-    return Status(
-        error::GoogleError::UNAUTHENTICATED,
+    return absl::UnauthenticatedError(
         absl::StrCat("QE identity did not match expectation: ", explanation));
   }
 
@@ -326,14 +318,13 @@ Status SgxIntelEcdsaQeRemoteAssertionVerifier::Initialize(
     const std::string &serialized_config) {
   auto members_view = members_.Lock();
   if (members_view->is_initialized) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Already initialized");
+    return absl::FailedPreconditionError("Already initialized");
   }
 
   SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config;
   if (!config.ParseFromString(serialized_config)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Failed to deserialize assertion authority configuration");
+    return absl::InvalidArgumentError(
+        "Failed to deserialize assertion authority configuration");
   }
 
   ASYLO_RETURN_IF_ERROR(
@@ -417,12 +408,11 @@ Status SgxIntelEcdsaQeRemoteAssertionVerifier::Verify(
 
 Status SgxIntelEcdsaQeRemoteAssertionVerifier::CheckInitialization(
     absl::string_view caller) const {
-  return IsInitialized()
-             ? Status::OkStatus()
-             : Status(error::GoogleError::FAILED_PRECONDITION,
-                      absl::StrCat("SgxIntelEcdsaQeRemoteAssertionVerifier "
-                                   "must be initialized before calling ",
-                                   caller));
+  return IsInitialized() ? absl::OkStatus()
+                         : absl::FailedPreconditionError(absl::StrCat(
+                               "SgxIntelEcdsaQeRemoteAssertionVerifier "
+                               "must be initialized before calling ",
+                               caller));
 }
 
 SET_STATIC_MAP_VALUE_OF_DERIVED_TYPE(AssertionVerifierMap,

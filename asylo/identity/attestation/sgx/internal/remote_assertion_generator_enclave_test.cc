@@ -26,6 +26,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/client.h"
@@ -193,7 +194,7 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
     std::vector<char> buffer(tmp_path.size() + 1, '\0');
     std::copy(tmp_path.begin(), tmp_path.end(), buffer.begin());
     if (mkdtemp(buffer.data()) == nullptr) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Failed to create random test directory");
     }
     std::string random_server_address =
@@ -320,7 +321,7 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
     ASYLO_ASSIGN_OR_RETURN(fake_pce, sgx::FakePce::CreateFromFakePki());
 
     SgxInfrastructuralEnclaveManager sgx_infra_enclave_manager(
-            std::move(fake_pce), remote_assertion_generator_enclave_client_);
+        std::move(fake_pce), remote_assertion_generator_enclave_client_);
 
     CertificateChain certificate_chain;
     ASYLO_ASSIGN_OR_RETURN(*certificate_chain.add_certificates(),
@@ -384,7 +385,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, InvalidConfigFails) {
       remote_assertion_generator_enclave_config);
 
   EXPECT_THAT(InitializeRemoteAssertionGeneratorEnclave(load_config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest, ConfigMissingServerAddressFails) {
@@ -397,7 +398,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, ConfigMissingServerAddressFails) {
       ->clear_remote_assertion_generator_server_address();
 
   EXPECT_THAT(InitializeRemoteAssertionGeneratorEnclave(load_config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest,
@@ -417,7 +418,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
       ->set_server_address(server_address_);
   EXPECT_THAT(remote_assertion_generator_test_util_enclave_client_->EnterAndRun(
                   enclave_input, &enclave_output),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest, StartServerWithSigningKeySuccess) {
@@ -447,7 +448,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
   // first is running.
   EXPECT_THAT(
       StartSgxRemoteAssertionGeneratorServer(StartServerOption::WITH_KEY),
-      StatusIs(error::GoogleError::ALREADY_EXISTS,
+      StatusIs(absl::StatusCode::kAlreadyExists,
                "Cannot start remote assertion generator gRPC server: server "
                "already exists"));
 }
@@ -497,7 +498,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
       if (status.ok()) {
         success_count++;
       }
-      if (status.Is(error::GoogleError::ALREADY_EXISTS)) {
+      if (status.Is(absl::StatusCode::kAlreadyExists)) {
         failure_count++;
       }
     });
@@ -575,7 +576,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
       ->clear_pce_target_info();
   EXPECT_THAT(remote_assertion_generator_enclave_client_->EnterAndRun(
                   enclave_input, &enclave_output),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "Input is missing pce_target_info"));
 }
 
@@ -595,7 +596,7 @@ TEST_F(
       ->clear_ppid_encryption_key();
   EXPECT_THAT(remote_assertion_generator_enclave_client_->EnterAndRun(
                   enclave_input, &enclave_output),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "Input is missing ppid_encryption_key"));
 }
 
@@ -696,7 +697,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
   certificate_chain->mutable_certificates()->SwapElements(1, 2);
   EXPECT_THAT(remote_assertion_generator_enclave_client_->EnterAndRun(
                   enclave_input, &enclave_output),
-              StatusIs(error::GoogleError::INTERNAL,
+              StatusIs(absl::StatusCode::kInternal,
                        HasSubstr("Cannot update certificates")));
 
   // Restore the certificate chain.
@@ -708,7 +709,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
       certificate_chain->certificates().cbegin());
   EXPECT_THAT(remote_assertion_generator_enclave_client_->EnterAndRun(
                   enclave_input, &enclave_output),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("Cannot update certificates")));
 }
 
@@ -802,7 +803,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, UpdateCertsNoAttestationKeyFails) {
   EXPECT_THAT(
       remote_assertion_generator_enclave_client_->EnterAndRun(enclave_input,
                                                               &enclave_output),
-      StatusIs(error::GoogleError::FAILED_PRECONDITION,
+      StatusIs(absl::StatusCode::kFailedPrecondition,
                "Cannot update certificates: no attestation key available"));
 }
 

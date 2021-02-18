@@ -22,6 +22,7 @@
 #include <type_traits>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/certificate_util.h"
@@ -66,113 +67,98 @@ Status PceErrorToStatus(sgx_pce_error_t pce_error) {
     case SGX_PCE_SUCCESS:
       return Status::OkStatus();
     case SGX_PCE_UNEXPECTED:
-      return Status(error::GoogleError::INTERNAL, "Unexpected error");
+      return absl::InternalError("Unexpected error");
     case SGX_PCE_OUT_OF_EPC:
-      return Status(error::GoogleError::INTERNAL,
-                    "Not enough EPC to load the PCE");
+      return absl::InternalError("Not enough EPC to load the PCE");
     case SGX_PCE_INTERFACE_UNAVAILABLE:
-      return Status(error::GoogleError::INTERNAL, "Interface unavailable");
+      return absl::InternalError("Interface unavailable");
     case SGX_PCE_CRYPTO_ERROR:
-      return Status(error::GoogleError::INTERNAL,
-                    "Evaluation of REPORT.REPORTDATA failed");
+      return absl::InternalError("Evaluation of REPORT.REPORTDATA failed");
     case SGX_PCE_INVALID_PARAMETER:
-      return Status(error::GoogleError::INVALID_ARGUMENT, "Invalid parameter");
+      return absl::InvalidArgumentError("Invalid parameter");
     case SGX_PCE_INVALID_REPORT:
-      return Status(error::GoogleError::INVALID_ARGUMENT, "Invalid report");
+      return absl::InvalidArgumentError("Invalid report");
     case SGX_PCE_INVALID_TCB:
-      return Status(error::GoogleError::INVALID_ARGUMENT, "Invalid TCB");
+      return absl::InvalidArgumentError("Invalid TCB");
     case SGX_PCE_INVALID_PRIVILEGE:
-      return Status(error::GoogleError::PERMISSION_DENIED,
-                    "Report must have the PROVISION_KEY attribute bit set");
+      return absl::PermissionDeniedError(
+          "Report must have the PROVISION_KEY attribute bit set");
     default:
-      return Status(error::GoogleError::UNKNOWN, "Unknown error");
+      return absl::UnknownError("Unknown error");
   }
 }
 
 Status Quote3ErrorToStatus(quote3_error_t quote3_error) {
   switch (quote3_error) {
     case SGX_QL_SUCCESS:
-      return Status::OkStatus();
+      return absl::OkStatus();
     case SGX_QL_ERROR_UNEXPECTED:
-      return Status(error::GoogleError::INTERNAL, "Unexpected error");
+      return absl::InternalError("Unexpected error");
     case SGX_QL_ERROR_INVALID_PARAMETER:
-      return Status(error::GoogleError::INVALID_ARGUMENT, "Invalid parameter");
+      return absl::InvalidArgumentError("Invalid parameter");
     case SGX_QL_ERROR_OUT_OF_MEMORY:
-      return Status(error::GoogleError::RESOURCE_EXHAUSTED, "Out of memory");
+      return absl::ResourceExhaustedError("Out of memory");
     case SGX_QL_ERROR_ECDSA_ID_MISMATCH:
-      return Status(error::GoogleError::INTERNAL,
-                    "Unexpected ID in the ECDSA key blob");
+      return absl::InternalError("Unexpected ID in the ECDSA key blob");
     case SGX_QL_PATHNAME_BUFFER_OVERFLOW_ERROR:
-      return Status(error::GoogleError::OUT_OF_RANGE,
-                    "Pathname buffer overflow");
+      return absl::OutOfRangeError("Pathname buffer overflow");
     case SGX_QL_FILE_ACCESS_ERROR:
-      return Status(error::GoogleError::INTERNAL, "File access error");
+      return absl::InternalError("File access error");
     case SGX_QL_ERROR_STORED_KEY:
-      return Status(error::GoogleError::INTERNAL, "Invalid cached ECDSA key");
+      return absl::InternalError("Invalid cached ECDSA key");
     case SGX_QL_ERROR_PUB_KEY_ID_MISMATCH:
-      return Status(error::GoogleError::INTERNAL,
-                    "Cached ECDSA key ID does not match request");
+      return absl::InternalError("Cached ECDSA key ID does not match request");
     case SGX_QL_ERROR_INVALID_PCE_SIG_SCHEME:
-      return Status(error::GoogleError::INTERNAL,
-                    "The signature scheme supported by the PCE is not "
-                    "supported by the QE");
+      return absl::InternalError(
+          "The signature scheme supported by the PCE is not "
+          "supported by the QE");
     case SGX_QL_ATT_KEY_BLOB_ERROR:
-      return Status(error::GoogleError::INTERNAL, "Attestation key blob error");
+      return absl::InternalError("Attestation key blob error");
     case SGX_QL_UNSUPPORTED_ATT_KEY_ID:
-      return Status(error::GoogleError::INTERNAL, "Invalid attestation key ID");
+      return absl::InternalError("Invalid attestation key ID");
     case SGX_QL_UNSUPPORTED_LOADING_POLICY:
-      return Status(error::GoogleError::INTERNAL,
-                    "Unsupported enclave loading policy");
+      return absl::InternalError("Unsupported enclave loading policy");
     case SGX_QL_INTERFACE_UNAVAILABLE:
-      return Status(error::GoogleError::INTERNAL,
-                    "Unable to load the quoting enclave");
+      return absl::InternalError("Unable to load the quoting enclave");
     case SGX_QL_PLATFORM_LIB_UNAVAILABLE:
-      return Status(
-          error::GoogleError::INTERNAL,
+      return absl::InternalError(
           "Unable to load the platform quote provider library (not fatal)");
     case SGX_QL_ATT_KEY_NOT_INITIALIZED:
-      return Status(error::GoogleError::FAILED_PRECONDITION,
-                    "Attestation key not initialized");
+      return absl::FailedPreconditionError("Attestation key not initialized");
     case SGX_QL_ATT_KEY_CERT_DATA_INVALID:
-      return Status(error::GoogleError::INTERNAL,
-                    "Invalid attestation key certification retrieved from "
-                    "platform quote provider library");
+      return absl::InternalError(
+          "Invalid attestation key certification retrieved from "
+          "platform quote provider library");
     case SGX_QL_NO_PLATFORM_CERT_DATA:
-      return Status(error::GoogleError::INTERNAL,
-                    "No certification for the platform could be found");
+      return absl::InternalError(
+          "No certification for the platform could be found");
     case SGX_QL_OUT_OF_EPC:
-      return Status(error::GoogleError::RESOURCE_EXHAUSTED,
-                    "Insufficient EPC memory to load an enclave");
+      return absl::ResourceExhaustedError(
+          "Insufficient EPC memory to load an enclave");
     case SGX_QL_ERROR_REPORT:
-      return Status(error::GoogleError::INTERNAL,
-                    "An error occurred validating the report");
+      return absl::InternalError("An error occurred validating the report");
     case SGX_QL_ENCLAVE_LOST:
-      return Status(error::GoogleError::INTERNAL,
-                    "The enclave was lost due to power transition or fork()");
+      return absl::InternalError(
+          "The enclave was lost due to power transition or fork()");
     case SGX_QL_INVALID_REPORT:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "The application enclave's report failed validation");
+      return absl::InvalidArgumentError(
+          "The application enclave's report failed validation");
     case SGX_QL_ENCLAVE_LOAD_ERROR:
-      return Status(error::GoogleError::INTERNAL, "Unable to load an enclave");
+      return absl::InternalError("Unable to load an enclave");
     case SGX_QL_UNABLE_TO_GENERATE_QE_REPORT:
-      return Status(
-          error::GoogleError::INTERNAL,
+      return absl::InternalError(
           "Unable to generate QE report targeting the application enclave");
     case SGX_QL_KEY_CERTIFCATION_ERROR:
-      return Status(
-          error::GoogleError::INTERNAL,
+      return absl::InternalError(
           "The platform quote provider library returned an invalid TCB");
     case SGX_QL_NETWORK_ERROR:
-      return Status(error::GoogleError::INTERNAL,
-                    "Network error getting PCK certificates");
+      return absl::InternalError("Network error getting PCK certificates");
     case SGX_QL_MESSAGE_ERROR:
-      return Status(error::GoogleError::INTERNAL,
-                    "Protocol error getting PCK certificates");
+      return absl::InternalError("Protocol error getting PCK certificates");
     case SGX_QL_ERROR_INVALID_PRIVILEGE:
-      return Status(error::GoogleError::PERMISSION_DENIED,
-                    "Invalid permission");
+      return absl::PermissionDeniedError("Invalid permission");
     default:
-      return Status(error::GoogleError::UNKNOWN, "Unknown error");
+      return absl::UnknownError("Unknown error");
   }
 }
 
@@ -185,8 +171,7 @@ DcapIntelArchitecturalEnclaveInterface::DcapIntelArchitecturalEnclaveInterface(
 Status DcapIntelArchitecturalEnclaveInterface::SetPckCertificateChain(
     const CertificateChain &chain) {
   if (chain.certificates().empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Certificate chain is empty");
+    return absl::InvalidArgumentError("Certificate chain is empty");
   }
 
   auto parsed_chain =
@@ -197,8 +182,7 @@ Status DcapIntelArchitecturalEnclaveInterface::SetPckCertificateChain(
     // Wrap the cert parsing error so that we always return INVALID_ARGUMENT if
     // the input cert chain cannot be parsed. The cert chain parsing code will
     // return other errors, which are potentially misleading.
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  parsed_chain.status().error_message());
+    return absl::InvalidArgumentError(parsed_chain.status().error_message());
   }
 
   SgxExtensions extensions;
@@ -208,11 +192,9 @@ Status DcapIntelArchitecturalEnclaveInterface::SetPckCertificateChain(
   sgx_ql_config_t config;
   config.version = SGX_QL_CONFIG_VERSION_1;
   if (extensions.cpu_svn.value().size() != sizeof(config.cert_cpu_svn)) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrCat("CPUSVN in the cert is ",
-                     extensions.cpu_svn.value().size(), " bytes. Expected ",
-                     sizeof(config.cert_cpu_svn)));
+    return absl::InvalidArgumentError(absl::StrCat(
+        "CPUSVN in the cert is ", extensions.cpu_svn.value().size(),
+        " bytes. Expected ", sizeof(config.cert_cpu_svn)));
   }
   memcpy(&config.cert_cpu_svn, extensions.cpu_svn.value().data(),
          extensions.cpu_svn.value().size());
@@ -258,9 +240,9 @@ Status DcapIntelArchitecturalEnclaveInterface::GetPceInfo(
   absl::optional<uint8_t> crypto_suite =
       AsymmetricEncryptionSchemeToPceCryptoSuite(ppid_encryption_scheme);
   if (!crypto_suite.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Invalid ppid_encryption_scheme: ",
-                               ProtoEnumValueName(ppid_encryption_scheme)));
+    return absl::InvalidArgumentError(
+        absl::StrCat("Invalid ppid_encryption_scheme: ",
+                     ProtoEnumValueName(ppid_encryption_scheme)));
   }
 
   uint32_t max_ppid_out_size;

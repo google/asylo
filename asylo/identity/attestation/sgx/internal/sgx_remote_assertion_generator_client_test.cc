@@ -21,6 +21,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/keys.pb.h"
@@ -95,7 +96,7 @@ TEST(SgxRemoteAssertionGeneratorClientTest, GenerateSgxRemoteAssertionFails) {
       std::unique_ptr<SgxRemoteAssertionGenerator::StubInterface>(
           std::move(mock_stub)));
   EXPECT_THAT(client.GenerateSgxRemoteAssertion(kUserData),
-              StatusIs(error::GoogleError::PERMISSION_DENIED));
+              StatusIs(absl::StatusCode::kPermissionDenied));
 }
 
 }  // namespace

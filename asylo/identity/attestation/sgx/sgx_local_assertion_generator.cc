@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
@@ -41,19 +42,16 @@ SgxLocalAssertionGenerator::SgxLocalAssertionGenerator()
 Status SgxLocalAssertionGenerator::Initialize(const std::string &config) {
   auto members_view = members_.Lock();
   if (members_view->initialized) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Already initialized");
+    return absl::FailedPreconditionError("Already initialized");
   }
 
   SgxLocalAssertionAuthorityConfig authority_config;
   if (!authority_config.ParseFromString(config)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Could not parse input config");
+    return absl::InvalidArgumentError("Could not parse input config");
   }
 
   if (!authority_config.has_attestation_domain()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Config is missing attestation domain");
+    return absl::InvalidArgumentError("Config is missing attestation domain");
   }
 
   members_view->attestation_domain = authority_config.attestation_domain();
@@ -77,7 +75,7 @@ std::string SgxLocalAssertionGenerator::AuthorityType() const {
 Status SgxLocalAssertionGenerator::CreateAssertionOffer(
     AssertionOffer *offer) const {
   if (!IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return absl::FailedPreconditionError("Not initialized");
   }
 
   offer->mutable_description()->set_identity_type(IdentityType());
@@ -88,8 +86,8 @@ Status SgxLocalAssertionGenerator::CreateAssertionOffer(
       members_.ReaderLock()->attestation_domain);
   if (!additional_info.SerializeToString(
           offer->mutable_additional_information())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed to serialize LocalAssertionOfferAdditionalInfo");
+    return absl::InternalError(
+        "Failed to serialize LocalAssertionOfferAdditionalInfo");
   }
 
   return Status::OkStatus();
@@ -98,7 +96,7 @@ Status SgxLocalAssertionGenerator::CreateAssertionOffer(
 StatusOr<bool> SgxLocalAssertionGenerator::CanGenerate(
     const AssertionRequest &request) const {
   if (!IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return Status(absl::StatusCode::kFailedPrecondition, "Not initialized");
   }
 
   StatusOr<sgx::LocalAssertionRequestAdditionalInfo> additional_info_result =
@@ -119,7 +117,7 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
                                             const AssertionRequest &request,
                                             Assertion *assertion) const {
   if (!IsInitialized()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+    return absl::FailedPreconditionError("Not initialized");
   }
 
   StatusOr<sgx::LocalAssertionRequestAdditionalInfo> additional_info_result =
@@ -133,8 +131,8 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
 
   if (additional_info.local_attestation_domain() !=
       members_.ReaderLock()->attestation_domain) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "AssertionRequest specifies non-local attestation domain");
+    return absl::InvalidArgumentError(
+        "AssertionRequest specifies non-local attestation domain");
   }
 
   // The layout and endianness of the TARGETINFO structure is defined by the
@@ -180,8 +178,7 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
   local_assertion.set_report(ConvertTrivialObjectToBinaryString(report));
 
   if (!local_assertion.SerializeToString(assertion->mutable_assertion())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed to serialize local assertion");
+    return absl::InternalError("Failed to serialize local assertion");
   }
   assertion->mutable_description()->set_identity_type(IdentityType());
   assertion->mutable_description()->set_authority_type(AuthorityType());
@@ -193,13 +190,13 @@ StatusOr<sgx::LocalAssertionRequestAdditionalInfo>
 SgxLocalAssertionGenerator::ParseAdditionalInfo(
     const AssertionRequest &request) const {
   if (!IsCompatibleAssertionDescription(request.description())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Incompatible assertion description");
   }
 
   sgx::LocalAssertionRequestAdditionalInfo additional_info;
   if (!additional_info.ParseFromString(request.additional_information())) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Failed to parse request additional information");
   }
 

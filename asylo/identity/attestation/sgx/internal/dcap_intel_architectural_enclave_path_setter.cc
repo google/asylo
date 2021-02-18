@@ -24,6 +24,7 @@
 
 #include "absl/container/node_hash_set.h"
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "asylo/identity/attestation/sgx/internal/dcap_intel_architectural_enclave_interface.h"
@@ -50,7 +51,7 @@ StatusOr<std::string> DirPathFromLocations(absl::string_view locations) {
     parents.insert(dirname(location_copy.data()));
   }
   if (parents.size() != 1) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Expected a shared directory for all locations ",
                                locations));
   }
