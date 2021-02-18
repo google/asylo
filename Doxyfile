@@ -851,6 +851,7 @@ asylo/util/posix_error_space.h \
 asylo/util/proto_flag.h \
 asylo/util/status.h \
 asylo/util/statusor.h \
+asylo/util/status_helpers.h \
 asylo/util/status_macros.h \
 README.md
 
