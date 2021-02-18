@@ -25,6 +25,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/base/config.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status_error_space.h"
@@ -176,6 +177,18 @@ bool operator==(const HeapAllocatedObject &lhs,
 template <class T>
 StatusOr<T> &&MoveStatusOr(StatusOr<T> *statusor) {
   return std::move(*statusor);
+}
+
+// Forwards a StatusOr<T>.
+template <typename T>
+StatusOr<T> ForwardStatusOr(StatusOr<T> statusor) {
+  return statusor;
+}
+
+// Forwards an absl::StatusOr<T>.
+template <typename T>
+absl::StatusOr<T> ForwardAbslStatusOr(absl::StatusOr<T> absl_statusor) {
+  return absl_statusor;
 }
 
 // A test fixture is required for typed tests.
@@ -403,6 +416,40 @@ TYPED_TEST(StatusOrTest, MoveAssignmentSelfOkStatus) {
 
   ASSERT_THAT(statusor, IsOk());
   EXPECT_EQ(*statusor, value);
+}
+
+TYPED_TEST(StatusOrTest, ImplicitConstructionFromAbslStatus) {
+  absl::Status absl_status = absl::InvalidArgumentError("foobar");
+  StatusOr<typename TypeParam::value_type> statusor =
+      ForwardStatusOr<typename TypeParam::value_type>(absl_status);
+  EXPECT_THAT(statusor, StatusIs(absl_status.code(), absl_status.message()));
+}
+
+TYPED_TEST(StatusOrTest, ImplicitConstructionFromAbslStatusOr) {
+  typename TypeParam::value_type value = TypeParam()();
+  absl::StatusOr<typename TypeParam::value_type> ok_statusor = value;
+  EXPECT_THAT(ForwardStatusOr<typename TypeParam::value_type>(ok_statusor),
+              IsOkAndHolds(value));
+
+  absl::StatusOr<typename TypeParam::value_type> error_statusor =
+      absl::InvalidArgumentError("foobar");
+  EXPECT_THAT(ForwardStatusOr<typename TypeParam::value_type>(error_statusor),
+              StatusIs(error_statusor.status().code(),
+                       error_statusor.status().message()));
+}
+
+TYPED_TEST(StatusOrTest, ImplicitConversionToAbslStatusOr) {
+  typename TypeParam::value_type value = TypeParam()();
+  StatusOr<typename TypeParam::value_type> ok_statusor = value;
+  EXPECT_THAT(ForwardAbslStatusOr<typename TypeParam::value_type>(ok_statusor),
+              IsOkAndHolds(value));
+
+  StatusOr<typename TypeParam::value_type> error_statusor =
+      absl::InvalidArgumentError("foobar");
+  EXPECT_THAT(
+      ForwardAbslStatusOr<typename TypeParam::value_type>(error_statusor),
+      StatusIs(error_statusor.status().code(),
+               error_statusor.status().message()));
 }
 
 #ifdef ABSL_HAVE_EXCEPTIONS

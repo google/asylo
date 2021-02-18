@@ -25,6 +25,7 @@
 #include "absl/base/attributes.h"
 #include "absl/base/config.h"
 #include "absl/meta/type_traits.h"
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/cleanup.h"
@@ -174,9 +175,28 @@ class StatusOr {
   /// convenience.
   ///
   /// \param status The non-OK Status object to initalize to.
-  StatusOr(const Status &status) : variant_(status), has_value_(false) {
+  StatusOr(const Status &status)
+      : variant_(status), has_value_(false) {
     if (status.ok()) {
       LOG(FATAL) << "Cannot instantiate StatusOr with Status::OkStatus()";
+    }
+  }
+
+  /// Constructs a StatusOr object with the given non-OK `absl::Status` object.
+  /// All calls to value() on this object will throw an exception or cause the
+  /// program to abort. The given `status` must not be an OK status, otherwise
+  /// this constructor will cause an abort.
+  ///
+  /// This constructor is not declared explicit so that a function with a return
+  /// type of `StatusOr<T>` can return an `absl::Status` object, and the status
+  /// will be implicitly converted to the appropriate return type as a matter of
+  /// convenience.
+  ///
+  /// \param status The non-OK `absl::Status` object to initalize to.
+  StatusOr(const absl::Status &status)
+      : variant_(status), has_value_(false) {
+    if (status.ok()) {
+      LOG(FATAL) << "Cannot instantiate StatusOr with absl::OkStatus()";
     }
   }
 
@@ -234,11 +254,30 @@ class StatusOr {
   template <typename U,
             typename E = typename std::enable_if<
                 is_implicitly_constructible<T, const U &>::value>::type>
-  StatusOr(const StatusOr<U> &other) : has_value_(other.has_value_) {
+  StatusOr(const StatusOr<U> &other)
+      : has_value_(other.has_value_) {
     if (has_value_) {
       new (&variant_) variant(other.variant_.value_);
     } else {
       new (&variant_) variant(other.variant_.status_);
+    }
+  }
+
+  /// Templatized constructor that constructs a `StatusOr<T>` from a const
+  /// reference to an `absl::StatusOr<U>`.
+  ///
+  /// `T` must be implicitly constructible from `const U &`.
+  ///
+  /// \param other The value to copy from.
+  template <typename U,
+            typename E = typename std::enable_if<
+                is_implicitly_constructible<T, const U &>::value>::type>
+  StatusOr(const absl::StatusOr<U> &other)
+      : has_value_(other.ok()) {
+    if (has_value_) {
+      new (&variant_) variant(*other);
+    } else {
+      new (&variant_) variant(other.status());
     }
   }
 
@@ -287,6 +326,21 @@ class StatusOr {
     }
   }
 
+  /// Templatized constructor which constructs a `StatusOr<T>` by moving the
+  /// contents of an `absl::StatusOr<U>`. `T` must be implicitly constructible
+  /// from `U &&`.
+  ///
+  /// \param other The `absl::StatusOr<U>` object to move from.
+  template <typename U, typename E = typename std::enable_if<
+                            is_implicitly_constructible<T, U &&>::value>::type>
+  StatusOr(absl::StatusOr<U> &&other) : has_value_(other.ok()) {
+    if (has_value_) {
+      new (&variant_) variant(*std::move(other));
+    } else {
+      new (&variant_) variant(std::move(other).status());
+    }
+  }
+
   /// Move-assignment operator.
   ///
   /// Sets `other` to contain a non-OK status with a `StatusError::MOVED` error
@@ -317,6 +371,19 @@ class StatusOr {
     }
 
     return *this;
+  }
+
+  // Implicit conversion operator to absl::StatusOr<U> for any type U that is
+  // implicitly constructible from T &&. This operator is provided for
+  // interoperability with Abseil status types.
+  template <typename U, typename E = typename std::enable_if<
+                            is_implicitly_constructible<U, T &&>::value>::type>
+  operator absl::StatusOr<U>() const {
+    if (has_value_) {
+      return variant_.value_;
+    } else {
+      return variant_.status_;
+    }
   }
 
   /// Indicates whether the object contains a `T` value.
