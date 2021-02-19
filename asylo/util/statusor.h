@@ -224,7 +224,10 @@ class StatusOr {
                 is_implicitly_constructible<T, U>::value &&
                 !std::is_same<typename std::remove_reference<
                                   typename std::remove_cv<U>::type>::type,
-                              Status>::value>::type>
+                              Status>::value &&
+                !std::is_same<typename std::remove_reference<
+                                  typename std::remove_cv<U>::type>::type,
+                              absl::Status>::value>::type>
   StatusOr(U &&value) : variant_(std::forward<U>(value)), has_value_(true) {}
 
   /// Copy constructor.
