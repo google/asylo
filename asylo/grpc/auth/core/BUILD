@@ -123,6 +123,38 @@ cc_library(
     ],
 )
 
+# Error functions for EKEP Abort errors.
+cc_library(
+    name = "ekep_errors",
+    srcs = ["ekep_errors.cc"],
+    hdrs = ["ekep_errors.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":ekep_error_space",
+        ":handshake_cc_proto",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
+    ],
+)
+
+# Tests for the EKEP error functions.
+cc_test(
+    name = "ekep_errors_test",
+    srcs = ["ekep_errors_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "ekep_errors_enclave_test",
+    deps = [
+        ":ekep_errors",
+        ":handshake_cc_proto",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/status",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Implementation of EKEP cryptographic operations.
 cc_library(
     name = "ekep_crypto",
