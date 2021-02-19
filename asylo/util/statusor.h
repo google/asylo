@@ -194,7 +194,7 @@ class StatusOr {
   ///
   /// \param status The non-OK `absl::Status` object to initalize to.
   StatusOr(const absl::Status &status)
-      : variant_(status), has_value_(false) {
+      : variant_(Status(status)), has_value_(false) {
     if (status.ok()) {
       LOG(FATAL) << "Cannot instantiate StatusOr with absl::OkStatus()";
     }
