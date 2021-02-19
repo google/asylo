@@ -26,8 +26,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/string_view.h"
-#include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/attestation/enclave_assertion_verifier.h"
 #include "asylo/identity/attestation/sgx/internal/local_assertion.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_local_assertion_authority_config.pb.h"
@@ -297,13 +297,11 @@ TEST_F(SgxLocalAssertionVerifierTest, VerifyFailsIfReportIsUnverifiable) {
   Assertion assertion;
   SetAssertionDescription(assertion.mutable_description());
 
-  Sha256Hash hash;
-  hash.Update(kUserData);
   sgx::AlignedReportdataPtr reportdata;
-  *reportdata = TrivialZeroObject<sgx::Reportdata>();
-  std::vector<uint8_t> digest;
-  ASYLO_ASSERT_OK(hash.CumulativeHash(&digest));
-  reportdata->data.replace(/*pos=*/0, digest);
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      reportdata->data,
+      AdditionalAuthenticatedDataGenerator::CreateEkepAadGenerator()->Generate(
+          kUserData));
 
   // A REPORT with an empty target will not verifiable by this enclave.
   sgx::AlignedTargetinfoPtr targetinfo;
@@ -360,13 +358,11 @@ TEST_F(SgxLocalAssertionVerifierTest, VerifySuccess) {
   Assertion assertion;
   SetAssertionDescription(assertion.mutable_description());
 
-  Sha256Hash hash;
-  hash.Update(kUserData);
   sgx::AlignedReportdataPtr reportdata;
-  *reportdata = TrivialZeroObject<sgx::Reportdata>();
-  std::vector<uint8_t> digest;
-  ASYLO_ASSERT_OK(hash.CumulativeHash(&digest));
-  reportdata->data.replace(/*pos=*/0, digest);
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      reportdata->data,
+      AdditionalAuthenticatedDataGenerator::CreateEkepAadGenerator()->Generate(
+          kUserData));
 
   sgx::AlignedTargetinfoPtr targetinfo;
   sgx::SetTargetinfoFromSelfIdentity(targetinfo.get());

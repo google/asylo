@@ -19,6 +19,9 @@
 #ifndef ASYLO_IDENTITY_ATTESTATION_SGX_SGX_LOCAL_ASSERTION_GENERATOR_H_
 #define ASYLO_IDENTITY_ATTESTATION_SGX_SGX_LOCAL_ASSERTION_GENERATOR_H_
 
+#include <memory>
+
+#include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/attestation/enclave_assertion_generator.h"
 #include "asylo/identity/attestation/sgx/internal/local_assertion.pb.h"
 #include "asylo/util/mutex_guarded.h"
@@ -79,6 +82,9 @@ class SgxLocalAssertionGenerator final : public EnclaveAssertionGenerator {
   struct Members {
     // The attestation domain to which the enclave belongs.
     std::string attestation_domain;
+
+    // Generates REPORTDATA that is signed as part of the attestation.
+    std::unique_ptr<AdditionalAuthenticatedDataGenerator> aad_generator;
 
     // Indicates whether this generator has been initialized.
     bool initialized;

@@ -20,10 +20,9 @@
 
 #include <string>
 
-#include "absl/status/status.h"
-#include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/attestation/sgx/internal/local_assertion.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/identity/platform/sgx/internal/code_identity_constants.h"
@@ -55,6 +54,10 @@ Status SgxLocalAssertionGenerator::Initialize(const std::string &config) {
   }
 
   members_view->attestation_domain = authority_config.attestation_domain();
+
+  members_view->aad_generator =
+      AdditionalAuthenticatedDataGenerator::CreateEkepAadGenerator();
+
   members_view->initialized = true;
 
   return Status::OkStatus();
@@ -151,15 +154,14 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
   // included in the report's MAC. Use a SHA256 hash of |user_data| as the
   // REPORTDATA value so that the resulting assertion is cryptographically-bound
   // to this user-provided data. Note that the SHA256 hash only occupies the
-  // lower 32 bytes of the 64-byte REPORTDATA structure so the structure is
-  // pre-filled with an additional 32 zeros.
+  // lower 32 bytes of the 64-byte REPORTDATA structure. The upper part is set
+  // to a concatenation of the purpose and uuid of the EKEP AAD specified at
+  // asylo/identity/additional_authenticated_data_generator.cc.
   sgx::AlignedReportdataPtr reportdata;
-  Sha256Hash hash;
-  hash.Update(user_data);
-  reportdata->data = TrivialZeroObject<UnsafeBytes<sgx::kReportdataSize>>();
-  std::vector<uint8_t> digest;
-  ASYLO_RETURN_IF_ERROR(hash.CumulativeHash(&digest));
-  reportdata->data.replace(/*pos=*/0, digest);
+  UnsafeBytes<kAdditionalAuthenticatedDataSize> aad;
+  ASYLO_ASSIGN_OR_RETURN(
+      aad, members_.ReaderLock()->aad_generator->Generate(user_data));
+  reportdata->data = aad;
 
   // Generate a REPORT that is bound to the provided |user_data| and is targeted
   // at the enclave described in the request.

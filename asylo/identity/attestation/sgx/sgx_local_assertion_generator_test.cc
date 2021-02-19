@@ -30,6 +30,7 @@
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/attestation/enclave_assertion_generator.h"
 #include "asylo/identity/attestation/sgx/internal/local_assertion.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_local_assertion_authority_config.pb.h"
@@ -398,13 +399,11 @@ TEST_F(SgxLocalAssertionGeneratorTest, GenerateSuccess) {
       << ConvertTrivialObjectToHexString(*report);
 
   // Verify that the assertion is bound to a hash of the user data.
-  Sha256Hash hash;
-  hash.Update(kUserData);
-  auto expected_reportdata =
-      TrivialZeroObject<UnsafeBytes<sgx::kReportdataSize>>();
-  std::vector<uint8_t> digest;
-  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
-  expected_reportdata.replace(/*pos=*/0, digest);
+  UnsafeBytes<kAdditionalAuthenticatedDataSize> expected_reportdata;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expected_reportdata,
+      AdditionalAuthenticatedDataGenerator::CreateEkepAadGenerator()->Generate(
+          kUserData));
   EXPECT_EQ(report->body.reportdata.data, expected_reportdata);
 
   // Verify that the asserted identity is the self identity.

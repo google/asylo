@@ -20,6 +20,7 @@
 #define ASYLO_IDENTITY_ATTESTATION_SGX_SGX_LOCAL_ASSERTION_VERIFIER_H_
 
 #include "absl/synchronization/mutex.h"
+#include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/attestation/enclave_assertion_verifier.h"
 
 namespace asylo {
@@ -69,6 +70,9 @@ class SgxLocalAssertionVerifier final : public EnclaveAssertionVerifier {
 
   // The attestation domain to which the enclave belongs.
   std::string attestation_domain_;
+
+  // Generates REPORTDATA that is verified as part of the attestation.
+  std::unique_ptr<AdditionalAuthenticatedDataGenerator> aad_generator_;
 
   // Indicates whether this verifier has been initialized.
   bool initialized_ ABSL_GUARDED_BY(initialized_mu_);

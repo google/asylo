@@ -24,9 +24,9 @@
 
 #include "absl/status/status.h"
 #include "absl/synchronization/mutex.h"
-#include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/attestation/sgx/internal/local_assertion.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/identity/descriptions.h"
@@ -57,6 +57,9 @@ Status SgxLocalAssertionVerifier::Initialize(const std::string &config) {
   }
 
   attestation_domain_ = authority_config.attestation_domain();
+
+  aad_generator_ =
+      AdditionalAuthenticatedDataGenerator::CreateEkepAadGenerator();
 
   absl::MutexLock lock(&initialized_mu_);
   initialized_ = true;
@@ -162,16 +165,14 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
 
   // Next, verify that the REPORT is cryptographically-bound to the provided
   // |user_data|. This is done by re-constructing the expected REPORTDATA (a
-  // SHA256 hash of |user_data| padded with zeros), and comparing it to the
-  // actual REPORTDATA inside the REPORT.
-  Sha256Hash hash;
-  hash.Update(user_data);
+  // SHA256 hash of |user_data| concatenated with the purpose and uuid set by
+  // the EKEP AAD specified at
+  // asylo/identity/additional_authenticated_data_generator.cc.), and comparing
+  // it to the actual REPORTDATA inside the REPORT.
   sgx::Reportdata expected_reportdata;
-  expected_reportdata.data =
-      TrivialZeroObject<UnsafeBytes<sgx::kReportdataSize>>();
-  std::vector<uint8_t> digest;
-  ASYLO_RETURN_IF_ERROR(hash.CumulativeHash(&digest));
-  expected_reportdata.data.replace(/*pos=*/0, digest);
+  UnsafeBytes<kAdditionalAuthenticatedDataSize> aad;
+  ASYLO_ASSIGN_OR_RETURN(aad, aad_generator_->Generate(user_data));
+  expected_reportdata.data = aad;
 
   if (expected_reportdata.data != report.body.reportdata.data) {
     return absl::InternalError(

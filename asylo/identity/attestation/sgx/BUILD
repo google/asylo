@@ -416,9 +416,9 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":sgx_local_assertion_authority_config_cc_proto",
-        "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity:additional_authenticated_data_generator",
         "//asylo/identity/attestation:enclave_assertion_generator",
         "//asylo/identity/attestation/sgx/internal:local_assertion_cc_proto",
         "//asylo/identity/platform/sgx/internal:code_identity_constants",
@@ -426,7 +426,6 @@ cc_library(
         "//asylo/identity/platform/sgx/internal:hardware_types",
         "//asylo/util:mutex_guarded",
         "//asylo/util:status",
-        "@com_google_absl//absl/status",
     ],
     alwayslink = 1,
 )
@@ -445,6 +444,7 @@ cc_test_and_cc_enclave_test(
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity:additional_authenticated_data_generator",
         "//asylo/identity:enclave_assertion_authority",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity/attestation:enclave_assertion_generator",
@@ -474,9 +474,9 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":sgx_local_assertion_authority_config_cc_proto",
-        "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity:additional_authenticated_data_generator",
         "//asylo/identity:descriptions",
         "//asylo/identity/attestation:enclave_assertion_verifier",
         "//asylo/identity/attestation/sgx/internal:local_assertion_cc_proto",
@@ -501,8 +501,8 @@ cc_test_and_cc_enclave_test(
     deps = [
         ":sgx_local_assertion_authority_config_cc_proto",
         ":sgx_local_assertion_verifier",
-        "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity:additional_authenticated_data_generator",
         "//asylo/identity:enclave_assertion_authority",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity/attestation:enclave_assertion_verifier",
@@ -538,6 +538,7 @@ cc_test(
     deps = [
         ":sgx_local_assertion_generator",
         ":sgx_local_assertion_verifier",
+        "//asylo/identity:additional_authenticated_data_generator",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity/attestation:enclave_assertion_generator",
         "//asylo/identity/attestation:enclave_assertion_verifier",
