@@ -30,6 +30,7 @@
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
 #include "absl/flags/reflection.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "asylo/identity/attestation/sgx/internal/dcap_intel_architectural_enclave_path_setter.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
@@ -248,9 +249,8 @@ TEST_F(SgxPcsToolLibTest, InvalidPpidFlagWithGetPlatformInfo) {
   absl::SetFlag(&FLAGS_cpu_svn, kValidCpuSvnHex);
   absl::SetFlag(&FLAGS_pce_svn, kValidPceSvn);
 
-  EXPECT_THAT(
-      GetPlatformInfoFromFlags(),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("Ppid")));
+  EXPECT_THAT(GetPlatformInfoFromFlags(),
+              StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("Ppid")));
 }
 
 TEST_F(SgxPcsToolLibTest, MissingCpuSvnFlagWithGetPlatformInfo) {
@@ -271,7 +271,7 @@ TEST_F(SgxPcsToolLibTest, InvalidCpuSvnFlagWithGetPlatformInfo) {
   absl::SetFlag(&FLAGS_pce_svn, kValidPceSvn);
   EXPECT_THAT(
       GetPlatformInfoFromFlags(),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("CpuSvn")));
+      StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("CpuSvn")));
 }
 
 TEST_F(SgxPcsToolLibTest, MissingPceSvnFlagWithGetPlatformInfo) {
@@ -292,7 +292,7 @@ TEST_F(SgxPcsToolLibTest, InvalidPceSvnFlagWithGetPlatformInfo) {
   absl::SetFlag(&FLAGS_pce_svn, kPceSvnMaxValue + 1);
   EXPECT_THAT(
       GetPlatformInfoFromFlags(),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("PceSvn")));
+      StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("PceSvn")));
 }
 
 TEST_F(SgxPcsToolLibTest, AllInfoFlags) {
@@ -310,12 +310,12 @@ TEST_F(SgxPcsToolLibTest, AllInfoFlags) {
 
 TEST_F(SgxPcsToolLibTest, GetPlatformInfoFromDcapWithInvalidSection) {
   EXPECT_THAT(GetPlatformInfoFromDcap("bogus section name"),
-              StatusIs(error::GoogleError::NOT_FOUND));
+              StatusIs(absl::StatusCode::kNotFound));
 }
 
 TEST_F(SgxPcsToolLibTest, MissingApiKeyFlagWithCreateSgxPcsClient) {
   EXPECT_THAT(CreateSgxPcsClientFromFlags(),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr(FLAGS_api_key.Name())));
 }
 
@@ -328,14 +328,14 @@ TEST_F(SgxPcsToolLibTest, WritePemOutputWithInvalidPath) {
   absl::SetFlag(&FLAGS_outfile, "/totally/bogus/path/that/does/not/exist");
   absl::SetFlag(&FLAGS_outfmt, "pem");
   EXPECT_THAT(WriteOutputAccordingToFlags(GetPckCertificateResult{}),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsToolLibTest, WriteProtoOutputWithInvalidPath) {
   absl::SetFlag(&FLAGS_outfile, "/totally/bogus/path/that/does/not/exist");
   absl::SetFlag(&FLAGS_outfmt, "textproto");
   EXPECT_THAT(WriteOutputAccordingToFlags(GetPckCertificateResult{}),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsToolLibTest, WritePemCertResultAsPem) {

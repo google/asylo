@@ -18,6 +18,7 @@
 
 #include "asylo/identity/platform/sgx/sgx_identity_util.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/platform/sgx/internal/sgx_identity_util_internal.h"
@@ -46,7 +47,7 @@ StatusOr<SgxIdentityMatchSpec> CreateSgxIdentityMatchSpec(
       sgx::SetStrictRemoteSgxMatchSpec(&match_spec);
       return match_spec;
   }
-  return Status(error::GoogleError::INVALID_ARGUMENT,
+  return Status(absl::StatusCode::kInvalidArgument,
                 absl::StrCat("Invalid MatchSpecOptions: ", options));
 }
 
@@ -57,7 +58,7 @@ StatusOr<SgxIdentityExpectation> CreateSgxIdentityExpectation(
   *expectation.mutable_match_spec() = std::move(match_spec);
 
   if (!sgx::IsValidExpectation(expectation)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "The given SgxIdentity and SgxIdentityMatchSpec do not form "
                   "a valid expectation");
   }

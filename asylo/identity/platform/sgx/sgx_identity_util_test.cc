@@ -22,6 +22,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/platform/sgx/internal/fake_enclave.h"
 #include "asylo/identity/platform/sgx/internal/proto_format.h"
@@ -91,13 +92,13 @@ TEST(SgxIdentityUtilTest, CreateSgxIdentityExpectationFailure) {
       match_spec,
       CreateSgxIdentityMatchSpec(SgxIdentityMatchSpecOptions::STRICT_LOCAL));
   EXPECT_THAT(CreateSgxIdentityExpectation(identity, match_spec),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   ASYLO_ASSERT_OK_AND_ASSIGN(
       match_spec,
       CreateSgxIdentityMatchSpec(SgxIdentityMatchSpecOptions::STRICT_REMOTE));
   EXPECT_THAT(CreateSgxIdentityExpectation(identity, match_spec),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SgxIdentityUtilTest, CreateSgxIdentityExpectationFromOptions) {
@@ -130,12 +131,12 @@ TEST(SgxIdentityUtilTest, ParseInvalidIdentityFailure) {
 
   generic_identity.set_identity("bad identity");
   EXPECT_THAT(ParseSgxIdentity(generic_identity),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SgxIdentityUtilTest, ParseInvalidMatchSpecFailure) {
   EXPECT_THAT(ParseSgxIdentityMatchSpec("bad match spec"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SgxIdentityUtilTest, ParseInvalidExpectationFailure) {
@@ -146,25 +147,25 @@ TEST(SgxIdentityUtilTest, ParseInvalidExpectationFailure) {
 
   generic_expectation.set_match_spec("bad match spec");
   EXPECT_THAT(ParseSgxIdentityExpectation(generic_expectation),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SgxIdentityUtilTest, SerializeInvalidIdentityFailure) {
   SgxIdentity identity;
   EXPECT_THAT(SerializeSgxIdentity(identity),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SgxIdentityUtilTest, SerializeInvalidMatchSpecFailure) {
   SgxIdentityMatchSpec match_spec;
   EXPECT_THAT(SerializeSgxIdentityMatchSpec(match_spec),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SgxIdentityUtilTest, SerializeInvalidExpectationFailure) {
   SgxIdentityExpectation expectation;
   EXPECT_THAT(SerializeSgxIdentityExpectation(expectation),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SgxIdentityUtilTest, SerializeAndParseIdentityEndToEnd) {

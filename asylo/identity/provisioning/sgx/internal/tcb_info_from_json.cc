@@ -36,6 +36,7 @@
 #include "absl/base/call_once.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/hash/hash.h"
+#include "absl/status/status.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
@@ -63,7 +64,7 @@ StatusOr<absl::Time> ParseIso8601TimeString(const std::string &time_string) {
   absl::Time time;
   std::string error;
   if (!absl::ParseTime("%Y-%m-%dT%H:%M:%SZ", time_string, &time, &error)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Could not parse time string: ", error));
   }
 
@@ -111,7 +112,7 @@ StatusOr<int32_t> Int32FromJson(const google::protobuf::Value &int32_json,
       value > static_cast<double>(std::numeric_limits<int32_t>::max()) ||
       round(value) != value) {
     return Status(
-        error::GoogleError::OUT_OF_RANGE,
+        absl::StatusCode::kOutOfRange,
         absl::StrFormat("%s JSON %f cannot be represented as a 32-bit integer",
                         value_name, value));
   }
@@ -129,7 +130,7 @@ StatusOr<google::protobuf::Timestamp> TimestampFromJson(
   ASYLO_ASSIGN_OR_RETURN(time, ParseIso8601TimeString(*timestamp_string));
   if (!CanBeTimestampProto(time)) {
     return Status(
-        error::GoogleError::OUT_OF_RANGE,
+        absl::StatusCode::kOutOfRange,
         absl::StrFormat(
             "Timestamp %s cannot be represented as a google.protobuf.Timestamp",
             *timestamp_string));
@@ -150,7 +151,7 @@ StatusOr<int> SgxTcbComponentSvnFromJson(
   double component;
   ASYLO_ASSIGN_OR_RETURN(component, JsonGetNumber(component_json));
   if (component < 0. || component > 255.) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "An SGX TCB component SVN is out of bounds");
   }
   return component;
@@ -161,7 +162,7 @@ StatusOr<PceSvn> PceSvnFromJson(const google::protobuf::Value &pce_svn_json) {
   double pce_svn_raw;
   ASYLO_ASSIGN_OR_RETURN(pce_svn_raw, JsonGetNumber(pce_svn_json));
   if (pce_svn_raw < 0. || pce_svn_raw > kPceSvnMaxValue) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "pcesvn is out of bounds");
   }
 
@@ -226,7 +227,7 @@ StatusOr<google::protobuf::RepeatedPtrField<std::string>> AdvisoryIdsFromJson(
   const google::protobuf::ListValue *advisory_ids_array;
   ASYLO_ASSIGN_OR_RETURN(advisory_ids_array, JsonGetArray(advisory_ids_json));
   if (advisory_ids_array->values().empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "\"advisoryIDs\" array may not be empty");
   }
   google::protobuf::RepeatedPtrField<std::string> advisory_ids;
@@ -313,13 +314,13 @@ StatusOr<Fmspc> FmspcFromJson(const google::protobuf::Value &fmspc_json) {
   const std::string *fmspc_hex_string;
   ASYLO_ASSIGN_OR_RETURN(fmspc_hex_string, JsonGetString(fmspc_json));
   if (!IsHexEncoded(*fmspc_hex_string)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "FMSPC JSON is not a hex encoding string");
   }
 
   std::string fmspc_bytes = absl::HexStringToBytes(*fmspc_hex_string);
   if (fmspc_bytes.size() != kFmspcSize) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("FMSPC JSON does not represent a ", kFmspcSize,
                                "-byte value"));
   }
@@ -336,13 +337,13 @@ StatusOr<PceId> PceIdFromJson(const google::protobuf::Value &pce_id_json) {
   const std::string *pce_id_hex_string;
   ASYLO_ASSIGN_OR_RETURN(pce_id_hex_string, JsonGetString(pce_id_json));
   if (!IsHexEncoded(*pce_id_hex_string)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "PCE ID JSON is not a hex encoding string");
   }
 
   std::string pce_id_bytes = absl::HexStringToBytes(*pce_id_hex_string);
   if (pce_id_bytes.size() != kPceIdNumBytes) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("PCE ID JSON does not represent a ",
                                kPceIdNumBytes, "-byte value"));
   }
@@ -374,7 +375,7 @@ StatusOr<google::protobuf::RepeatedPtrField<TcbLevel>> TcbLevelsFromJson(
       if (!google::protobuf::util::MessageDifferencer::Equals(insert_pair.first->second,
                                                     tcb_level.status())) {
         return Status(
-            error::GoogleError::INVALID_ARGUMENT,
+            absl::StatusCode::kInvalidArgument,
             "TCB info JSON contains the same TCB level multiple times with "
             "different statuses");
       } else {
@@ -415,7 +416,7 @@ StatusOr<TcbInfo> TcbInfoFromJsonV1and2(
                          TimestampFromJson(*next_update_json));
 
   if (tcb_info_impl->issue_date() >= tcb_info_impl->next_update()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Issue date does not come before next update");
   }
 
@@ -442,7 +443,7 @@ StatusOr<TcbInfo> TcbInfoFromJsonV1and2(
         tcb_info_impl->set_tcb_type(TcbType::TCB_TYPE_0);
         break;
       default:
-        return Status(error::GoogleError::INVALID_ARGUMENT,
+        return Status(absl::StatusCode::kInvalidArgument,
                       absl::StrCat("Unknown TCB type value: ", tcb_type));
     }
 
@@ -520,7 +521,7 @@ StatusOr<TcbInfo> TcbInfoFromJson(const std::string &json_string) {
       return TcbInfoFromJsonV1and2(version, *tcb_info_object);
     default:
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrCat("Unrecognized version of TCB info JSON: ", version));
   }
 }

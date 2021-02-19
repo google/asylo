@@ -32,6 +32,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/random/random.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -199,7 +200,7 @@ TEST(PckCertificateUtilTest, SgxExtensionsMustBeOidAnyPairSequences) {
     Asn1Value bad_sgx_extensions_asn1;
     ASYLO_ASSERT_OK_AND_ASSIGN(bad_sgx_extensions_asn1, bad_sgx_extensions);
     EXPECT_THAT(ReadSgxExtensions(bad_sgx_extensions_asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -219,7 +220,7 @@ TEST(PckCertificateUtilTest,
     ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                                Asn1Value::CreateSequence(elements_copy));
     EXPECT_THAT(ReadSgxExtensions(extensions_asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -244,7 +245,7 @@ TEST(PckCertificateUtilTest, SgxExtensionsWithExtraElementsCannotBeRead) {
     ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                                Asn1Value::CreateSequence(elements));
     EXPECT_THAT(ReadSgxExtensions(extensions_asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -261,7 +262,7 @@ TEST(PckCertificateUtilTest, SgxExtensionsWithDuplicateElementsCannotBeRead) {
     ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                                Asn1Value::CreateSequence(elements_copy));
     EXPECT_THAT(ReadSgxExtensions(extensions_asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -284,7 +285,7 @@ TEST(PckCertificateUtilTest, PpidsMustBeOctetStringsOfCorrectLength) {
     ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                                Asn1Value::CreateSequence(elements));
     EXPECT_THAT(ReadSgxExtensions(extensions_asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -311,7 +312,7 @@ TEST(PckCertificateUtilTest, TcbsMustBeOidAnyPairSequences) {
     ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                                Asn1Value::CreateSequence(elements));
     EXPECT_THAT(ReadSgxExtensions(extensions_asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -336,7 +337,7 @@ TEST(PckCertificateUtilTest, TcbsWithMissingElementsCannotBeRead) {
     ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                                Asn1Value::CreateSequence(elements));
     EXPECT_THAT(ReadSgxExtensions(extensions_asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -369,7 +370,7 @@ TEST(PckCertificateUtilTest, TcbsWithExtraElementsCannotBeRead) {
     ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                                Asn1Value::CreateSequence(elements));
     EXPECT_THAT(ReadSgxExtensions(extensions_asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -394,7 +395,7 @@ TEST(PckCertificateUtilTest, TcbsWithDuplicateElementsCannotBeRead) {
     ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                                Asn1Value::CreateSequence(elements));
     EXPECT_THAT(ReadSgxExtensions(extensions_asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -416,14 +417,14 @@ TEST(PckCertificateUtilTest, TcbComponentsMustBeIntegersInRange) {
 
     for (auto pair :
          {std::make_pair(Asn1Value::CreateBoolean(true),
-                         error::GoogleError::INVALID_ARGUMENT),
+                         absl::StatusCode::kInvalidArgument),
           std::make_pair(Asn1Value::CreateIntegerFromInt(-1),
-                         error::GoogleError::OUT_OF_RANGE),
+                         absl::StatusCode::kOutOfRange),
           std::make_pair(Asn1Value::CreateIntegerFromInt(
                              std::numeric_limits<uint8_t>::max() + 1),
-                         error::GoogleError::OUT_OF_RANGE)}) {
+                         absl::StatusCode::kOutOfRange)}) {
       StatusOr<Asn1Value> bad_tcb_component;
-      error::GoogleError error_code;
+      absl::StatusCode error_code;
       std::tie(bad_tcb_component, error_code) = std::move(pair);
       ASYLO_ASSERT_OK_AND_ASSIGN(
           tcb_elements[kSgxTcbCompSvnBaseIndex + i],
@@ -456,14 +457,14 @@ TEST(PckCertificateUtilTest, PceSvnsMustBeIntegersInRange) {
 
   for (auto pair :
        {std::make_pair(Asn1Value::CreateBoolean(true),
-                       error::GoogleError::INVALID_ARGUMENT),
+                       absl::StatusCode::kInvalidArgument),
         std::make_pair(Asn1Value::CreateIntegerFromInt(-1),
-                       error::GoogleError::OUT_OF_RANGE),
+                       absl::StatusCode::kOutOfRange),
         std::make_pair(Asn1Value::CreateIntegerFromInt(
                            std::numeric_limits<uint16_t>::max() + 1),
-                       error::GoogleError::OUT_OF_RANGE)}) {
+                       absl::StatusCode::kOutOfRange)}) {
     StatusOr<Asn1Value> bad_pce_svn;
-    error::GoogleError error_code;
+    absl::StatusCode error_code;
     std::tie(bad_pce_svn, error_code) = std::move(pair);
     ASYLO_ASSERT_OK_AND_ASSIGN(tcb_elements[kPceSvnIndex],
                                Asn1Value::CreateSequenceFromStatusOrs(
@@ -506,7 +507,7 @@ TEST(PckCertificateUtilTest, CpuSvnsMustBeOctetStringsOfCorrectLength) {
     ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                                Asn1Value::CreateSequence(elements));
     EXPECT_THAT(ReadSgxExtensions(extensions_asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -529,7 +530,7 @@ TEST(PckCertificateUtilTest, PceIdsMustBeOctetStringsOfCorrectLength) {
     ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                                Asn1Value::CreateSequence(elements));
     EXPECT_THAT(ReadSgxExtensions(extensions_asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -552,7 +553,7 @@ TEST(PckCertificateUtilTest, FmspcsMustBeOctetStringsOfCorrectLength) {
     ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                                Asn1Value::CreateSequence(elements));
     EXPECT_THAT(ReadSgxExtensions(extensions_asn1),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -568,13 +569,13 @@ TEST(PckCertificateUtilTest, SgxTypesMustBeEnumeratedValuesInRange) {
 
   for (auto pair :
        {std::make_pair(Asn1Value::CreateBoolean(true),
-                       error::GoogleError::INVALID_ARGUMENT),
+                       absl::StatusCode::kInvalidArgument),
         std::make_pair(Asn1Value::CreateEnumeratedFromInt(-1),
-                       error::GoogleError::OUT_OF_RANGE),
+                       absl::StatusCode::kOutOfRange),
                        std::make_pair(Asn1Value::CreateEnumeratedFromInt(1),
-                       error::GoogleError::INVALID_ARGUMENT)}) {
+                       absl::StatusCode::kInvalidArgument)}) {
     StatusOr<Asn1Value> bad_sgx_type;
-    error::GoogleError error_code;
+    absl::StatusCode error_code;
     std::tie(bad_sgx_type, error_code) = std::move(pair);
     ASYLO_ASSERT_OK_AND_ASSIGN(elements[kSgxTypeIndex],
                                Asn1Value::CreateSequenceFromStatusOrs(
@@ -589,32 +590,32 @@ TEST(PckCertificateUtilTest, InvalidSgxExtensionsCannotBeWritten) {
   SgxExtensions extensions = CreateValidSgxExtensions();
   extensions.ppid.clear_value();
   EXPECT_THAT(WriteSgxExtensions(extensions),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   extensions = CreateValidSgxExtensions();
   extensions.tcb.clear_components();
   EXPECT_THAT(WriteSgxExtensions(extensions),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   extensions = CreateValidSgxExtensions();
   extensions.cpu_svn.clear_value();
   EXPECT_THAT(WriteSgxExtensions(extensions),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   extensions = CreateValidSgxExtensions();
   extensions.pce_id.clear_value();
   EXPECT_THAT(WriteSgxExtensions(extensions),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   extensions = CreateValidSgxExtensions();
   extensions.fmspc.clear_value();
   EXPECT_THAT(WriteSgxExtensions(extensions),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   extensions = CreateValidSgxExtensions();
   extensions.sgx_type = SgxType::SGX_TYPE_UNKNOWN;
   EXPECT_THAT(WriteSgxExtensions(extensions),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest, SgxExtensionsRoundtrip) {
@@ -669,35 +670,35 @@ TEST(PckCertificateUtilTest, PckCertificateInfoWithoutTcbLevelIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   pck_certificates.mutable_certs(0)->clear_tcb_level();
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest, PckCertificateInfoWithInvalidTcbLevelIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   pck_certificates.mutable_certs(0)->mutable_tcb_level()->set_components("");
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest, PckCertificateInfoWithoutTcbmIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   pck_certificates.mutable_certs(0)->clear_tcbm();
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest, PckCertificateInfoWithInvalidTcbmIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   pck_certificates.mutable_certs(0)->mutable_tcbm()->clear_cpu_svn();
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest, PckCertificateInfoWithoutCertIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   pck_certificates.mutable_certs(0)->clear_cert();
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest, PckCertificateInfoWithInvalidCertIsInvalid) {
@@ -705,7 +706,7 @@ TEST(PckCertificateUtilTest, PckCertificateInfoWithInvalidCertIsInvalid) {
   pck_certificates.mutable_certs(0)->mutable_cert()->set_format(
       asylo::Certificate::UNKNOWN);
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest, PckCertificateInfoWithDifferingPceSvnsIsInvalid) {
@@ -715,7 +716,7 @@ TEST(PckCertificateUtilTest, PckCertificateInfoWithDifferingPceSvnsIsInvalid) {
       ->mutable_pce_svn()
       ->set_value(29);
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest,
@@ -724,7 +725,7 @@ TEST(PckCertificateUtilTest,
   *pck_certificates.mutable_certs(1)->mutable_tcb_level() =
       pck_certificates.certs(0).tcb_level();
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest,
@@ -733,7 +734,7 @@ TEST(PckCertificateUtilTest,
   *pck_certificates.mutable_certs(1)->mutable_tcbm() =
       pck_certificates.certs(0).tcbm();
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest, ValidPckCertificatesIsValid) {
@@ -756,7 +757,7 @@ TEST(PckCertificateUtilTest,
       X509Certificate::Create(GetFakePckCertificateChain().certificates(2)));
 
   ASSERT_THAT(ExtractMachineConfigurationFromPckCert(cert.get()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("SGX extensions")));
 }
 
@@ -771,7 +772,7 @@ TEST(PckCertificateUtilTest,
       cert, AttestationKeyCertificateImpl::Create(non_x509_cert));
 
   ASSERT_THAT(ExtractMachineConfigurationFromPckCert(cert.get()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("X.509 certificate")));
 }
 
@@ -798,7 +799,7 @@ TEST(PckCertificateUtilTest, ExtractSgxExtensionFromPckCertNonX509Fails) {
       cert, AttestationKeyCertificateImpl::Create(non_x509_cert));
 
   EXPECT_THAT(ExtractSgxExtensionsFromPckCert(*cert),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest,
@@ -810,7 +811,7 @@ TEST(PckCertificateUtilTest,
       cert, X509Certificate::Create(pck_cert_chain.certificates(1)));
 
   EXPECT_THAT(ExtractSgxExtensionsFromPckCert(*cert),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest, ExtractSgxExtensionFromPckCertSuccess) {
@@ -830,14 +831,14 @@ TEST(PckCertificateUtilTest, ExtractCpuSvnFromPckCertNonX509Fails) {
   non_x509_cert.set_data(absl::HexStringToBytes(kAttestationKeyCertificateHex));
 
   ASSERT_THAT(ExtractCpuSvnFromPckCert(non_x509_cert),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest, ExtractCpuSvnFromPckCertNoSgxExtensionsFails) {
   CertificateChain pck_cert_chain = GetFakePckCertificateChain();
 
   ASSERT_THAT(ExtractCpuSvnFromPckCert(pck_cert_chain.certificates(1)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest, ExtractCpuSvnFromPckCertSuccess) {
@@ -856,14 +857,14 @@ TEST(PckCertificateUtilTest, ExtractPceSvnFromPckCertNonX509Fails) {
   non_x509_cert.set_data(absl::HexStringToBytes(kAttestationKeyCertificateHex));
 
   ASSERT_THAT(ExtractPceSvnFromPckCert(non_x509_cert),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest, ExtractPceSvnFromPckCertNoSgxExtensionsFails) {
   CertificateChain pck_cert_chain = GetFakePckCertificateChain();
 
   ASSERT_THAT(ExtractPceSvnFromPckCert(pck_cert_chain.certificates(1)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertificateUtilTest, ExtractPceSvnFromPckCertSuccess) {

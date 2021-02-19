@@ -36,6 +36,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -121,7 +122,7 @@ StatusOr<SgxTypeRaw> ToRawSgxType(SgxType sgx_type) {
       return SgxTypeRaw::kStandard;
     default:
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrCat("No known ENUMERATED value for SgxType: ", sgx_type));
   }
 }
@@ -133,7 +134,7 @@ StatusOr<SgxType> FromRawSgxType(std::underlying_type<SgxTypeRaw>::type raw) {
     case static_cast<UnderlyingType>(SgxTypeRaw::kStandard):
       return SgxType::STANDARD;
   }
-  return Status(error::GoogleError::INVALID_ARGUMENT,
+  return Status(absl::StatusCode::kInvalidArgument,
                 absl::StrFormat("Unknown SGX Type code: %d", raw));
 }
 
@@ -155,7 +156,7 @@ StatusOr<std::vector<uint8_t>> ReadOctetStringWithSize(const Asn1Value &asn1,
   ASYLO_ASSIGN_OR_RETURN(bytes, asn1.GetOctetString());
   if (bytes.size() != expected_size) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrFormat("Expected a container of size %d, found size %d",
                         expected_size, bytes.size()));
   }
@@ -209,7 +210,7 @@ Status ReadOidAnySequence(
     Status read_status = it->second.read_function(asn1).WithPrependedContext(
         absl::StrFormat("Error reading value for OID %s: ", oid_string));
     if (!read_status.ok()) {
-      if (read_status.CanonicalCode() == error::GoogleError::INVALID_ARGUMENT) {
+      if (read_status.code() == absl::StatusCode::kInvalidArgument) {
         errors.push_back(std::string(read_status.error_message()));
       } else {
         return read_status;
@@ -229,11 +230,10 @@ Status ReadOidAnySequence(
                            : "Missing extension");
     }
   }
-  return errors.empty()
-             ? Status::OkStatus()
-             : Status(error::GoogleError::INVALID_ARGUMENT,
-                      absl::StrCat("Encountered the following errors:\n  ",
-                                   absl::StrJoin(errors, "\n  ")));
+  return errors.empty() ? absl::OkStatus()
+                        : absl::InvalidArgumentError(absl::StrCat(
+                              "Encountered the following errors:\n  ",
+                              absl::StrJoin(errors, "\n  ")));
 }
 
 // Validates an SgxExtensions object.
@@ -245,8 +245,8 @@ Status ValidateSgxExtensions(const SgxExtensions &extensions) {
   ASYLO_RETURN_IF_ERROR(ValidateFmspc(extensions.fmspc));
   if (!SgxType_IsValid(extensions.sgx_type) ||
       extensions.sgx_type == SgxType::SGX_TYPE_UNKNOWN) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Invalid SgxType: ", extensions.sgx_type));
+    return absl::InvalidArgumentError(
+        absl::StrCat("Invalid SgxType: ", extensions.sgx_type));
   }
   return Status::OkStatus();
 }
@@ -317,16 +317,16 @@ StatusOr<Asn1Value> WriteTcb(const Tcb &tcb, const CpuSvn &cpu_svn) {
 Status ValidatePckCertificateInfo(
     const PckCertificates::PckCertificateInfo &cert_info) {
   if (!cert_info.has_tcb_level()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "PckCertificateInfo does not have a \"tcb_level\" field");
+    return absl::InvalidArgumentError(
+        "PckCertificateInfo does not have a \"tcb_level\" field");
   }
   if (!cert_info.has_tcbm()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "PckCertificateInfo does not have a \"tcbm\" field");
+    return absl::InvalidArgumentError(
+        "PckCertificateInfo does not have a \"tcbm\" field");
   }
   if (!cert_info.has_cert()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "PckCertificateInfo does not have a \"cert\" field");
+    return absl::InvalidArgumentError(
+        "PckCertificateInfo does not have a \"cert\" field");
   }
 
   ASYLO_RETURN_IF_ERROR(ValidateTcb(cert_info.tcb_level()));
@@ -335,11 +335,11 @@ Status ValidatePckCertificateInfo(
 
   if (!google::protobuf::util::MessageDifferencer::Equals(cert_info.tcb_level().pce_svn(),
                                                 cert_info.tcbm().pce_svn())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "PckCertificateInfo has two different PCE SVNs");
+    return absl::InvalidArgumentError(
+        "PckCertificateInfo has two different PCE SVNs");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace
@@ -439,8 +439,7 @@ Status ValidatePckCertificates(const PckCertificates &pck_certificates) {
     auto it = tcbs_to_certs.find(cert_info.tcb_level());
     if (it != tcbs_to_certs.end()) {
       if (!google::protobuf::util::MessageDifferencer::Equals(*it->second, cert_info)) {
-        return Status(
-            error::GoogleError::INVALID_ARGUMENT,
+        return absl::InvalidArgumentError(
             "PckCertificates contains two distinct entries with identical "
             "TCBs");
       } else {
@@ -449,8 +448,7 @@ Status ValidatePckCertificates(const PckCertificates &pck_certificates) {
     }
 
     if (tcbms.contains(cert_info.tcbm())) {
-      return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+      return absl::InvalidArgumentError(
           "PckCertificates contains two distinct entries with identical TCBMs");
     }
 
@@ -466,7 +464,7 @@ StatusOr<SgxExtensions> ExtractSgxExtensionsFromPckCert(
   const X509Certificate *pck_cert =
       dynamic_cast<const X509Certificate *>(&pck_certificate);
   if (pck_cert == nullptr) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "PCK certificate is not an X.509 certificate");
   }
 
@@ -484,7 +482,7 @@ StatusOr<SgxExtensions> ExtractSgxExtensionsFromPckCert(
     }
   }
 
-  return Status(error::GoogleError::INVALID_ARGUMENT,
+  return Status(absl::StatusCode::kInvalidArgument,
                 "PCK certificate does not contain SGX extensions");
 }
 

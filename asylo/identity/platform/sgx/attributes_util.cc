@@ -18,6 +18,7 @@
 
 #include "asylo/identity/platform/sgx/attributes_util.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/platform/sgx/attributes.pb.h"
@@ -73,7 +74,7 @@ absl::string_view GetAttributeName(AttributeBit attribute) {
 StatusOr<uint64_t> GetAttributeBitMask(size_t bit_position) {
   if (bit_position >= kNumAttributeBits) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrCat("AttributeBit specifies an invalid bit position: ",
                      bit_position));
   }

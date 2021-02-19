@@ -32,6 +32,7 @@
 #include "absl/base/call_once.h"
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -197,8 +198,7 @@ Status WriteTextProtoOutput(asylo::sgx::GetPckCertificateResult cert_result,
 
   int output_fd = creat(filename.c_str(), /*mode=*/0664);
   if (output_fd == -1) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         absl::StrCat("Unable to open ", filename, ": ", ErrnoToString()));
   }
 
@@ -317,7 +317,7 @@ StatusOr<PlatformInfo> GetPlatformInfoFromDcap(
 StatusOr<std::unique_ptr<SgxPcsClient>> CreateSgxPcsClientFromFlags() {
   std::string api_key = absl::GetFlag(FLAGS_api_key);
   if (api_key.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat(FLAGS_api_key.Name(), " must be specified"));
   }
 
@@ -348,8 +348,7 @@ Status WriteOutputAccordingToFlags(GetPckCertificateResult cert_result) {
                                       std::move(outfile));
   }
 
-  return Status(
-      error::GoogleError::INVALID_ARGUMENT,
+  return absl::InvalidArgumentError(
       absl::StrCat("Invalid ", FLAGS_outfmt.Name(), " value: ", outfmt));
 }
 

@@ -18,6 +18,7 @@
 
 #include "asylo/identity/platform/sgx/internal/sgx_identity_test_util.h"
 
+#include "absl/status/status.h"
 #include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
@@ -240,8 +241,7 @@ Status SetRandomValidGenericIdentity(EnclaveIdentity *generic_identity,
 
   SgxIdentity sgx_identity = GetRandomValidSgxIdentity();
   if (!sgx_identity.SerializeToString(generic_identity->mutable_identity())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Failed to serialize SgxIdentity");
+    return absl::InvalidArgumentError("Failed to serialize SgxIdentity");
   }
   *corresponding_sgx_identity = sgx_identity;
   return Status::OkStatus();
@@ -268,15 +268,15 @@ Status SetRandomInvalidGenericIdentity(EnclaveIdentity *generic_identity) {
     std::string empty_sgx_code_identity_string;
     if (!SgxIdentity::default_instance().SerializeToString(
             &empty_sgx_code_identity_string)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Failed to serialize empty SgxIdentity");
+      return absl::InvalidArgumentError(
+          "Failed to serialize empty SgxIdentity");
     }
 
     std::string valid_identity_string;
     if (!GetRandomValidSgxIdentity().SerializeToString(
             &valid_identity_string)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Failed to serialize valid SgxIdentity");
+      return absl::InvalidArgumentError(
+          "Failed to serialize valid SgxIdentity");
     }
 
     std::string identity_string = RandomSelect(std::vector<std::string>{
@@ -292,8 +292,8 @@ Status SetRandomValidGenericMatchSpec(
     std::string *generic_spec, SgxIdentityMatchSpec *corresponding_sgx_spec) {
   SgxIdentityMatchSpec spec = GetRandomValidSgxMatchSpec();
   if (!spec.SerializeToString(generic_spec)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Failed to serialize CodeIdentityMatchSpec");
+    return absl::InvalidArgumentError(
+        "Failed to serialize CodeIdentityMatchSpec");
   }
   *corresponding_sgx_spec = spec;
   return Status::OkStatus();
@@ -314,7 +314,7 @@ Status SetRandomInvalidGenericMatchSpec(std::string *generic_spec) {
       return Status::OkStatus();
     }
   }
-  return Status(error::GoogleError::INTERNAL, "Exceeded max attempts");
+  return absl::InternalError("Exceeded max attempts");
 }
 
 Status SetRandomValidGenericExpectation(
@@ -334,7 +334,7 @@ Status SetRandomValidGenericExpectation(
       return Status::OkStatus();
     }
   }
-  return Status(error::GoogleError::INTERNAL, "Exceeded max attempts");
+  return absl::InternalError("Exceeded max attempts");
 }
 
 Status SetRandomInvalidGenericExpectation(
@@ -367,7 +367,7 @@ Status SetRandomInvalidGenericExpectation(
       return Status::OkStatus();
     }
   }
-  return Status(error::GoogleError::INTERNAL, "Exceeded max attempts");
+  return absl::InternalError("Exceeded max attempts");
 }
 
 }  // namespace sgx

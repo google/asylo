@@ -23,6 +23,7 @@
 
 #include "google/protobuf/struct.pb.h"
 #include <google/protobuf/util/json_util.h>
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_replace.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.pb.h"
@@ -70,8 +71,7 @@ Status ParseSignedTcbInfoFromJson(const std::string &signed_tcb_info_json,
 
   // Check that the signature is hex-encoded.
   if (!IsHexEncoded(*signature)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Signature is not hex-encoded");
+    return absl::InvalidArgumentError("Signature is not hex-encoded");
   }
 
   // The entire JSON was validated above, so it is safe to use regex to extract
@@ -80,8 +80,8 @@ Status ParseSignedTcbInfoFromJson(const std::string &signed_tcb_info_json,
                       tcb_info_json) &&
       !RE2::FullMatch(signed_tcb_info_json, *kSignedTcbInfoJsonSigFirstPattern,
                       tcb_info_json)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Cannot parse the JSON of signed TCB info");
+    return absl::InvalidArgumentError(
+        "Cannot parse the JSON of signed TCB info");
   }
 
   // According to Intel's Get TCB Info API documentation, the signature is

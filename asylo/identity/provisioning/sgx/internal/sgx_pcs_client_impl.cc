@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/algorithms.pb.h"
@@ -94,23 +95,19 @@ Status ParseHttpResponseError(const HttpFetcher::HttpResponse &response) {
     case 200:  // OK
       return Status::OkStatus();
     case 400:  // Bad Request
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Invalid request parameters");
+      return absl::InvalidArgumentError("Invalid request parameters");
     case 401:  // Unauthorized
-      return Status(error::GoogleError::UNAUTHENTICATED,
-                    "Failed to authenticate or authorize the request");
+      return absl::UnauthenticatedError(
+          "Failed to authenticate or authorize the request");
     case 404:  // Not Found.
-      return Status(error::GoogleError::NOT_FOUND,
-                    "Requested resource cannot be found");
+      return absl::NotFoundError("Requested resource cannot be found");
     case 500:  // Internal Server Error.
-      return Status(error::GoogleError::INTERNAL,
-                    "Internal server error occurred");
+      return absl::InternalError("Internal server error occurred");
     case 503:  // Service Unavailable
-      return Status(error::GoogleError::UNAVAILABLE,
-                    "Server is currently unable to process the request");
+      return absl::UnavailableError(
+          "Server is currently unable to process the request");
     default:
-      return Status(
-          error::GoogleError::UNKNOWN,
+      return absl::UnknownError(
           absl::StrCat("Unexpected HTTP status code ", response.status_code));
   }
 }
@@ -126,14 +123,14 @@ StatusOr<GetPckCertificateResult> ParseGetPckCertificateResponse(
   absl::optional<std::string> issuer_chain =
       response.GetHeaderValue(kHttpHeaderPckCertIssuerCertChain);
   if (!issuer_chain.has_value()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
+    return Status(absl::StatusCode::kFailedPrecondition,
                   absl::StrCat("The reply header does not contain the ",
                                kHttpHeaderPckCertIssuerCertChain, " field"));
   }
   absl::optional<std::string> tcbm =
       response.GetHeaderValue(kHttpHeaderSgxTcbm);
   if (!tcbm.has_value()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
+    return Status(absl::StatusCode::kFailedPrecondition,
                   absl::StrCat("The reply header does not contain the ",
                                kHttpHeaderSgxTcbm, " field"));
   }
@@ -156,7 +153,7 @@ StatusOr<GetPckCertificatesResult> ParseGetPckCertificatesResponse(
   absl::optional<std::string> issuer_chain =
       response.GetHeaderValue(kHttpHeaderPckCertIssuerCertChain);
   if (!issuer_chain.has_value()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
+    return Status(absl::StatusCode::kFailedPrecondition,
                   absl::StrCat("The reply header does not contain the ",
                                kHttpHeaderPckCertIssuerCertChain, " field"));
   }
@@ -180,7 +177,7 @@ StatusOr<std::string> CaTypeToStr(SgxCaType sgx_ca_type) {
     case SgxCaType::PLATFORM:
       return "platform";
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     "Input CA type cannot be unknown");
   }
 }
@@ -196,7 +193,7 @@ StatusOr<GetCrlResult> ParseGetCrlResponse(
   const absl::optional<std::string> issuer_chain =
       response.GetHeaderValue(kHttpHeaderIssuerCertChain);
   if (!issuer_chain.has_value()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
+    return Status(absl::StatusCode::kFailedPrecondition,
                   absl::StrCat("The reply header does not contain the ",
                                kHttpHeaderIssuerCertChain, " field"));
   }
@@ -220,7 +217,7 @@ StatusOr<GetTcbInfoResult> ParseGetTcbInfoResponse(
   const absl::optional<std::string> issuer_chain =
       response.GetHeaderValue(kHttpHeaderIssuerCertChain);
   if (!issuer_chain.has_value()) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
+    return Status(absl::StatusCode::kFailedPrecondition,
                   absl::StrCat("The reply header does not contain the ",
                                kHttpHeaderIssuerCertChain, " field."));
   }
@@ -238,7 +235,7 @@ StatusOr<GetTcbInfoResult> ParseGetTcbInfoResponse(
 StatusOr<std::string> EncryptPpid(const AsymmetricEncryptionKey *enc_key,
                                   const Ppid &ppid) {
   if (enc_key == nullptr) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
+    return Status(absl::StatusCode::kFailedPrecondition,
                   "No PPID encryption key provided");
   }
   std::vector<uint8_t> ppid_encrypted;
@@ -263,7 +260,7 @@ StatusOr<std::unique_ptr<SgxPcsClient>> SgxPcsClientImpl::Create(
     absl::string_view api_key) {
   AsymmetricEncryptionScheme enc_scheme = ppid_enc_key->GetEncryptionScheme();
   if (enc_scheme != AsymmetricEncryptionScheme::RSA3072_OAEP) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrFormat(
                       "ppid_enc_key has an invalid encryption scheme: %s (%d). "
                       "Expected RSA3072_OAEP.",

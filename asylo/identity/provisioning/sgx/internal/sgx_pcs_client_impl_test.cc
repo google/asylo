@@ -26,6 +26,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -846,7 +847,7 @@ TEST(SgxPcsClientNoFixtureTest, CreateClient_Fails) {
       .WillOnce(Return(AsymmetricEncryptionScheme::RSA2048_OAEP));
   ASSERT_THAT(SgxPcsClientImpl::Create(absl::make_unique<MockHttpFetcher>(),
                                        std::move(key), kApiKey),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SgxPcsClientNoFixtureTest, PpidMethodsFailIfNoEncryptionKey) {
@@ -860,9 +861,9 @@ TEST(SgxPcsClientNoFixtureTest, PpidMethodsFailIfNoEncryptionKey) {
   const PceSvn pce_svn = GetValidPceSvn();
   const PceId pce_id = GetValidPceId();
   EXPECT_THAT(client->GetPckCertificate(ppid, cpu_svn, pce_svn, pce_id),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
   EXPECT_THAT(client->GetPckCertificates(ppid, pce_id),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
 }
 
 class SgxPcsClientTest : public testing::Test {
@@ -933,7 +934,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedPpid) {
   const PceSvn pce_svn = GetValidPceSvn();
   const PceId pce_id = GetValidPceId();
   EXPECT_THAT(pcs_client_->GetPckCertificate(ppid, cpu_svn, pce_svn, pce_id),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedCpuSvn) {
@@ -942,7 +943,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedCpuSvn) {
   const PceSvn pce_svn = GetValidPceSvn();
   const PceId pce_id = GetValidPceId();
   EXPECT_THAT(pcs_client_->GetPckCertificate(ppid, cpu_svn, pce_svn, pce_id),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedPceSvn) {
@@ -951,7 +952,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedPceSvn) {
   const PceSvn pce_svn;
   const PceId pce_id = GetValidPceId();
   EXPECT_THAT(pcs_client_->GetPckCertificate(ppid, cpu_svn, pce_svn, pce_id),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedPceId) {
@@ -960,7 +961,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedPceId) {
   const PceSvn pce_svn = GetValidPceSvn();
   const PceId pce_id;
   EXPECT_THAT(pcs_client_->GetPckCertificate(ppid, cpu_svn, pce_svn, pce_id),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedIssuerCertChain) {
@@ -988,7 +989,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedIssuerCertChain) {
       .WillOnce(Return(response));
 
   EXPECT_THAT(pcs_client_->GetPckCertificate(ppid, cpu_svn, pce_svn, pce_id),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedTcbm) {
@@ -1016,7 +1017,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedTcbm) {
       .WillOnce(Return(response));
 
   EXPECT_THAT(pcs_client_->GetPckCertificate(ppid, cpu_svn, pce_svn, pce_id),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedPckCertificate) {
@@ -1044,7 +1045,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedPckCertificate) {
       .WillOnce(Return(response));
 
   EXPECT_THAT(pcs_client_->GetPckCertificate(ppid, cpu_svn, pce_svn, pce_id),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST_F(SgxPcsClientTest, GetPckCertificates_Success) {
@@ -1085,14 +1086,14 @@ TEST_F(SgxPcsClientTest, GetPckCertificates_MalformedPpid) {
   const Ppid ppid;
   const PceId pce_id = GetValidPceId();
   EXPECT_THAT(pcs_client_->GetPckCertificates(ppid, pce_id),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsClientTest, GetPckCertificates_MalformedPceId) {
   const Ppid ppid = GetValidPpid();
   const PceId pce_id;
   EXPECT_THAT(pcs_client_->GetPckCertificates(ppid, pce_id),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsClientTest, GetPckCertificates_MalformedIssuerCertChain) {
@@ -1116,7 +1117,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificates_MalformedIssuerCertChain) {
       .WillOnce(Return(response));
 
   EXPECT_THAT(pcs_client_->GetPckCertificates(ppid, pce_id),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsClientTest, GetPckCertificates_MalformedPckCertificates) {
@@ -1141,7 +1142,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificates_MalformedPckCertificates) {
 
   GetPckCertificatesResult result;
   EXPECT_THAT(pcs_client_->GetPckCertificates(ppid, pce_id),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsClientTest, GetCrl_Success) {
@@ -1179,7 +1180,7 @@ TEST_F(SgxPcsClientTest, GetCrl_MalformedIssuerCertChain) {
       .WillOnce(Return(response));
 
   EXPECT_THAT(pcs_client_->GetCrl(SgxCaType::PROCESSOR),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsClientTest, GetTcbInfo_Success) {
@@ -1210,7 +1211,7 @@ TEST_F(SgxPcsClientTest, GetTcbInfo_MalformedFmspc) {
   Fmspc fmspc;
   fmspc.set_value("\x00\x90\x6e\xa1\x00\x00\00\00", 8);
   EXPECT_THAT(pcs_client_->GetTcbInfo(fmspc),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsClientTest, GetTcbInfo_MalformedIssuerCertChain) {
@@ -1225,7 +1226,7 @@ TEST_F(SgxPcsClientTest, GetTcbInfo_MalformedIssuerCertChain) {
       .WillOnce(Return(response));
 
   EXPECT_THAT(pcs_client_->GetTcbInfo(fmspc),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxPcsClientTest, GetTcbInfo_MalformedTcbInfo) {
@@ -1240,20 +1241,20 @@ TEST_F(SgxPcsClientTest, GetTcbInfo_MalformedTcbInfo) {
       .WillOnce(Return(response));
 
   EXPECT_THAT(pcs_client_->GetTcbInfo(fmspc),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Represents the error states of the HttpFetcher's response.
 struct FetcherResponseErrorState {
   // Status returned by HttpFetcher::Get().
-  error::GoogleError status;
+  absl::StatusCode status;
   // HTTP response code set returned through HttpResponse.
   int http_response_code;
 };
 
 StatusOr<HttpFetcher::HttpResponse> CreateErrorFetchResponse(
     const FetcherResponseErrorState &error_state) {
-  if (error_state.status != error::GoogleError::OK) {
+  if (error_state.status != absl::StatusCode::kOk) {
     return Status(error_state.status, "");
   }
   HttpFetcher::HttpResponse response;
@@ -1264,7 +1265,7 @@ StatusOr<HttpFetcher::HttpResponse> CreateErrorFetchResponse(
 // Used to represent the errors and the expected parsing status.
 struct FetcherResponseErrorAndParsingResult {
   FetcherResponseErrorState response_error_state;
-  error::GoogleError expected_status_code;
+  absl::StatusCode expected_status_code;
 };
 
 // Attaches parameterization to SgxPcsClientTest to test PCS client response
@@ -1279,22 +1280,22 @@ INSTANTIATE_TEST_SUITE_P(
     ClientErrors, SgxPcsClientErrorTest,
     ValuesIn(std::vector<FetcherResponseErrorAndParsingResult>{
         // 400 Bad Request.
-        {{error::GoogleError::OK, 400}, error::GoogleError::INVALID_ARGUMENT},
+        {{absl::StatusCode::kOk, 400}, absl::StatusCode::kInvalidArgument},
 
         // 401 Unauthorized.
-        {{error::GoogleError::OK, 401}, error::GoogleError::UNAUTHENTICATED},
+        {{absl::StatusCode::kOk, 401}, absl::StatusCode::kUnauthenticated},
 
         // 404 Not found.
-        {{error::GoogleError::OK, 404}, error::GoogleError::NOT_FOUND},
+        {{absl::StatusCode::kOk, 404}, absl::StatusCode::kNotFound},
 
         // 500 Internal server error.
-        {{error::GoogleError::OK, 500}, error::GoogleError::INTERNAL},
+        {{absl::StatusCode::kOk, 500}, absl::StatusCode::kInternal},
 
         // 503 service unavailable.
-        {{error::GoogleError::OK, 503}, error::GoogleError::UNAVAILABLE},
+        {{absl::StatusCode::kOk, 503}, absl::StatusCode::kUnavailable},
 
         // Fetch request is roboted.
-        {{error::GoogleError::INTERNAL, 0}, error::GoogleError::INTERNAL}}));
+        {{absl::StatusCode::kInternal, 0}, absl::StatusCode::kInternal}}));
 
 TEST_P(SgxPcsClientErrorTest, GetPckCertificate) {
   const Ppid ppid = GetValidPpid();

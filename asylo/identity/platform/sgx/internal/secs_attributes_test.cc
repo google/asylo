@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
@@ -287,7 +288,7 @@ TEST_F(SecsAttributesTest, ListToSetError) {
                    " that is larger than the max allowed value of 127");
   EXPECT_LOG(ERROR, str);
   EXPECT_THAT(SecsAttributeSet::FromBits(v),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify the correctness of conversion from AttributeSet to Attributes.
@@ -346,7 +347,7 @@ TEST_F(SecsAttributesTest, TestAttributeSetError) {
 // Verify that SecsAttributeSet::FromBits fails for an invalid attribute bit.
 TEST_F(SecsAttributesTest, FromBitsNegative) {
   EXPECT_THAT(SecsAttributeSet::FromBits({bad_attribute_}),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that SetDefaultSecsAttributesMask creates a mask that is the logical

@@ -20,6 +20,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/platform/sgx/attributes.pb.h"
 #include "asylo/test/util/status_matchers.h"
@@ -172,19 +173,19 @@ TEST_F(AttributesTest, SetAndClearValidAttributeBits) {
 TEST_F(AttributesTest, SetInvalidAttributeBit) {
   Attributes attributes;
   EXPECT_THAT(SetAttributeBit(kBadAttribute, &attributes),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(AttributesTest, ClearInvalidAttributeBit) {
   Attributes attributes;
   EXPECT_THAT(ClearAttributeBit(kBadAttribute, &attributes),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(AttributesTest, TestInvalidAttributeBit) {
   Attributes attributes;
   EXPECT_THAT(IsAttributeBitSet(kBadAttribute, attributes),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(AttributesTest, GetPrintableAttributeListFromSet) {

@@ -28,6 +28,7 @@
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/hash/hash.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -117,8 +118,8 @@ PartialOrder OrderCombine(PartialOrder lhs, PartialOrder rhs) {
 // Returns an error indicating that |tcb_info_version| is an unknown TCB info
 // version.
 Status UnknownTcbInfoVersionError(int tcb_info_version) {
-  return Status(error::GoogleError::INVALID_ARGUMENT,
-                absl::StrCat("Unknown TCB info version: ", tcb_info_version));
+  return absl::InvalidArgumentError(
+      absl::StrCat("Unknown TCB info version: ", tcb_info_version));
 }
 
 // Returns an error indicating the TCB info version |tcb_info_version| does not
@@ -128,8 +129,7 @@ Status UnknownTcbInfoVersionError(int tcb_info_version) {
 Status WrongTcbInfoVersionError(absl::string_view message_name,
                                 int tcb_info_version,
                                 absl::string_view error_predicate) {
-  return Status(
-      error::GoogleError::INVALID_ARGUMENT,
+  return absl::InvalidArgumentError(
       absl::StrFormat("%s is for TCB info version %d but %s", message_name,
                       tcb_info_version, error_predicate));
 }
@@ -142,18 +142,16 @@ Status WrongTcbInfoVersionError(absl::string_view message_name,
 Status ValidateTimestamp(const google::protobuf::Timestamp &timestamp) {
   if (timestamp.seconds() < google::protobuf::util::TimeUtil::kTimestampMinSeconds ||
       timestamp.seconds() > google::protobuf::util::TimeUtil::kTimestampMaxSeconds) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrCat("Timestamp's \"seconds\" field must be between ",
-                     google::protobuf::util::TimeUtil::kTimestampMinSeconds, " and ",
-                     google::protobuf::util::TimeUtil::kTimestampMaxSeconds,
-                     " (inclusive)"));
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Timestamp's \"seconds\" field must be between ",
+        google::protobuf::util::TimeUtil::kTimestampMinSeconds, " and ",
+        google::protobuf::util::TimeUtil::kTimestampMaxSeconds, " (inclusive)"));
   }
 
   if (timestamp.nanos() < 0 || timestamp.nanos() > 999999999) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Timestamp's \"nanos\" field must be between 0 and "
-                  "999999999 (inclusive)");
+    return absl::InvalidArgumentError(
+        "Timestamp's \"nanos\" field must be between 0 and "
+        "999999999 (inclusive)");
   }
 
   return Status::OkStatus();
@@ -170,14 +168,14 @@ Status ValidateTimestamp(const google::protobuf::Timestamp &timestamp) {
 // be added to TcbStatus.StatusType without invalidating old data.
 Status ValidateTcbStatus(const TcbStatus &tcb_status) {
   if (tcb_status.value_case() == TcbStatus::VALUE_NOT_SET) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "TcbStatus has an empty \"value\" variant");
+    return absl::InvalidArgumentError(
+        "TcbStatus has an empty \"value\" variant");
   }
 
   if (tcb_status.value_case() == TcbStatus::kKnownStatus &&
       tcb_status.known_status() == TcbStatus::INVALID) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "TcbStatus has an unknown \"known_status\"");
+    return absl::InvalidArgumentError(
+        "TcbStatus has an unknown \"known_status\"");
   }
 
   return Status::OkStatus();
@@ -195,13 +193,12 @@ Status ValidateTcbStatus(const TcbStatus &tcb_status) {
 //   * Each set field is valid according to its respective validator.
 Status ValidateTcbLevel(const TcbLevel &tcb_level, int tcb_info_version) {
   if (!tcb_level.has_tcb()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "TcbLevel does not have a \"tcb\" field");
+    return absl::InvalidArgumentError("TcbLevel does not have a \"tcb\" field");
   }
 
   if (!tcb_level.has_status()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "TcbLevel does not have a \"status\" field");
+    return absl::InvalidArgumentError(
+        "TcbLevel does not have a \"status\" field");
   }
 
   ASYLO_RETURN_IF_ERROR(ValidateTcb(tcb_level.tcb()));
@@ -246,31 +243,30 @@ Status ValidateTcbLevel(const TcbLevel &tcb_level, int tcb_info_version) {
 //   * The |issue_date| is before the |next_update|.
 Status ValidateTcbInfoImplV1andV2(const TcbInfoImpl &tcb_info_impl) {
   if (!tcb_info_impl.has_issue_date()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "TcbInfoImpl does not have a \"issue_date\" field");
+    return absl::InvalidArgumentError(
+        "TcbInfoImpl does not have a \"issue_date\" field");
   }
 
   if (!tcb_info_impl.has_next_update()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "TcbInfoImpl does not have a \"next_update\" field");
+    return absl::InvalidArgumentError(
+        "TcbInfoImpl does not have a \"next_update\" field");
   }
 
   if (!tcb_info_impl.has_fmspc()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "TcbInfoImpl does not have a \"fmspc\" field");
+    return absl::InvalidArgumentError(
+        "TcbInfoImpl does not have a \"fmspc\" field");
   }
 
   if (!tcb_info_impl.has_pce_id()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "TcbInfoImpl does not have a \"pce_id\" field");
+    return absl::InvalidArgumentError(
+        "TcbInfoImpl does not have a \"pce_id\" field");
   }
 
   ASYLO_RETURN_IF_ERROR(ValidateTimestamp(tcb_info_impl.issue_date()));
   ASYLO_RETURN_IF_ERROR(ValidateTimestamp(tcb_info_impl.next_update()));
 
   if (tcb_info_impl.issue_date() >= tcb_info_impl.next_update()) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         "TcbInfoImpl's \"next_update\" is not after its \"issue_date\"");
   }
 
@@ -296,8 +292,7 @@ Status ValidateTcbInfoImplV1andV2(const TcbInfoImpl &tcb_info_impl) {
       }
       if (!TcbType_IsValid(tcb_info_impl.tcb_type()) ||
           tcb_info_impl.tcb_type() == TcbType::TCB_TYPE_UNKNOWN) {
-        return Status(
-            error::GoogleError::INVALID_ARGUMENT,
+        return absl::InvalidArgumentError(
             absl::StrCat("Unknown TCB type: ",
                          ProtoEnumValueName(tcb_info_impl.tcb_type())));
       }
@@ -320,8 +315,7 @@ Status ValidateTcbInfoImplV1andV2(const TcbInfoImpl &tcb_info_impl) {
     if (!insert_pair.second &&
         !google::protobuf::util::MessageDifferencer::Equals(tcb_level.status(),
                                                   insert_pair.first->second)) {
-      return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+      return absl::InvalidArgumentError(
           "TcbInfoImpl contains two entries with the same Tcb but different "
           "statuses");
     }
@@ -340,8 +334,8 @@ Status ValidateTcbInfoImplV1andV2(const TcbInfoImpl &tcb_info_impl) {
 //     to the message's |version|.
 Status ValidateTcbInfoImpl(const TcbInfoImpl &tcb_info_impl) {
   if (!tcb_info_impl.has_version()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "TcbInfoImpl does not have a \"version\" field");
+    return absl::InvalidArgumentError(
+        "TcbInfoImpl does not have a \"version\" field");
   }
 
   switch (tcb_info_impl.version()) {
@@ -349,9 +343,9 @@ Status ValidateTcbInfoImpl(const TcbInfoImpl &tcb_info_impl) {
     case 2:
       return ValidateTcbInfoImplV1andV2(tcb_info_impl);
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    absl::StrCat("TcbInfoImpl has an unknown (Intel) version: ",
-                                 tcb_info_impl.version()));
+      return absl::InvalidArgumentError(
+          absl::StrCat("TcbInfoImpl has an unknown (Intel) version: ",
+                       tcb_info_impl.version()));
   }
 }
 
@@ -359,21 +353,18 @@ Status ValidateTcbInfoImpl(const TcbInfoImpl &tcb_info_impl) {
 
 Status ValidateTcb(const Tcb &tcb) {
   if (!tcb.has_components()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Tcb does not have a \"components\" field");
+    return absl::InvalidArgumentError(
+        "Tcb does not have a \"components\" field");
   }
 
   if (!tcb.has_pce_svn()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Tcb does not have a \"pce_svn\" field");
+    return absl::InvalidArgumentError("Tcb does not have a \"pce_svn\" field");
   }
 
   if (tcb.components().size() != kTcbComponentsSize) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrCat(
-            "Tcb's \"components\" field has an invalid size (must be exactly ",
-            kTcbComponentsSize, " bytes)"));
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Tcb's \"components\" field has an invalid size (must be exactly ",
+        kTcbComponentsSize, " bytes)"));
   }
 
   return ValidatePceSvn(tcb.pce_svn());
@@ -381,13 +372,13 @@ Status ValidateTcb(const Tcb &tcb) {
 
 Status ValidateRawTcb(const RawTcb &raw_tcb) {
   if (!raw_tcb.has_cpu_svn()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "RawTcb does not have a \"cpu_svn\" field");
+    return absl::InvalidArgumentError(
+        "RawTcb does not have a \"cpu_svn\" field");
   }
 
   if (!raw_tcb.has_pce_svn()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "RawTcb does not have a \"pce_svn\" field");
+    return absl::InvalidArgumentError(
+        "RawTcb does not have a \"pce_svn\" field");
   }
 
   ASYLO_RETURN_IF_ERROR(ValidateCpuSvn(raw_tcb.cpu_svn()));
@@ -398,8 +389,8 @@ Status ValidateRawTcb(const RawTcb &raw_tcb) {
 
 Status ValidateTcbInfo(const TcbInfo &tcb_info) {
   if (tcb_info.value_case() != TcbInfo::kImpl) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "TcbInfo has an unknown \"value\" variant");
+    return absl::InvalidArgumentError(
+        "TcbInfo has an unknown \"value\" variant");
   }
 
   return ValidateTcbInfoImpl(tcb_info.impl());
@@ -424,19 +415,19 @@ StatusOr<PartialOrder> CompareTcbs(TcbType tcb_type, const Tcb &lhs,
           current, CompareTotal(lhs.pce_svn().value(), rhs.pce_svn().value()));
     default:
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrCat("Unknown TCB type: ", ProtoEnumValueName(tcb_type)));
   }
 }
 
 StatusOr<asylo::sgx::RawTcb> ParseRawTcbHex(absl::string_view raw_tcb_hex) {
   if (!IsHexEncoded(raw_tcb_hex)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Value is not a valid hex-encoded string");
   }
   std::string raw_tcb = absl::HexStringToBytes(raw_tcb_hex);
   if (raw_tcb.size() != kRawTcbSize) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Value has invalid size: ", raw_tcb.size(),
                                " bytes (expected ", kRawTcbSize, " bytes)"));
   }
@@ -461,14 +452,14 @@ StatusOr<std::string> TcbStatusToString(const TcbStatus &status) {
         case TcbStatus::REVOKED:
           return "Revoked";
         default:
-          return Status(error::GoogleError::INVALID_ARGUMENT,
+          return Status(absl::StatusCode::kInvalidArgument,
                         "Unknown known status code");
       }
       break;
     case TcbStatus::kUnknownStatus:
       return status.unknown_status();
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     "Unknown TcbStatus variant");
   }
 }

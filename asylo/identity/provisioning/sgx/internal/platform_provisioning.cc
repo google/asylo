@@ -20,6 +20,7 @@
 
 #include <limits>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
@@ -35,8 +36,8 @@ const uint32_t kPceIdMaxValue = std::numeric_limits<uint16_t>::max();
 
 Status ValidateConfigurationId(const ConfigurationId &id) {
   if (!id.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "ConfigurationId does not have a \"value\" field");
+    return absl::InvalidArgumentError(
+        "ConfigurationId does not have a \"value\" field");
   }
 
   return Status::OkStatus();
@@ -44,16 +45,13 @@ Status ValidateConfigurationId(const ConfigurationId &id) {
 
 Status ValidatePpid(const Ppid &ppid) {
   if (!ppid.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Ppid does not have a \"value\" field");
+    return absl::InvalidArgumentError("Ppid does not have a \"value\" field");
   }
 
   if (ppid.value().size() != kPpidSize) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrCat(
-            "Ppid's \"value\" field has an invalid size (must be exactly ",
-            kPpidSize, " bytes)"));
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Ppid's \"value\" field has an invalid size (must be exactly ",
+        kPpidSize, " bytes)"));
   }
 
   return Status::OkStatus();
@@ -61,16 +59,13 @@ Status ValidatePpid(const Ppid &ppid) {
 
 Status ValidateCpuSvn(const CpuSvn &cpu_svn) {
   if (!cpu_svn.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "CpuSvn does not have a \"value\" field");
+    return absl::InvalidArgumentError("CpuSvn does not have a \"value\" field");
   }
 
   if (cpu_svn.value().size() != kCpusvnSize) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrCat(
-            "CpuSvn's \"value\" field has an invalid size (must be exactly ",
-            kCpusvnSize, " bytes)"));
+    return absl::InvalidArgumentError(absl::StrCat(
+        "CpuSvn's \"value\" field has an invalid size (must be exactly ",
+        kCpusvnSize, " bytes)"));
   }
 
   return Status::OkStatus();
@@ -78,16 +73,13 @@ Status ValidateCpuSvn(const CpuSvn &cpu_svn) {
 
 Status ValidatePceSvn(const PceSvn &pce_svn) {
   if (!pce_svn.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "PceSvn does not have a \"value\" field");
+    return absl::InvalidArgumentError("PceSvn does not have a \"value\" field");
   }
 
   if (pce_svn.value() > kPceSvnMaxValue) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrCat(
-            "PceSvn's \"value\" field is too large (must be less than ",
-            kPceSvnMaxValue, ")"));
+    return absl::InvalidArgumentError(absl::StrCat(
+        "PceSvn's \"value\" field is too large (must be less than ",
+        kPceSvnMaxValue, ")"));
   }
 
   return Status::OkStatus();
@@ -95,13 +87,11 @@ Status ValidatePceSvn(const PceSvn &pce_svn) {
 
 Status ValidatePceId(const PceId &pce_id) {
   if (!pce_id.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "PceId does not have a \"value\" field");
+    return absl::InvalidArgumentError("PceId does not have a \"value\" field");
   }
 
   if (pce_id.value() > kPceIdMaxValue) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         absl::StrCat("PceId's \"value\" field is too large (must be less than ",
                      kPceIdMaxValue, ")"));
   }
@@ -111,13 +101,11 @@ Status ValidatePceId(const PceId &pce_id) {
 
 Status ValidateFmspc(const Fmspc &fmspc) {
   if (!fmspc.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Fmspc does not have a \"value\" field");
+    return absl::InvalidArgumentError("Fmspc does not have a \"value\" field");
   }
 
   if (fmspc.value().size() != kFmspcSize) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         absl::StrCat("Fmspc's \"value\" has an invalid size (must be exactly ",
                      kFmspcSize, " bytes)"));
   }
@@ -136,7 +124,7 @@ Status ValidateTargetInfoProto(const TargetInfoProto &target_info_proto) {
 StatusOr<Report> ConvertReportProtoToHardwareReport(
     const ReportProto &report_proto) {
   if (!report_proto.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "ReportProto does not have a \"value\" field");
   }
 
@@ -149,7 +137,7 @@ StatusOr<Report> ConvertReportProtoToHardwareReport(
 StatusOr<Targetinfo> ConvertTargetInfoProtoToTargetinfo(
     const TargetInfoProto &target_info_proto) {
   if (!target_info_proto.has_value()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "TargetInfoProto does not have a \"value\" field");
   }
 

@@ -25,6 +25,7 @@
 #include <google/protobuf/util/json_util.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
@@ -277,17 +278,17 @@ std::string JsonToString(const google::protobuf::Value &json) {
 
 TEST(SignedTcbInfoFromJsonTest, ImproperJsonFailsToParse) {
   EXPECT_THAT(SignedTcbInfoFromJson("} Wait a minute! This isn't proper JSON!"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SignedTcbInfoFromJsonTest, NonObjectJsonValueFailsToParse) {
   EXPECT_THAT(SignedTcbInfoFromJson("[\"An array, not an object\"]"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SignedTcbInfoFromJsonTest, ExtraFieldsFailsToParse) {
   EXPECT_THAT(SignedTcbInfoFromJson(kInvalidSignedTcbInfoExtraFieldsJson),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SignedTcbInfoFromJsonTest, NonJsonObjectTcbInfoFieldFailsToParse) {
@@ -295,7 +296,7 @@ TEST(SignedTcbInfoFromJsonTest, NonJsonObjectTcbInfoFieldFailsToParse) {
   json.mutable_struct_value()->mutable_fields()->at("tcbInfo").set_string_value(
       "Non JSON-object tcbInfo field");
   EXPECT_THAT(SignedTcbInfoFromJson(JsonToString(json)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SignedTcbInfoFromJsonTest, NonHexEncodedSignatureFailsToParse) {
@@ -305,7 +306,7 @@ TEST(SignedTcbInfoFromJsonTest, NonHexEncodedSignatureFailsToParse) {
       ->at("signature")
       .set_string_value("Non hex-encoded");
   EXPECT_THAT(SignedTcbInfoFromJson(JsonToString(json)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(SignedTcbInfoFromJsonTest,

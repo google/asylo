@@ -23,6 +23,7 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/container_util.h"
@@ -66,7 +67,7 @@ StatusOr<ConfigurationId> TcbInfoReader::GetConfigurationId(
       break;
     default:
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrCat("Unknown TCB type: ",
                        ProtoEnumValueName(tcb_info_.impl().tcb_type())));
   }

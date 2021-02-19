@@ -25,6 +25,7 @@
 #include <google/protobuf/text_format.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
@@ -133,7 +134,7 @@ constexpr char kExtendedPckCertificates[] =
 
 TEST(TcbInfoReaderTest, CreateFailsOnInvalidTcbInfo) {
   EXPECT_THAT(TcbInfoReader::Create(TcbInfo()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbInfoReaderTest, GetTcbInfoReturnsInputTcbInfo) {
@@ -151,7 +152,7 @@ TEST(TcbInfoReaderTest, GetConfigurationIdFailsOnInvalidCpuSvn) {
   ASYLO_ASSERT_OK_AND_ASSIGN(reader, TcbInfoReader::Create(tcb_info));
 
   EXPECT_THAT(reader.GetConfigurationId(CpuSvn()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbInfoReaderTest, GetConfigurationIdReadsCorrectConfigurationId) {
@@ -184,7 +185,7 @@ TEST(TcbInfoReaderTest, GetConsistencyWithFailsOnInvalidPckCertificates) {
                                                   &pck_certificates));
   pck_certificates.mutable_certs(0)->clear_cert();
   EXPECT_THAT(reader.GetConsistencyWith(pck_certificates),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 class TcbInfoReaderGetConsistencyWithTest

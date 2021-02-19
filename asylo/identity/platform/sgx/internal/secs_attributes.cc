@@ -25,6 +25,7 @@
 #include <string>
 
 #include "absl/base/macros.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
@@ -115,7 +116,7 @@ StatusOr<SecsAttributeSet> SecsAttributeSet::FromBits(
     size_t bit_position = static_cast<size_t>(attribute);
     if (bit_position >= kNumAttributeBits) {
       return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+          absl::StatusCode::kInvalidArgument,
           absl::StrFormat("SecsAttributeBit specifies a bit position %d "
                           " that is larger than the max allowed value of %d",
                           bit_position, kNumAttributeBits - 1));

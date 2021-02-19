@@ -40,6 +40,7 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/random/distributions.h"
 #include "absl/random/random.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -131,8 +132,7 @@ Status FmspcIsValidAndMatchesLayout(const Fmspc &fmspc) {
       reinterpret_cast<const FakeFmspcLayout *>(fmspc.value().data());
   if (!SgxCaType_IsValid(layout->ca) ||
       layout->ca == SgxCaType::SGX_CA_TYPE_UNKNOWN) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         absl::StrCat("Invalid FMSPC: bad SgxCaType: ",
                      ProtoEnumValueName(static_cast<SgxCaType>(layout->ca))));
   }
@@ -162,17 +162,15 @@ Status IsValidFmspcTcbInfoPair(const Fmspc &fmspc, const TcbInfo &tcb_info) {
   ASYLO_RETURN_IF_ERROR(ValidateTcbInfo(tcb_info));
   if (!google::protobuf::util::MessageDifferencer::Equals(tcb_info.impl().fmspc(),
                                                 fmspc)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrFormat(
-                      "TCB info is for wrong FMSPC: expected 0x%s, found 0x%s",
-                      absl::BytesToHexString(fmspc.value()),
-                      absl::BytesToHexString(tcb_info.impl().fmspc().value())));
+    return absl::InvalidArgumentError(absl::StrFormat(
+        "TCB info is for wrong FMSPC: expected 0x%s, found 0x%s",
+        absl::BytesToHexString(fmspc.value()),
+        absl::BytesToHexString(tcb_info.impl().fmspc().value())));
   }
   const FakeFmspcLayout *layout =
       reinterpret_cast<const FakeFmspcLayout *>(fmspc.value().data());
   if (tcb_info.impl().pce_id().value() != layout->pce_id) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         absl::StrFormat("TCB info is for wrong PCE ID: expected %d, found %d",
                         layout->pce_id, tcb_info.impl().pce_id().value()));
   }
@@ -249,7 +247,7 @@ StatusOr<std::string> TcbInfoToJson(const TcbInfo &tcb_info) {
         tcb_info_element.set_number_value(0);
         break;
       default:
-        return Status(error::GoogleError::INVALID_ARGUMENT,
+        return Status(absl::StatusCode::kInvalidArgument,
                       absl::StrCat("Unknown TCB type: ",
                                    ProtoEnumValueName(impl.tcb_type())));
     }
@@ -342,9 +340,8 @@ Status FakeSgxPcsClient::UpdateFmspc(const Fmspc &fmspc, TcbInfo tcb_info) {
   auto tcb_infos_view = tcb_infos_.Lock();
   auto it = tcb_infos_view->find(fmspc);
   if (it == tcb_infos_view->end()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Unknown FMSPC: 0x",
-                               absl::BytesToHexString(fmspc.value())));
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Unknown FMSPC: 0x", absl::BytesToHexString(fmspc.value())));
   }
   it->second = std::move(tcb_info);
   return Status::OkStatus();
@@ -353,7 +350,7 @@ Status FakeSgxPcsClient::UpdateFmspc(const Fmspc &fmspc, TcbInfo tcb_info) {
 StatusOr<GetPckCertificateResult> FakeSgxPcsClient::GetPckCertificate(
     const Ppid &ppid, const CpuSvn &cpu_svn, const PceSvn &pce_svn,
     const PceId &pce_id) {
-  return Status(error::GoogleError::UNIMPLEMENTED,
+  return Status(absl::StatusCode::kUnimplemented,
                 "FakeSgxPcsClient::GetPckCertificate() is not implemented");
 }
 
@@ -374,7 +371,7 @@ StatusOr<GetPckCertificatesResult> FakeSgxPcsClient::GetPckCertificates(
   auto tcb_info_it = readable_view->find(fmspc);
   if (tcb_info_it == readable_view->end()) {
     return Status(
-        error::GoogleError::NOT_FOUND,
+        absl::StatusCode::kNotFound,
         absl::StrFormat(
             "Failed to create PCK certificates for platform with PPID 0x%s: "
             "unknown FMSPC 0x%s",
@@ -402,7 +399,7 @@ StatusOr<GetPckCertificatesResult> FakeSgxPcsClient::GetPckCertificates(
 }
 
 StatusOr<GetCrlResult> FakeSgxPcsClient::GetCrl(SgxCaType sgx_ca_type) {
-  return Status(error::GoogleError::UNIMPLEMENTED,
+  return Status(absl::StatusCode::kUnimplemented,
                 "FakeSgxPcsClient::GetCrl() is not implemented");
 }
 
@@ -417,7 +414,7 @@ StatusOr<GetTcbInfoResult> FakeSgxPcsClient::GetTcbInfo(const Fmspc &fmspc) {
     auto tcb_infos_readable_view = tcb_infos_.ReaderLock();
     auto it = tcb_infos_readable_view->find(fmspc);
     if (it == tcb_infos_readable_view->end()) {
-      return Status(error::GoogleError::NOT_FOUND,
+      return Status(absl::StatusCode::kNotFound,
                     "No TCB info associated with given FMSPC");
     }
 
@@ -447,7 +444,7 @@ StatusOr<Fmspc> FakeSgxPcsClient::CreateFmspcWithProperties(
     const FakeSgxPcsClient::PlatformProperties &properties) {
   if (!SgxCaType_IsValid(properties.ca) ||
       properties.ca == SGX_CA_TYPE_UNKNOWN) {
-    return Status(error::GoogleError::INVALID_ARGUMENT, "Invalid SgxCaType");
+    return Status(absl::StatusCode::kInvalidArgument, "Invalid SgxCaType");
   }
   ASYLO_RETURN_IF_ERROR(ValidatePceId(properties.pce_id));
 
@@ -490,7 +487,7 @@ StatusOr<const FakeSgxPcsClient::CaInfo *> FakeSgxPcsClient::GetCaInfo(
     case SgxCaType::PROCESSOR:
       return kProcessorCaInfo;
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
+      return Status(absl::StatusCode::kInvalidArgument,
                     absl::StrCat("Unsupported SGX CA type: ",
                                  ProtoEnumValueName(ca_type)));
   }

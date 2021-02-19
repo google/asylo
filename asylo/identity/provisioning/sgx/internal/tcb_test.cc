@@ -24,6 +24,7 @@
 #include "google/protobuf/timestamp.pb.h"
 #include <gtest/gtest.h>
 #include "absl/base/macros.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -121,28 +122,28 @@ std::vector<TcbInfo> CreateTcbInfosOfVersions(absl::Span<const int> versions) {
 TEST(TcbTest, TcbWithoutComponentsFieldIsInvalid) {
   Tcb tcb = CreateValidTcb();
   tcb.clear_components();
-  EXPECT_THAT(ValidateTcb(tcb), StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(ValidateTcb(tcb), StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, TcbWithoutPceSvnFieldIsInvalid) {
   Tcb tcb = CreateValidTcb();
   tcb.clear_pce_svn();
-  EXPECT_THAT(ValidateTcb(tcb), StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(ValidateTcb(tcb), StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, TcbWithComponentsFieldOfBadLengthIsInvalid) {
   Tcb tcb = CreateValidTcb();
   tcb.set_components("short");
-  EXPECT_THAT(ValidateTcb(tcb), StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(ValidateTcb(tcb), StatusIs(absl::StatusCode::kInvalidArgument));
 
   tcb.set_components("waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaytoolong");
-  EXPECT_THAT(ValidateTcb(tcb), StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(ValidateTcb(tcb), StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, TcbWithInvalidPceSvnFieldIsInvalid) {
   Tcb tcb = CreateValidTcb();
   tcb.mutable_pce_svn()->clear_value();
-  EXPECT_THAT(ValidateTcb(tcb), StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(ValidateTcb(tcb), StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, ValidTcbIsValid) {
@@ -153,28 +154,28 @@ TEST(TcbTest, RawTcbWithoutCpuSvnFieldIsInvalid) {
   RawTcb raw_tcb = CreateValidRawTcb();
   raw_tcb.clear_cpu_svn();
   EXPECT_THAT(ValidateRawTcb(raw_tcb),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, RawTcbWithoutPceSvnFieldIsInvalid) {
   RawTcb raw_tcb = CreateValidRawTcb();
   raw_tcb.clear_pce_svn();
   EXPECT_THAT(ValidateRawTcb(raw_tcb),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, RawTcbWithInvalidCpuSvnFieldIsInvalid) {
   RawTcb raw_tcb = CreateValidRawTcb();
   raw_tcb.mutable_cpu_svn()->clear_value();
   EXPECT_THAT(ValidateRawTcb(raw_tcb),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, RawTcbWithInvalidPceSvnFieldIsInvalid) {
   RawTcb raw_tcb = CreateValidRawTcb();
   raw_tcb.mutable_pce_svn()->clear_value();
   EXPECT_THAT(ValidateRawTcb(raw_tcb),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, ValidRawTcbIsValid) {
@@ -183,14 +184,14 @@ TEST(TcbTest, ValidRawTcbIsValid) {
 
 TEST(TcbTest, TcbInfoWithoutValueVariantIsInvalid) {
   EXPECT_THAT(ValidateTcbInfo(TcbInfo()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, TcbInfoImplWithoutVersionFieldIsInvalid) {
   for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
     tcb_info.mutable_impl()->clear_version();
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -198,7 +199,7 @@ TEST(TcbTest, TcbInfoImplWithoutIssueDateFieldIsInvalid) {
   for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
     tcb_info.mutable_impl()->clear_issue_date();
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -206,7 +207,7 @@ TEST(TcbTest, TcbInfoImplWithoutNextUpdateFieldIsInvalid) {
   for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
     tcb_info.mutable_impl()->clear_issue_date();
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -214,7 +215,7 @@ TEST(TcbTest, TcbInfoImplWithoutFmspcFieldIsInvalid) {
   for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
     tcb_info.mutable_impl()->clear_fmspc();
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -222,7 +223,7 @@ TEST(TcbTest, TcbInfoImplWithoutPceIdFieldIsInvalid) {
   for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
     tcb_info.mutable_impl()->clear_pce_id();
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -230,42 +231,42 @@ TEST(TcbTest, TcbInfoImplV1WithTcbTypeFieldIsInvalid) {
   TcbInfo tcb_info = CreateValidTcbInfoV1();
   tcb_info.mutable_impl()->set_tcb_type(TcbType::TCB_TYPE_0);
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, TcbInfoImplV2WithoutTcbTypeFieldIsInvalid) {
   TcbInfo tcb_info = CreateValidTcbInfoV2();
   tcb_info.mutable_impl()->clear_tcb_type();
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, TcbInfoImplV2WithInvalidTcbTypeFieldIsInvalid) {
   TcbInfo tcb_info = CreateValidTcbInfoV2();
   tcb_info.mutable_impl()->set_tcb_type(TcbType::TCB_TYPE_UNKNOWN);
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, TcbInfoImplV1WithTcbDataEvaluationNumberFieldIsInvalid) {
   TcbInfo tcb_info = CreateValidTcbInfoV1();
   tcb_info.mutable_impl()->set_tcb_evaluation_data_number(16);
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, TcbInfoImplV2WithoutTcbDataEvaluationNumberFieldIsInvalid) {
   TcbInfo tcb_info = CreateValidTcbInfoV2();
   tcb_info.mutable_impl()->clear_tcb_evaluation_data_number();
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, TcbInfoImplWithUnknownVersionIsInvalid) {
   for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
     tcb_info.mutable_impl()->set_version(12);
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -273,7 +274,7 @@ TEST(TcbTest, TcbInfoImplWithInvalidIssueDateIsInvalid) {
   for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
     tcb_info.mutable_impl()->mutable_issue_date()->set_seconds(-100000000000);
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -281,7 +282,7 @@ TEST(TcbTest, TcbInfoImplWithInvalidNextUpdateIsInvalid) {
   for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
     tcb_info.mutable_impl()->mutable_next_update()->set_seconds(-100000000000);
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -289,7 +290,7 @@ TEST(TcbTest, TcbInfoImplWithInvalidFmspcIsInvalid) {
   for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
     tcb_info.mutable_impl()->mutable_fmspc()->clear_value();
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -297,7 +298,7 @@ TEST(TcbTest, TcbInfoImplWithInvalidPceIdIsInvalid) {
   for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
     tcb_info.mutable_impl()->mutable_pce_id()->clear_value();
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -305,7 +306,7 @@ TEST(TcbTest, TcbLevelWithoutTcbFieldIsInvalid) {
   for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
     tcb_info.mutable_impl()->mutable_tcb_levels(0)->clear_tcb();
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -316,14 +317,14 @@ TEST(TcbTest, TcbLevelInV1TcbInfoWithTcbDateFieldIsInvalid) {
   tcb_date->set_seconds(absl::ToInt64Seconds(absl::Now() - absl::UnixEpoch()));
   tcb_date->set_nanos(0);
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, TcbLevelInV2TcbInfoWithoutTcbDateFieldIsInvalid) {
   TcbInfo tcb_info = CreateValidTcbInfoV2();
   tcb_info.mutable_impl()->mutable_tcb_levels(0)->clear_tcb_date();
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, TcbLevelInV1TcbInfoWithNonEmptyAdvisoryIdsIsInvalid) {
@@ -331,14 +332,14 @@ TEST(TcbTest, TcbLevelInV1TcbInfoWithNonEmptyAdvisoryIdsIsInvalid) {
   *tcb_info.mutable_impl()->mutable_tcb_levels(0)->add_advisory_ids() =
       "This shouldn't be here";
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, TcbLevelWithoutStatusFieldIsInvalid) {
   for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
     tcb_info.mutable_impl()->mutable_tcb_levels(0)->clear_status();
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -349,7 +350,7 @@ TEST(TcbTest, TcbLevelWithInvalidTcbIsInvalid) {
         ->mutable_tcb()
         ->clear_pce_svn();
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -360,7 +361,7 @@ TEST(TcbTest, TcbStatusWithoutValueVariantIsInvalid) {
         ->mutable_status()
         ->clear_value();
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -371,7 +372,7 @@ TEST(TcbTest, TcbStatusWithUnknownKnownStatusVariantIsInvalid) {
         ->mutable_status()
         ->set_known_status(TcbStatus::INVALID);
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -384,7 +385,7 @@ TEST(TcbTest,
         ->mutable_status()
         ->set_known_status(TcbStatus::OUT_OF_DATE);
     EXPECT_THAT(ValidateTcbInfo(tcb_info),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -405,7 +406,7 @@ TEST(TcbTest,
 TEST(TcbTest, CompareTcbsFailsWithUnknownTcbType) {
   EXPECT_THAT(CompareTcbs(TcbType::TCB_TYPE_UNKNOWN, CreateValidTcb(),
                           CreateValidTcb()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, CompareTcbsComparesArgumentsCorrectly) {
@@ -466,12 +467,12 @@ TEST(TcbTest, ParseRawTcbHex_ValidRawTcbHexParseSuccessfully) {
 
 TEST(TcbTest, ParseRawTcbHex_NonHexStringFailsToParse) {
   EXPECT_THAT(ParseRawTcbHex("not a hex string"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, ParseRawTcbHex_WrongSizedStringFailsToParse) {
   EXPECT_THAT(ParseRawTcbHex("1234567890"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbTest, TcbStatusToStringSucceedsOnUnknownStatuses) {
@@ -501,11 +502,11 @@ TEST(TcbTest, TcbStatusToStringSucceedsOnValidKnownStatusValues) {
 TEST(TcbTest, TcbStatusToStringFailsOnBadInputs) {
   TcbStatus status;
   EXPECT_THAT(TcbStatusToString(status),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   status.set_known_status(TcbStatus::INVALID);
   EXPECT_THAT(TcbStatusToString(status),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 }  // namespace

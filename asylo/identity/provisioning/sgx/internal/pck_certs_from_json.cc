@@ -27,6 +27,7 @@
 #include "google/protobuf/struct.pb.h"
 #include <google/protobuf/util/json_util.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/certificate.pb.h"
@@ -71,12 +72,12 @@ StatusOr<RawTcb> RawTcbFromJsonValue(
   const std::string *raw_tcb_hex;
   ASYLO_ASSIGN_OR_RETURN(raw_tcb_hex, JsonGetString(raw_tcb_json));
   if (!IsHexEncoded(*raw_tcb_hex)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   "Raw TCB JSON is not a hex-encoded string.");
   }
   std::string raw_tcb = absl::HexStringToBytes(*raw_tcb_hex);
   if (raw_tcb.size() != kRawTcbSize) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Raw TCB JSON does not represents a ",
                                kRawTcbSize, "-byte value."));
   }

@@ -26,6 +26,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/identity/provisioning/sgx/internal/pck_certificates.pb.h"
 #include "asylo/test/util/output_collector.h"
 #include "asylo/test/util/proto_matchers.h"
@@ -668,12 +669,12 @@ std::string JsonToString(const google::protobuf::Value &json) {
 TEST(PckCertsFromJsonTest, InvalidJsonFailsToParse) {
   EXPECT_THAT(
       PckCertificatesFromJson("} Wait a minute! This isn't proper JSON!"),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+      StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertsFromJsonTest, NonObjectJsonValueFailsToParse) {
   EXPECT_THAT(PckCertificatesFromJson("[\"An array, not an object\"]"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertsFromJsonTest, NonHexEncodedRawTcbFailsToParse) {
@@ -685,7 +686,7 @@ TEST(PckCertsFromJsonTest, NonHexEncodedRawTcbFailsToParse) {
       ->at("tcbm")
       .set_string_value("Non hex encoded");
   EXPECT_THAT(PckCertificatesFromJson(JsonToString(json)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertsFromJsonTest, WrongSizedRawTcbFailsToParse) {
@@ -697,7 +698,7 @@ TEST(PckCertsFromJsonTest, WrongSizedRawTcbFailsToParse) {
       ->at("tcbm")
       .set_string_value("\x00\x01\x02\x03");
   EXPECT_THAT(PckCertificatesFromJson(JsonToString(json)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PckCertsFromJsonTest, WrongPemFormatCertFailsToParse) {
@@ -709,7 +710,7 @@ TEST(PckCertsFromJsonTest, WrongPemFormatCertFailsToParse) {
       ->at("cert")
       .set_string_value("not a certificate");
   EXPECT_THAT(PckCertificatesFromJson(JsonToString(json)),
-              StatusIs(error::GoogleError::INTERNAL));
+              StatusIs(absl::StatusCode::kInternal));
 }
 
 TEST(PckCertsFromJsonTest, CorrectJsonParsesSuccessfully) {

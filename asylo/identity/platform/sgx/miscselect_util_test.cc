@@ -21,6 +21,7 @@
 #include <cstdint>
 
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/platform/sgx/miscselect.pb.h"
 #include "asylo/test/util/status_matchers.h"
@@ -111,37 +112,37 @@ TEST(MiscselectUtilTest, SetAndClearValidMiscselectProtoBits) {
 TEST(MiscselectUtilTest, SetInvalidMiscselectBit) {
   uint32_t miscselect = 0;
   EXPECT_THAT(SetMiscselectBit(bad_miscselect_, &miscselect),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(MiscselectUtilTest, SetInvalidMiscselectProtoBit) {
   Miscselect miscselect;
   EXPECT_THAT(SetMiscselectBit(bad_miscselect_, &miscselect),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(MiscselectUtilTest, ClearInvalidMiscselectBit) {
   uint32_t miscselect = 0;
   EXPECT_THAT(ClearMiscselectBit(bad_miscselect_, &miscselect),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(MiscselectUtilTest, ClearInvalidMiscselectProtoBit) {
   Miscselect miscselect;
   EXPECT_THAT(ClearMiscselectBit(bad_miscselect_, &miscselect),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(MiscselectUtilTest, TestInvalidMiscselectBit) {
   uint32_t miscselect = 0;
   EXPECT_THAT(IsMiscselectBitSet(bad_miscselect_, miscselect),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(MiscselectUtilTest, TestInvalidMiscselectProtoBit) {
   Miscselect miscselect;
   EXPECT_THAT(IsMiscselectBitSet(bad_miscselect_, miscselect),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 }  // namespace

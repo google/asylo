@@ -24,6 +24,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/crypto/sha256_hash_util.h"
 #include "asylo/crypto/util/bytes.h"
@@ -763,7 +764,7 @@ TEST_F(SgxIdentityUtilInternalTest, SgxIdentityMatchInvalidExpectation) {
   SgxIdentityExpectation expectation;
   EXPECT_THAT(MatchIdentityToExpectation(identity, expectation,
                                          /*explanation=*/nullptr),
-              StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "Expectation parameter is invalid"));
 }
 
@@ -776,7 +777,7 @@ TEST_F(SgxIdentityUtilInternalTest, SgxIdentityMatchInvalidIdentity) {
 
   EXPECT_THAT(MatchIdentityToExpectation(SgxIdentity::default_instance(),
                                          expectation, /*explanation=*/nullptr),
-              StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "Identity parameter is invalid"));
 }
 
@@ -799,7 +800,7 @@ TEST_F(SgxIdentityUtilInternalTest, SgxIdentityMatchIdentityMissingMrenclave) {
 
   EXPECT_THAT(MatchIdentityToExpectation(identity, expectation,
                                          /*explanation=*/nullptr),
-              StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "Identity is not compatible with specified match spec"));
 }
 
@@ -824,7 +825,7 @@ TEST_F(SgxIdentityUtilInternalTest, SgxIdentityMatchIdentityMissingMrsigner) {
 
   EXPECT_THAT(MatchIdentityToExpectation(identity, expectation,
                                          /*explanation=*/nullptr),
-              StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "Identity is not compatible with specified match spec"));
 }
 

@@ -34,6 +34,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -394,7 +395,7 @@ TEST_P(FakeSgxPcsClientTest, GetPckCertificateIsUnimplemented) {
   pce_id.set_value(0);
 
   EXPECT_THAT(fake_client_->GetPckCertificate(ppid, cpu_svn, pce_svn, pce_id),
-              StatusIs(error::GoogleError::UNIMPLEMENTED));
+              StatusIs(absl::StatusCode::kUnimplemented));
 }
 
 TEST_P(FakeSgxPcsClientTest, GetPckCertificatesFailsOnInvalidArguments) {
@@ -404,9 +405,9 @@ TEST_P(FakeSgxPcsClientTest, GetPckCertificatesFailsOnInvalidArguments) {
   valid_pce_id.set_value(0);
 
   EXPECT_THAT(fake_client_->GetPckCertificates(Ppid(), valid_pce_id),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(fake_client_->GetPckCertificates(valid_ppid, PceId()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_P(FakeSgxPcsClientTest,
@@ -419,7 +420,7 @@ TEST_P(FakeSgxPcsClientTest,
   pce_id.set_value(0);
 
   EXPECT_THAT(fake_client_->GetPckCertificates(ppid, pce_id),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_P(FakeSgxPcsClientTest, GetPckCertificatesFailsOnPpidWithUnknownFmspc) {
@@ -430,7 +431,7 @@ TEST_P(FakeSgxPcsClientTest, GetPckCertificatesFailsOnPpidWithUnknownFmspc) {
   ASYLO_ASSERT_OK_AND_ASSIGN(ppid, FakeSgxPcsClient::CreatePpidForFmspc(fmspc));
   EXPECT_THAT(
       fake_client_->GetPckCertificates(ppid, platform_properties_.pce_id),
-      StatusIs(error::GoogleError::NOT_FOUND));
+      StatusIs(absl::StatusCode::kNotFound));
 }
 
 TEST_P(FakeSgxPcsClientTest,
@@ -473,21 +474,21 @@ TEST_P(FakeSgxPcsClientTest,
 
 TEST_P(FakeSgxPcsClientTest, GetCrlIsUnimplemented) {
   EXPECT_THAT(fake_client_->GetCrl(SgxCaType::PLATFORM),
-              StatusIs(error::GoogleError::UNIMPLEMENTED));
+              StatusIs(absl::StatusCode::kUnimplemented));
 }
 
 TEST_P(FakeSgxPcsClientTest, GetTcbInfoFailsOnInvalidFmspc) {
   Fmspc fmspc;
   fmspc.set_value("toolong");
   EXPECT_THAT(fake_client_->GetTcbInfo(fmspc),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_P(FakeSgxPcsClientTest, GetTcbInfoFailsOnFmspcNotMatchingFakeFormat) {
   Fmspc fmspc;
   fmspc.set_value("\xffstuff");
   EXPECT_THAT(fake_client_->GetTcbInfo(fmspc),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_P(FakeSgxPcsClientTest, GetTcbInfoFailsOnUnknownFmspc) {
@@ -495,15 +496,14 @@ TEST_P(FakeSgxPcsClientTest, GetTcbInfoFailsOnUnknownFmspc) {
   ASYLO_ASSERT_OK_AND_ASSIGN(
       fmspc, fake_client_->CreateFmspcWithProperties(platform_properties_));
   EXPECT_THAT(fake_client_->GetTcbInfo(fmspc),
-              StatusIs(error::GoogleError::NOT_FOUND));
+              StatusIs(absl::StatusCode::kNotFound));
 }
 
 TEST_P(FakeSgxPcsClientTest, GetTcbInfoReturnsConfiguredTcbInfoForAddedFmspc) {
   for (int tcb_info_version : {1, 2}) {
     Fmspc fmspc;
     ASYLO_ASSERT_OK_AND_ASSIGN(
-        fmspc,
-        fake_client_->CreateFmspcWithProperties(platform_properties_));
+        fmspc, fake_client_->CreateFmspcWithProperties(platform_properties_));
     TcbInfo expected_tcb_info = SomeTcbInfo(tcb_info_version, fmspc);
     ASSERT_THAT(fake_client_->AddFmspc(fmspc, expected_tcb_info),
                 IsOkAndHolds(true));
@@ -524,11 +524,10 @@ TEST_P(FakeSgxPcsClientTest, UpdateFmspcFailsForUnknownFmspc) {
   for (int tcb_info_version : {1, 2}) {
     Fmspc fmspc;
     ASYLO_ASSERT_OK_AND_ASSIGN(
-        fmspc,
-        fake_client_->CreateFmspcWithProperties(platform_properties_));
+        fmspc, fake_client_->CreateFmspcWithProperties(platform_properties_));
     EXPECT_THAT(
         fake_client_->UpdateFmspc(fmspc, SomeTcbInfo(tcb_info_version, fmspc)),
-        StatusIs(error::GoogleError::INVALID_ARGUMENT));
+        StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -536,8 +535,7 @@ TEST_P(FakeSgxPcsClientTest, GetTcbInfoReturnsNewTcbInfoForChangedFmspc) {
   for (int tcb_info_version : {1, 2}) {
     Fmspc fmspc;
     ASYLO_ASSERT_OK_AND_ASSIGN(
-        fmspc,
-        fake_client_->CreateFmspcWithProperties(platform_properties_));
+        fmspc, fake_client_->CreateFmspcWithProperties(platform_properties_));
     ASSERT_THAT(
         fake_client_->AddFmspc(fmspc, SomeTcbInfo(tcb_info_version, fmspc)),
         IsOkAndHolds(true));

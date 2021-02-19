@@ -20,6 +20,7 @@
 
 #include <cstdint>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/platform/sgx/miscselect.pb.h"
@@ -44,7 +45,7 @@ absl::string_view GetMiscselectBitName(MiscselectBit miscselect_bit) {
 StatusOr<size_t> GetMiscselectBitMask(size_t bit_position) {
   if (bit_position >= kNumMiscselectBits) {
     return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+        absl::StatusCode::kInvalidArgument,
         absl::StrCat("MiscselectBit specifies an invalid bit position: ",
                      bit_position));
   }

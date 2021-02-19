@@ -22,6 +22,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
@@ -38,7 +39,7 @@ using ::testing::Eq;
 
 TEST(ProvisioningPlatformTest, ConfigurationIdWithoutValueFieldIsInvalid) {
   EXPECT_THAT(ValidateConfigurationId(ConfigurationId()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(ProvisioningPlatformTest, ValidConfigurationIdIsValid) {
@@ -49,18 +50,16 @@ TEST(ProvisioningPlatformTest, ValidConfigurationIdIsValid) {
 
 TEST(PlatformProvisioningTest, PpidWithoutValueFieldIsInvalid) {
   EXPECT_THAT(ValidatePpid(Ppid()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest, PpidWithValueFieldOfBadLengthIsInvalid) {
   Ppid ppid;
   *ppid.mutable_value() = "short";
-  EXPECT_THAT(ValidatePpid(ppid),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(ValidatePpid(ppid), StatusIs(absl::StatusCode::kInvalidArgument));
 
   *ppid.mutable_value() = "waaaaaaaaaaaaaaaaaaaaaaaaaaytoolong";
-  EXPECT_THAT(ValidatePpid(ppid),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(ValidatePpid(ppid), StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest, ValidPpidIsValid) {
@@ -71,18 +70,18 @@ TEST(PlatformProvisioningTest, ValidPpidIsValid) {
 
 TEST(PlatformProvisioningTest, CpuSvnWithoutValueFieldIsInvalid) {
   EXPECT_THAT(ValidateCpuSvn(CpuSvn()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest, CpuSvnWithValueFieldOfBadLengthIsInvalid) {
   CpuSvn cpu_svn;
   *cpu_svn.mutable_value() = "short";
   EXPECT_THAT(ValidateCpuSvn(cpu_svn),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   *cpu_svn.mutable_value() = "waaaaaaaaaaaaaaaaaaaaaaaaaaytoolong";
   EXPECT_THAT(ValidateCpuSvn(cpu_svn),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest, ValidCpuSvnIsValid) {
@@ -93,14 +92,14 @@ TEST(PlatformProvisioningTest, ValidCpuSvnIsValid) {
 
 TEST(PlatformProvisioningTest, PceSvnWithoutValueFieldIsInvalid) {
   EXPECT_THAT(ValidatePceSvn(PceSvn()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest, PceSvnWithTooLargeValueFieldIsInvalid) {
   PceSvn pce_svn;
   pce_svn.set_value(100000);
   EXPECT_THAT(ValidatePceSvn(pce_svn),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest, ValidPceSvnIsValid) {
@@ -111,14 +110,14 @@ TEST(PlatformProvisioningTest, ValidPceSvnIsValid) {
 
 TEST(PlatformProvisioningTest, PceIdWithoutValueFieldIsInvalid) {
   EXPECT_THAT(ValidatePceId(PceId()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest, PceIdWithTooLargeValueFieldIsInvalid) {
   PceId pce_id;
   pce_id.set_value(100000);
   EXPECT_THAT(ValidatePceId(pce_id),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest, ValidPceIdIsValid) {
@@ -129,18 +128,18 @@ TEST(PlatformProvisioningTest, ValidPceIdIsValid) {
 
 TEST(PlatformProvisioningTest, FmspcWithoutValueFieldIsInvalid) {
   EXPECT_THAT(ValidateFmspc(Fmspc()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest, FmspcWithValueFieldOfBadLengthIsInvalid) {
   Fmspc fmspc;
   fmspc.set_value("short");
   EXPECT_THAT(ValidateFmspc(fmspc),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   fmspc.set_value("toolong");
   EXPECT_THAT(ValidateFmspc(fmspc),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest, ValidFmspcIsValid) {
@@ -152,18 +151,18 @@ TEST(PlatformProvisioningTest, ValidFmspcIsValid) {
 TEST(PlatformProvisioningTest, ReportProtoWithoutValueFieldIsInvalid) {
   ReportProto report_proto;
   EXPECT_THAT(ValidateReportProto(report_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(ConvertReportProtoToHardwareReport(report_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest, ReportProtoWithValueFieldOfBadLengthIsInvalid) {
   ReportProto report_proto;
   report_proto.set_value("short");
   EXPECT_THAT(ValidateReportProto(report_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(ConvertReportProtoToHardwareReport(report_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   Report report = TrivialRandomObject<Report>();
   std::string report_bin = ConvertTrivialObjectToBinaryString(report);
@@ -171,17 +170,17 @@ TEST(PlatformProvisioningTest, ReportProtoWithValueFieldOfBadLengthIsInvalid) {
   report_bin.push_back('a');
   report_proto.set_value(report_bin);
   EXPECT_THAT(ValidateReportProto(report_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(ConvertReportProtoToHardwareReport(report_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest, TargetInfoProtoWithoutValueFieldIsInvalid) {
   TargetInfoProto target_info_proto;
   EXPECT_THAT(ValidateTargetInfoProto(target_info_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(ConvertTargetInfoProtoToTargetinfo(target_info_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest,
@@ -189,9 +188,9 @@ TEST(PlatformProvisioningTest,
   TargetInfoProto target_info_proto;
   target_info_proto.set_value("short");
   EXPECT_THAT(ValidateTargetInfoProto(target_info_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(ConvertTargetInfoProtoToTargetinfo(target_info_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   Targetinfo targetinfo = TrivialRandomObject<Targetinfo>();
   std::string targetinfo_bin = ConvertTrivialObjectToBinaryString(targetinfo);
@@ -199,9 +198,9 @@ TEST(PlatformProvisioningTest,
   targetinfo_bin.push_back('a');
   target_info_proto.set_value(targetinfo_bin);
   EXPECT_THAT(ValidateTargetInfoProto(target_info_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(ConvertTargetInfoProtoToTargetinfo(target_info_proto),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(PlatformProvisioningTest, ValidReportCanBeConvertedToHardwareReport) {
@@ -257,7 +256,7 @@ TEST(PlatformProvisioningTest, CpuSvnFromReportProtoFailure) {
   bad_report.set_value("abc");
 
   EXPECT_THAT(CpuSvnFromReportProto(bad_report),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 }  // namespace

@@ -31,6 +31,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/base/macros.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/civil_time.h"
 #include "absl/time/time.h"
@@ -250,19 +251,19 @@ std::string JsonToString(const google::protobuf::Value &json) {
 
 TEST(TcbFromJsonValueTest, ImproperJsonFailsToParse) {
   EXPECT_THAT(TcbFromJson("} Wait a minute! This isn't proper JSON!"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbFromJsonTest, NonObjectJsonValueFailsToParse) {
   EXPECT_THAT(TcbFromJson("[\"An array, not an object\"]"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbFromJsonTest, MissingSgxTcbComponentSvnFailsToParse) {
   google::protobuf::Value json = CreateValidTcbJson();
   json.mutable_struct_value()->mutable_fields()->erase("sgxtcbcomp09svn");
   EXPECT_THAT(TcbFromJson(JsonToString(json)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbFromJsonTest, NonIntegerSgxTcbComponentSvnFailsToParse) {
@@ -272,7 +273,7 @@ TEST(TcbFromJsonTest, NonIntegerSgxTcbComponentSvnFailsToParse) {
       ->at("sgxtcbcomp06svn")
       .mutable_list_value();
   EXPECT_THAT(TcbFromJson(JsonToString(json)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbFromJsonTest, OutOfBoundsSgxTcbComponentSvnFailsToParse) {
@@ -282,21 +283,21 @@ TEST(TcbFromJsonTest, OutOfBoundsSgxTcbComponentSvnFailsToParse) {
       ->at("sgxtcbcomp15svn")
       .set_number_value(-7.0);
   EXPECT_THAT(TcbFromJson(JsonToString(json)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   json.mutable_struct_value()
       ->mutable_fields()
       ->at("sgxtcbcomp15svn")
       .set_number_value(1000.0);
   EXPECT_THAT(TcbFromJson(JsonToString(json)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbFromJsonTest, WithoutPceSvnFieldFailsToParse) {
   google::protobuf::Value json = CreateValidTcbJson();
   json.mutable_struct_value()->mutable_fields()->erase("pcesvn");
   EXPECT_THAT(TcbFromJson(JsonToString(json)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbFromJsonTest, NonIntegerPceSvnFieldFailsToParse) {
@@ -304,7 +305,7 @@ TEST(TcbFromJsonTest, NonIntegerPceSvnFieldFailsToParse) {
   json.mutable_struct_value()->mutable_fields()->at("pcesvn").set_string_value(
       "");
   EXPECT_THAT(TcbFromJson(JsonToString(json)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbFromJsonTest, OutOfBoundsPceSvnFieldFailsToParse) {
@@ -312,12 +313,12 @@ TEST(TcbFromJsonTest, OutOfBoundsPceSvnFieldFailsToParse) {
   json.mutable_struct_value()->mutable_fields()->at("pcesvn").set_number_value(
       -15);
   EXPECT_THAT(TcbFromJson(JsonToString(json)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   json.mutable_struct_value()->mutable_fields()->at("pcesvn").set_number_value(
       70000);
   EXPECT_THAT(TcbFromJson(JsonToString(json)),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbFromJsonTest, CorrectTcbJsonParsesSuccessfully) {
@@ -353,19 +354,19 @@ TEST(TcbFromJsonTest, ExtraFieldsCausesLogWarning) {
 
 TEST(TcbInfoFromJsonTest, ImproperJsonFailsToParse) {
   EXPECT_THAT(TcbInfoFromJson("} Wait a minute! This isn't proper JSON!"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbInfoFromJsonTest, NonObjectJsonValueFailsToParse) {
   EXPECT_THAT(TcbInfoFromJson("[\"An array, not an object\"]"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(TcbInfoFromJsonTest, TcbInfoJsonWithoutVersionFieldFailsToParse) {
   for (auto &pair : CreateValidTcbInfoPairsOfVersions({1, 2})) {
     pair.first.mutable_struct_value()->mutable_fields()->erase("version");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -376,7 +377,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithNonIntegerVersionFailsToParse) {
         ->at("version")
         .mutable_list_value();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -387,7 +388,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithOutOfRangeVersionFailsToParse) {
         ->at("version")
         .set_number_value(10000000000.0);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::OUT_OF_RANGE));
+                StatusIs(absl::StatusCode::kOutOfRange));
   }
 }
 
@@ -398,7 +399,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithUnknownVersionFailsToParse) {
         ->at("version")
         .set_number_value(73.0);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -406,7 +407,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithoutIssueDateFieldFailsToParse) {
   for (auto &pair : CreateValidTcbInfoPairsOfVersions({1, 2})) {
     pair.first.mutable_struct_value()->mutable_fields()->erase("issueDate");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -417,7 +418,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithNonStringIssueDateFailsToParse) {
         ->at("issueDate")
         .mutable_list_value();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -428,7 +429,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithGarbledIssueDateFailsToParse) {
         ->at("issueDate")
         .set_string_value("2000-01-01T00:00:0whatisthemeaningoflifeZ");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -439,7 +440,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithOutOfRangeIssueDateFailsToParse) {
         ->at("issueDate")
         .set_string_value("10000-01-01T00:00:00Z");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::OUT_OF_RANGE));
+                StatusIs(absl::StatusCode::kOutOfRange));
   }
 }
 
@@ -447,7 +448,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithoutNextUpdateFieldFailsToParse) {
   for (auto &pair : CreateValidTcbInfoPairsOfVersions({1, 2})) {
     pair.first.mutable_struct_value()->mutable_fields()->erase("nextUpdate");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -458,7 +459,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithNonStringNextUpdateFailsToParse) {
         ->at("nextUpdate")
         .mutable_list_value();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -469,7 +470,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithGarbledNextUpdateFailsToParse) {
         ->at("nextUpdate")
         .set_string_value("2000-01-01T00:00:0whatisthemeaningoflifeZ");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -480,7 +481,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithOutOfRangeNextUpdateFailsToParse) {
         ->at("nextUpdate")
         .set_string_value("10000-01-01T00:00:00Z");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::OUT_OF_RANGE));
+                StatusIs(absl::StatusCode::kOutOfRange));
   }
 }
 
@@ -495,7 +496,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithIssueDateAfterNextUpdateFailsToParse) {
         ->at("nextUpdate")
         .set_string_value("2000-01-01T00:00:00Z");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -503,7 +504,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithoutFmspcFieldFailsToParse) {
   for (auto &pair : CreateValidTcbInfoPairsOfVersions({1, 2})) {
     pair.first.mutable_struct_value()->mutable_fields()->erase("fmspc");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -514,7 +515,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithNonStringFmspcFailsToParse) {
         ->at("fmspc")
         .mutable_list_value();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -525,7 +526,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithBadHexInFmspcFailsToParse) {
         ->at("fmspc")
         .set_string_value("00000000000z");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -536,7 +537,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithWrongSizeOfFmspcFailsToParse) {
         ->at("fmspc")
         .set_string_value("00ab");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -544,7 +545,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithoutPceIdFieldFailsToParse) {
   for (auto &pair : CreateValidTcbInfoPairsOfVersions({1, 2})) {
     pair.first.mutable_struct_value()->mutable_fields()->erase("pceId");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -555,7 +556,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithNonStringPceIdFailsToParse) {
         ->at("pceId")
         .mutable_list_value();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -566,7 +567,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithBadHexInPceIdFailsToParse) {
         ->at("pceId")
         .set_string_value("000z");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -577,7 +578,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithWrongSizeOfPceIdFailsToParse) {
         ->at("pceId")
         .set_string_value("00ab00");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -585,7 +586,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoV2JsonWithoutTcbTypeFieldFailsToParse) {
   for (auto &pair : CreateValidTcbInfoPairsOfVersions({2})) {
     pair.first.mutable_struct_value()->mutable_fields()->erase("tcbType");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -596,7 +597,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoV2JsonWithNonNumberTcbTypeFieldFailsToParse) {
         ->at("tcbType")
         .mutable_list_value();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -607,7 +608,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoV2JsonWithOutOfRangeTcbTypeFieldFailsToParse) {
         ->at("tcbType")
         .set_number_value(10000000000.0);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::OUT_OF_RANGE));
+                StatusIs(absl::StatusCode::kOutOfRange));
   }
 }
 
@@ -618,7 +619,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoV2JsonWithUnknownTcbTypeFieldFailsToParse) {
         ->at("tcbType")
         .set_number_value(3.0);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -628,7 +629,7 @@ TEST(TcbInfoFromJsonTest,
     pair.first.mutable_struct_value()->mutable_fields()->erase(
         "tcbEvaluationDataNumber");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -640,7 +641,7 @@ TEST(TcbInfoFromJsonTest,
         ->at("tcbEvaluationDataNumber")
         .mutable_list_value();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -652,7 +653,7 @@ TEST(TcbInfoFromJsonTest,
         ->at("tcbEvaluationDataNumber")
         .set_number_value(10000000000.0);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::OUT_OF_RANGE));
+                StatusIs(absl::StatusCode::kOutOfRange));
   }
 }
 
@@ -660,7 +661,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithoutTcbLevelsFieldFailsToParse) {
   for (auto &pair : CreateValidTcbInfoPairsOfVersions({1, 2})) {
     pair.first.mutable_struct_value()->mutable_fields()->erase("tcbLevels");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -671,7 +672,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithNonArrayTcbLevelsFailsToParse) {
         ->at("tcbLevels")
         .mutable_struct_value();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -686,7 +687,7 @@ TEST(TcbInfoFromJsonTest, TcbLevelJsonWithoutTcbFieldFailsToParse) {
         ->mutable_fields()
         ->erase("tcb");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -702,7 +703,7 @@ TEST(TcbInfoFromJsonTest, TcbLevelJsonWithNonObjectTcbFailsToParse) {
         ->at("tcb")
         .mutable_list_value();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -720,7 +721,7 @@ TEST(TcbInfoFromJsonTest, TcbJsonWithMissingSgxTcbComponentSvnFailsToParse) {
         ->mutable_fields()
         ->erase("sgxtcbcomp09svn");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -739,7 +740,7 @@ TEST(TcbInfoFromJsonTest, TcbJsonWithNonIntegerSgxTcbComponentSvnFailsToParse) {
         ->at("sgxtcbcomp06svn")
         .mutable_list_value();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -759,7 +760,7 @@ TEST(TcbInfoFromJsonTest,
         ->at("sgxtcbcomp15svn")
         .set_number_value(-7.0);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
 
     pair.first.mutable_struct_value()
         ->mutable_fields()
@@ -774,7 +775,7 @@ TEST(TcbInfoFromJsonTest,
         ->at("sgxtcbcomp15svn")
         .set_number_value(1000.0);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -792,7 +793,7 @@ TEST(TcbInfoFromJsonTest, TcbJsonWithoutPceSvnFieldFailsToParse) {
         ->mutable_fields()
         ->erase("pcesvn");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -811,7 +812,7 @@ TEST(TcbInfoFromJsonTest, TcbJsonWithNonIntegerPceSvnFieldFailsToParse) {
         ->at("pcesvn")
         .set_string_value("");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -830,7 +831,7 @@ TEST(TcbInfoFromJsonTest, TcbJsonWithOutOfBoundsPceSvnFieldFailsToParse) {
         ->at("pcesvn")
         .set_number_value(-15);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
 
     pair.first.mutable_struct_value()
         ->mutable_fields()
@@ -845,7 +846,7 @@ TEST(TcbInfoFromJsonTest, TcbJsonWithOutOfBoundsPceSvnFieldFailsToParse) {
         ->at("pcesvn")
         .set_number_value(70000);
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -861,7 +862,7 @@ TEST(TcbInfoFromJsonTest,
         ->mutable_fields()
         ->erase("tcbDate");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -878,7 +879,7 @@ TEST(TcbInfoFromJsonTest,
         ->at("tcbDate")
         .mutable_list_value();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -895,7 +896,7 @@ TEST(TcbInfoFromJsonTest,
         ->at("tcbDate")
         .set_string_value("2000-01-01T00:00:0whatisthemeaningoflifeZ");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -912,7 +913,7 @@ TEST(TcbInfoFromJsonTest,
         ->at("tcbDate")
         .set_string_value("10000-01-01T00:00:00Z");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::OUT_OF_RANGE));
+                StatusIs(absl::StatusCode::kOutOfRange));
   }
 }
 
@@ -927,7 +928,7 @@ TEST(TcbInfoFromJsonTest, TcbLevelJsonWithoutStatusFieldFailsToParse) {
         ->mutable_fields()
         ->erase(StatusFieldName(pair.first));
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -943,7 +944,7 @@ TEST(TcbInfoFromJsonTest, TcbLevelJsonWithNonStringStatusFailsToParse) {
         ->at(StatusFieldName(pair.first))
         .mutable_list_value();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -960,7 +961,7 @@ TEST(TcbInfoFromJsonTest,
         ->at("advisoryIDs")
         .set_string_value("not a list");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -978,7 +979,7 @@ TEST(TcbInfoFromJsonTest,
         .mutable_list_value()
         ->Clear();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -997,7 +998,7 @@ TEST(TcbInfoFromJsonTest,
         ->mutable_values(0)
         ->mutable_list_value();
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -1015,7 +1016,7 @@ TEST(TcbInfoFromJsonTest,
         ->at(StatusFieldName(pair.first))
         .set_string_value("OutOfDate");
     EXPECT_THAT(TcbInfoFromJson(JsonToString(pair.first)),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
