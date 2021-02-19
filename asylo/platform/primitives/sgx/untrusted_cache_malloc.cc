@@ -104,11 +104,12 @@ void *UntrustedCacheMalloc::GetBuffer() {
       buffers =
           primitives::AllocateUntrustedBuffers(kPoolIncrement, kPoolEntrySize);
       for (int i = 0; i < kPoolIncrement; i++) {
-        if (!buffers[i] ||
-            !TrustedPrimitives::IsOutsideEnclave(buffers[i], kPoolEntrySize)) {
-          abort();
+        void *buf = buffers[i];
+        if (!buf || !TrustedPrimitives::IsOutsideEnclave(buf, kPoolEntrySize)) {
+          TrustedPrimitives::BestEffortAbort(
+              "Cached buffer is not outside the enclave");
         }
-        buffer_pool_.push(buffers[i]);
+        buffer_pool_.push(buf);
       }
     }
     buffer = buffer_pool_.top();
