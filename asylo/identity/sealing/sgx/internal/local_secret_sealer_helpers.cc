@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/types/span.h"
 #include "asylo/crypto/algorithms.pb.h"
@@ -53,15 +54,13 @@ Status ParseKeyGenerationParamsFromSealedSecretHeader(
     SgxIdentityExpectation *sgx_expectation) {
   const SealingRootInformation &root_info = header.root_info();
   if (root_info.sealing_root_type() != LOCAL) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Incorrect sealing_root_type");
+    return absl::InvalidArgumentError("Incorrect sealing_root_type");
   }
   if (root_info.sealing_root_name() != kSgxLocalSecretSealerRootName) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Incorrect sealing_root_name");
+    return absl::InvalidArgumentError("Incorrect sealing_root_name");
   }
   if (header.client_acl().item_case() != IdentityAclPredicate::kExpectation) {
-    return Status(error::GoogleError::INVALID_ARGUMENT, "Malformed client_acl");
+    return absl::InvalidArgumentError("Malformed client_acl");
   }
 
   ASYLO_RETURN_IF_ERROR(
@@ -76,8 +75,7 @@ Status ParseKeyGenerationParamsFromSealedSecretHeader(
       result, MatchIdentityToExpectation(GetSelfIdentity()->sgx_identity,
                                          *sgx_expectation, &explanation));
   if (!result) {
-    return Status(
-        error::GoogleError::PERMISSION_DENIED,
+    return absl::PermissionDeniedError(
         absl::StrCat("Identity of the current enclave does not match the ACL: ",
                      explanation));
   }
@@ -175,8 +173,7 @@ StatusOr<std::unique_ptr<AeadCryptor>> MakeCryptor(AeadScheme aead_scheme,
     case AeadScheme::AES256_GCM_SIV:
       return AeadCryptor::CreateAesGcmSivCryptor(key);
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Unsupported cipher suite");
+      return absl::InvalidArgumentError("Unsupported cipher suite");
   }
 }
 
@@ -213,9 +210,8 @@ StatusOr<AeadScheme> GetAeadSchemeFromSealedSecretHeader(
   AeadScheme aead_scheme = header.root_info().aead_scheme();
 
   if (aead_scheme != AeadScheme::AES256_GCM_SIV) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Unsupported AeadScheme ",
-                               ProtoEnumValueName(aead_scheme)));
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Unsupported AeadScheme ", ProtoEnumValueName(aead_scheme)));
   }
 
   return aead_scheme;

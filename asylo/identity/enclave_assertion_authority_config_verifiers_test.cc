@@ -22,6 +22,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_intel_ecdsa_qe_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_local_assertion_authority_config.pb.h"
@@ -42,7 +43,7 @@ TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
      VerifySgxLocalAssertionAuthorityConfigEmpty) {
   SgxLocalAssertionAuthorityConfig config;
   EXPECT_THAT(VerifySgxLocalAssertionAuthorityConfig(config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
@@ -50,18 +51,18 @@ TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
   SgxLocalAssertionAuthorityConfig config;
   config.set_attestation_domain("this is a bit too long");
   EXPECT_THAT(VerifySgxLocalAssertionAuthorityConfig(config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   config.set_attestation_domain("too short");
   EXPECT_THAT(VerifySgxLocalAssertionAuthorityConfig(config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
      VerifySgxAgeRemoteAssertionAuthorityConfigEmpty) {
   SgxAgeRemoteAssertionAuthorityConfig config;
   EXPECT_THAT(VerifySgxAgeRemoteAssertionAuthorityConfig(config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
@@ -69,15 +70,14 @@ TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
   SgxAgeRemoteAssertionAuthorityConfig config;
   config.set_server_address("the address");
   EXPECT_THAT(VerifySgxAgeRemoteAssertionAuthorityConfig(config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
      VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfigEmpty) {
   SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config;
-  EXPECT_THAT(
-      VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(config),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT, HasSubstr("empty")));
+  EXPECT_THAT(VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(config),
+              StatusIs(absl::StatusCode::kInvalidArgument, HasSubstr("empty")));
 }
 
 TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
@@ -90,7 +90,7 @@ TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
           [ { format: UNKNOWN data: "" }]
         })pb");
   EXPECT_THAT(VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("unknown format")));
 }
 
@@ -104,7 +104,7 @@ TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
           [ { format: X509_PEM data: "junk data" }]
         })pb");
   EXPECT_THAT(VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(config),
-              StatusIs(error::GoogleError::INTERNAL,
+              StatusIs(absl::StatusCode::kInternal,
                        HasSubstr("OPENSSL_internal:NO_START_LINE")));
 }
 
@@ -114,13 +114,12 @@ TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
       ParseTextProtoOrDie(R"pb(
         verifier_info: { qe_identity_expectation: {} })pb");
   EXPECT_THAT(VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("root certificate")));
 }
 
-TEST(
-    EnclaveAssertionAuthorityConfigVerifiersTest,
-    VerifySgxIntelEcdsaQeRemoteAssertionVerifierConfigNoQeExpectation) {
+TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
+     VerifySgxIntelEcdsaQeRemoteAssertionVerifierConfigNoQeExpectation) {
   SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config =
       ParseTextProtoOrDie(R"pb(
         verifier_info: {
@@ -131,13 +130,12 @@ TEST(
       {sgx::kFakeSgxRootCa.certificate_pem.begin(),
        sgx::kFakeSgxRootCa.certificate_pem.end()});
   EXPECT_THAT(VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("QE identity expectation")));
 }
 
-TEST(
-    EnclaveAssertionAuthorityConfigVerifiersTest,
-    VerifySgxIntelEcdsaQeRemoteAssertionVerifierConfigInvalidQeExpectation) {
+TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
+     VerifySgxIntelEcdsaQeRemoteAssertionVerifierConfigInvalidQeExpectation) {
   SgxIntelEcdsaQeRemoteAssertionAuthorityConfig config =
       ParseTextProtoOrDie(R"pb(
         verifier_info: {
@@ -160,7 +158,7 @@ TEST(
       {sgx::kFakeSgxRootCa.certificate_pem.begin(),
        sgx::kFakeSgxRootCa.certificate_pem.end()});
   EXPECT_THAT(VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("QE identity expectation")));
 }
 
@@ -175,7 +173,7 @@ TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
           }
         })pb");
   EXPECT_THAT(VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(config),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        HasSubstr("unknown format")));
 }
 
@@ -191,7 +189,7 @@ TEST(EnclaveAssertionAuthorityConfigVerifiersTest,
         })pb");
   EXPECT_THAT(
       VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(config),
-      StatusIs(error::GoogleError::INTERNAL, HasSubstr("OPENSSL_internal")));
+      StatusIs(absl::StatusCode::kInternal, HasSubstr("OPENSSL_internal")));
 }
 
 }  // namespace

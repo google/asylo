@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/aead_cryptor.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/byte_container_util.h"
@@ -132,8 +133,7 @@ Status SgxLocalSecretSealer::Seal(
 
   if (!header.SerializeToString(
           sealed_secret->mutable_sealed_secret_header())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Header serialization to string failed");
+    return absl::InternalError("Header serialization to string failed");
   }
   sealed_secret->set_additional_authenticated_data(
       reinterpret_cast<const char *>(additional_authenticated_data.data()),
@@ -159,8 +159,8 @@ Status SgxLocalSecretSealer::Unseal(const SealedSecret &sealed_secret,
                                     CleansingVector<uint8_t> *secret) {
   SealedSecretHeader header;
   if (!header.ParseFromString(sealed_secret.sealed_secret_header())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Could not parse the sealed secret header");
+    return absl::InvalidArgumentError(
+        "Could not parse the sealed secret header");
   }
 
   AeadScheme aead_scheme;

@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/identity/attestation/enclave_assertion_generator.h"
 #include "asylo/identity/attestation/enclave_assertion_verifier.h"
@@ -43,9 +44,9 @@ Status InitializeEnclaveAssertionVerifier(
 
   auto verifier_it = AssertionVerifierMap::GetValue(authority_id);
   if (verifier_it == AssertionVerifierMap::value_end()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Config for ", description.ShortDebugString(),
-                               " does not match any known assertion verifier"));
+    return absl::InvalidArgumentError(
+        absl::StrCat("Config for ", description.ShortDebugString(),
+                     " does not match any known assertion verifier"));
   }
   return internal::TryInitialize(config.config(), verifier_it);
 }
@@ -61,9 +62,9 @@ Status InitializeEnclaveAssertionGenerator(
 
   auto generator_it = AssertionGeneratorMap::GetValue(authority_id);
   if (generator_it == AssertionGeneratorMap::value_end()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Config for ", description.ShortDebugString(),
-                               " does not match any known assertion verifier"));
+    return absl::InvalidArgumentError(
+        absl::StrCat("Config for ", description.ShortDebugString(),
+                     " does not match any known assertion verifier"));
   }
   return internal::TryInitialize(config.config(), generator_it);
 }

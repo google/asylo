@@ -22,6 +22,7 @@
 #include <vector>
 
 #include <google/protobuf/message.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "asylo/daemon/identity/attestation_domain.h"
@@ -51,8 +52,7 @@ StatusOr<EnclaveAssertionAuthorityConfig> SerializeToAuthorityConfig(
     std::function<void(AssertionDescription *)> set_description) {
   EnclaveAssertionAuthorityConfig authority_config;
   if (!inner_config.SerializeToString(authority_config.mutable_config())) {
-    return Status(
-        error::GoogleError::INTERNAL,
+    return absl::InternalError(
         absl::StrCat("Failed to serialize ", inner_config.GetTypeName()));
   }
 
@@ -152,8 +152,8 @@ StatusOr<EnclaveAssertionAuthorityConfig>
 CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
     CertificateChain pck_certificate_chain, SgxIdentity qe_identity) {
   if (pck_certificate_chain.certificates_size() == 0) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "The pck_certificate_chain must not be empty");
+    return absl::InvalidArgumentError(
+        "The pck_certificate_chain must not be empty");
   }
 
   SgxIntelEcdsaQeRemoteAssertionAuthorityConfig sgx_config;

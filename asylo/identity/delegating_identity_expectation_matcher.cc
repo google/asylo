@@ -19,6 +19,7 @@
 #include "asylo/identity/delegating_identity_expectation_matcher.h"
 
 #include <google/protobuf/util/message_differencer.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "asylo/identity/named_identity_expectation_matcher.h"
@@ -36,8 +37,7 @@ StatusOr<bool> DelegatingIdentityExpectationMatcher::MatchAndExplain(
       NamedIdentityExpectationMatcher::GetMatcherName(identity.description())
           .ValueOrDie());
   if (matcher_it == IdentityExpectationMatcherMap::value_end()) {
-    return Status(
-        error::GoogleError::INTERNAL,
+    return absl::InternalError(
         absl::StrCat("No matcher exists for identity with description ",
                      identity.description().ShortDebugString()));
   }
@@ -54,12 +54,10 @@ StatusOr<bool> DelegatingIdentityExpectationMatcher::MatchAndExplain(
             NamedIdentityExpectationMatcher::GetMatcherName(
                 expectation.reference_identity().description())
                 .ValueOrDie()) == IdentityExpectationMatcherMap::value_end()) {
-      return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("No matcher exists for matching expectation "
-                                 "with reference-identity description ",
-                                 expectation.reference_identity()
-                                     .description()
-                                     .ShortDebugString()));
+      return absl::InternalError(absl::StrCat(
+          "No matcher exists for matching expectation "
+          "with reference-identity description ",
+          expectation.reference_identity().description().ShortDebugString()));
     }
 
     // The matcher recognizes the descriptions of both |identity| and

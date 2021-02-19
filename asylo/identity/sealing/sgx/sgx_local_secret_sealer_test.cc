@@ -30,6 +30,7 @@
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -181,7 +182,7 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadSealingRootType) {
   SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
                   header, &aead_scheme, &sgx_expectation),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that ParseKeyGenerationParamsFromSealedSecretHeader() fails when the
@@ -197,7 +198,7 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadSealingRootName) {
   SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
                   header, &aead_scheme, &sgx_expectation),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadAeadScheme) {
@@ -211,7 +212,7 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadAeadScheme) {
   SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
                   header, &aead_scheme, &sgx_expectation),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that ParseKeyGenerationParamsFromSealedSecretHeader() fails when the
@@ -230,7 +231,7 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadClientAcl) {
   SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
                   header, &aead_scheme, &sgx_expectation),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that the default SealedSecretHeader that binds a secret to MRENCLAVE
@@ -288,7 +289,7 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsMrenclaveFailure) {
   SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
                   header, &aead_scheme, &sgx_expectation),
-              StatusIs(error::GoogleError::PERMISSION_DENIED));
+              StatusIs(absl::StatusCode::kPermissionDenied));
 }
 
 // Verify that the default SealedSecretHeader that binds a secret to MRSIGNER
@@ -367,7 +368,7 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsMrsignerFailure) {
   SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
                   header, &aead_scheme, &sgx_expectation),
-              StatusIs(error::GoogleError::PERMISSION_DENIED));
+              StatusIs(absl::StatusCode::kPermissionDenied));
 }
 
 // Verify that a secret fails to be sealed with an unsupported AEAD scheme.
@@ -384,7 +385,7 @@ TEST_F(SgxLocalSecretSealerTest, SealFailureUnsupportedAeadScheme) {
 
   SealedSecret sealed_secret;
   EXPECT_THAT(sealer->Seal(header, input_aad, input_secret, &sealed_secret),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Verify that a secret sealed to MRENCLAVE can be unsealed from the same

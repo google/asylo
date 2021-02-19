@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/certificate_util.h"
@@ -40,16 +41,14 @@ namespace asylo {
 Status VerifySgxLocalAssertionAuthorityConfig(
     const SgxLocalAssertionAuthorityConfig &config) {
   if (!config.has_attestation_domain()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Attestation domain is not set");
+    return absl::InvalidArgumentError("Attestation domain is not set");
   }
 
   if (config.attestation_domain().size() != kAttestationDomainNameSize) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrFormat("Attestation domain must be %d bytes in size "
-                                  "but was %d bytes in size",
-                                  kAttestationDomainNameSize,
-                                  config.attestation_domain().size()));
+    return absl::InvalidArgumentError(absl::StrFormat(
+        "Attestation domain must be %d bytes in size "
+        "but was %d bytes in size",
+        kAttestationDomainNameSize, config.attestation_domain().size()));
   }
 
   return Status::OkStatus();
@@ -58,14 +57,14 @@ Status VerifySgxLocalAssertionAuthorityConfig(
 Status VerifySgxAgeRemoteAssertionAuthorityConfig(
     const SgxAgeRemoteAssertionAuthorityConfig &config) {
   if (!config.has_intel_root_certificate()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "SGX AGE remote authority config must include an Intel root "
-                  "certificate");
+    return absl::InvalidArgumentError(
+        "SGX AGE remote authority config must include an Intel root "
+        "certificate");
   }
 
   if (config.server_address().empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "SGX AGE remote authority config must have a server address");
+    return absl::InvalidArgumentError(
+        "SGX AGE remote authority config must have a server address");
   }
 
   return Status::OkStatus();
@@ -74,8 +73,7 @@ Status VerifySgxAgeRemoteAssertionAuthorityConfig(
 Status VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
     const SgxIntelEcdsaQeRemoteAssertionAuthorityConfig &config) {
   if (config.ByteSizeLong() == 0) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Configuration must not be empty");
+    return absl::InvalidArgumentError("Configuration must not be empty");
   }
 
   for (const auto &cert :
@@ -89,19 +87,17 @@ Status VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
 
   if (config.has_verifier_info()) {
     if (config.verifier_info().root_certificates().empty()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Verifier configuration must contain at least one trusted "
-                    "root certificate");
+      return absl::InvalidArgumentError(
+          "Verifier configuration must contain at least one trusted "
+          "root certificate");
     }
     if (!config.verifier_info().has_qe_identity_expectation()) {
-      return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+      return absl::InvalidArgumentError(
           "Verifier configuration is missing QE identity expectation");
     }
     if (config.verifier_info().qe_identity_expectation().item_case() ==
         IdentityAclPredicate::ITEM_NOT_SET) {
-      return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+      return absl::InvalidArgumentError(
           "QE identity expectation must be set to expectation or ACL group");
     }
     // The |qe_identity_expectation| field is an IdentityAclPredicate and would
@@ -112,8 +108,7 @@ Status VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
         !ParseSgxIdentityExpectation(
              config.verifier_info().qe_identity_expectation().expectation())
              .ok()) {
-      return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+      return absl::InvalidArgumentError(
           "QE identity expectation must be a valid SGX identity expectation");
     }
   }

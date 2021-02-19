@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/bytes.h"
@@ -88,15 +89,15 @@ AdditionalAuthenticatedDataGenerator::Generate(ByteContainerView data) const {
   ASYLO_RETURN_IF_ERROR(hasher.CumulativeHash(&hash));
   UnsafeBytes<kAdditionalAuthenticatedDataSize> aad;
   if (aad.replace(0, hash) != hasher.DigestSize()) {
-    return Status(error::GoogleError::INTERNAL, "Setting hash data failed");
+    return absl::InternalError("Setting hash data failed");
   }
   if (aad.replace(hasher.DigestSize(), purpose_) !=
       kAdditionalAuthenticatedDataPurposeSize) {
-    return Status(error::GoogleError::INTERNAL, "Setting purpose data failed");
+    return absl::InternalError("Setting purpose data failed");
   }
   if (aad.replace(hasher.DigestSize() + kAdditionalAuthenticatedDataPurposeSize,
                   uuid_) != kAdditionalAuthenticatedDataUuidSize) {
-    return Status(error::GoogleError::INTERNAL, "Setting UUID data failed");
+    return absl::InternalError("Setting UUID data failed");
   }
   return aad;
 }

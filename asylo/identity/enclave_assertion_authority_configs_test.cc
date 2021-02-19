@@ -23,6 +23,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/daemon/identity/attestation_domain.h"
 #include "asylo/identity/attestation/sgx/internal/intel_certs/intel_sgx_root_ca_cert.h"
@@ -111,10 +112,10 @@ TEST(EnclaveAssertionAuthorityConfigsTest,
 TEST(EnclaveAssertionAuthorityConfigsTest,
      CreateSgxLocalAssertionAuthorityConfigInvalidAttestationDomain) {
   EXPECT_THAT(CreateSgxLocalAssertionAuthorityConfig("this is a bit too long"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   EXPECT_THAT(CreateSgxLocalAssertionAuthorityConfig("too short"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(EnclaveAssertionAuthorityConfigsTest,
@@ -199,7 +200,7 @@ TEST(EnclaveAssertionAuthorityConfigsTest,
      CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfigWithEmptyChain) {
   EXPECT_THAT(experimental::CreateSgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
                   {}, GetSelfSgxIdentity()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(EnclaveAssertionAuthorityConfigsTest,

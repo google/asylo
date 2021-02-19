@@ -29,6 +29,7 @@
 #include <google/protobuf/text_format.h>
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -110,8 +111,7 @@ Status ReadTestData(const std::string &input_path,
   google::protobuf::io::FileInputStream stream(fd);
   stream.SetCloseOnDelete(true);
   if (!google::protobuf::TextFormat::Parse(&stream, test_data)) {
-    return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("Could not parse ", input_path));
+    return absl::InternalError(absl::StrCat("Could not parse ", input_path));
   }
   return Status::OkStatus();
 }
@@ -193,8 +193,8 @@ Status WriteTestData(const LocalSecretSealerTestData &test_data,
     stream.SetCloseOnDelete(true);
   }
   if (!google::protobuf::TextFormat::Print(test_data, &stream)) {
-    return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("Error while writing to ", output_path));
+    return absl::InternalError(
+        absl::StrCat("Error while writing to ", output_path));
   }
   return Status::OkStatus();
 }

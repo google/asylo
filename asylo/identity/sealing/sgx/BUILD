@@ -44,6 +44,7 @@ cc_library(
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -83,6 +84,7 @@ cc_test(
         "//asylo/util:status",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
     ],

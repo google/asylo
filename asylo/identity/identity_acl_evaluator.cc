@@ -23,6 +23,7 @@
 #include <vector>
 
 #include <google/protobuf/repeated_field.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -126,8 +127,8 @@ StatusOr<bool> EvaluateAclNotPredicateGroup(
     const RepeatedPtrField<IdentityAclPredicate> &predicates,
     const IdentityExpectationMatcher &matcher, std::string *explanation) {
   if (predicates.size() != 1) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "NOT predicate groups must have exactly one element");
+    return absl::InvalidArgumentError(
+        "NOT predicate groups must have exactly one element");
   }
 
   // Don't pass an explanation parameter to this call because the NOT group
@@ -154,8 +155,7 @@ StatusOr<bool> EvaluateAclPredicateGroup(
       acl_group.predicates();
 
   if (predicates.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "ACL predicate groups cannot be empty");
+    return absl::InvalidArgumentError("ACL predicate groups cannot be empty");
   }
 
   switch (acl_group.type()) {
@@ -169,8 +169,8 @@ StatusOr<bool> EvaluateAclPredicateGroup(
       return EvaluateAclNotPredicateGroup(identities, predicates, matcher,
                                           explanation);
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    absl::StrCat("Unknown acl_group type: ", acl_group.type()));
+      return absl::InvalidArgumentError(
+          absl::StrCat("Unknown acl_group type: ", acl_group.type()));
   }
 }
 
@@ -219,12 +219,11 @@ StatusOr<bool> EvaluateIdentityAclImpl(
       return EvaluateAclExpectation(identities, acl.expectation(), matcher,
                                     explanation);
     case IdentityAclPredicate::ITEM_NOT_SET:
-      return Status(
-          error::GoogleError::INVALID_ARGUMENT,
+      return absl::InvalidArgumentError(
           "Invalid ACL predicate: must be either a group or an expectation.");
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    absl::StrCat("Unknown acl item: ", acl.item_case()));
+      return absl::InvalidArgumentError(
+          absl::StrCat("Unknown acl item: ", acl.item_case()));
   }
 }
 

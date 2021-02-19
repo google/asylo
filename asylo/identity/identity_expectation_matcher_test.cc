@@ -23,6 +23,7 @@
 #include <google/protobuf/util/message_differencer.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "asylo/identity/delegating_identity_expectation_matcher.h"
 #include "asylo/identity/identity.pb.h"
@@ -91,7 +92,7 @@ class TestMatcher final : public NamedIdentityExpectationMatcher {
                                                         Description()) ||
         !::google::protobuf::util::MessageDifferencer::Equivalent(
             reference_identity.description(), Description())) {
-      return Status(error::GoogleError::INTERNAL, "Incorrect description");
+      return absl::InternalError("Incorrect description");
     }
 
     if (identity.identity() != reference_identity.identity()) {

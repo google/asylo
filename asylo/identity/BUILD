@@ -135,6 +135,7 @@ cc_library(
         "//asylo/util:proto_enum_util",
         "//asylo/util:proto_parse_util",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
         "@com_google_protobuf//:protobuf",
@@ -168,6 +169,7 @@ cc_test(
         "//asylo/util:proto_parse_util",
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -191,6 +193,7 @@ cc_library(
         "//asylo/identity/platform/sgx:sgx_identity_util",
         "//asylo/util:error_codes",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:str_format",
     ],
 )
@@ -211,6 +214,7 @@ cc_test(
         "//asylo/util:proto_enum_util",
         "//asylo/util:proto_parse_util",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -226,6 +230,7 @@ cc_library(
         ":identity_cc_proto",
         ":identity_expectation_matcher",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
         "@com_google_protobuf//:protobuf_lite",
@@ -252,6 +257,7 @@ cc_library(
         "//asylo/platform/common:static_map",
         "//asylo/util:status",
         "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
         "@com_google_protobuf//:protobuf",
@@ -269,6 +275,7 @@ cc_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:str_format",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
@@ -290,6 +297,7 @@ cc_library(
         "//asylo/util:status",
         "//asylo/util:status_macros",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
     ],
 )
 
