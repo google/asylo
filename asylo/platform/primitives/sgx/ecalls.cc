@@ -66,7 +66,7 @@ int ecall_restore(const char *input, uint64_t input_len, char **output,
       !asylo::primitives::TrustedPrimitives::IsOutsideEnclave(
           output_len, sizeof(uint64_t)) ||
       !asylo::primitives::TrustedPrimitives::IsOutsideEnclave(output,
-                                                              *output_len)) {
+                                                              sizeof(char *))) {
     asylo::primitives::TrustedPrimitives::BestEffortAbort(
         "ecall_restore: input/output found to not be in untrusted memory.");
   }
