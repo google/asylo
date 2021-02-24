@@ -236,8 +236,13 @@ ssize_t enc_untrusted_read(int fd, void *buf, size_t count) {
 }
 
 ssize_t enc_untrusted_write(int fd, const void *buf, size_t count) {
-  return static_cast<ssize_t>(EnsureInitializedAndDispatchSyscall(
+  ssize_t ret = static_cast<ssize_t>(EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_write, fd, buf, count));
+  if (ret != -1 && ret > count) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_read: read result exceeds requested");
+  }
+  return ret;
 }
 
 int enc_untrusted_symlink(const char *target, const char *linkpath) {
@@ -246,8 +251,13 @@ int enc_untrusted_symlink(const char *target, const char *linkpath) {
 }
 
 ssize_t enc_untrusted_readlink(const char *pathname, char *buf, size_t bufsiz) {
-  return static_cast<ssize_t>(EnsureInitializedAndDispatchSyscall(
+  ssize_t ret = static_cast<ssize_t>(EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_readlink, pathname, buf, bufsiz));
+  if (ret != -1 && ret > bufsiz) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_read: read result exceeds requested");
+  }
+  return ret;
 }
 
 int enc_untrusted_truncate(const char *path, off_t length) {
@@ -446,14 +456,24 @@ int enc_untrusted_sched_getaffinity(pid_t pid, size_t cpusetsize,
 }
 
 int enc_untrusted_pread64(int fd, void *buf, size_t count, off_t offset) {
-  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_pread64,
-                                             fd, buf, count, offset);
+  int ret = EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_pread64, fd, buf, count, offset);
+  if (ret != -1 && ret > count) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_read: read result exceeds requested");
+  }
+  return ret;
 }
 
 int enc_untrusted_pwrite64(int fd, const void *buf, size_t count,
                            off_t offset) {
-  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_pwrite64,
-                                             fd, buf, count, offset);
+  int ret = EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_pwrite64, fd, buf, count, offset);
+  if (ret != -1 && ret > count) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_read: read result exceeds requested");
+  }
+  return ret;
 }
 
 int enc_untrusted_isatty(int fd) {
