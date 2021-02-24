@@ -18,6 +18,7 @@
 
 #include "asylo/platform/primitives/enclave_loader.h"
 
+#include "absl/status/status.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
@@ -69,8 +70,7 @@ StatusOr<std::shared_ptr<Client>> LoadEnclave(
                                 enclave_size, enclave_config, debug,
                                 std::move(exit_call_provider)));
   } else {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "SGX enclave source not set");
+    return absl::InvalidArgumentError("SGX enclave source not set");
   }
   return std::move(primitive_client);
 }

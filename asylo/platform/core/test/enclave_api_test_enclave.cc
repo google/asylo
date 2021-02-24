@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/core/test/proto_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
@@ -30,21 +31,19 @@ class EnclaveApi : public EnclaveTestCase {
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
     if (!input.HasExtension(enclave_api_test_input)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Input extension not found");
+      return absl::InvalidArgumentError("Input extension not found");
     }
     EnclaveApiTest input_test = input.GetExtension(enclave_api_test_input);
     if (!input_test.has_test_string() || !input_test.has_test_int() ||
         input_test.test_repeated_size() == 0) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Field(s) of user_input not set");
+      return absl::InvalidArgumentError("Field(s) of user_input not set");
     }
     if (input_test.test_string() != "test string" ||
         input_test.test_int() != 1 || input_test.test_repeated_size() != 2 ||
         input_test.test_repeated(0) != "test repeated 1" ||
         input_test.test_repeated(1) != "test repeated 2") {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Field(s) of user_input doesn't match the value set");
+      return absl::InvalidArgumentError(
+          "Field(s) of user_input doesn't match the value set");
     }
     EnclaveApiTest output_test;
     output_test.set_test_string("output string");

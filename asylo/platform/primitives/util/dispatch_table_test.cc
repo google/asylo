@@ -26,6 +26,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
@@ -71,10 +72,10 @@ TEST(DispatchTableTest, HandlersRegistration) {
               IsOk());
   ASSERT_THAT(dispatch_table.RegisterExitHandler(
                   0, ExitHandler{callback.AsStdFunction()}),
-              StatusIs(error::GoogleError::ALREADY_EXISTS));
+              StatusIs(absl::StatusCode::kAlreadyExists));
   ASSERT_THAT(dispatch_table.RegisterExitHandler(
                   10, ExitHandler{callback.AsStdFunction()}),
-              StatusIs(error::GoogleError::ALREADY_EXISTS));
+              StatusIs(absl::StatusCode::kAlreadyExists));
   ASSERT_THAT(dispatch_table.RegisterExitHandler(
                   20, ExitHandler{callback.AsStdFunction()}),
               IsOk());
@@ -107,7 +108,7 @@ TEST(DispatchTableTest, HandlersInvocation) {
               IsOk());
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(30, nullptr, &out,
                                                               client.get()),
-              StatusIs(error::GoogleError::OUT_OF_RANGE));
+              StatusIs(absl::StatusCode::kOutOfRange));
 }
 
 TEST(DispatchTableTest, HandlersInMultipleThreads) {

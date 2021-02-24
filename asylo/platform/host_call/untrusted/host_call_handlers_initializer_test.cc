@@ -19,6 +19,7 @@
 #include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
 
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
@@ -65,7 +66,7 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
   // handler.
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kSystemCallHandler, primitives::ExitHandler{nullptr}),
-              StatusIs(error::GoogleError::ALREADY_EXISTS));
+              StatusIs(absl::StatusCode::kAlreadyExists));
 
   // Verify that |kSystemCallHandler| points to |SystemCallHandler| by making a
   // call with an empty request.
@@ -73,62 +74,62 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
   primitives::MessageWriter output;
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kSystemCallHandler, &input, &output, client.get()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kIsAttyHandler, primitives::ExitHandler{nullptr}),
-              StatusIs(error::GoogleError::ALREADY_EXISTS));
+              StatusIs(absl::StatusCode::kAlreadyExists));
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kIsAttyHandler, &input, &output, client.get()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kUSleepHandler, primitives::ExitHandler{nullptr}),
-              StatusIs(error::GoogleError::ALREADY_EXISTS));
+              StatusIs(absl::StatusCode::kAlreadyExists));
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kUSleepHandler, &input, &output, client.get()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kSysconfHandler, primitives::ExitHandler{nullptr}),
-              StatusIs(error::GoogleError::ALREADY_EXISTS));
+              StatusIs(absl::StatusCode::kAlreadyExists));
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kSysconfHandler, &input, &output, client.get()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kReallocHandler, primitives::ExitHandler{nullptr}),
-              StatusIs(error::GoogleError::ALREADY_EXISTS));
+              StatusIs(absl::StatusCode::kAlreadyExists));
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kReallocHandler, &input, &output, client.get()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kSleepHandler, primitives::ExitHandler{nullptr}),
-              StatusIs(error::GoogleError::ALREADY_EXISTS));
+              StatusIs(absl::StatusCode::kAlreadyExists));
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kSleepHandler, &input, &output, client.get()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kGetSocknameHandler, primitives::ExitHandler{nullptr}),
-              StatusIs(error::GoogleError::ALREADY_EXISTS));
+              StatusIs(absl::StatusCode::kAlreadyExists));
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kGetSocknameHandler, &input, &output, client.get()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kAcceptHandler, primitives::ExitHandler{nullptr}),
-              StatusIs(error::GoogleError::ALREADY_EXISTS));
+              StatusIs(absl::StatusCode::kAlreadyExists));
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kAcceptHandler, &input, &output, client.get()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kGetPeernameHandler, primitives::ExitHandler{nullptr}),
-              StatusIs(error::GoogleError::ALREADY_EXISTS));
+              StatusIs(absl::StatusCode::kAlreadyExists));
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kGetPeernameHandler, &input, &output, client.get()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kRecvFromHandler, primitives::ExitHandler{nullptr}),
-              StatusIs(error::GoogleError::ALREADY_EXISTS));
+              StatusIs(absl::StatusCode::kAlreadyExists));
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kRecvFromHandler, &input, &output, client.get()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 }  // namespace host_call

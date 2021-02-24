@@ -27,6 +27,7 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/time/time.h"
@@ -294,8 +295,7 @@ class EnclaveLoader {
   virtual StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
       absl::string_view name, void *base_address, const size_t enclave_size,
       const EnclaveConfig &config) const {
-    return Status(
-        error::GoogleError::INTERNAL,
+    return absl::InternalError(
         "EnclaveLoader::LoadEnclave not implemented for test enclave");
   }
 

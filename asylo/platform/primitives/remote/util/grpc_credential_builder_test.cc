@@ -29,6 +29,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/test/util/status_matchers.h"
@@ -59,11 +60,10 @@ Status WriteFile(absl::string_view path, absl::string_view data) {
                   absl::StrCat("Failed to write, file=", path));
   }
   if (write_result < data.size()) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         absl::StrCat("Could not write ", data.size(), " bytes, file=", path));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 TEST(GrpcCredentialBuilderTest, GeneratesServerSSLCredentials) {

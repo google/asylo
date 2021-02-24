@@ -28,6 +28,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -66,8 +67,7 @@ StatusOr<SecurityType> ParseFlag(absl::string_view text) {
     return SecurityType::kLocal;
   }
   LOG(ERROR) << "Invalid security_type specified, '" << text << "'";
-  return Status(
-      error::GoogleError::INVALID_ARGUMENT,
+  return absl::InvalidArgumentError(
       absl::StrCat("Invalid security_type was specified, '", text, "'"));
 }
 
@@ -105,9 +105,8 @@ StatusOr<std::string> ReadFile(absl::string_view path) {
                   absl::StrCat("Failed to read, file=", path));
   }
   if (read_result < statbuf.st_size) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Could not read ", statbuf.st_size,
-                               " bytes, file=", path));
+    return absl::InvalidArgumentError(absl::StrCat(
+        "Could not read ", statbuf.st_size, " bytes, file=", path));
   }
   return std::string(buf.get(), statbuf.st_size);
 }
@@ -137,8 +136,7 @@ GrpcCredentialBuilder::BuildServerCredentials() {
       return ::grpc::InsecureServerCredentials();
     default:
       LOG(ERROR) << "Invalid security_type specified, " << security_type;
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Invalid security_type was specified.");
+      return absl::InvalidArgumentError("Invalid security_type was specified.");
   }
 }
 
@@ -159,8 +157,7 @@ GrpcCredentialBuilder::BuildChannelCredentials() {
     case SecurityType::kLocal:
       return ::grpc::InsecureChannelCredentials();
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Invalid security_type was specified.");
+      return absl::InvalidArgumentError("Invalid security_type was specified.");
   }
 }
 

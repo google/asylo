@@ -23,6 +23,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/platform/primitives/remote/metrics/mocks/mock_proc_system_service.h"
 #include "asylo/platform/primitives/remote/metrics/proc_system.grpc.pb.h"
 #include "asylo/platform/primitives/remote/metrics/proc_system.pb.h"
@@ -89,7 +90,7 @@ TEST(ProcSystemServiceClientTestNoFixture, HandlesGetProcStatError) {
 
   auto proc_or_request = proc_client.GetProcStat();
   ASSERT_THAT(proc_or_request.status(),
-              Eq(::asylo::Status(error::GoogleError::UNKNOWN, "BadError")));
+              Eq(::asylo::Status(absl::StatusCode::kUnknown, "BadError")));
 }
 
 }  // namespace

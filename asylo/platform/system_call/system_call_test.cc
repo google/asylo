@@ -34,6 +34,7 @@
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
+#include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/system_call/sysno.h"
 #include "asylo/platform/system_call/type_conversions/types.h"
@@ -91,7 +92,7 @@ asylo::primitives::PrimitiveStatus InvalidResponseDispatcher(
 asylo::primitives::PrimitiveStatus AlwaysFailingDispatcher(
     const uint8_t *request_buffer, size_t request_size,
     uint8_t **response_buffer, size_t *response_size) {
-  return {asylo::error::GoogleError::UNKNOWN, "some random failure"};
+  return {primitives::AbslStatusCode::kUnknown, "some random failure"};
 }
 
 // Invokes a system call with zero parameters.

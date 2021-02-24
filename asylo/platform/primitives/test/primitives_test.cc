@@ -26,6 +26,7 @@
 #include <gtest/gtest.h>
 #include "absl/debugging/leak_check.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/test/test_backend.h"
@@ -275,8 +276,8 @@ TEST_F(PrimitivesTest, CallChain) {
     ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
     const auto n = in->next<int32_t>();
     if (n >= 50) {
-      return Status{error::GoogleError::INVALID_ARGUMENT,
-                    "UntrustedFibonacci called with invalid argument."};
+      return absl::InvalidArgumentError(
+          "UntrustedFibonacci called with invalid argument.");
     }
     out->Push(n < 2 ? n : trusted_fibonacci(n - 1) + trusted_fibonacci(n - 2));
     return Status::OkStatus();
@@ -411,8 +412,7 @@ TEST_F(PrimitivesTest, InsideOutsideEnclaveTest) {
   ASYLO_EXPECT_OK(client->EnclaveCall(kInsideOutsideTest, nullptr, &out));
   EXPECT_THAT(out, SizeIs(1));
   auto result = out.next();
-  EXPECT_THAT(std::string(result.As<char>(), result.size() - 1),
-              StrEq("pass"));
+  EXPECT_THAT(std::string(result.As<char>(), result.size() - 1), StrEq("pass"));
   EXPECT_FALSE(out.hasNext());
 }
 

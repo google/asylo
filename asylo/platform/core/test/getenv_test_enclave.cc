@@ -17,8 +17,10 @@
  */
 
 #include <stdlib.h>
+
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/core/test/proto_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
@@ -37,25 +39,23 @@ class EnclaveGetenvTest : public EnclaveTestCase {
       std::string value(positive + 1, test_string.size() - name.size() - 1);
       const char *test_value = getenv(name.c_str());
       if (!test_value) {
-        return Status(error::GoogleError::INTERNAL,
-                      absl::StrCat("getenv returned null for name ", name));
+        return absl::InternalError(
+            absl::StrCat("getenv returned null for name ", name));
       } else if (value != test_value) {
-        return Status(
-            error::GoogleError::INTERNAL,
+        return absl::InternalError(
             absl::StrCat("getenv returned an unexpected value for name ", name,
                          ": ", test_value, ", expected ", value));
       }
     } else {
       const char *negative = strchr(test_string.c_str(), '~');
       if (!negative) {
-        return Status(error::GoogleError::INTERNAL,
-                      absl::StrCat("Bad test string: ", test_string));
+        return absl::InternalError(
+            absl::StrCat("Bad test string: ", test_string));
       }
       std::string name(test_string.c_str(), negative - test_string.c_str());
       const char *negative_value = getenv(name.c_str());
       if (negative_value) {
-        return Status(
-            error::GoogleError::INTERNAL,
+        return absl::InternalError(
             absl::StrCat("Test for unset getenv returned a value for name ",
                          name, ": ", negative_value));
       }
@@ -67,13 +67,13 @@ class EnclaveGetenvTest : public EnclaveTestCase {
     std::string buf = GetEnclaveInputTestString(input);
     EnclaveApiTest enclave_input_test;
     if (!enclave_input_test.ParseFromArray(buf.data(), buf.size())) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Failed to deserialize string to enclave_input_test");
+      return absl::InvalidArgumentError(
+          "Failed to deserialize string to enclave_input_test");
     }
     if (enclave_input_test.test_repeated_size() != 2) {
-      return Status(error::GoogleError::INTERNAL,
-                    "Deserialized field(s) of enclave_input_test doesn't "
-                    "match the value set");
+      return absl::InternalError(
+          "Deserialized field(s) of enclave_input_test doesn't "
+          "match the value set");
     }
     for (const auto &test : enclave_input_test.test_repeated()) {
       ASYLO_RETURN_IF_ERROR(RunTest(test));

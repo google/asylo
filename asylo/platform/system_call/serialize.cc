@@ -23,6 +23,7 @@
 #include <numeric>
 
 #include "absl/strings/str_cat.h"
+#include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/system_call/message.h"
 #include "asylo/platform/system_call/metadata.h"
 
@@ -44,7 +45,7 @@ primitives::PrimitiveStatus SerializeRequest(
   SystemCallDescriptor descriptor{sysno};
   if (!descriptor.is_valid()) {
     return primitives::PrimitiveStatus{
-        error::GoogleError::INVALID_ARGUMENT,
+        primitives::AbslStatusCode::kInvalidArgument,
         absl::StrCat("Could not infer system call descriptor from the sysno (",
                      sysno, ") provided.")};
   }
@@ -66,7 +67,7 @@ primitives::PrimitiveStatus SerializeResponse(
 
   if (!descriptor.is_valid()) {
     return primitives::PrimitiveStatus{
-        error::GoogleError::INVALID_ARGUMENT,
+        primitives::AbslStatusCode::kInvalidArgument,
         absl::StrCat("Could not infer system call descriptor from the sysno (",
                      sysno, ") provided.")};
   }

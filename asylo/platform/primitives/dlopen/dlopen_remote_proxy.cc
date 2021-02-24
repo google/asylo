@@ -21,6 +21,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
@@ -48,29 +49,27 @@ StatusOr<std::shared_ptr<Client>> LocalEnclaveFactory::Get(
 
   // Parse and verify the EnclaveLoadConfig
   if (!load_config.HasExtension(remote_load_config)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Expected RemoteLoadConfig.");
+    return absl::InvalidArgumentError("Expected RemoteLoadConfig.");
   }
   const auto &remote_config = load_config.GetExtension(remote_load_config);
 
   const std::string enclave_name = load_config.name();
   if (enclave_name.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "EnclaveLoadConfig.name was empty");
+    return absl::InvalidArgumentError("EnclaveLoadConfig.name was empty");
   }
 
   // Parse and verify the DlopenLoadConfig
   if (remote_config.loader_case() !=
       RemoteLoadConfig::LoaderCase::kDlopenLoadConfig) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Expected DlopenLoadConfig held by RemoteLoadConfig.");
+    return absl::InvalidArgumentError(
+        "Expected DlopenLoadConfig held by RemoteLoadConfig.");
   }
   const auto &dlopen_config = remote_config.dlopen_load_config();
 
   const std::string enclave_path = dlopen_config.enclave_path();
   if (enclave_path.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "DlopenLoadConfig.enclave_path was empty");
+    return absl::InvalidArgumentError(
+        "DlopenLoadConfig.enclave_path was empty");
   }
 
   // Load dlopen()ed enclave to be proxied.

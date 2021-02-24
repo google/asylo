@@ -20,6 +20,7 @@
 
 #include <ifaddrs.h>
 
+#include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/util/status_macros.h"
 
@@ -78,7 +79,7 @@ PrimitiveStatus PushkLinuxSockAddrToWriter(
     primitives::MessageWriter *writer, struct sockaddr *sock,
     void (*abort_handler)(const char *message)) {
   if (!writer) {
-    return {error::GoogleError::INVALID_ARGUMENT,
+    return {primitives::AbslStatusCode::kInvalidArgument,
             "PushkLinuxSockAddr: Null MessageWriter provided."};
   }
   if (!sock) {
@@ -95,7 +96,7 @@ PrimitiveStatus PushkLinuxSockAddrToWriter(
   if (!TokLinuxSockAddr(sock, GetSocklen(sock, abort_handler),
                         reinterpret_cast<klinux_sockaddr *>(klinux_sock.get()),
                         &klinux_sock_len, abort_handler)) {
-    return {error::GoogleError::INVALID_ARGUMENT,
+    return {primitives::AbslStatusCode::kInvalidArgument,
             "TestGetAddrInfo: Couldn't convert sockaddr to klinux_sockaddr"};
   }
   writer->PushByCopy(Extent{klinux_sock.get(), klinux_sock_len});
@@ -300,7 +301,7 @@ PrimitiveStatus SerializeAddrInfo(primitives::MessageWriter *writer,
                                   void (*abort_handler)(const char *message),
                                   bool explicit_klinux_conversion) {
   if (!writer) {
-    return {error::GoogleError::INVALID_ARGUMENT,
+    return {primitives::AbslStatusCode::kInvalidArgument,
             "SerializeAddrInfo: Null writer provided"};
   }
   writer->Push<uint64_t>(GetNumAddrinfos(addrs));
@@ -326,7 +327,7 @@ PrimitiveStatus SerializeAddrInfo(primitives::MessageWriter *writer,
               reinterpret_cast<klinux_sockaddr *>(klinux_sock.get()),
               &klinux_sock_len, abort_handler)) {
         return {
-            error::GoogleError::INVALID_ARGUMENT,
+            primitives::AbslStatusCode::kInvalidArgument,
             "SerializeAddrInfo: Couldn't convert sockaddr to klinux_sockaddr"};
       }
       writer->PushByCopy(Extent{klinux_sock.get(), klinux_sock_len});
@@ -345,7 +346,7 @@ PrimitiveStatus SerializeIfAddrs(primitives::MessageWriter *writer,
                                  void (*abort_handler)(const char *message),
                                  bool explicit_klinux_conversion) {
   if (!writer || !ifaddr_list) {
-    return {error::GoogleError::INVALID_ARGUMENT,
+    return {primitives::AbslStatusCode::kInvalidArgument,
             "SerializeIfAddrs: NULL MessageWriter or ifaddrs provided."};
   }
   writer->Push<uint64_t>(GetNumIfAddrs(ifaddr_list));

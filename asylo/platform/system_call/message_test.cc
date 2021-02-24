@@ -30,7 +30,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/base/casts.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "asylo/platform/primitives/primitive_status.h"
 
 namespace asylo {
 namespace system_call {
@@ -59,14 +61,14 @@ void CollectParameters(uint64_t *parameters) {}
 
 // Collects a variable length argument list into an array of 64-bit words.
 template <typename T, typename... Args>
-void CollectParameters(uint64_t *parameters, T first, Args &&... rest) {
+void CollectParameters(uint64_t *parameters, T first, Args &&...rest) {
   *parameters = CastToWord(first);
   CollectParameters(parameters + 1, rest...);
 }
 
 // Builds a system call request message and formats it as a string.
 template <typename... Args>
-std::string FormatRequest(int sysno, Args &&... args) {
+std::string FormatRequest(int sysno, Args &&...args) {
   std::array<uint64_t, 6> parameters;
   CollectParameters(&parameters[0], args...);
   auto writer = MessageWriter::RequestWriter(sysno, parameters);
@@ -79,7 +81,7 @@ std::string FormatRequest(int sysno, Args &&... args) {
 // Builds a system call response message and formats it as a string.
 template <typename... Args>
 std::string FormatResponse(int sysno, uint64_t result, uint64_t error_number,
-                           Args &&... args) {
+                           Args &&...args) {
   std::array<uint64_t, 6> parameters;
   CollectParameters(&parameters[0], args...);
   auto writer =
@@ -158,7 +160,8 @@ TEST(MessageTest, MessageHeaderNotCompleteTest) {
   uint8_t *response_buffer = nullptr;
   MessageReader reader({response_buffer, 0});
   primitives::PrimitiveStatus status = reader.Validate();
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_code(),
+              Eq(primitives::AbslStatusCode::kInvalidArgument));
   EXPECT_THAT(status.error_message(),
               StrEq("Message malformed: no completed header present"));
 }
@@ -174,7 +177,8 @@ TEST(MessageTest, MessageMagicNumberMisMatchTest) {
   reinterpret_cast<MessageHeader *>(message.data())->magic = -1;
   MessageReader reader(message);
   primitives::PrimitiveStatus status = reader.Validate();
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_code(),
+              Eq(primitives::AbslStatusCode::kInvalidArgument));
   EXPECT_THAT(status.error_message(),
               StrEq("Message malformed: magic number mismatched"));
 }
@@ -190,7 +194,8 @@ TEST(MessageTest, MessageFlagBothRequestResponseTest) {
   reinterpret_cast<MessageHeader *>(message.data())->flags = 0xFFFFFFFF;
   MessageReader reader(message);
   primitives::PrimitiveStatus status = reader.Validate();
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_code(),
+              Eq(primitives::AbslStatusCode::kInvalidArgument));
   EXPECT_THAT(status.error_message(),
               StrEq("Message malformed: should be either a request or a "
                     "response"));
@@ -207,7 +212,8 @@ TEST(MessageTest, MessageSystemCallNumberInvalidTest) {
   reinterpret_cast<MessageHeader *>(message.data())->sysno = -1;
   MessageReader reader(message);
   primitives::PrimitiveStatus status = reader.Validate();
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_code(),
+              Eq(primitives::AbslStatusCode::kInvalidArgument));
   EXPECT_THAT(
       status.error_message(),
       StrEq(absl::StrCat("Message malformed: sysno ", -1, " is invalid")));
@@ -225,7 +231,8 @@ TEST(MessageTest, FixedDataSizeMisMatchTest) {
   writer.Write(&message);
   MessageReader reader(message);
   primitives::PrimitiveStatus status = reader.Validate();
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_code(),
+              Eq(primitives::AbslStatusCode::kInvalidArgument));
   // 2nd parameter is kFixed and have mismatched size.
   EXPECT_THAT(status.error_message(),
               StrEq(absl::StrCat("Message malformed: parameter under index ",
@@ -246,7 +253,8 @@ TEST(MessageTest, ScalarDataSizeMisMatchTest) {
   reinterpret_cast<MessageHeader *>(message.data())->size[1] = 1;
   MessageReader reader(message);
   primitives::PrimitiveStatus status = reader.Validate();
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_code(),
+              Eq(primitives::AbslStatusCode::kInvalidArgument));
   // 2nd parameter is kScalar and have mismatched size.
   EXPECT_THAT(status.error_message(),
               StrEq(absl::StrCat("Message malformed: parameter under index ",
@@ -265,7 +273,8 @@ TEST(MessageTest, StringDataSizeMisMatchTest) {
   reinterpret_cast<MessageHeader *>(message.data())->size[0] = 5;
   MessageReader reader(message);
   primitives::PrimitiveStatus status = reader.Validate();
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_code(),
+              Eq(primitives::AbslStatusCode::kInvalidArgument));
   // 1st parameter is kString and have mismatched size.
   EXPECT_THAT(status.error_message(),
               StrEq(absl::StrCat("Message malformed: parameter under index ",
@@ -284,7 +293,8 @@ TEST(MessageTest, NonNullTerminatedStringParameterTest) {
   reinterpret_cast<MessageHeader *>(message.data())->size[0] = 2;
   MessageReader reader(message);
   primitives::PrimitiveStatus status = reader.Validate();
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_code(),
+              Eq(primitives::AbslStatusCode::kInvalidArgument));
   // 1st parameter is kString and not null terminated.
   EXPECT_THAT(status.error_message(),
               StrEq(absl::StrCat("Message malformed: parameter under index ",
@@ -301,7 +311,7 @@ TEST(MessageTest, NegativeSizeTest) {
   writer.Write(&message);
   MessageReader reader(message);
   primitives::PrimitiveStatus status = reader.Validate();
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::OK));
+  EXPECT_THAT(status.error_code(), Eq(primitives::AbslStatusCode::kOk));
 }
 
 TEST(MessageTest, OffsetDriftTest) {
@@ -316,7 +326,8 @@ TEST(MessageTest, OffsetDriftTest) {
   reinterpret_cast<MessageHeader *>(message.data())->offset[1] = 0;
   MessageReader reader(message);
   primitives::PrimitiveStatus status = reader.Validate();
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_code(),
+              Eq(primitives::AbslStatusCode::kInvalidArgument));
   EXPECT_THAT(status.error_message(),
               StrEq(absl::StrCat("Message malformed: parameter under index ", 1,
                                  " has drifted offset")));
@@ -332,7 +343,8 @@ TEST(MessageTest, OffsetOverflowTest) {
   writer.Write(&message);
   MessageReader reader(message);
   primitives::PrimitiveStatus status = reader.Validate();
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_code(),
+              Eq(primitives::AbslStatusCode::kInvalidArgument));
   // there are three parameters: path, buf and size. buf is the only output.
   EXPECT_THAT(status.error_message(),
               StrEq(absl::StrCat("Message malformed: parameter under index ", 1,
@@ -351,7 +363,8 @@ TEST(MessageTest, OffsetOverflowFromUint64Test) {
   reinterpret_cast<MessageHeader *>(message.data())->size[1] = SIZE_MAX;
   MessageReader reader(message);
   primitives::PrimitiveStatus status = reader.Validate();
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_code(),
+              Eq(primitives::AbslStatusCode::kInvalidArgument));
   EXPECT_THAT(status.error_message(),
               StrEq(absl::StrCat("Message malformed: parameter under index ", 1,
                                  " resides above max offset")));

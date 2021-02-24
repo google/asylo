@@ -99,7 +99,7 @@ PrimitiveStatus TrustedFibonacci(void *context, MessageReader *in,
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
   const int32_t n = in->next<int32_t>();
   if (n >= 50) {
-    return {error::GoogleError::INVALID_ARGUMENT,
+    return {primitives::AbslStatusCode::kInvalidArgument,
             "TrustedFibonacci called with invalid input."};
   }
 
@@ -301,8 +301,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       EntryHandler{asylo::primitives::InsideOutsideTest}));
   return asylo::primitives::initialized
              ? PrimitiveStatus::OkStatus()
-             : PrimitiveStatus{::asylo::error::GoogleError::FAILED_PRECONDITION,
-                               "Enclave not initialized"};
+             : PrimitiveStatus{
+                   asylo::primitives::AbslStatusCode::kFailedPrecondition,
+                   "Enclave not initialized"};
 }
 
 // Implements the required enclave finalization function.

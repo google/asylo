@@ -19,6 +19,7 @@
 #include <string>
 
 #include "absl/flags/parse.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/examples/hello_enclave.h"
@@ -64,7 +65,7 @@ Status call_enclave() {
       client->EnclaveCall(kHelloEnclaveSelector, /*input=*/nullptr, &out));
 
   if (out.size() != 1) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
+    return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Incorrect output parameter count received."
                                " Expecting 1, got: ",
                                out.size()));

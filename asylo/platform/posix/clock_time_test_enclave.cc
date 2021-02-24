@@ -18,6 +18,7 @@
 #include <sys/time.h>
 #include <time.h>
 
+#include "absl/status/status.h"
 #include "asylo/platform/posix/clock_time_test.pb.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/status.h"
@@ -39,8 +40,7 @@ class ClockTimeTestEnclave : public TrustedApplication {
     uint64_t kNs = 1000000000ULL;
 
     if (clock_gettime(clk_id, &ts) < 0)
-      return Status(error::GoogleError::FAILED_PRECONDITION,
-                    "clock_gettime failed");
+      return absl::FailedPreconditionError("clock_gettime failed");
     time_test_output->set_clock_gettime(ts.tv_sec * kNs + ts.tv_nsec);
 
     return Status::OkStatus();

@@ -23,6 +23,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "asylo/platform/posix/sockets/socket_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
 
@@ -34,8 +35,8 @@ class AddrinfoTestEnclave : public EnclaveTestCase {
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
     if (!input.HasExtension(addrinfo_test_input)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "addrinfo test input use addrinfo hints not found");
+      return absl::InvalidArgumentError(
+          "addrinfo test input use addrinfo hints not found");
     }
 
     AddrInfoTestInput::TestMode mode =
@@ -49,8 +50,7 @@ class AddrinfoTestEnclave : public EnclaveTestCase {
       case AddrInfoTestInput::IP_HINTS:
         return AddrInfoTest_IpHints();
       default:
-        return Status(error::GoogleError::INTERNAL,
-                      "unknown addrinfo test mode");
+        return absl::InternalError("unknown addrinfo test mode");
     }
   }
 
@@ -103,12 +103,11 @@ class AddrinfoTestEnclave : public EnclaveTestCase {
   Status AddrInfoTest_NoHints() {
     struct addrinfo *info = nullptr;
     if (!GetAddrInfoForLocalHost(/*hints=*/nullptr, &info)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "getaddrinfo() system call failed");
+      return absl::InternalError("getaddrinfo() system call failed");
     }
     if (!VerifyLocalHostAddrInfoAddress(info)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "getaddrinfo() returned incorrect address string");
+      return absl::InternalError(
+          "getaddrinfo() returned incorrect address string");
     }
     freeaddrinfo(info);
     return Status::OkStatus();
@@ -122,19 +121,18 @@ class AddrinfoTestEnclave : public EnclaveTestCase {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_CANONNAME;  // return canonical names in addrinfo
     if (!GetAddrInfoForLocalHost(&hints, &info)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "getaddrinfo() system call failed");
+      return absl::InternalError("getaddrinfo() system call failed");
     }
     if (!VerifyLocalHostAddrInfoAddress(info)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "getaddrinfo() returned incorrect address string");
+      return absl::InternalError(
+          "getaddrinfo() returned incorrect address string");
     }
     if (!VerifyLocalHostAddrInfoCanonname(info)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "getaddrinfo() returned incorrect canonical name");
+      return absl::InternalError(
+          "getaddrinfo() returned incorrect canonical name");
     }
     freeaddrinfo(info);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status AddrInfoTest_IpHints() {
@@ -145,16 +143,15 @@ class AddrinfoTestEnclave : public EnclaveTestCase {
     hints.ai_socktype = SOCK_STREAM;
     hints.ai_flags = AI_CANONNAME;  // return canonical names in addrinfo
     if (!GetAddrInfoForLocalHost(&hints, &info)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "getaddrinfo() system call failed");
+      return absl::InternalError("getaddrinfo() system call failed");
     }
     if (!VerifyLocalHostAddrInfoAddress(info)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "getaddrinfo() returned incorrect address string");
+      return absl::InternalError(
+          "getaddrinfo() returned incorrect address string");
     }
     if (!VerifyLocalHostAddrInfoCanonname(info)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "getaddrinfo() returned incorrect canonical name");
+      return absl::InternalError(
+          "getaddrinfo() returned incorrect canonical name");
     }
     freeaddrinfo(info);
     return Status::OkStatus();

@@ -24,6 +24,7 @@
 
 #include <thread>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/enclave.pb.h"
@@ -158,8 +159,8 @@ StatusOr<EnclaveManager *> EnclaveManager::Instance() {
 
   instance_ = new EnclaveManager();
   if (!instance_) {
-    return Status(error::GoogleError::RESOURCE_EXHAUSTED,
-                  "Could not create an instance of the enclave manager");
+    return absl::ResourceExhaustedError(
+        "Could not create an instance of the enclave manager");
   }
 
   return instance_;
@@ -229,8 +230,8 @@ Status EnclaveManager::LoadFakeEnclave(absl::string_view name,
   {
     absl::ReaderMutexLock lock(&client_table_lock_);
     if (client_by_name_.find(name) != client_by_name_.end()) {
-      Status status(error::GoogleError::ALREADY_EXISTS,
-                    absl::StrCat("Name already exists: ", name));
+      Status status =
+          absl::AlreadyExistsError(absl::StrCat("Name already exists: ", name));
       LOG(ERROR) << "LoadEnclave failed: " << status;
       return status;
     }
@@ -301,8 +302,8 @@ Status EnclaveManager::LoadEnclave(const EnclaveLoadConfig &load_config) {
   {
     absl::ReaderMutexLock lock(&client_table_lock_);
     if (client_by_name_.find(name) != client_by_name_.end()) {
-      Status status(error::GoogleError::ALREADY_EXISTS,
-                    absl::StrCat("Name already exists: ", name));
+      Status status =
+          absl::AlreadyExistsError(absl::StrCat("Name already exists: ", name));
       LOG(ERROR) << "LoadEnclave failed: " << status;
       return status;
     }

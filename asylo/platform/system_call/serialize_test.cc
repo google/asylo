@@ -17,9 +17,11 @@
  */
 
 #include "asylo/platform/system_call/serialize.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
+#include "asylo/platform/primitives/primitive_status.h"
 
 namespace asylo {
 namespace system_call {
@@ -34,7 +36,8 @@ TEST(SerializeTest, SerializeRequestInvalidSysnoTest) {
   primitives::PrimitiveStatus status =
       SerializeRequest(10000, parameters, nullptr);
 
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_code(),
+              Eq(primitives::AbslStatusCode::kInvalidArgument));
   EXPECT_THAT(status.error_message(),
               StrEq(absl::StrCat(
                   "Could not infer system call descriptor from the sysno (",
@@ -47,7 +50,8 @@ TEST(SerializeTest, SerializeResponseInvalidSysnoTest) {
   primitives::PrimitiveStatus status =
       SerializeResponse(10000, 0, 0, parameters, nullptr);
 
-  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_code(),
+              Eq(primitives::AbslStatusCode::kInvalidArgument));
   EXPECT_THAT(status.error_message(),
               StrEq(absl::StrCat(
                   "Could not infer system call descriptor from the sysno (",

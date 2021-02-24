@@ -28,6 +28,7 @@
 #include <gtest/gtest.h>
 #include "absl/base/macros.h"
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
@@ -124,39 +125,39 @@ Status EnclaveStorageSecureTest::OpenWriteClose(off_t offset) {
                        S_IRWXU | S_IRWXG | S_IRWXO);
   LOG(INFO) << "Opened file for write, fd = " << fd;
   if (fd < 0) {
-    return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("Secure open path ", GetPath(), " failed."));
+    return absl::InternalError(
+        absl::StrCat("Secure open path ", GetPath(), " failed."));
   }
 
   platform::storage::FdCloser fd_closer(fd, &secure_close);
 
   if (EmulateSetKeyIoctl(fd) != 0) {
-    return Status(error::GoogleError::INTERNAL, "Set Master Key failed.");
+    return absl::InternalError("Set Master Key failed.");
   }
 
   if (offset > 0) {
     if (secure_lseek(fd, offset, SEEK_SET) != offset) {
-      return Status(error::GoogleError::INTERNAL, "Secure lseek failed.");
+      return absl::InternalError("Secure lseek failed.");
     }
     LOG(INFO) << "Performed lseek to offset = " << offset;
   }
 
   // Write.
   if (secure_write(fd, GetWriteBuffer(), test_buf_len_) != test_buf_len_) {
-    return Status(error::GoogleError::INTERNAL, "Secure write failed.");
+    return absl::InternalError("Secure write failed.");
   }
 
   fd_closer.release();  // Make no more attempts to close before return.
 
   // Close.
   if (secure_close(fd) != 0) {
-    return Status(error::GoogleError::INTERNAL, "Secure close failed.");
+    return absl::InternalError("Secure close failed.");
   }
 
   // Cannot close twice.
   if (secure_close(fd) != -1) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Secure close the same fd a second time succeeded.");
+    return absl::InternalError(
+        "Secure close the same fd a second time succeeded.");
   }
 
   return Status::OkStatus();
@@ -168,45 +169,44 @@ Status EnclaveStorageSecureTest::OpenReadVerifyClose(off_t offset,
   int fd = secure_open(GetPath().c_str(), O_RDONLY);
   LOG(INFO) << "Opened file for read, fd = " << fd;
   if (fd < 0) {
-    return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("Secure open path ", GetPath(), " failed."));
+    return absl::InternalError(
+        absl::StrCat("Secure open path ", GetPath(), " failed."));
   }
 
   platform::storage::FdCloser fd_closer(fd, &secure_close);
 
   if (EmulateSetKeyIoctl(fd) != 0) {
-    return Status(error::GoogleError::INTERNAL, "Set master Key failed.");
+    return absl::InternalError("Set master Key failed.");
   }
 
   if (offset > 0) {
     if (secure_lseek(fd, offset, SEEK_SET) != offset) {
-      return Status(error::GoogleError::INTERNAL, "Secure lseek failed.");
+      return absl::InternalError("Secure lseek failed.");
     }
     LOG(INFO) << "Performed lseek to offset = " << offset;
   }
 
   // Read.
   if (secure_read(fd, GetReadBuffer(), test_buf_len_) != bytes_expected) {
-    return Status(error::GoogleError::INTERNAL, "Secure read failed.");
+    return absl::InternalError("Secure read failed.");
   }
 
   // Verify.
   if (memcmp(GetWriteBuffer(), GetReadBuffer(), bytes_expected) != 0) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Bytes read different from bytes written.");
+    return absl::InternalError("Bytes read different from bytes written.");
   }
 
   fd_closer.release();  // Make no more attempts to close before return.
 
   // Close.
   if (secure_close(fd) != 0) {
-    return Status(error::GoogleError::INTERNAL, "secure close failed.");
+    return absl::InternalError("secure close failed.");
   }
 
   // Cannot close twice.
   if (secure_close(fd) != -1) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Secure close the same fd a second time succeeded.");
+    return absl::InternalError(
+        "Secure close the same fd a second time succeeded.");
   }
 
   return Status::OkStatus();
@@ -518,7 +518,7 @@ TEST_P(EnclaveStorageSecureTest, ReadWriteDataModified) {
   ASSERT_EQ(enc_untrusted_fsync(fd), 0) << strerror(errno);
   ASSERT_EQ(enc_untrusted_close(fd), 0) << strerror(errno);
   EXPECT_THAT(OpenReadVerifyClose(0, test_buf_len_),
-              StatusIs(error::GoogleError::INTERNAL, "Secure read failed."));
+              StatusIs(absl::StatusCode::kInternal, "Secure read failed."));
 }
 
 TEST_P(EnclaveStorageSecureTest, ReadWriteDigestModified) {
@@ -531,7 +531,7 @@ TEST_P(EnclaveStorageSecureTest, ReadWriteDigestModified) {
   ASSERT_EQ(enc_untrusted_fsync(fd), 0) << strerror(errno);
   ASSERT_EQ(enc_untrusted_close(fd), 0) << strerror(errno);
   EXPECT_THAT(OpenReadVerifyClose(0, test_buf_len_),
-              StatusIs(error::GoogleError::INTERNAL, "Set master Key failed."));
+              StatusIs(absl::StatusCode::kInternal, "Set master Key failed."));
 }
 
 TEST_P(EnclaveStorageSecureTest, ReadWriteAuthTagsModified) {
@@ -547,7 +547,7 @@ TEST_P(EnclaveStorageSecureTest, ReadWriteAuthTagsModified) {
   ASSERT_EQ(enc_untrusted_fsync(fd), 0) << strerror(errno);
   ASSERT_EQ(enc_untrusted_close(fd), 0) << strerror(errno);
   EXPECT_THAT(OpenReadVerifyClose(0, test_buf_len_),
-              StatusIs(error::GoogleError::INTERNAL, "Set master Key failed."));
+              StatusIs(absl::StatusCode::kInternal, "Set master Key failed."));
 }
 
 TEST_P(EnclaveStorageSecureTest, ReadWriteTokensModified) {
@@ -564,7 +564,7 @@ TEST_P(EnclaveStorageSecureTest, ReadWriteTokensModified) {
   ASSERT_EQ(enc_untrusted_fsync(fd), 0) << strerror(errno);
   ASSERT_EQ(enc_untrusted_close(fd), 0) << strerror(errno);
   EXPECT_THAT(OpenReadVerifyClose(0, test_buf_len_),
-              StatusIs(error::GoogleError::INTERNAL, "Secure read failed."));
+              StatusIs(absl::StatusCode::kInternal, "Secure read failed."));
 }
 
 TEST_P(EnclaveStorageSecureTest, FileTruncateAttack) {
@@ -574,7 +574,7 @@ TEST_P(EnclaveStorageSecureTest, FileTruncateAttack) {
   int fd = enc_untrusted_open(GetPath().c_str(), O_WRONLY | O_TRUNC);
   enc_untrusted_close(fd);
   EXPECT_THAT(OpenWriteClose(0),
-              StatusIs(error::GoogleError::INTERNAL, "Set Master Key failed."));
+              StatusIs(absl::StatusCode::kInternal, "Set Master Key failed."));
 }
 
 TEST_P(EnclaveStorageSecureTest, KeyNotSetFailure) {

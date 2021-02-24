@@ -66,6 +66,7 @@ dlopen_enclave_loader(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
 )

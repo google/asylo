@@ -20,6 +20,7 @@
 
 #include <sys/syscall.h>
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/util/thread.h"
@@ -57,8 +58,8 @@ Status CreateThreadHandler(const std::shared_ptr<primitives::Client> &client,
 
 Status RegisterSgxExitHandlers(Client::ExitCallProvider *exit_call_provider) {
   if (!exit_call_provider) {
-    return {error::GoogleError::INVALID_ARGUMENT,
-            "RegisterSgxExitHandlers: Invalid/NULL ExitCallProvider provided."};
+    return absl::InvalidArgumentError(
+        "RegisterSgxExitHandlers: Invalid/NULL ExitCallProvider provided.");
   }
 
   ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(

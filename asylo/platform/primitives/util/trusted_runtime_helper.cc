@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include "absl/status/status.h"
 #include "asylo/platform/core/trusted_spin_lock.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
@@ -70,7 +71,8 @@ void UpdateEnclaveState(const Flag &flag) {
 
 PrimitiveStatus ReservedEntry(void *context, MessageReader *in,
                               MessageWriter *out) {
-  return {error::GoogleError::INTERNAL, "Invalid call to reserved selector."};
+  return {primitives::AbslStatusCode::kInternal,
+          "Invalid call to reserved selector."};
 }
 
 // Initializes the enclave if it has not been initialized already.
@@ -106,7 +108,7 @@ PrimitiveStatus RegisterEntryHandler(uint64_t trusted_selector,
   LockGuard lock(&enclave_state.entry_table_lock);
   if (trusted_selector >= kEntryPointMax ||
       !enclave_state.entry_table[trusted_selector].IsNull()) {
-    return {error::GoogleError::OUT_OF_RANGE,
+    return {primitives::AbslStatusCode::kOutOfRange,
             "Invalid selector in RegisterEntryHandler."};
   }
 
@@ -121,13 +123,14 @@ PrimitiveStatus InvokeEntryHandler(uint64_t selector, MessageReader *in,
 
   // Ensure the enclave has not been aborted.
   if (enclave_state.flags & Flag::kAborted) {
-    return {error::GoogleError::ABORTED, "Invalid call to aborted enclave."};
+    return {primitives::AbslStatusCode::kAborted,
+            "Invalid call to aborted enclave."};
   }
 
   // Bounds check the passed selector.
   if (selector >= kEntryPointMax ||
       enclave_state.entry_table[selector].IsNull()) {
-    return {error::GoogleError::OUT_OF_RANGE,
+    return {primitives::AbslStatusCode::kOutOfRange,
             "Invalid selector passed in call to asylo_enclave_call."};
   }
 

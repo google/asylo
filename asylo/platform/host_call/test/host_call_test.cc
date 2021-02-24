@@ -42,6 +42,7 @@
 #include "absl/base/macros.h"
 #include "absl/container/flat_hash_set.h"
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -147,26 +148,26 @@ class HostCallTest : public ::testing::Test {
   asylo::Status CheckStatFs(const struct statfs *st,
                             const struct statfs *st_expected) {
     if (st->f_type != st_expected->f_type) {
-      return Status(error::GoogleError::INTERNAL, "type");
+      return absl::InternalError("type");
     }
     if (st->f_bsize != st_expected->f_bsize) {
-      return Status(error::GoogleError::INTERNAL, "bsize");
+      return absl::InternalError("bsize");
     }
     if (st->f_blocks != st_expected->f_blocks) {
-      return Status(error::GoogleError::INTERNAL, "blocks");
+      return absl::InternalError("blocks");
     }
     // bavail, files, ffree are too volatile to check between enclave and host.
     if (st->f_fsid.__val[0] != st_expected->f_fsid.__val[0]) {
-      return Status(error::GoogleError::INTERNAL, "val0");
+      return absl::InternalError("val0");
     }
     if (st->f_fsid.__val[1] != st_expected->f_fsid.__val[1]) {
-      return Status(error::GoogleError::INTERNAL, "val1");
+      return absl::InternalError("val1");
     }
     if (st->f_namelen != st_expected->f_namelen) {
-      return Status(error::GoogleError::INTERNAL, "namelen");
+      return absl::InternalError("namelen");
     }
     if (st->f_frsize != st_expected->f_frsize) {
-      return Status(error::GoogleError::INTERNAL, "frsize");
+      return absl::InternalError("frsize");
     }
     int64_t supported_flag_mask = ST_NOSUID
 #if (defined(__GNU_VISIBLE) && __GNU_VISIBLE) || \
@@ -178,11 +179,11 @@ class HostCallTest : public ::testing::Test {
                                   | ST_RDONLY;
     if ((st->f_flags & supported_flag_mask) !=
         (st_expected->f_flags & supported_flag_mask)) {
-      return Status(error::GoogleError::INTERNAL, "flags");
+      return absl::InternalError("flags");
     }
     for (int i = 0; i < ABSL_ARRAYSIZE(st->f_spare); ++i) {
       if (st->f_spare[i] != st_expected->f_spare[i]) {
-        return Status(error::GoogleError::INTERNAL, absl::StrCat("spare", i));
+        return absl::InternalError(absl::StrCat("spare", i));
       }
     }
     return Status::OkStatus();
@@ -226,10 +227,11 @@ class AddressFamily {
         return "(unknown)";
     }
   }
+
  private:
   int family_;
 };
-std::ostream& operator<<(std::ostream &stream, const AddressFamily &family) {
+std::ostream &operator<<(std::ostream &stream, const AddressFamily &family) {
   return stream << family.getString();
 }
 
@@ -1232,27 +1234,24 @@ TEST_F(HostCallTest, TestSetSockOpt) {
     // sending or receiving data.
     memset(&sas, 0, sizeof(sockaddr_storage));
     switch (family) {
-      case AF_INET:
-        {
-          sockaddr_in *sa = reinterpret_cast<sockaddr_in *>(&sas);
-          sa->sin_family = AF_INET;
-          sa->sin_addr.s_addr = htonl(INADDR_ANY);
-          sa->sin_port = htons(0);
-        }
-        break;
-      case AF_INET6:
-        {
-          sockaddr_in6 *sa = reinterpret_cast<sockaddr_in6 *>(&sas);
-          sa->sin6_family = AF_INET6;
-          sa->sin6_flowinfo = 0;
-          sa->sin6_addr = in6addr_any;
-          sa->sin6_port = htons(0);
-        }
-        break;
+      case AF_INET: {
+        sockaddr_in *sa = reinterpret_cast<sockaddr_in *>(&sas);
+        sa->sin_family = AF_INET;
+        sa->sin_addr.s_addr = htonl(INADDR_ANY);
+        sa->sin_port = htons(0);
+      } break;
+      case AF_INET6: {
+        sockaddr_in6 *sa = reinterpret_cast<sockaddr_in6 *>(&sas);
+        sa->sin6_family = AF_INET6;
+        sa->sin6_flowinfo = 0;
+        sa->sin6_addr = in6addr_any;
+        sa->sin6_port = htons(0);
+      } break;
     }
     EXPECT_THAT(
         bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sas), sizeof(sas)),
-        Not(Eq(-1))) << strerror(errno) << AddressFamily(family);
+        Not(Eq(-1)))
+        << strerror(errno) << AddressFamily(family);
 
     MessageWriter in;
     in.Push<int>(/*value=sockfd=*/socket_fd);
@@ -2305,7 +2304,8 @@ TEST_F(HostCallTest, TestGetSockOpt) {
     socklen_t optlen_expected = sizeof(optval_expected);
     EXPECT_THAT(getsockopt(socket_fd, SOL_SOCKET, SO_KEEPALIVE,
                            &optval_expected, &optlen_expected),
-                Eq(0)) << strerror(errno) << AddressFamily(family);
+                Eq(0))
+        << strerror(errno) << AddressFamily(family);
 
     MessageWriter in;
     in.Push<int>(socket_fd);

@@ -20,6 +20,7 @@
 
 #include <memory>
 
+#include "absl/status/status.h"
 #include "absl/types/optional.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/status.h"
@@ -33,8 +34,7 @@ Status DispatchTable::RegisterExitHandler(uint64_t untrusted_selector,
   // Ensure no handler is installed for untrusted_selector.
   auto locked_exit_table = exit_table_.Lock();
   if (locked_exit_table->count(untrusted_selector)) {
-    return {error::GoogleError::ALREADY_EXISTS,
-            "Invalid selector in RegisterExitHandler."};
+    return absl::AlreadyExistsError("Invalid selector in RegisterExitHandler.");
   }
   locked_exit_table->emplace(untrusted_selector, handler);
   return Status::OkStatus();
@@ -44,8 +44,7 @@ Status DispatchTable::PerformUnknownExit(uint64_t untrusted_selector,
                                          MessageReader *input,
                                          MessageWriter *output,
                                          Client *client) {
-  return {error::GoogleError::OUT_OF_RANGE,
-          "Invalid selector in enclave exit."};
+  return absl::OutOfRangeError("Invalid selector in enclave exit.");
 }
 
 Status DispatchTable::PerformExit(uint64_t untrusted_selector,

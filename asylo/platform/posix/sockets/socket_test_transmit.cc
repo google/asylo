@@ -21,6 +21,7 @@
 #include <string.h>
 #include <sys/socket.h>
 
+#include "absl/status/status.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -67,8 +68,7 @@ Status ServerTransmit(SocketServer *socket_server) {
     return status;
   }
   if (strncmp(socket_buf, kClientWriteSuccessStr, sizeof(socket_buf))) {
-    return Status(error::GoogleError::DATA_LOSS,
-                  "expected client-write string not found");
+    return absl::DataLossError("expected client-write string not found");
   }
 
   if (!(status = socket_server->Write(kServerWriteSuccessStr,
@@ -83,8 +83,7 @@ Status ServerTransmit(SocketServer *socket_server) {
     return status;
   }
   if (strncmp(socket_buf, kClientWriteSuccessStr, sizeof(socket_buf))) {
-    return Status(error::GoogleError::DATA_LOSS,
-                  "expected client-write string not found");
+    return absl::DataLossError("expected client-write string not found");
   }
 
   struct iovec msg_iov_send[kNumMsgs];
@@ -108,8 +107,7 @@ Status ServerTransmit(SocketServer *socket_server) {
               kClientMsgSuccessStr1, msg_recv.msg_iov[0].iov_len) ||
       strncmp(reinterpret_cast<char *>(msg_recv.msg_iov[1].iov_base),
               kClientMsgSuccessStr2, msg_recv.msg_iov[1].iov_len)) {
-    return Status(error::GoogleError::DATA_LOSS,
-                  "expected client-write string not found");
+    return absl::DataLossError("expected client-write string not found");
   }
   return Status::OkStatus();
 }
@@ -121,8 +119,7 @@ Status ClientTransmit(SocketClient *socket_client) {
     return status;
   }
   if (strncmp(socket_buf, kServerWriteSuccessStr, sizeof(socket_buf))) {
-    return Status(error::GoogleError::DATA_LOSS,
-                  "expected server-write string not found");
+    return absl::DataLossError("expected server-write string not found");
   }
   if (!(status = socket_client->Write(kClientWriteSuccessStr,
                                       sizeof(kClientWriteSuccessStr)))
@@ -136,8 +133,7 @@ Status ClientTransmit(SocketClient *socket_client) {
     return status;
   }
   if (strncmp(socket_buf, kServerWriteSuccessStr, sizeof(socket_buf))) {
-    return Status(error::GoogleError::DATA_LOSS,
-                  "expected server-write string not found");
+    return absl::DataLossError("expected server-write string not found");
   }
   if (!(status = socket_client->Write(kClientWriteSuccessStr,
                                       sizeof(kClientWriteSuccessStr)))
@@ -158,8 +154,7 @@ Status ClientTransmit(SocketClient *socket_client) {
               kServerMsgSuccessStr1, msg_recv.msg_iov[0].iov_len) ||
       strncmp(reinterpret_cast<char *>(msg_recv.msg_iov[1].iov_base),
               kServerMsgSuccessStr2, msg_recv.msg_iov[1].iov_len)) {
-    return Status(error::GoogleError::DATA_LOSS,
-                  "expected client-write string not found");
+    return absl::DataLossError("expected client-write string not found");
   }
   struct iovec msg_iov_send[kNumMsgs];
   struct msghdr msg_send;

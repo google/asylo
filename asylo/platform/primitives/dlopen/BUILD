@@ -97,6 +97,7 @@ cc_library(
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/debugging:leak_check",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
 )
@@ -118,6 +119,7 @@ cc_library(
         "//asylo/util:status",
         "//asylo/util/remote:remote_loader_cc_proto",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
     # Required to prevent the linker from dropping the flag symbol.

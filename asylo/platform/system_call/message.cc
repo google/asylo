@@ -25,6 +25,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
+#include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/system_call/metadata.h"
 #include "asylo/util/status_macros.h"
 
@@ -133,8 +134,8 @@ bool MessageReader::IsValidParameterSize(int index) const {
 
 primitives::PrimitiveStatus MessageReader::invalid_argument_status(
     const std::string &reason) const {
-  return primitives::PrimitiveStatus{error::GoogleError::INVALID_ARGUMENT,
-                                     reason};
+  return primitives::PrimitiveStatus{
+      primitives::AbslStatusCode::kInvalidArgument, reason};
 }
 
 primitives::PrimitiveStatus MessageReader::ValidateMessageHeader() const {

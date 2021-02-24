@@ -29,6 +29,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/init.h"
 #include "asylo/platform/common/enclave_state.h"
@@ -77,7 +78,7 @@ void LogError(const Status &status) {
 PrimitiveStatus VerifyTrustedAddressRange(void *address, size_t size) {
   if (!TrustedPrimitives::IsInsideEnclave(address, size)) {
     return PrimitiveStatus(
-        error::GoogleError::INVALID_ARGUMENT,
+        primitives::AbslStatusCode::kInvalidArgument,
         "Unexpected reference to resource outside the enclave trusted memory.");
   }
   return PrimitiveStatus::OkStatus();
@@ -157,12 +158,10 @@ PrimitiveStatus Finalize(void *context, MessageReader *in, MessageWriter *out) {
 
 }  // namespace
 
-
 Status VerifyOutputArguments(char **output, size_t *output_len) {
   if (!output || !output_len) {
-    Status status =
-        Status(error::GoogleError::INVALID_ARGUMENT,
-               "Invalid input parameter passed to __asylo_user...()");
+    Status status = absl::InvalidArgumentError(
+        "Invalid input parameter passed to __asylo_user...()");
     LogError(status);
     return status;
   }
@@ -190,9 +189,9 @@ Status InitializeEnvironmentVariables(
     const RepeatedPtrField<EnvironmentVariable> &variables) {
   for (const auto &variable : variables) {
     if (!variable.has_name() || !variable.has_value()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Environment variables should set both name and value "
-                    "fields");
+      return absl::InvalidArgumentError(
+          "Environment variables should set both name and value "
+          "fields");
     }
     int overwrite = 0;
     setenv(variable.name().c_str(), variable.value().c_str(), overwrite);
@@ -279,8 +278,7 @@ int __asylo_user_init(const char *name, const char *config, size_t config_len,
 
   EnclaveConfig enclave_config;
   if (!enclave_config.ParseFromArray(config, config_len)) {
-    status = Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Failed to parse EnclaveConfig");
+    status = absl::InvalidArgumentError("Failed to parse EnclaveConfig");
     return status_serializer.Serialize(status);
   }
 
@@ -315,14 +313,12 @@ int __asylo_user_run(const char *input, size_t input_len, char **output,
 
   EnclaveInput enclave_input;
   if (!enclave_input.ParseFromArray(input, input_len)) {
-    status = Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Failed to parse EnclaveInput");
+    status = absl::InvalidArgumentError("Failed to parse EnclaveInput");
     return status_serializer.Serialize(status);
   }
 
   if (GetState() != EnclaveState::kRunning) {
-    status = Status(error::GoogleError::FAILED_PRECONDITION,
-                    "Enclave not in state RUNNING");
+    status = absl::FailedPreconditionError("Enclave not in state RUNNING");
     return status_serializer.Serialize(status);
   }
 
@@ -342,8 +338,7 @@ int __asylo_user_fini(const char *input, size_t input_len, char **output,
 
   asylo::EnclaveFinal enclave_final;
   if (!enclave_final.ParseFromArray(input, input_len)) {
-    status = Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Failed to parse EnclaveFinal");
+    status = absl::InvalidArgumentError("Failed to parse EnclaveFinal");
     return status_serializer.Serialize(status);
   }
 

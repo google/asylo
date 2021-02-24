@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/core/test/proto_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
@@ -32,25 +33,25 @@ class EnclaveProtoTest : public EnclaveTestCase {
     std::string buf = GetEnclaveInputTestString(input);
     EnclaveApiTest enclave_input_test;
     if (!enclave_input_test.ParseFromArray(buf.data(), buf.size())) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Failed to deserialize string to enclave_input_test");
+      return absl::InvalidArgumentError(
+          "Failed to deserialize string to enclave_input_test");
     }
     if (!enclave_input_test.has_test_string() ||
         !enclave_input_test.has_test_int() ||
         enclave_input_test.test_repeated_size() == 0) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Field(s) of enclave_input_test not set");
+      return absl::InvalidArgumentError(
+          "Field(s) of enclave_input_test not set");
     }
     if (enclave_input_test.test_string() != "test string" ||
         enclave_input_test.test_int() != 1 ||
         enclave_input_test.test_repeated_size() != 2 ||
         enclave_input_test.test_repeated(0) != "test repeated 1" ||
         enclave_input_test.test_repeated(1) != "test repeated 2") {
-      return Status(error::GoogleError::INTERNAL,
-                    "Deserialized field(s) of enclave_input_test doesn't "
-                    "match the value set");
+      return absl::InternalError(
+          "Deserialized field(s) of enclave_input_test doesn't "
+          "match the value set");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

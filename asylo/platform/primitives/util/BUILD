@@ -68,6 +68,7 @@ cc_library(
         "//asylo/util:status",
         "//asylo/util:status_macros",
         "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/types:optional",
     ],
 )
@@ -98,6 +99,7 @@ cc_test(
         "//asylo/util:status",
         "//asylo/util:thread",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",
     ],
@@ -118,6 +120,7 @@ cc_library(
         "//asylo/platform/primitives:trusted_runtime",
         "//asylo/util:lock_guard",
         "//asylo/util:status_macros",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -128,6 +131,7 @@ cc_library(
     deps = [
         "//asylo/platform/primitives",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
 )

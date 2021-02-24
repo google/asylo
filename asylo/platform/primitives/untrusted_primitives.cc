@@ -24,6 +24,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
@@ -54,8 +55,8 @@ Client *Client::GetCurrentClient() { return current_client_; }
 Status Client::EnclaveCall(uint64_t selector, MessageWriter *input,
                            MessageReader *output) {
   if (IsClosed()) {
-    return Status{error::GoogleError::FAILED_PRECONDITION,
-                  "Cannot make an enclave call to a closed enclave."};
+    return absl::FailedPreconditionError(
+        "Cannot make an enclave call to a closed enclave.");
   }
   ScopedCurrentClient scoped_client(this);
   return EnclaveCallInternal(selector, input, output);
@@ -64,7 +65,7 @@ Status Client::EnclaveCall(uint64_t selector, MessageWriter *input,
 PrimitiveStatus Client::ExitCallback(uint64_t untrusted_selector,
                                      MessageReader *in, MessageWriter *out) {
   if (!current_client_->exit_call_provider()) {
-    return PrimitiveStatus{error::GoogleError::FAILED_PRECONDITION,
+    return PrimitiveStatus{primitives::AbslStatusCode::kFailedPrecondition,
                            "Exit call provider not set yet"};
   }
   return MakePrimitiveStatus(

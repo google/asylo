@@ -18,12 +18,14 @@
 
 #include <sys/epoll.h>
 #include <unistd.h>
+
 #include <chrono>
 #include <thread>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -42,7 +44,7 @@ class EpollTest : public ::testing::Test {
     while (num_bytes_left > 0) {
       ssize_t num_bytes_written = write(fd, str, num_bytes_left);
       if (num_bytes_written < 0) {
-        return Status(error::GoogleError::INTERNAL, "write() failed");
+        return absl::InternalError("write() failed");
       }
       num_bytes_left -= num_bytes_written;
     }
@@ -53,7 +55,7 @@ class EpollTest : public ::testing::Test {
     while (bytes_to_read > 0) {
       int num_bytes_read = read(fd, buf, bytes_to_read);
       if (num_bytes_read < 0) {
-        return Status(error::GoogleError::INTERNAL, "read() failed");
+        return absl::InternalError("read() failed");
       }
       bytes_to_read -= num_bytes_read;
     }

@@ -33,8 +33,8 @@ proto_library(
     srcs = ["pck_certificates.proto"],
     visibility = ["//asylo:implementation"],
     deps = [
+        ":tcb_proto",
         "//asylo/crypto:certificate_proto",
-        "//asylo/identity/provisioning/sgx/internal:tcb_proto",
     ],
 )
 

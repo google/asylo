@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "absl/status/status.h"
 #include "asylo/test/util/enclave_test_application.h"
 
 namespace asylo {
@@ -40,7 +41,7 @@ class PipeTest : public EnclaveTestCase {
     char buf[1024];
     fgets(buf, sizeof(buf), stdin);
     if (strncmp(buf, "Hello from the driver!", sizeof(buf)) != 0) {
-      return Status(error::GoogleError::INTERNAL, "Read bad input from stdin");
+      return absl::InternalError("Read bad input from stdin");
     }
 
     return Status::OkStatus();

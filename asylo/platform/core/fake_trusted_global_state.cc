@@ -17,6 +17,7 @@
  */
 
 #include "absl/base/attributes.h"
+#include "absl/status/status.h"
 #include "asylo/platform/core/trusted_global_state.h"
 
 #ifdef __ASYLO__
@@ -59,8 +60,7 @@ Status SetEnclaveConfig(const EnclaveConfig &config) {
 
 StatusOr<const EnclaveConfig *> GetEnclaveConfig() {
   if (!enclave_config) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "EnclaveConfig is not set");
+    return absl::FailedPreconditionError("EnclaveConfig is not set");
   }
 
   return enclave_config;

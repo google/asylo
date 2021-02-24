@@ -17,6 +17,7 @@
  */
 #include "asylo/platform/primitives/sgx/fork.h"
 
+#include "absl/status/status.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
@@ -33,13 +34,12 @@ namespace {
 
 Status VerifyOutputArguments(char **output, size_t *output_len) {
   if (!output || !output_len) {
-    Status status =
-        Status(error::GoogleError::INVALID_ARGUMENT,
-               "Invalid input parameter passed to trusted handlers");
+    Status status = absl::InvalidArgumentError(
+        "Invalid input parameter passed to trusted handlers");
     primitives::TrustedPrimitives::DebugPuts(status.ToString().c_str());
     return status;
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace
@@ -65,8 +65,7 @@ int TakeSnapshot(char **output, size_t *output_len) {
 
   const asylo::EnclaveConfig *config = config_result.ValueOrDie();
   if (!config->has_enable_fork() || !config->enable_fork()) {
-    status = Status(error::GoogleError::FAILED_PRECONDITION,
-                    "Insecure fork not enabled");
+    status = absl::FailedPreconditionError("Insecure fork not enabled");
     return status_serializer.Serialize(status);
   }
 
@@ -95,8 +94,7 @@ int Restore(const char *snapshot_layout, size_t snapshot_layout_len,
 
   const asylo::EnclaveConfig *config = config_result.ValueOrDie();
   if (!config->has_enable_fork() || !config->enable_fork()) {
-    status = Status(error::GoogleError::FAILED_PRECONDITION,
-                    "Insecure fork not enabled");
+    status = absl::FailedPreconditionError("Insecure fork not enabled");
     return status_serializer.Serialize(status);
   }
 
@@ -141,8 +139,7 @@ int TransferSecureSnapshotKey(const char *input, size_t input_len,
 
   asylo::ForkHandshakeConfig fork_handshake_config;
   if (!fork_handshake_config.ParseFromArray(input, input_len)) {
-    status = Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Failed to parse HandshakeInput");
+    status = absl::InvalidArgumentError("Failed to parse HandshakeInput");
     return status_serializer.Serialize(status);
   }
 

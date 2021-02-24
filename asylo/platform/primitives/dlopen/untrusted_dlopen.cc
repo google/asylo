@@ -30,6 +30,7 @@
 #include "absl/base/call_once.h"
 #include "absl/debugging/leak_check.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/dlopen/shared_dlopen.h"
 #include "asylo/platform/primitives/primitive_status.h"
@@ -139,17 +140,16 @@ StatusOr<std::shared_ptr<Client>> DlopenBackend::Load(
     client->dl_handle_ = dlopen(path.c_str(), RTLD_LAZY | RTLD_LOCAL);
   }
   if (!client->dl_handle_) {
-    return Status{
-        error::GoogleError::NOT_FOUND,
-        absl::StrCat("dlopen of ", path, " failed with: ", dlerror())};
+    return absl::NotFoundError(
+        absl::StrCat("dlopen of ", path, " failed with: ", dlerror()));
   }
 
   // Resolve and set the enclave entry point trampoline.
   void *asylo_enclave_call = dlsym(client->dl_handle_, "asylo_enclave_call");
   if (!asylo_enclave_call) {
-    return Status{error::GoogleError::NOT_FOUND,
-                  "Could not resolve enclave entry handler: "
-                  "asylo_enclave_call"};
+    return absl::NotFoundError(
+        "Could not resolve enclave entry handler: "
+        "asylo_enclave_call");
   }
   client->enclave_call_ = reinterpret_cast<EnclaveCallPtr>(asylo_enclave_call);
 
@@ -169,8 +169,8 @@ Status DlopenEnclaveClient::EnclaveCallInternal(uint64_t selector,
                                                 MessageReader *output) {
   // Ensure client is properly initialized.
   if (!dl_handle_ || !enclave_call_) {
-    return Status{error::GoogleError::FAILED_PRECONDITION,
-                  "Enclave client closed or uninitialized."};
+    return absl::FailedPreconditionError(
+        "Enclave client closed or uninitialized.");
   }
 
   size_t input_size = 0;

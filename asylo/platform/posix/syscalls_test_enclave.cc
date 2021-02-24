@@ -49,6 +49,7 @@
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
@@ -299,9 +300,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
     int fd = open(path.c_str(), flags, mode);
     if (fd < 0) {
-      return Status(
-          static_cast<error::GoogleError>(errno),
-          absl::StrCat("Open path ", path, " failed: ", strerror(errno)));
+      return LastPosixError(absl::StrCat("Open path ", path, " failed"));
     }
     return fd;
   }
@@ -312,9 +311,7 @@ class SyscallsEnclave : public EnclaveTestCase {
       int rc = read(fd, buf + read_bytes, size - read_bytes);
       read_bytes += rc;
       if (read_bytes > size || rc < 0) {
-        return Status(
-            static_cast<error::PosixError>(errno),
-            absl::StrCat("Failed to read from file, error:", strerror(errno)));
+        return LastPosixError("Failed to read from file, error");
       }
     }
     if (read_bytes != size) {
@@ -326,17 +323,17 @@ class SyscallsEnclave : public EnclaveTestCase {
 
   Status CompareFiles(int fd1, int fd2, int size) {
     if (lseek(fd1, 0, SEEK_SET) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
+      return LastPosixError(
                     absl::StrCat("Moving to beginning of fd:", fd1,
-                                 " failed: ", strerror(errno)));
+                                 " failed"));
     }
     char buf1[1024];
     ASYLO_RETURN_IF_ERROR(ReadFile(fd1, buf1, size));
 
     if (lseek(fd2, 0, SEEK_SET) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
+      return LastPosixError(
                     absl::StrCat("Moving to beginning of fd:", fd2,
-                                 " failed: ", strerror(errno)));
+                                 " failed"));
     }
     char buf2[1024];
     ASYLO_RETURN_IF_ERROR(ReadFile(fd2, buf2, size));
@@ -391,9 +388,8 @@ class SyscallsEnclave : public EnclaveTestCase {
     const std::string message = path;
     size_t rc = write(fd, message.c_str(), message.size());
     if (rc != message.size()) {
-      return Status(
-          static_cast<error::GoogleError>(errno),
-          absl::StrCat("Write to file:", path, " failed: ", strerror(errno)));
+      return LastPosixError(
+          absl::StrCat("Write to file:", path, " failed"));
     }
 
     int dup_fd = fcntl(fd, F_DUPFD, -1);
@@ -411,9 +407,8 @@ class SyscallsEnclave : public EnclaveTestCase {
 
     dup_fd = fcntl(fd, F_DUPFD, fd);
     if (dup_fd == -1) {
-      return Status(
-          static_cast<error::GoogleError>(errno),
-          absl::StrCat("fcntl dup fd:", fd, " failed: ", strerror(errno)));
+      return LastPosixError(
+          absl::StrCat("fcntl dup fd:", fd, " failed"));
     }
     if (dup_fd <= fd) {
       return Status(absl::StatusCode::kInternal,
@@ -1049,16 +1044,14 @@ class SyscallsEnclave : public EnclaveTestCase {
 
     int fd = open(path.c_str(), O_RDONLY);
     if (fd == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("open failed:", strerror(errno)));
+      return LastPosixError("open failed");
     }
 
     struct stat stat_buffer;
     output_ret.set_int_syscall_return(fstat(fd, &stat_buffer));
 
     if (close(fd) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("close failed:", strerror(errno)));
+      return LastPosixError("close failed");
     }
 
     EncodeStatBufferInTestOutput(stat_buffer, &output_ret);
@@ -1120,13 +1113,11 @@ class SyscallsEnclave : public EnclaveTestCase {
   Status RunUmaskTest(const std::string &path) {
     umask(S_IWGRP | S_IWOTH);
     if (mkdir(path.c_str(), 0777) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("mkdir failed:", strerror(errno)));
+      return LastPosixError("mkdir failed");
     }
     struct stat st;
     if (stat(path.c_str(), &st) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("stat failed:", strerror(errno)));
+      return LastPosixError("stat failed");
     }
     if (st.st_mode & S_IWGRP || st.st_mode & S_IWOTH) {
       return Status(absl::StatusCode::kInternal,
@@ -1138,8 +1129,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                            OpenFile(file_path.c_str(), O_CREAT | O_RDWR, 0777));
     platform::storage::FdCloser fd_closer(fd);
     if (fstat(fd, &st) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("fstat failed:", strerror(errno)));
+      return LastPosixError("fstat failed");
     }
     if (st.st_mode & S_IWGRP || st.st_mode & S_IWOTH) {
       return Status(absl::StatusCode::kInternal,
@@ -1312,16 +1302,15 @@ class SyscallsEnclave : public EnclaveTestCase {
     platform::storage::FdCloser fd_closer(fd);
     ssize_t rc = write(fd, message.c_str(), message.size());
     if (rc != message.size()) {
-      return Status(
-          static_cast<error::GoogleError>(errno),
-          absl::StrCat("Write to file:", path, " failed: ", strerror(errno)));
+      return LastPosixError(
+          absl::StrCat("Write to file:", path, " failed"));
     }
 
     // Test dup.
     int dup_fd = dup(fd);
     if (dup_fd == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("dup fd:", fd, " failed: ", strerror(errno)));
+      return LastPosixError(
+                    absl::StrCat("dup fd:", fd, " failed"));
     }
     if (dup_fd == fd) {
       return Status(
@@ -1333,9 +1322,9 @@ class SyscallsEnclave : public EnclaveTestCase {
     // Test dup2 with a used file descriptor.
     int dup2_fd = dup2(fd, dup_fd);
     if (dup2_fd != dup_fd) {
-      return Status(static_cast<error::GoogleError>(errno),
+      return LastPosixError(
                     absl::StrCat("dup2 fd:", fd, " to fd:", dup_fd,
-                                 " failed: ", strerror(errno)));
+                                 " failed"));
     }
     ASYLO_RETURN_IF_ERROR(CompareFiles(fd, dup2_fd, message.size()));
 
@@ -1343,26 +1332,25 @@ class SyscallsEnclave : public EnclaveTestCase {
     int newfd = 1000;
     dup2_fd = dup2(fd, newfd);
     if (dup2_fd != newfd) {
-      return Status(static_cast<error::GoogleError>(errno),
+      return LastPosixError(
                     absl::StrCat("dup2 fd:", fd, " to fd:", newfd,
-                                 " failed: ", strerror(errno)));
+                                 " failed"));
     }
     ASYLO_RETURN_IF_ERROR(CompareFiles(fd, dup2_fd, message.size()));
 
     // Test whether we can still read from one of the file descriptors after
     // closing the other.
     if (close(fd) == -1) {
-      return Status(
-          static_cast<error::GoogleError>(errno),
-          absl::StrCat("close fd:", fd, " failed: ", strerror(errno)));
+      return LastPosixError(
+          absl::StrCat("close fd:", fd, " failed"));
     }
     char buf[1024];
     rc = read(newfd, buf, sizeof(buf));
     if (rc >= sizeof(buf) || rc < 0) {
-      return Status(static_cast<error::GoogleError>(errno),
+      return LastPosixError(
                     absl::StrCat("Read from newfd:", newfd,
                                  " failed after closing fd: ", fd,
-                                 " error:", strerror(errno)));
+                                 " error"));
     }
 
     return Status::OkStatus();
@@ -1374,8 +1362,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     char *buf = getcwd(provide_buffer ? stack_buffer : nullptr,
                        std::min(buffer_size, PATH_MAX));
     if (!buf) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("getcwd failed:", strerror(errno)));
+      return LastPosixError("getcwd failed");
     }
     SyscallsTestOutput output_ret;
     output_ret.set_string_syscall_return(std::string(buf));
@@ -1410,8 +1397,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     char buf[256];
 #endif
     if (gethostname(buf, sizeof(buf)) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("gethostname failed:", strerror(errno)));
+      return LastPosixError("gethostname failed");
     }
     SyscallsTestOutput output_ret;
     output_ret.set_string_syscall_return(std::string(buf));
@@ -1475,9 +1461,9 @@ class SyscallsEnclave : public EnclaveTestCase {
                                  " error:", strerror(errno)));
     }
     if (link(from_path.c_str(), to_path.c_str()) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
+      return LastPosixError(
                     absl::StrCat("Link path ", from_path, " to ", to_path,
-                                 " failed: ", strerror(errno)));
+                                 " failed"));
     }
     int to_fd;
     ASYLO_ASSIGN_OR_RETURN(to_fd, OpenFile(to_path, O_RDWR, 0));
@@ -1572,9 +1558,9 @@ class SyscallsEnclave : public EnclaveTestCase {
           absl::StrCat("Truncate file: ", path, " failed: ", strerror(errno)));
     }
     if (lseek(fd, 0, SEEK_SET) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
+      return LastPosixError(
                     absl::StrCat("Moving to beginning of fd:", fd,
-                                 " failed: ", strerror(errno)));
+                                 " failed"));
     }
     char buf1[1024];
     rc = read(fd, buf1, message.size());
@@ -1595,9 +1581,9 @@ class SyscallsEnclave : public EnclaveTestCase {
           absl::StrCat("Ftruncate file: ", fd, " failed: ", strerror(errno)));
     }
     if (lseek(fd, 0, SEEK_SET) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
+      return LastPosixError(
                     absl::StrCat("Moving to beginning of fd:", fd,
-                                 " failed: ", strerror(errno)));
+                                 " failed"));
     }
     char buf2[1024];
     rc = read(fd, buf2, message.size());

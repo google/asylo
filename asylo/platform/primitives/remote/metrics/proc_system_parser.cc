@@ -25,6 +25,7 @@
 #include <iostream>
 #include <sstream>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
@@ -50,8 +51,8 @@ StatusOr<std::string> GetFileContents(const std::string &filename) {
   Cleanup file_cleanup([&file]() { file.close(); });
   file.open(filename.c_str());
   if (!file) {
-    return Status(error::GoogleError::UNKNOWN,
-                  absl::StrCat("Unable to open file with filename=", filename));
+    return absl::UnknownError(
+        absl::StrCat("Unable to open file with filename=", filename));
   }
 
   std::stringstream file_contents;
@@ -82,8 +83,7 @@ StatusOr<ProcSystemStat> ProcSystemParser::GetProcStat(pid_t pid) const {
   // Get the PID and ensure we got the right file.
   sscanf(stat_contents_c_str, "%ld ...", &proc_stat.pid);
   if (proc_stat.pid != pid) {
-    return Status(
-        error::GoogleError::UNKNOWN,
+    return absl::UnknownError(
         absl::StrCat("Got wrong pid while parsing /proc/", pid, "/stat"));
   }
 
@@ -121,10 +121,9 @@ StatusOr<ProcSystemStat> ProcSystemParser::GetProcStat(pid_t pid) const {
   // If we are unable to find end of filename, or filename was too long the
   // format of the file is unexpected.
   if (end == nullptr || end - start > kFilenameLength) {
-    return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("/proc/", pid,
-                               "/stat file was not formatted as "
-                               "expected. Unable to parse."));
+    return absl::InternalError(absl::StrCat("/proc/", pid,
+                                            "/stat file was not formatted as "
+                                            "expected. Unable to parse."));
   }
 
   // Set the character after the final ')' to a null.
@@ -165,10 +164,9 @@ StatusOr<ProcSystemStat> ProcSystemParser::GetProcStat(pid_t pid) const {
   // The expectation is that 50 values were set by sscanf. If that is not the
   // case, the file was not formatted as expected.
   if (check != 50) {
-    return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("/proc/", pid,
-                               "/stat file was not formatted as "
-                               "expected. Unable to parse."));
+    return absl::InternalError(absl::StrCat("/proc/", pid,
+                                            "/stat file was not formatted as "
+                                            "expected. Unable to parse."));
   }
 
   proc_stat.comm = process_filename;

@@ -20,6 +20,7 @@
 
 #include <signal.h>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
@@ -80,11 +81,9 @@ Status EnclaveSignalDispatcher::DeregisterAllSignalsForClient(
          iterator != signal_to_client_map_.end();) {
       if (iterator->second == client) {
         if (signal(iterator->first, SIG_DFL) == SIG_ERR) {
-          status = Status(
-              error::GoogleError::INVALID_ARGUMENT,
-              absl::StrCat(
-                  "Failed to deregister one or more handlers for signal: ",
-                  iterator->first));
+          status = absl::InvalidArgumentError(absl::StrCat(
+              "Failed to deregister one or more handlers for signal: ",
+              iterator->first));
         }
         auto saved_iterator = iterator;
         ++iterator;

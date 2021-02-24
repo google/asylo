@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/base/macros.h"
+#include "absl/status/status.h"
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
@@ -176,7 +177,7 @@ PrimitiveStatus TestOpen(void *context, MessageReader *in, MessageWriter *out) {
     out->Push<int>(enc_untrusted_open(pathname.As<char>(),
                                       FromkLinuxFileStatusFlag(kLinux_flags)));
   } else {
-    return {error::GoogleError::INVALID_ARGUMENT,
+    return {primitives::AbslStatusCode::kInvalidArgument,
             "Unexpected number of arguments. open() expects 2 or 3 arguments."};
   }
 
@@ -715,11 +716,11 @@ PrimitiveStatus TestWait(void *context, MessageReader *in, MessageWriter *out) {
   out->Push<int>(enc_untrusted_wait(&enclave_wstatus));
 
   if (!WIFEXITED(enclave_wstatus)) {
-    return {error::GoogleError::INVALID_ARGUMENT,
+    return {primitives::AbslStatusCode::kInvalidArgument,
             "TestWait: Expected WIFEXITED to be true, found false."};
   }
   if (WEXITSTATUS(enclave_wstatus) != 0) {
-    return {error::GoogleError::INVALID_ARGUMENT,
+    return {primitives::AbslStatusCode::kInvalidArgument,
             "TestWait: Found non-zero WEXITSTATUS."};
   }
 
@@ -921,7 +922,7 @@ PrimitiveStatus TestGetAddrInfo(void *context, MessageReader *in,
             res->ai_addr, res->ai_addrlen,
             reinterpret_cast<klinux_sockaddr *>(klinux_sock.get()),
             &klinux_sock_len, TrustedPrimitives::BestEffortAbort)) {
-      return {error::GoogleError::INVALID_ARGUMENT,
+      return {primitives::AbslStatusCode::kInvalidArgument,
               "TestGetAddrInfo: Couldn't convert sockaddr to klinux_sockaddr"};
     }
 
@@ -942,14 +943,14 @@ PrimitiveStatus TestPoll(void *context, MessageReader *in, MessageWriter *out) {
   struct pollfd fds[2];
   if (!FromkLinuxPollfd(klinux_fds, &fds[0]) ||
       !FromkLinuxPollfd(klinux_fds + 1, &fds[1])) {
-    return {error::GoogleError::INVALID_ARGUMENT,
+    return {primitives::AbslStatusCode::kInvalidArgument,
             "TestPoll: Couldn't convert klinux_pollfd to native pollfd"};
   }
   out->Push<int>(enc_untrusted_poll(fds, nfds, timeout));
 
   if (!TokLinuxPollfd(&fds[0], &klinux_fds[0]) ||
       !TokLinuxPollfd(&fds[1], &klinux_fds[1])) {
-    return {error::GoogleError::INVALID_ARGUMENT,
+    return {primitives::AbslStatusCode::kInvalidArgument,
             "TestPoll: Couldn't convert native pollfd to kernel pollfd"};
   }
   out->PushByCopy(Extent{klinux_fds, klinux_pollfd_buffer.size()});
@@ -964,7 +965,7 @@ PrimitiveStatus TestUtime(void *context, MessageReader *in,
 
   struct utimbuf times {};
   if (!FromkLinuxutimbuf(&klinux_times, &times)) {
-    return {error::GoogleError::INVALID_ARGUMENT,
+    return {primitives::AbslStatusCode::kInvalidArgument,
             "TestUtime: Couldn't convert klinux_utimbuf to native utimbuf"};
   }
   out->Push<int>(enc_untrusted_utime(file_buf.As<char>(), &times));
@@ -982,7 +983,7 @@ PrimitiveStatus TestGetRusage(void *context, MessageReader *in,
       enc_untrusted_getrusage(FromkLinuxRusageTarget(klinux_who), &usage));
 
   if (!TokLinuxRusage(&usage, &klinux_usage)) {
-    return {error::GoogleError::INVALID_ARGUMENT,
+    return {primitives::AbslStatusCode::kInvalidArgument,
             "TestGetRusage: Conversion to klinux_rusage failed."};
   }
   out->Push<struct klinux_rusage>(klinux_usage);

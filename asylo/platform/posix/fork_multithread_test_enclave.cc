@@ -25,6 +25,7 @@
 #include <thread>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
@@ -86,13 +87,13 @@ class ForkTest : public EnclaveTestCase {
     struct timespec ts;
     ts.tv_sec = 0;
     ts.tv_nsec = kStep;
-    for (int i = 0; i < kTimeout/kStep && entry_count != kNumThreads; i++) {
+    for (int i = 0; i < kTimeout / kStep && entry_count != kNumThreads; i++) {
       nanosleep(&ts, /*rem=*/nullptr);
     }
 
     if (entry_count != kNumThreads) {
-      return Status(error::GoogleError::INTERNAL,
-                    "Timeout waiting for other threads to enter the enclave.");
+      return absl::InternalError(
+          "Timeout waiting for other threads to enter the enclave.");
     }
 
     pid_t pid = fork();
@@ -127,12 +128,12 @@ class ForkTest : public EnclaveTestCase {
       // normally.
       int status;
       if (wait(&status) == -1) {
-        return Status(static_cast<error::PosixError>(errno),
-                      absl::StrCat("Error waiting for child: ",
-                                   strerror(errno)));
+        return Status(
+            static_cast<error::PosixError>(errno),
+            absl::StrCat("Error waiting for child: ", strerror(errno)));
       }
       if (!WIFEXITED(status)) {
-        return Status(error::GoogleError::INTERNAL, "child enclave aborted");
+        return absl::InternalError("child enclave aborted");
       }
     }
     return Status::OkStatus();

@@ -111,8 +111,10 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":message",
+        "//asylo/platform/primitives",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/base",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
@@ -182,6 +184,7 @@ cc_test(
     deps = [
         ":system_call",
         ":untrusted_invoke",
+        "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/system_call/type_conversions",
         "//asylo/test/util:test_flags",
@@ -199,6 +202,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":system_call",
+        "//asylo/platform/primitives",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",

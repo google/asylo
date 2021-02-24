@@ -47,16 +47,15 @@
 #include "asylo/util/status_macros.h"
 #include "include/sgx_trts.h"
 
-#define CHECK_OCALL(status)                                         \
-  do {                                                              \
-    sgx_status_t sgx_status = status;                               \
-    if (sgx_status != SGX_SUCCESS) {                                \
-      TrustedPrimitives::BestEffortAbort(                           \
-          absl::StrCat(                                             \
-              __FILE__, ":", __LINE__, ": ",                        \
-              asylo::Status(sgx_status, "ocall failed").ToString()) \
-              .c_str());                                            \
-    }                                                               \
+#define CHECK_OCALL(status)                                                  \
+  do {                                                                       \
+    sgx_status_t sgx_status = status;                                        \
+    if (sgx_status != SGX_SUCCESS) {                                         \
+      TrustedPrimitives::BestEffortAbort(                                    \
+          absl::StrCat(__FILE__, ":", __LINE__, ": ",                        \
+                       asylo::Status(sgx_status, "ocall failed").ToString()) \
+              .c_str());                                                     \
+    }                                                                        \
   } while (0)
 
 namespace asylo {
@@ -178,7 +177,7 @@ PrimitiveStatus TrustedPrimitives::RegisterEntryHandler(
 int asylo_enclave_call(uint64_t selector, void *buffer) {
   SgxParams *const sgx_params = reinterpret_cast<SgxParams *>(buffer);
   if (!IsValidUntrustedAddress(sgx_params)) {
-    PrimitiveStatus status{error::GoogleError::INVALID_ARGUMENT,
+    PrimitiveStatus status{primitives::AbslStatusCode::kInvalidArgument,
                            "input should lie within untrusted memory."};
     return status.error_code();
   }

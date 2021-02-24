@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <memory>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
 #include "asylo/platform/core/entry_selectors.h"
@@ -101,8 +102,7 @@ Status GenericEnclaveClient::Finalize(const char *input, size_t input_len,
 Status GenericEnclaveClient::EnterAndInitialize(const EnclaveConfig &config) {
   std::string buf;
   if (!config.SerializeToString(&buf)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Failed to serialize EnclaveConfig");
+    return absl::InvalidArgumentError("Failed to serialize EnclaveConfig");
   }
 
   std::unique_ptr<char[]> output;
@@ -116,8 +116,7 @@ Status GenericEnclaveClient::EnterAndInitialize(const EnclaveConfig &config) {
   // have a value.
   StatusProto status_proto;
   if (!status_proto.ParseFromArray(output.get(), output_len)) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed to deserialize StatusProto");
+    return absl::InternalError("Failed to deserialize StatusProto");
   }
 
   return StatusFromProto(status_proto);
@@ -127,8 +126,7 @@ Status GenericEnclaveClient::EnterAndRun(const EnclaveInput &input,
                                          EnclaveOutput *output) {
   std::string buf;
   if (!input.SerializeToString(&buf)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Failed to serialize EnclaveInput");
+    return absl::InvalidArgumentError("Failed to serialize EnclaveInput");
   }
 
   std::unique_ptr<char[]> output_buf;
@@ -151,8 +149,7 @@ Status GenericEnclaveClient::EnterAndRun(const EnclaveInput &input,
 Status GenericEnclaveClient::EnterAndFinalize(const EnclaveFinal &final_input) {
   std::string buf;
   if (!final_input.SerializeToString(&buf)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Failed to serialize EnclaveFinal");
+    return absl::InvalidArgumentError("Failed to serialize EnclaveFinal");
   }
 
   std::unique_ptr<char[]> output;

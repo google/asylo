@@ -31,6 +31,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
@@ -157,8 +158,9 @@ class MessageWriter {
       PushByCopy(
           Extent{reinterpret_cast<char *>(sock), sizeof(struct sockaddr_in6)});
     } else {
-      return {error::GoogleError::INVALID_ARGUMENT,
-              "PushSockAddr: Unsupported sa_family encountered."};
+      return PrimitiveStatus(
+          primitives::AbslStatusCode::kInvalidArgument,
+          "PushSockAddr: Unsupported sa_family encountered.");
     }
     return PrimitiveStatus::OkStatus();
   }
@@ -275,7 +277,7 @@ class MessageReader {
 #define ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(reader, expected_args) \
   do {                                                                    \
     if ((reader).size() != expected_args) {                               \
-      return {::asylo::error::GoogleError::INVALID_ARGUMENT,              \
+      return {error::GoogleError::INVALID_ARGUMENT,                       \
               absl::StrCat(expected_args,                                 \
                            " item(s) expected on the MessageReader.")};   \
     }                                                                     \
@@ -284,26 +286,26 @@ class MessageReader {
 #define ASYLO_RETURN_IF_TOO_FEW_READER_ARGUMENTS(reader, expected_args) \
   do {                                                                  \
     if ((reader).size() < expected_args) {                              \
-      return {::asylo::error::GoogleError::INVALID_ARGUMENT,            \
+      return {error::GoogleError::INVALID_ARGUMENT,                     \
               absl::StrCat("At least", expected_args,                   \
                            " item(s) expected on the MessageReader.")}; \
     }                                                                   \
   } while (false)
 
-#define ASYLO_RETURN_IF_READER_NOT_EMPTY(reader)             \
-  do {                                                       \
-    if (!(reader).empty()) {                                 \
-      return {::asylo::error::GoogleError::INVALID_ARGUMENT, \
-              "MessageReader expected to be empty."};        \
-    }                                                        \
+#define ASYLO_RETURN_IF_READER_NOT_EMPTY(reader)      \
+  do {                                                \
+    if (!(reader).empty()) {                          \
+      return {error::GoogleError::INVALID_ARGUMENT,   \
+              "MessageReader expected to be empty."}; \
+    }                                                 \
   } while (false)
 
-#define ASYLO_RETURN_IF_READER_HAS_NEXT(reader)              \
-  do {                                                       \
-    if ((reader).hasNext()) {                                \
-      return {::asylo::error::GoogleError::INVALID_ARGUMENT, \
-              "More items than expected on the reader."};    \
-    }                                                        \
+#define ASYLO_RETURN_IF_READER_HAS_NEXT(reader)           \
+  do {                                                    \
+    if ((reader).hasNext()) {                             \
+      return {error::GoogleError::INVALID_ARGUMENT,       \
+              "More items than expected on the reader."}; \
+    }                                                     \
   } while (false)
 
  private:

@@ -25,6 +25,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/status_conversions.h"
 #include "asylo/platform/system_call/message.h"
@@ -64,7 +65,7 @@ TEST(HostCallHandlersTest, SyscallHandlerEmptyMessageTest) {
   MessageReader empty_input;
   MessageWriter empty_output;
   EXPECT_THAT(SystemCallHandler(nullptr, nullptr, &empty_input, &empty_output),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "1 item(s) expected on the MessageReader."));
 }
 
@@ -78,7 +79,7 @@ TEST(HostCallHandlersTest, SyscallHandlerMoreThanOneRequestTest) {
       &input);
   MessageWriter output;
   EXPECT_THAT(SystemCallHandler(nullptr, nullptr, &input, &output),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+              StatusIs(absl::StatusCode::kInvalidArgument,
                        "1 item(s) expected on the MessageReader."));
 }
 
@@ -100,7 +101,7 @@ TEST(HostCallHandlersTest, SyscallHandlerValidRequestTest) {
       &input);
   MessageWriter output;
   ASSERT_THAT(SystemCallHandler(nullptr, nullptr, &input, &output),
-              StatusIs(error::GoogleError::OK));
+              StatusIs(absl::StatusCode::kOk));
   EXPECT_THAT(output, SizeIs(1));  // Contains the response.
 }
 
@@ -129,7 +130,7 @@ TEST(HostCallHandlersTest, SyscallHandlerInvalidRequestTest) {
       &input);
   MessageWriter output;
   const auto status = SystemCallHandler(nullptr, nullptr, &input, &output);
-  ASSERT_THAT(status, StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  ASSERT_THAT(status, StatusIs(absl::StatusCode::kInvalidArgument));
   // There should be no response populated on the stack for illegal requests.
   EXPECT_THAT(output, IsEmpty());
 }
@@ -140,7 +141,7 @@ TEST(HostCallHandlersTest, IsAttyIncorrectSizeTest) {
   MessageReader input;
   MessageWriter output;
   EXPECT_THAT(IsAttyHandler(nullptr, nullptr, &input, &output),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   FillInput(
       [](MessageWriter *params) {
@@ -149,7 +150,7 @@ TEST(HostCallHandlersTest, IsAttyIncorrectSizeTest) {
       },
       &input);
   EXPECT_THAT(IsAttyHandler(nullptr, nullptr, &input, &output),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Invokes an IsAtty hostcall for a valid request, and verifies that an ok
@@ -176,7 +177,7 @@ TEST(HostCallHandlersTest, USleepIncorrectSizeTest) {
   MessageReader input;
   MessageWriter output;
   EXPECT_THAT(USleepHandler(nullptr, nullptr, &input, &output),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   FillInput(
       [](MessageWriter *params) {
@@ -185,7 +186,7 @@ TEST(HostCallHandlersTest, USleepIncorrectSizeTest) {
       },
       &input);
   EXPECT_THAT(USleepHandler(nullptr, nullptr, &input, &output),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 // Invokes an USleep hostcall for a valid request, and verifies that an ok
@@ -196,7 +197,7 @@ TEST(HostCallHandlersTest, USleepValidRequestTest) {
   FillInput([](MessageWriter *params) { params->Push(0); }, &input);
   MessageWriter output;
   ASSERT_THAT(USleepHandler(nullptr, nullptr, &input, &output),
-              StatusIs(error::GoogleError::OK));
+              StatusIs(absl::StatusCode::kOk));
   ASSERT_THAT(output, SizeIs(2));
   VerifyOutput(
       [](MessageReader *results) {

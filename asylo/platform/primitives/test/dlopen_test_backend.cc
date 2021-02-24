@@ -23,6 +23,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/platform/primitives/dlopen/untrusted_dlopen.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
@@ -44,8 +45,7 @@ StatusOr<std::shared_ptr<Client>> DlopenTestBackend::LoadTestEnclave(
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
   const std::string binary_path = absl::GetFlag(FLAGS_enclave_binary);
   if (binary_path.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "--enclave_binary must be set");
+    return absl::InvalidArgumentError("--enclave_binary must be set");
   }
   return LoadEnclave<DlopenBackend>(enclave_name, binary_path,
                                     std::move(exit_call_provider));

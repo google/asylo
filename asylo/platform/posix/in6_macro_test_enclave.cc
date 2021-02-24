@@ -18,6 +18,7 @@
 
 #include <netinet/in.h>
 
+#include "absl/status/status.h"
 #include "asylo/platform/posix/in6_macro_test.pb.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/status.h"
@@ -35,15 +36,14 @@ class In6MacroTestEnclave : public TrustedApplication {
     in6_addr address;
     In6MacroTestInput test_input = input.GetExtension(in6_macro_test_input);
     if (test_input.ipv6_address().size() != sizeof(in6_addr)) {
-      return Status(error::GoogleError::FAILED_PRECONDITION,
-                    "Input IPv6 address has incorrect number of bytes");
+      return absl::FailedPreconditionError(
+          "Input IPv6 address has incorrect number of bytes");
     }
     test_input.ipv6_address().copy(reinterpret_cast<char *>(&address),
                                    sizeof(in6_addr));
 
     // Run each of the address macros and stuff the results in the output proto.
-    MacroResults *results =
-        output->MutableExtension(in6_macro_test_output);
+    MacroResults *results = output->MutableExtension(in6_macro_test_output);
     results->set_unspecified(IN6_IS_ADDR_UNSPECIFIED(&address));
     results->set_loopback(IN6_IS_ADDR_LOOPBACK(&address));
     results->set_multicast(IN6_IS_ADDR_MULTICAST(&address));

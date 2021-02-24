@@ -32,7 +32,9 @@ cc_library(
         "//asylo/platform/primitives/remote/metrics:proc_system_grpc_proto",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "//asylo/util:status_helpers",
         "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -54,6 +56,7 @@ cc_test(
         "//asylo/util:status_helpers",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],
 )

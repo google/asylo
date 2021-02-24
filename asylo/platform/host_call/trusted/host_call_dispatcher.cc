@@ -20,6 +20,7 @@
 
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/primitives/extent.h"
+#include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/status_macros.h"
@@ -33,7 +34,7 @@ primitives::PrimitiveStatus SystemCallDispatcher(const uint8_t* request_buffer,
                                                  size_t* response_size) {
   if (request_size == 0 || request_buffer == nullptr) {
     return primitives::PrimitiveStatus{
-        error::GoogleError::FAILED_PRECONDITION,
+        primitives::AbslStatusCode::kFailedPrecondition,
         "Zero-sized request or null request provided. Need a valid request to "
         "dispatch the host call."};
   }
@@ -58,8 +59,9 @@ primitives::PrimitiveStatus SystemCallDispatcher(const uint8_t* request_buffer,
   // worry about freeing the memory we allocate here.
   *response_buffer = reinterpret_cast<uint8_t*>(malloc(*response_size));
   if (!response_buffer) {
-    return primitives::PrimitiveStatus{error::GoogleError::RESOURCE_EXHAUSTED,
-                                       "Failed to malloc response buffer"};
+    return primitives::PrimitiveStatus{
+        primitives::AbslStatusCode::kResourceExhausted,
+        "Failed to malloc response buffer"};
   }
   memcpy(*response_buffer, response.As<uint8_t>(), *response_size);
 
@@ -71,7 +73,7 @@ primitives::PrimitiveStatus NonSystemCallDispatcher(
     primitives::MessageReader* output) {
   if (!input) {
     return primitives::PrimitiveStatus{
-        error::GoogleError::FAILED_PRECONDITION,
+        primitives::AbslStatusCode::kFailedPrecondition,
         "NonSystemCallDispatcher: Null input provided. Need a valid request to "
         "dispatch the host call"};
   }
@@ -82,7 +84,7 @@ primitives::PrimitiveStatus NonSystemCallDispatcher(
   // Output should at least contain the host call return value.
   if (output->empty()) {
     return primitives::PrimitiveStatus{
-        error::GoogleError::DATA_LOSS,
+        primitives::AbslStatusCode::kFailedPrecondition,
         "No response received for the host call, or response lost while "
         "crossing the enclave boundary."};
   }

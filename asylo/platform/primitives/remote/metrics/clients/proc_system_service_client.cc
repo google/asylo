@@ -18,10 +18,12 @@
 
 #include "asylo/platform/primitives/remote/metrics/clients/proc_system_service_client.h"
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/remote/metrics/proc_system.grpc.pb.h"
 #include "asylo/platform/primitives/remote/metrics/proc_system.pb.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "include/grpc/support/time.h"
 #include "include/grpcpp/support/status.h"
 
@@ -40,8 +42,7 @@ ProcSystemServiceClient::ProcSystemServiceClient(
 
   auto status = stub_->GetProcStat(&context, request, &response);
   if (!status.ok()) {
-    return ::asylo::Status(static_cast<error::GoogleError>(status.error_code()),
-                           std::string(status.error_message()));
+    return ConvertStatus<absl::Status>(status);
   }
   return response;
 }

@@ -27,6 +27,7 @@
 #include <thread>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
@@ -106,8 +107,8 @@ class ForkTest : public EnclaveTestCase {
     }
 
     if (!read_to_fork) {
-      return Status(error::GoogleError::INTERNAL,
-                    "Timeout waiting for counter thread to enter the enclave.");
+      return absl::InternalError(
+          "Timeout waiting for counter thread to enter the enclave.");
     }
 
     pid_t pid = fork();
@@ -124,8 +125,7 @@ class ForkTest : public EnclaveTestCase {
         for (int j = 0; j < kBufferSize; ++j) {
           if (buffers[i][j] > 0) {
             if (values[buffers[i][j]]) {
-              return Status(
-                  error::GoogleError::INTERNAL,
+              return absl::InternalError(
                   "The same counter exists in more than one buffer address");
             }
             values.set(buffers[i][j]);
@@ -154,7 +154,7 @@ class ForkTest : public EnclaveTestCase {
             absl::StrCat("Error waiting for child: ", strerror(errno)));
       }
       if (!WIFEXITED(status)) {
-        return Status(error::GoogleError::INTERNAL, "child enclave aborted");
+        return absl::InternalError("child enclave aborted");
       }
     }
     return Status::OkStatus();

@@ -18,6 +18,7 @@
 
 #include "asylo/platform/common/enclave_state.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/core/trusted_spin_lock.h"
 #include "asylo/util/lock_guard.h"
@@ -40,9 +41,9 @@ Status VerifyAndSetState(const EnclaveState &expected_state,
     ABSL_LOCKS_EXCLUDED(global_enclave_state_lock) {
   LockGuard lock(&global_enclave_state_lock);
   if (global_enclave_state != expected_state) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  ::absl::StrCat("Enclave is in state: ", global_enclave_state,
-                                 " expected state: ", expected_state));
+    return absl::FailedPreconditionError(
+        ::absl::StrCat("Enclave is in state: ", global_enclave_state,
+                       " expected state: ", expected_state));
   }
   global_enclave_state = new_state;
   return Status::OkStatus();

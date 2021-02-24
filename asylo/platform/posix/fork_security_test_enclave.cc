@@ -16,8 +16,9 @@
  *
  */
 
-#include "asylo/platform/primitives/sgx/fork_internal.h"
+#include "absl/status/status.h"
 #include "asylo/platform/posix/fork_security_test.pb.h"
+#include "asylo/platform/primitives/sgx/fork_internal.h"
 #include "asylo/test/util/enclave_test_application.h"
 
 namespace asylo {
@@ -28,23 +29,20 @@ class ForkSecurityTest : public EnclaveTestCase {
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
     if (!IsSecureForkSupported()) {
-      return Status(error::GoogleError::UNAVAILABLE,
-                    "Secure fork not supported in non SGX hardware mode");
+      return absl::UnavailableError(
+          "Secure fork not supported in non SGX hardware mode");
     }
     if (!input.HasExtension(fork_security_test_input)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Missing input extension");
+      return absl::InvalidArgumentError("Missing input extension");
     }
     ForkSecurityTestInput test_input =
         input.GetExtension(fork_security_test_input);
     if (!test_input.has_thread_type()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Missing thread type");
+      return absl::InvalidArgumentError("Missing thread type");
     }
     if (test_input.thread_type() == ForkSecurityTestInput::SETREQUEST) {
       if (!test_input.has_request_fork()) {
-        return Status(error::GoogleError::INVALID_ARGUMENT,
-                      "Missing request fork");
+        return absl::InvalidArgumentError("Missing request fork");
       }
       if (test_input.request_fork()) {
         SetForkRequested();
@@ -53,8 +51,7 @@ class ForkSecurityTest : public EnclaveTestCase {
     } else if (test_input.thread_type() == ForkSecurityTestInput::WAIT) {
       if (!test_input.has_wait_thread_inside() ||
           test_input.wait_thread_inside() == 0) {
-        return Status(error::GoogleError::INVALID_ARGUMENT,
-                      "Missing wait thread inside");
+        return absl::InvalidArgumentError("Missing wait thread inside");
       }
       // Set the untrusted bit to inform the untrusted side the wait thread has
       // entered the enclave.
@@ -63,10 +60,10 @@ class ForkSecurityTest : public EnclaveTestCase {
       *wait_thread_inside = true;
       // Stay inside the enclave until the untrusted side finished verifying and
       // reset the bit.
-      while (*wait_thread_inside) {}
+      while (*wait_thread_inside) {
+      }
     } else {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Unrecognized thread type");
+      return absl::InvalidArgumentError("Unrecognized thread type");
     }
     return Status::OkStatus();
   }

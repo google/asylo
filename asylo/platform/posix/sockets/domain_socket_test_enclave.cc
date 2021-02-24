@@ -18,6 +18,7 @@
 
 #include <sys/un.h>
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/posix/sockets/socket_client.h"
 #include "asylo/platform/posix/sockets/socket_server.h"
@@ -31,13 +32,12 @@ class DomainSocketTest : public EnclaveTestCase {
  public:
   Status Run(const EnclaveInput &input, EnclaveOutput *output) override {
     if (!input.HasExtension(socket_test_input)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Missing domain socket test input");
+      return absl::InvalidArgumentError("Missing domain socket test input");
     }
     SocketTestInput test_input = input.GetExtension(socket_test_input);
     if (!test_input.has_action() || !test_input.has_socket_name()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "domain socket test input is incomplete");
+      return absl::InvalidArgumentError(
+          "domain socket test input is incomplete");
     }
     SocketTestInput::SocketAction enc_command = test_input.action();
     std::string socket_name = test_input.socket_name();
@@ -49,8 +49,8 @@ class DomainSocketTest : public EnclaveTestCase {
     } else if (enc_command == SocketTestInput::RUNCLIENT) {
       return EncRunClient(socket_name, test_input.use_path_len());
     } else {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Unrecognized command for domain socket test");
+      return absl::InvalidArgumentError(
+          "Unrecognized command for domain socket test");
     }
   }
 
@@ -58,20 +58,20 @@ class DomainSocketTest : public EnclaveTestCase {
   // Sets up UNIX domain-socket server inside enclave.
   Status EncSetupServer(const std::string &socket_name, bool use_path_len) {
     if (!enc_socket_server_.ServerSetup(socket_name, use_path_len).ok()) {
-      return Status(error::GoogleError::INTERNAL, "Server setup failed");
+      return absl::InternalError("Server setup failed");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Runs UNIX domain-socket server inside enclave.
   Status EncRunServer() {
     if (!enc_socket_server_.ServerAccept().ok()) {
-      return Status(error::GoogleError::INTERNAL, "Server accept failed");
+      return absl::InternalError("Server accept failed");
     }
     if (!ServerTransmit(&enc_socket_server_).ok()) {
-      return Status(error::GoogleError::INTERNAL, "Server transmit failed");
+      return absl::InternalError("Server transmit failed");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Runs UNIX domain-socket client inside enclave.
@@ -81,7 +81,7 @@ class DomainSocketTest : public EnclaveTestCase {
     if (!enc_socket_client
              .ClientSetup(socket_name, &app_server_sockaddr, use_path_len)
              .ok()) {
-      return Status(error::GoogleError::INTERNAL, "Client setup failed");
+      return absl::InternalError("Client setup failed");
     }
 
     // Test getpeername() by ensuring its return value matches the server
@@ -98,11 +98,11 @@ class DomainSocketTest : public EnclaveTestCase {
     sockaddr_un *peer_sockaddr_un = (sockaddr_un *)&peer_sockaddr;
     if (app_server_sockaddr.sun_family != peer_sockaddr_un->sun_family) {
       LOG(ERROR) << "peer addr is incorrect family";
-      return Status(error::GoogleError::INTERNAL, "getpeername failure 2");
+      return absl::InternalError("getpeername failure 2");
     }
 
     if (!ClientTransmit(&enc_socket_client).ok()) {
-      return Status(error::GoogleError::INTERNAL, "Client transmit failed");
+      return absl::InternalError("Client transmit failed");
     }
     return Status::OkStatus();
   }

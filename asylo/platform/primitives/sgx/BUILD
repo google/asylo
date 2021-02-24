@@ -32,15 +32,16 @@ cc_library(
     srcs = ["enclave_loader.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":loader_cc_proto",
+        ":untrusted_sgx",
         "//asylo:enclave_cc_proto",
         "//asylo/platform/primitives:enclave_loader_hdr",
         "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/primitives/sgx:loader_cc_proto",
-        "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/platform/primitives/util:exit_log",
         "//asylo/util:status",
         "//asylo/util:status_macros",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -165,6 +166,7 @@ cc_library(
         "//asylo/util:status_helpers",
         "//asylo/util:status_macros",
         "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@linux_sgx//:public",
         "@linux_sgx//:urts",
@@ -243,6 +245,7 @@ cc_library(
         "//asylo/util:status",
         "//asylo/util:status_macros",
         "//asylo/util:thread",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -264,6 +267,7 @@ cc_library(
         "//asylo/util:status",
         "//asylo/util/remote:remote_loader_cc_proto",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
     alwayslink = 1,

@@ -24,6 +24,7 @@
 
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "asylo/client.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/platform/common/memory.h"
@@ -214,11 +215,11 @@ void EnterEnclaveAndWait(GenericEnclaveClient *client,
 TEST_F(ForkSecurityTest, SnapshotFailsWithoutForkRequest) {
   Status status =
       LoadEnclaveAndTakeSnapshot("Snapshot blocked", /*request_fork=*/false);
-  if (status != Status(error::GoogleError::UNAVAILABLE,
+  if (status != Status(absl::StatusCode::kUnavailable,
                        "Secure fork not supported in non SGX hardware mode")) {
     // Snapshot should be rejected without fork request set.
     ASSERT_THAT(status,
-                StatusIs(error::GoogleError::PERMISSION_DENIED,
+                StatusIs(absl::StatusCode::kPermissionDenied,
                          "Snapshot is not allowed unless fork is requested"));
 
     // Transferring key should be rejected without transfer key request set.
@@ -226,8 +227,8 @@ TEST_F(ForkSecurityTest, SnapshotFailsWithoutForkRequest) {
     fork_handshake_config.set_is_parent(true);
     fork_handshake_config.set_socket(0);
     EXPECT_THAT(primitive_client_->EnterAndTransferSecureSnapshotKey(
-        fork_handshake_config),
-                StatusIs(error::GoogleError::PERMISSION_DENIED,
+                    fork_handshake_config),
+                StatusIs(absl::StatusCode::kPermissionDenied,
                          "Snapshot key transfer is not allowed unless "
                          "requested by fork inside an enclave"));
   }
@@ -251,7 +252,7 @@ TEST_F(ForkSecurityTest, RestoreSucceed) {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.
     EXPECT_THAT(status,
-                StatusIs(error::GoogleError::UNAVAILABLE,
+                StatusIs(absl::StatusCode::kUnavailable,
                          "Secure fork not supported in non SGX hardware mode"));
   }
 }
@@ -268,7 +269,8 @@ TEST_F(ForkSecurityTest, RestoreWithOtherThreadsRunning) {
     // Create a thread to enter the enclave and busy wait.
     std::thread wait_thread(EnterEnclaveAndWait, client_, &wait_thread_inside_);
     // Wait till the wait thread enters the enclave.
-    while (!wait_thread_inside_) {}
+    while (!wait_thread_inside_) {
+    }
     // Restore should fail if other threads are running inside the enclave.
     EXPECT_THAT(primitive_client_->EnterAndRestore(snapshot_layout_),
                 Not(IsOk()));
@@ -280,7 +282,7 @@ TEST_F(ForkSecurityTest, RestoreWithOtherThreadsRunning) {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.
     EXPECT_THAT(status,
-                StatusIs(error::GoogleError::UNAVAILABLE,
+                StatusIs(absl::StatusCode::kUnavailable,
                          "Secure fork not supported in non SGX hardware mode"));
   }
 }
@@ -308,7 +310,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyData) {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.
     EXPECT_THAT(status,
-                StatusIs(error::GoogleError::UNAVAILABLE,
+                StatusIs(absl::StatusCode::kUnavailable,
                          "Secure fork not supported in non SGX hardware mode"));
   }
 }
@@ -336,7 +338,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyBss) {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.
     EXPECT_THAT(status,
-                StatusIs(error::GoogleError::UNAVAILABLE,
+                StatusIs(absl::StatusCode::kUnavailable,
                          "Secure fork not supported in non SGX hardware mode"));
   }
 }
@@ -365,7 +367,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyThread) {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.
     EXPECT_THAT(status,
-                StatusIs(error::GoogleError::UNAVAILABLE,
+                StatusIs(absl::StatusCode::kUnavailable,
                          "Secure fork not supported in non SGX hardware mode"));
   }
 }
@@ -393,7 +395,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyStack) {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.
     EXPECT_THAT(status,
-                StatusIs(error::GoogleError::UNAVAILABLE,
+                StatusIs(absl::StatusCode::kUnavailable,
                          "Secure fork not supported in non SGX hardware mode"));
   }
 }
@@ -415,7 +417,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyHeap) {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.
     EXPECT_THAT(status,
-                StatusIs(error::GoogleError::UNAVAILABLE,
+                StatusIs(absl::StatusCode::kUnavailable,
                          "Secure fork not supported in non SGX hardware mode"));
   }
 }

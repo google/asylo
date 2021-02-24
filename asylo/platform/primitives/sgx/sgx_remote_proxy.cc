@@ -17,6 +17,7 @@
  */
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
@@ -44,8 +45,7 @@ StatusOr<std::shared_ptr<Client>> LocalEnclaveFactory::Get(
 
   // Parse and verify the EnclaveLoadConfig
   if (!load_config.HasExtension(remote_load_config)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Expected RemoteLoadConfig.");
+    return absl::InvalidArgumentError("Expected RemoteLoadConfig.");
   }
   const auto &remote_config = load_config.GetExtension(remote_load_config);
 
@@ -53,29 +53,28 @@ StatusOr<std::shared_ptr<Client>> LocalEnclaveFactory::Get(
 
   const std::string enclave_name = load_config.name();
   if (enclave_name.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "EnclaveLoadConfig.name was empty");
+    return absl::InvalidArgumentError("EnclaveLoadConfig.name was empty");
   }
 
   // Parse and verify the SgxLoadConfig
   if (remote_config.loader_case() !=
       RemoteLoadConfig::LoaderCase::kSgxLoadConfig) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Expected SgxLoadConfig held by RemoteLoadConfig.");
+    return absl::InvalidArgumentError(
+        "Expected SgxLoadConfig held by RemoteLoadConfig.");
   }
   const auto &sgx_config = remote_config.sgx_load_config();
 
   if (sgx_config.has_embedded_enclave_config()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Expected no EmbededEnclaveConfig: RemoteBackend does not "
-                  "support embedded enclaves.");
+    return absl::InvalidArgumentError(
+        "Expected no EmbededEnclaveConfig: RemoteBackend does not "
+        "support embedded enclaves.");
   }
 
   const std::string enclave_path =
       sgx_config.file_enclave_config().enclave_path();
   if (enclave_path.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "SgxLoadConfig.FileConfig.enclave_path was empty");
+    return absl::InvalidArgumentError(
+        "SgxLoadConfig.FileConfig.enclave_path was empty");
   }
 
   // Defaults to false.
@@ -89,14 +88,14 @@ StatusOr<std::shared_ptr<Client>> LocalEnclaveFactory::Get(
   const size_t enclave_size = fork_config.enclave_size();
 
   if (base_address != nullptr && enclave_size == 0) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "SgxLoadConfig.ForkConfig.base_address was set"
-                  " but SgxLoadConfig.ForkConfig.enclave_size was 0");
+    return absl::InvalidArgumentError(
+        "SgxLoadConfig.ForkConfig.base_address was set"
+        " but SgxLoadConfig.ForkConfig.enclave_size was 0");
   }
   if (enclave_size > 0 && base_address == nullptr) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "SgxLoadConfig.ForkConfig.enclave_size was set"
-                  " but SgxLoadConfig.ForkConfig.base_address was null");
+    return absl::InvalidArgumentError(
+        "SgxLoadConfig.ForkConfig.enclave_size was set"
+        " but SgxLoadConfig.ForkConfig.base_address was null");
   }
 
   return LoadEnclave<SgxBackend>(enclave_name, base_address, enclave_path,

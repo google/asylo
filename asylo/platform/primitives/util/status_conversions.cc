@@ -19,6 +19,7 @@
 #include "asylo/platform/primitives/util/status_conversions.h"
 
 #include "absl/strings/str_cat.h"
+#include "asylo/platform/primitives/primitive_status.h"
 
 namespace asylo {
 namespace primitives {
@@ -30,7 +31,8 @@ PrimitiveStatus MakePrimitiveStatus(const Status& status) {
         "' to an asylo PrimitiveStatus: Unexpected error space. Status dump: ",
         status.ToString());
 
-    return PrimitiveStatus(error::GoogleError::OUT_OF_RANGE, error_message);
+    return PrimitiveStatus(primitives::AbslStatusCode::kOutOfRange,
+                           error_message);
   }
 
   return PrimitiveStatus{status.error_code(), status.error_message().data(),

@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -43,8 +44,7 @@ Status SetEnclaveConfig(const EnclaveConfig &config) {
   // EnclaveConfig may only be set once and additional calls will return an
   // error.
   if (global_enclave_config) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "EnclaveConfig is already set");
+    return absl::FailedPreconditionError("EnclaveConfig is already set");
   }
   global_enclave_config = new EnclaveConfig(config);
   return Status::OkStatus();
@@ -52,8 +52,7 @@ Status SetEnclaveConfig(const EnclaveConfig &config) {
 
 StatusOr<const EnclaveConfig *> GetEnclaveConfig() {
   if (!global_enclave_config) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "EnclaveConfig is not set");
+    return absl::FailedPreconditionError("EnclaveConfig is not set");
   }
 
   return global_enclave_config;

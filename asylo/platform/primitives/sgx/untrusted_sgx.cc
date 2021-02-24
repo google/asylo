@@ -28,6 +28,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/sgx/exit_handlers.h"
 #include "asylo/platform/primitives/sgx/generated_bridge_u.h"
@@ -85,9 +86,9 @@ static Status TransferSecureSnapshotKey(sgx_enclave_id_t eid, const char *input,
     // Ecall succeeded but did not return a value. This indicates that the
     // trusted code failed to propagate error information over the enclave
     // boundary.
-    return Status(error::GoogleError::INTERNAL, "No output from enclave");
+    return absl::InternalError("No output from enclave");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Enters the enclave and invokes the snapshotting entry-point. If the ecall
@@ -109,8 +110,7 @@ static Status TakeSnapshot(sgx_enclave_id_t eid, char **output,
     // Ecall succeeded but did not return a value. This indicates that the
     // trusted code failed to propagate error information over the enclave
     // boundary.
-    return Status(asylo::error::GoogleError::INTERNAL,
-                  "No output from enclave");
+    return absl::InternalError("No output from enclave");
   }
 
   return Status::OkStatus();
@@ -134,8 +134,7 @@ static Status Restore(sgx_enclave_id_t eid, const char *input, size_t input_len,
     // Ecall succeeded but did not return a value. This indicates that the
     // trusted code failed to propagate error information over the enclave
     // boundary.
-    return Status(asylo::error::GoogleError::INTERNAL,
-                  "No output from enclave");
+    return absl::InternalError("No output from enclave");
   }
   return Status::OkStatus();
 }
@@ -203,12 +202,12 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
     // because the in-kernel SGX driver leaves VMA pages in that address space
     // after fork().
     if (munmap(base_address, enclave_size) != 0) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Failed to release enclave memory");
     }
     if (mmap(base_address, enclave_size, PROT_NONE, MAP_SHARED | MAP_ANONYMOUS,
              -1, 0) != base_address) {
-      return Status(error::GoogleError::INTERNAL,
+      return Status(absl::StatusCode::kInternal,
                     "Failed to reserve enclave memory");
     }
   }
@@ -227,14 +226,14 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
   // The enclave section should be page-aligned, which is ensured by the
   // embed_enclaves rule.
   if ((reinterpret_cast<uintptr_t>(enclave_buffer.data()) & (kPageSize - 1))) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
+    return Status(absl::StatusCode::kFailedPrecondition,
                   absl::StrCat("Enclave section ", section_name,
                                " must be page-aligned"));
   }
 
   if (base_address && enclave_size > 0 &&
       munmap(base_address, enclave_size) < 0) {
-    return Status(error::GoogleError::INTERNAL,
+    return Status(absl::StatusCode::kInternal,
                   "Failed to release enclave memory");
   }
 
@@ -330,8 +329,7 @@ Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
     return Status(status, "Call to primitives ecall endpoint failed");
   }
   if (retval) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Enclave call failed inside enclave");
+    return absl::InternalError("Enclave call failed inside enclave");
   }
   if (params.output) {
     output->Deserialize(params.output, static_cast<size_t>(params.output_size));
@@ -385,8 +383,7 @@ Status SgxEnclaveClient::EnterAndRestore(
     const SnapshotLayout &snapshot_layout) {
   std::string buf;
   if (!snapshot_layout.SerializeToString(&buf)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Failed to serialize SnapshotLayout");
+    return absl::InvalidArgumentError("Failed to serialize SnapshotLayout");
   }
 
   char *output = nullptr;
@@ -413,8 +410,8 @@ Status SgxEnclaveClient::EnterAndTransferSecureSnapshotKey(
     const ForkHandshakeConfig &fork_handshake_config) {
   std::string buf;
   if (!fork_handshake_config.SerializeToString(&buf)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Failed to serialize ForkHandshakeConfig");
+    return absl::InvalidArgumentError(
+        "Failed to serialize ForkHandshakeConfig");
   }
 
   char *output = nullptr;

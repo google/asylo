@@ -19,6 +19,7 @@
 #include "asylo/platform/core/shared_resource_manager.h"
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 
@@ -33,9 +34,8 @@ Status SharedResourceManager::InstallResource(ResourceHandle *handle) {
     std::string name = handle->resource_name.name();
     handle->release();
     delete handle;
-    return Status(error::GoogleError::ALREADY_EXISTS,
-                  absl::StrCat("Cannot install resource \"", name,
-                               "\": Resource already exists."));
+    return absl::AlreadyExistsError(absl::StrCat(
+        "Cannot install resource \"", name, "\": Resource already exists."));
   }
   shared_resources_[handle->resource_name] = absl::WrapUnique(handle);
   return Status::OkStatus();

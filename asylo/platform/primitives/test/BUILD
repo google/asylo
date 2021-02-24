@@ -75,6 +75,7 @@ cc_library(
         "//asylo/util:thread",
         "@com_google_absl//absl/debugging:leak_check",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],
     # Required to prevent the linker from dropping the flag symbol.
@@ -96,6 +97,7 @@ cc_library(
         "//asylo/util:status",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
     ],
     # Required to prevent the linker from dropping the flag symbol.
     alwayslink = 1,

@@ -25,6 +25,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
@@ -39,33 +40,30 @@ StatusOr<std::string> ReadRandomBytes(const char *path, size_t read_bytes,
                                       size_t align_bytes) {
   int fd = open(path, O_RDONLY, 0);
   if (fd < 0) {
-    return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("Failed to open path ", path));
+    return absl::InternalError(absl::StrCat("Failed to open path ", path));
   }
   platform::storage::FdCloser fd_closer(fd);
   uint8_t buf[128] = {};
   if (read_bytes > sizeof(buf) - 16) {
-    return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("Invalid length requested: ", read_bytes));
+    return absl::InternalError(
+        absl::StrCat("Invalid length requested: ", read_bytes));
   }
   if (align_bytes > 16) {
-    return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("Invalid alignment requested: ", align_bytes));
+    return absl::InternalError(
+        absl::StrCat("Invalid alignment requested: ", align_bytes));
   }
   size_t count = 0;
   while (count < read_bytes) {
     ssize_t status = read(fd, &buf[align_bytes + count], read_bytes - count);
     if (status < 0) {
-      return Status(
-          error::GoogleError::INTERNAL,
+      return absl::InternalError(
           absl::StrCat("Cannot read ", path, " (", strerror(errno), ")"));
     }
     count += status;
   }
   if (count != read_bytes) {
-    return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("Incorrect read amount (", count,
-                               " != ", read_bytes, ")"));
+    return absl::InternalError(absl::StrCat("Incorrect read amount (", count,
+                                            " != ", read_bytes, ")"));
   }
 
   // If reading unaligned (start or end), return the unread part so the test can
@@ -79,10 +77,10 @@ StatusOr<std::string> ReadRandomBytes(const char *path, size_t read_bytes,
 StatusOr<std::string> ReadRandomBytesFromBoringSSL(size_t read_bytes) {
   uint8_t buf[128] = {};
   if (read_bytes > sizeof(buf)) {
-    return Status(error::GoogleError::INTERNAL, "Invalid number of bytes read");
+    return absl::InternalError("Invalid number of bytes read");
   }
   if (!RAND_bytes(buf, read_bytes)) {
-    return Status(error::GoogleError::INTERNAL, "Cannot read random bytes");
+    return absl::InternalError("Cannot read random bytes");
   }
   return std::string(&buf[0], &buf[read_bytes]);
 }

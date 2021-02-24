@@ -145,6 +145,7 @@ cc_library(
         "//asylo/platform/core:trusted_spin_lock",
         "//asylo/util:lock_guard",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
 )

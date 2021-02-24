@@ -18,6 +18,7 @@
 
 #include <netinet/in.h>
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/posix/sockets/socket_client.h"
 #include "asylo/platform/posix/sockets/socket_server.h"
@@ -31,13 +32,12 @@ class Inet6SocketTest : public EnclaveTestCase {
  public:
   Status Run(const EnclaveInput &input, EnclaveOutput *output) override {
     if (!input.HasExtension(socket_test_input)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Missing inet6 socket_test_input");
+      return absl::InvalidArgumentError("Missing inet6 socket_test_input");
     }
     SocketTestInput test_input = input.GetExtension(socket_test_input);
     if (!test_input.has_action() || !test_input.has_server_port()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "inet6 socket_test_input is incomplete");
+      return absl::InvalidArgumentError(
+          "inet6 socket_test_input is incomplete");
     }
     SocketTestInput::SocketAction enc_command = test_input.action();
     int server_port = test_input.server_port();
@@ -53,8 +53,8 @@ class Inet6SocketTest : public EnclaveTestCase {
     } else if (enc_command == SocketTestInput::RUNCLIENT) {
       return EncRunClient(server_port);
     } else {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Unrecognized command for inet6 socket test");
+      return absl::InvalidArgumentError(
+          "Unrecognized command for inet6 socket test");
     }
   }
 
@@ -62,7 +62,7 @@ class Inet6SocketTest : public EnclaveTestCase {
   // Runs INET6 socket server inside enclave.
   Status EncSetupServer(int enc_server_port, SocketTestOutput *output) {
     if (!enc_socket_server_.ServerSetup(enc_server_port).ok()) {
-      return Status(error::GoogleError::INTERNAL, "Server setup failed");
+      return absl::InternalError("Server setup failed");
     }
     if (output) {
       output->set_server_port(enc_socket_server_.GetPort());
@@ -73,10 +73,10 @@ class Inet6SocketTest : public EnclaveTestCase {
   // Runs INET6 socket server inside enclave.
   Status EncRunServer() {
     if (!enc_socket_server_.ServerAccept().ok()) {
-      return Status(error::GoogleError::INTERNAL, "Server accept failed");
+      return absl::InternalError("Server accept failed");
     }
     if (!ServerTransmit(&enc_socket_server_).ok()) {
-      return Status(error::GoogleError::INTERNAL, "Server transmit failed");
+      return absl::InternalError("Server transmit failed");
     }
     return Status::OkStatus();
   }
@@ -89,7 +89,7 @@ class Inet6SocketTest : public EnclaveTestCase {
              .ClientSetup(kLocalIpv6AddrStr, app_server_port,
                           &app_server_sockaddr)
              .ok()) {
-      return Status(error::GoogleError::INTERNAL, "Client setup failed");
+      return absl::InternalError("Client setup failed");
     }
 
     // Test getpeername() by ensuring its return value matches the server
@@ -105,15 +105,15 @@ class Inet6SocketTest : public EnclaveTestCase {
     if (peer_sockaddr_len != sizeof(sockaddr_in6)) {
       LOG(ERROR) << "peer addrlen " << peer_sockaddr_len
                  << " doesn't match server addr len " << sizeof(sockaddr_in6);
-      return Status(error::GoogleError::INTERNAL, "getpeername failure 1");
+      return absl::InternalError("getpeername failure 1");
     }
     if (memcmp(&peer_sockaddr, &app_server_sockaddr, sizeof(sockaddr_in6))) {
       LOG(ERROR) << "peer addr doesn't match server addr!";
-      return Status(error::GoogleError::INTERNAL, "getpeername failure 2");
+      return absl::InternalError("getpeername failure 2");
     }
 
     if (!ClientTransmit(&enc_socket_client).ok()) {
-      return Status(error::GoogleError::INTERNAL, "Client transmit failed");
+      return absl::InternalError("Client transmit failed");
     }
     return Status::OkStatus();
   }
