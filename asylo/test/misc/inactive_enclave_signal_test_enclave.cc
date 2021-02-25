@@ -18,6 +18,7 @@
 
 #include <signal.h>
 
+#include "absl/status/status.h"
 #include "asylo/test/misc/signal_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/status.h"
@@ -44,13 +45,11 @@ class InactiveEnclaveSignalTest : public EnclaveTestCase {
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
     if (!input.HasExtension(signal_test_input)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Missing input extension");
+      return absl::InvalidArgumentError("Missing input extension");
     }
     SignalTestInput test_input = input.GetExtension(signal_test_input);
     if (!test_input.has_signal_test_type()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Missing signal_handler_type");
+      return absl::InvalidArgumentError("Missing signal_handler_type");
     }
     struct sigaction act;
     switch (test_input.signal_test_type()) {
@@ -65,8 +64,7 @@ class InactiveEnclaveSignalTest : public EnclaveTestCase {
         signal(SIGUSR1, &HandleSignalWithHandler);
         break;
       default:
-        return Status(error::GoogleError::INVALID_ARGUMENT,
-                      "No valid test type");
+        return absl::InvalidArgumentError("No valid test type");
     }
     if (test_input.signal_test_type() != SignalTestInput::SIGNAL) {
       struct sigaction oldact;

@@ -18,6 +18,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/posix_error_space.h"
@@ -50,11 +51,11 @@ TEST_F(ErrorPropagationTest, NoError) {
 TEST_F(ErrorPropagationTest, ErrorCanonical) {
   EnclaveInput enclave_input;
   SetEnclaveInputTestString(&enclave_input,
-                            "error::GoogleError::UNAUTHENTICATED");
+                            "absl::StatusCode::kUnauthenticated");
 
   Status status = client_->EnterAndRun(enclave_input, /*output=*/nullptr);
   EXPECT_THAT(status, Not(IsOk()));
-  EXPECT_THAT(status, StatusIs(error::GoogleError::UNAUTHENTICATED));
+  EXPECT_THAT(status, StatusIs(absl::StatusCode::kUnauthenticated));
   EXPECT_EQ(status.error_message(), kErrorString);
 }
 

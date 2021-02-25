@@ -21,6 +21,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/time/time.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/grpc/auth/enclave_channel_credentials.h"
@@ -73,21 +74,20 @@ EnclaveCredentialsOptions GetCredentialsOptions(
 
 Status ClientEnclave::Run(const EnclaveInput &input, EnclaveOutput *output) {
   if (!input.HasExtension(client_enclave_input)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Input missing client_input extension");
+    return absl::InvalidArgumentError("Input missing client_input extension");
   }
   const ClientEnclaveInput &client_input =
       input.GetExtension(client_enclave_input);
 
   const std::string &address = client_input.server_address();
   if (address.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Input must provide a non-empty server address");
+    return absl::InvalidArgumentError(
+        "Input must provide a non-empty server address");
   }
   const std::string &rpc_input = client_input.rpc_input();
   if (rpc_input.empty()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Input must provide a non-empty RPC input");
+    return absl::InvalidArgumentError(
+        "Input must provide a non-empty RPC input");
   }
 
   const int64_t connection_deadline =
@@ -117,7 +117,7 @@ Status ClientEnclave::Run(const EnclaveInput &input, EnclaveOutput *output) {
       gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                    gpr_time_from_micros(connection_deadline, GPR_TIMESPAN));
   if (!channel->WaitForConnected(absolute_deadline)) {
-    return Status(error::GoogleError::INTERNAL, "Failed to connect to server");
+    return absl::InternalError("Failed to connect to server");
   }
 
   // Make an RPC to the server and write the response to EnclaveOutput.

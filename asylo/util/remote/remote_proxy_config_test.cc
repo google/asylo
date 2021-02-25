@@ -24,6 +24,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "asylo/platform/primitives/remote/util/grpc_credential_builder.h"
@@ -90,7 +91,7 @@ TEST(RemoteProxyClientConfigTest, OpenCensusMetricsConfigAddedCorrectly) {
                                  absl::make_unique<MockProvision>()));
   EXPECT_THAT(config->HasOpenCensusMetricsConfig(), Eq(false));
   EXPECT_THAT(config->GetOpenCensusMetricsConfig(),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(absl::StatusCode::kFailedPrecondition));
 
   config->EnableOpenCensusMetricsCollection(granularity, kViewNameRoot);
   EXPECT_THAT(config->HasOpenCensusMetricsConfig(), Eq(true));

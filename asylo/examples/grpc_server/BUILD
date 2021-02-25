@@ -101,6 +101,7 @@ cc_unsigned_enclave(
         "@com_github_grpc_grpc//:grpc++_reflection",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",

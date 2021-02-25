@@ -18,6 +18,7 @@
 
 #include "asylo/util/proto_struct_util.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
 namespace asylo {
@@ -25,8 +26,7 @@ namespace asylo {
 StatusOr<const google::protobuf::Struct *> JsonGetObject(
     const google::protobuf::Value &value) {
   if (value.kind_case() != google::protobuf::Value::kStructValue) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "JSON value is not an object");
+    return absl::InvalidArgumentError("JSON value is not an object");
   }
 
   return &value.struct_value();
@@ -35,8 +35,7 @@ StatusOr<const google::protobuf::Struct *> JsonGetObject(
 StatusOr<const google::protobuf::ListValue *> JsonGetArray(
     const google::protobuf::Value &value) {
   if (value.kind_case() != google::protobuf::Value::kListValue) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "JSON value is not an array");
+    return absl::InvalidArgumentError("JSON value is not an array");
   }
 
   return &value.list_value();
@@ -45,8 +44,7 @@ StatusOr<const google::protobuf::ListValue *> JsonGetArray(
 StatusOr<const std::string *> JsonGetString(
     const google::protobuf::Value &value) {
   if (value.kind_case() != google::protobuf::Value::kStringValue) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "JSON value is not a string");
+    return absl::InvalidArgumentError("JSON value is not a string");
   }
 
   return &value.string_value();
@@ -54,8 +52,7 @@ StatusOr<const std::string *> JsonGetString(
 
 StatusOr<double> JsonGetNumber(const google::protobuf::Value &value) {
   if (value.kind_case() != google::protobuf::Value::kNumberValue) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "JSON value is not an integer");
+    return absl::InvalidArgumentError("JSON value is not an integer");
   }
 
   return value.number_value();
@@ -64,8 +61,7 @@ StatusOr<double> JsonGetNumber(const google::protobuf::Value &value) {
 StatusOr<const google::protobuf::Value *> JsonObjectGetField(
     const google::protobuf::Struct &object, const std::string &field_name) {
   if (!object.fields().contains(field_name)) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         absl::StrCat("JSON object does not have a ", field_name, " field"));
   }
 

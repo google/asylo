@@ -119,6 +119,7 @@ cc_unsigned_enclave(
         "//asylo/platform/primitives:trusted_runtime",
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/synchronization",
     ],
 )
@@ -149,6 +150,7 @@ cc_unsigned_enclave(
         ":signal_test_cc_proto",
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -162,7 +164,10 @@ cc_unsigned_enclave(
     name = "die_unsigned.so",
     srcs = ["die.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    deps = ["//asylo:enclave_runtime"],
+    deps = [
+        "//asylo:enclave_runtime",
+        "@com_google_absl//absl/status",
+    ],
 )
 
 debug_sign_enclave(
@@ -184,6 +189,7 @@ cc_unsigned_enclave(
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:status",
         "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -242,6 +248,7 @@ cc_unsigned_enclave(
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -261,6 +268,7 @@ cc_unsigned_enclave(
         "//asylo/platform/primitives:trusted_runtime",
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
 )
@@ -366,6 +374,7 @@ sgx_enclave_test(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -538,6 +547,7 @@ enclave_test(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -578,6 +588,7 @@ enclave_test(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -596,6 +607,7 @@ enclave_test(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -751,6 +763,7 @@ cc_unsigned_enclave(
         "//asylo:enclave_runtime",
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -781,7 +794,10 @@ cc_unsigned_enclave(
     name = "fail_finalize_enclave_unsigned.so",
     srcs = ["fail_finalize_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    deps = ["//asylo:enclave_runtime"],
+    deps = [
+        "//asylo:enclave_runtime",
+        "@com_google_absl//absl/status",
+    ],
 )
 
 debug_sign_enclave(

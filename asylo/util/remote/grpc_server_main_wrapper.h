@@ -28,6 +28,7 @@
 #include <string>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/remote/util/grpc_credential_builder.h"
@@ -82,7 +83,7 @@ class GrpcServerMainWrapper {
  public:
   template <typename... Args>
   static StatusOr<std::unique_ptr<GrpcServerMainWrapper<T>>> Create(
-      int port, Args &&... args) {
+      int port, Args &&...args) {
     // Create server.
     ::grpc::ServerBuilder builder;
     std::unique_ptr<T> server;
@@ -113,8 +114,7 @@ class GrpcServerMainWrapper {
     if (port == 0) {
       int bytes = write(STDOUT_FILENO, &wrapper->port_, sizeof(wrapper->port_));
       if (bytes != sizeof(wrapper->port_)) {
-        return Status(error::GoogleError::INTERNAL,
-                      "Failure to communicate port");
+        return absl::InternalError("Failure to communicate port");
       }
     }
     return std::move(wrapper);

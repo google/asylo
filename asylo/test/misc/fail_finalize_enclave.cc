@@ -24,7 +24,7 @@ class FailFinalizeEnclave : public asylo::TrustedApplication {
  public:
   asylo::Status Finalize(const asylo::EnclaveFinal& enclave_final) override {
     // Finalize returns a non-OK status.
-    return asylo::Status(asylo::error::GoogleError::INTERNAL, "Non-ok status");
+    return absl::InternalError("Non-ok status");
   }
 };
 

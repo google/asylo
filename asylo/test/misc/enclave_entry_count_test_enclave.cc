@@ -20,6 +20,7 @@
 
 #include <atomic>
 
+#include "absl/status/status.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/test/misc/enclave_entry_count_test.pb.h"
@@ -42,14 +43,12 @@ class EnclaveEntryCountTest : public EnclaveTestCase {
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
     if (!input.HasExtension(enclave_entry_count_test_input)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Missing input extension");
+      return absl::InvalidArgumentError("Missing input extension");
     }
     EnclaveEntryCountTestInput test_input =
         input.GetExtension(enclave_entry_count_test_input);
     if (!test_input.has_thread_type()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Missing thread type");
+      return absl::InvalidArgumentError("Missing thread type");
     }
 
     if (test_input.thread_type() == EnclaveEntryCountTestInput::DONOTHING) {
@@ -63,14 +62,12 @@ class EnclaveEntryCountTest : public EnclaveTestCase {
         absl::MutexLock lock(&mu);
         if (!mu.AwaitWithTimeout(absl::Condition(&count_finished),
                                  absl::Seconds(kTimeout))) {
-          return Status(error::GoogleError::INTERNAL,
-                        "Timeout waiting for count");
+          return absl::InternalError("Timeout waiting for count");
         }
       }
     } else if (test_input.thread_type() == EnclaveEntryCountTestInput::COUNT) {
       if (!test_input.has_expected_entries()) {
-        return Status(error::GoogleError::INVALID_ARGUMENT,
-                      "Missing input extension");
+        return absl::InvalidArgumentError("Missing input extension");
       }
       // Wait till all threads has entered.
       {
@@ -82,16 +79,14 @@ class EnclaveEntryCountTest : public EnclaveTestCase {
                                      },
                                      &test_input),
                                  absl::Seconds(kTimeout))) {
-          return Status(error::GoogleError::INTERNAL,
-                        "Timeout waiting for entries");
+          return absl::InternalError("Timeout waiting for entries");
         }
       }
       // Counts the total active enclave entries saved by the enclave.
       output->SetExtension(number_entries, active_entry_count());
       count_finished = true;
     } else {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Unknown thread type");
+      return absl::InvalidArgumentError("Unknown thread type");
     }
     return Status::OkStatus();
   }

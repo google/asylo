@@ -23,6 +23,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/platform/primitives/remote/util/grpc_credential_builder.h"
@@ -67,8 +68,8 @@ class RemoteProvisionClient : public RemoteProvision {
     // Connect to the remote provision server.
     const auto provision_server = absl::GetFlag(FLAGS_remote_provision_server);
     if (provision_server.empty()) {
-      return Status{error::GoogleError::FAILED_PRECONDITION,
-                    "No remote provision server specified."};
+      return absl::FailedPreconditionError(
+          "No remote provision server specified.");
     }
     std::shared_ptr<::grpc::Channel> grpc_channel;
     ASYLO_ASSIGN_OR_RETURN(grpc_channel,
@@ -76,7 +77,7 @@ class RemoteProvisionClient : public RemoteProvision {
     gpr_timespec absolute_deadline = gpr_time_add(
         gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(10, GPR_TIMESPAN));
     if (!grpc_channel->WaitForConnected(absolute_deadline)) {
-      return Status(error::GoogleError::DEADLINE_EXCEEDED, "Failed to connect");
+      return absl::DeadlineExceededError("Failed to connect");
     }
     std::unique_ptr<ProvisionService::Stub> grpc_stub =
         ProvisionService::NewStub(grpc_channel);
@@ -156,7 +157,7 @@ class RemoteProvisionClient : public RemoteProvision {
 
     ASYLO_RETURN_IF_ERROR(ConvertStatus<asylo::Status>(stream->Finish()));
     if (response.enclave_path().empty()) {
-      return Status{error::GoogleError::NOT_FOUND, "No enclave file path"};
+      return absl::NotFoundError("No enclave file path");
     }
     LOG(INFO) << "Enclave sent successfully, path=" << response.enclave_path();
     return response.enclave_path();

@@ -22,6 +22,7 @@
 #include <string>
 
 #include <google/protobuf/text_format.h>
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -35,8 +36,7 @@ template <typename T>
 StatusOr<T> ParseTextProto(absl::string_view text) {
   T proto;
   if (!google::protobuf::TextFormat::ParseFromString(std::string{text}, &proto)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Invalid textproto input");
+    return absl::InvalidArgumentError("Invalid textproto input");
   }
   return proto;
 }

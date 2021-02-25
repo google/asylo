@@ -16,6 +16,7 @@
  *
  */
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/posix_error_space.h"
@@ -39,14 +40,14 @@ class ErrorPropagationEnclave : public EnclaveTestCase {
 
     if (test_name == "OK") {
       return Status::OkStatus();
-    } else if (test_name == "error::GoogleError::UNAUTHENTICATED") {
-      return Status(error::GoogleError::UNAUTHENTICATED, kErrorString);
+    } else if (test_name == "absl::StatusCode::kUnauthenticated") {
+      return absl::UnauthenticatedError(kErrorString);
     } else if (test_name == "error::PosixError::P_EINVAL") {
       return Status(error::PosixError::P_EINVAL, kErrorString);
     }
 
     LOG(ERROR) << "Unexpected test name: '" << test_name << "'";
-    return Status(error::GoogleError::INTERNAL, "Unknown test");
+    return absl::InternalError("Unknown test");
   }
 
   Status Finalize(const EnclaveFinal &final_input) final {

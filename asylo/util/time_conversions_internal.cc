@@ -27,6 +27,7 @@
 #include <google/protobuf/message.h>
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/time_util.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
@@ -92,8 +93,8 @@ std::string GprTimespecToString(gpr_timespec time) {
 // instance of type |type_name|.
 Status InvalidInstanceError(absl::string_view type_name,
                             absl::string_view type_value) {
-  return Status(error::GoogleError::INVALID_ARGUMENT,
-                absl::StrFormat("Invalid %s value: %s", type_name, type_value));
+  return absl::InvalidArgumentError(
+      absl::StrFormat("Invalid %s value: %s", type_name, type_value));
 }
 
 // Returns an OUT_OF_RANGE error indicating that the value |source_type_value|
@@ -101,8 +102,7 @@ Status InvalidInstanceError(absl::string_view type_name,
 Status CannotRepresentError(absl::string_view source_type_name,
                             absl::string_view dest_type_name,
                             absl::string_view source_type_value) {
-  return Status(
-      error::GoogleError::OUT_OF_RANGE,
+  return absl::OutOfRangeError(
       absl::StrFormat("Cannot represent %s value \"%s\" as %s",
                       source_type_name, source_type_value, dest_type_name));
 }

@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
@@ -38,14 +39,12 @@ class BlockEnclaveEntriesTest : public EnclaveTestCase {
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
     if (!input.HasExtension(block_enclave_entries_test_input)) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Missing input extension");
+      return absl::InvalidArgumentError("Missing input extension");
     }
     BlockEnclaveEntriesTestInput test_input =
         input.GetExtension(block_enclave_entries_test_input);
     if (!test_input.has_thread_type()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Missing thread type");
+      return absl::InvalidArgumentError("Missing thread type");
     }
 
     if (test_input.thread_type() == BlockEnclaveEntriesTestInput::CHECK) {
@@ -56,14 +55,13 @@ class BlockEnclaveEntriesTest : public EnclaveTestCase {
     } else if (test_input.thread_type() ==
                BlockEnclaveEntriesTestInput::BLOCK) {
       if (!test_input.has_socket()) {
-        return Status(error::GoogleError::INVALID_ARGUMENT,
-                      "Missing thread type");
+        return absl::InvalidArgumentError("Missing thread type");
       }
       int socket = test_input.socket();
 
       if (blocked_entry_count() != 0) {
-        return Status(error::GoogleError::INTERNAL,
-                      "Found blocked entries while there shouldn't");
+        return absl::InternalError(
+            "Found blocked entries while there shouldn't");
       }
 
       // Block entries and inform the untrusted thread to try entering the
@@ -85,8 +83,7 @@ class BlockEnclaveEntriesTest : public EnclaveTestCase {
       }
 
       if (check_thread_entered) {
-        return Status(error::GoogleError::INTERNAL,
-                      "Enclave entries detected while blocked");
+        return absl::InternalError("Enclave entries detected while blocked");
       }
 
       // Unblock entries and allow entry to enter the enclave.
@@ -97,8 +94,7 @@ class BlockEnclaveEntriesTest : public EnclaveTestCase {
         nanosleep(&ts, /*rem=*/nullptr);
       }
     } else {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Unknown thread type");
+      return absl::InvalidArgumentError("Unknown thread type");
     }
 
     return Status::OkStatus();

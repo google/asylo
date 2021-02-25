@@ -21,6 +21,7 @@
 #include "google/protobuf/struct.pb.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
@@ -36,15 +37,15 @@ TEST(JsonUtilTest, JsonGetObjectFailsOnNonObjects) {
   google::protobuf::Value value;
   value.set_number_value(0.);
   EXPECT_THAT(JsonGetObject(value),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   value.set_string_value("");
   EXPECT_THAT(JsonGetObject(value),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   value.mutable_list_value();
   EXPECT_THAT(JsonGetObject(value),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(JsonUtilTest, JsonGetObjectSucceedsOnObjects) {
@@ -58,15 +59,15 @@ TEST(JsonUtilTest, JsonGetArrayFailsOnNonArrays) {
   google::protobuf::Value value;
   value.set_number_value(0.);
   EXPECT_THAT(JsonGetArray(value),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   value.set_string_value("");
   EXPECT_THAT(JsonGetArray(value),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   value.mutable_struct_value();
   EXPECT_THAT(JsonGetArray(value),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(JsonUtilTest, JsonGetArraySucceedsOnArrays) {
@@ -81,15 +82,15 @@ TEST(JsonUtilTest, JsonGetStringFailsOnNonStrings) {
   google::protobuf::Value value;
   value.set_number_value(0.);
   EXPECT_THAT(JsonGetString(value),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   value.mutable_list_value();
   EXPECT_THAT(JsonGetString(value),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   value.mutable_struct_value();
   EXPECT_THAT(JsonGetString(value),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(JsonUtilTest, JsonGetStringSucceedsOnStrings) {
@@ -105,15 +106,15 @@ TEST(JsonUtilTest, JsonGetNumberFailsOnNonNumbers) {
   google::protobuf::Value value;
   value.set_string_value("");
   EXPECT_THAT(JsonGetNumber(value),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   value.mutable_list_value();
   EXPECT_THAT(JsonGetNumber(value),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 
   value.mutable_struct_value();
   EXPECT_THAT(JsonGetNumber(value),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(JsonUtilTest, JsonGetNumberSucceedsOnNumbers) {
@@ -134,7 +135,7 @@ TEST(JsonUtilTest, JsonObjectGetFieldFailsIfTheFieldIsAbsent) {
   value.set_number_value(0.);
   object.mutable_fields()->insert({"bar", value});
   EXPECT_THAT(JsonObjectGetField(object, "foo"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
 }
 
 TEST(JsonUtilTest, JsonObjectGetFieldSucceedsIfTheFieldIsPresent) {

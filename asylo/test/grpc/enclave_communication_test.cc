@@ -21,6 +21,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/grpc/util/enclave_server.pb.h"
@@ -80,8 +81,8 @@ class EnclaveCommunicationTest : public ::testing::Test {
         server_launcher_.mutable_client()->EnterAndRun(/*input=*/{}, &output));
 
     if (!output.HasExtension(server_output_config)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "EnclaveServer did not return a server_output_config");
+      return absl::InternalError(
+          "EnclaveServer did not return a server_output_config");
     }
 
     const ServerConfig &final_server_config =

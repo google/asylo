@@ -24,6 +24,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "absl/types/optional.h"
@@ -174,8 +175,7 @@ class RemoteProxyClientConfig : public RemoteProxyConfig {
 
   StatusOr<OpenCensusClientConfig> GetOpenCensusMetricsConfig() const {
     if (!HasOpenCensusMetricsConfig()) {
-      return Status(error::GoogleError::FAILED_PRECONDITION,
-                    "OpenCensusConfig is not set");
+      return absl::FailedPreconditionError("OpenCensusConfig is not set");
     }
     return *open_census_config_;
   }

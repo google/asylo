@@ -18,6 +18,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -28,7 +29,7 @@ class ExhaustSgxTcsTest : public EnclaveTest {};
 
 TEST_F(ExhaustSgxTcsTest, StdThreadResourceExhausted) {
   EXPECT_THAT(client_->EnterAndRun({}, nullptr),
-              StatusIs(error::GoogleError::RESOURCE_EXHAUSTED));
+              StatusIs(absl::StatusCode::kResourceExhausted));
 }
 
 }  // namespace

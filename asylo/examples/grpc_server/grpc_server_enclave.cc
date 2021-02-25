@@ -110,8 +110,7 @@ asylo::Status GrpcServerEnclave::Initialize(
   // Start the server.
   server_ = builder.BuildAndStart();
   if (!server_) {
-    return asylo::Status(asylo::error::GoogleError::INTERNAL,
-                         "Failed to start server");
+    return absl::InternalError("Failed to start server");
   }
 
   return asylo::Status::OkStatus();

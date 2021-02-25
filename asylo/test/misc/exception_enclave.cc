@@ -19,6 +19,7 @@
 #include <string>
 
 #include "absl/base/attributes.h"
+#include "absl/status/status.h"
 #include "asylo/test/misc/exception.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/status.h"
@@ -37,13 +38,12 @@ class Exception : public EnclaveTestCase {
       try {
         Throw();
       } catch (TestException &e) {
-        return (e.Code() == 54) ? Status::OkStatus()
-                                : Status(error::GoogleError::INTERNAL,
-                                         "Unexpected exception code");
+        return (e.Code() == 54)
+                   ? absl::OkStatus()
+                   : absl::InternalError("Unexpected exception code");
       }
     } else {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Unrecognized command");
+      return absl::InvalidArgumentError("Unrecognized command");
     }
   }
 

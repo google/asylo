@@ -32,6 +32,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
 #include "asylo/util/logging.h"
@@ -349,7 +350,7 @@ TYPED_TEST(TimeConversionsDurationTest, InvalidConversionsToAbslDurationFail) {
   for (const TypeParam &value_duration : TestFixture::InvalidTestData()) {
     absl::Duration temp;
     EXPECT_THAT(internal::ToAbslDuration(value_duration, &temp),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -358,7 +359,7 @@ TYPED_TEST(TimeConversionsDurationTest,
   for (absl::Duration absl_duration : TestFixture::OutOfRangeTestData()) {
     typename TestFixture::ValueType temp;
     EXPECT_THAT(internal::FromAbslDuration(absl_duration, &temp),
-                StatusIs(error::GoogleError::OUT_OF_RANGE));
+                StatusIs(absl::StatusCode::kOutOfRange));
   }
 }
 
@@ -372,7 +373,7 @@ TYPED_TEST(TimeConversionsDurationTest, RoundtripConversionsOfValidDataWork) {
 TYPED_TEST(TimeConversionsDurationTest, RoundtripConversionsOfInvalidDataFail) {
   for (const TypeParam &value_duration : TestFixture::InvalidTestData()) {
     EXPECT_THAT(ConvertDuration<TypeParam>(value_duration),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -590,7 +591,7 @@ TYPED_TEST(TimeConversionsTimeTest, InvalidConversionsToAbslTimeFail) {
   for (const TypeParam &value_time : TestFixture::InvalidTestData()) {
     absl::Time temp;
     EXPECT_THAT(internal::ToAbslTime(value_time, &temp),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 
@@ -598,7 +599,7 @@ TYPED_TEST(TimeConversionsTimeTest, OutOfRangeConversionsFromAbslTimeFail) {
   for (absl::Time absl_time : TestFixture::OutOfRangeTestData()) {
     typename TestFixture::ValueType temp;
     EXPECT_THAT(internal::FromAbslTime(absl_time, &temp),
-                StatusIs(error::GoogleError::OUT_OF_RANGE));
+                StatusIs(absl::StatusCode::kOutOfRange));
   }
 }
 
@@ -612,7 +613,7 @@ TYPED_TEST(TimeConversionsTimeTest, RoundtripConversionsOfValidDataWork) {
 TYPED_TEST(TimeConversionsTimeTest, RoundtripConversionsOfInvalidDataFail) {
   for (const TypeParam &value_time : TestFixture::InvalidTestData()) {
     EXPECT_THAT(ConvertTime<TypeParam>(value_time),
-                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+                StatusIs(absl::StatusCode::kInvalidArgument));
   }
 }
 }  // namespace

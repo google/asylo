@@ -23,6 +23,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/container/flat_hash_set.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
@@ -86,8 +87,7 @@ StatusOr<std::unique_ptr<FakeCurl>> FakeCurl::Create(
     absl::string_view raw_http_response) {
   std::vector<std::string> lines = absl::StrSplit(raw_http_response, "\r\n");
   if (lines.size() <= 3) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         absl::StrCat("HTTP response is malformed: ", raw_http_response));
   }
   std::vector<std::string> headers;
@@ -100,7 +100,7 @@ StatusOr<std::unique_ptr<FakeCurl>> FakeCurl::Create(
 
 Status FakeCurl::Perform() {
   if (perform_failure_) {
-    return Status(error::GoogleError::INTERNAL, "test");
+    return absl::InternalError("test");
   }
   for (const auto &header : headers_) {
     (*header_fn_)(header.data(), header.size(), 1, header_data_);
@@ -120,7 +120,7 @@ void FakeCurl::Reset() {
 
 Status FakeCurl::SetOpt(CURLoption option, void *value) {
   if (setopt_failures_.contains(option)) {
-    return Status(error::GoogleError::INTERNAL, "test");
+    return absl::InternalError("test");
   }
   switch (option) {
     case CURLOPT_HEADERFUNCTION:
@@ -144,8 +144,7 @@ Status FakeCurl::SetOpt(CURLoption option, void *value) {
       ca_path_ = static_cast<char *>(value);
       break;
     default:
-      return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("Unexpected option ", option));
+      return absl::InternalError(absl::StrCat("Unexpected option ", option));
   }
   return Status::OkStatus();
 }
@@ -277,7 +276,7 @@ TEST(HttpFetcherImplTest, Perform_Failure) {
   curl->set_perform_failure();
   HttpFetcherImpl fetcher(std::move(curl), /*ca_cert_filename=*/"");
   HttpFetcher::HttpResponse response;
-  EXPECT_THAT(fetcher.Get(kUrl, {}), StatusIs(error::GoogleError::INTERNAL));
+  EXPECT_THAT(fetcher.Get(kUrl, {}), StatusIs(absl::StatusCode::kInternal));
 }
 
 class HttpFetcherImplSetOptErrorTest
@@ -307,7 +306,7 @@ TEST_P(HttpFetcherImplSetOptErrorTest, SetOpt_Failure) {
   curl->set_setopt_failure(GetParam());
   HttpFetcherImpl fetcher(std::move(curl), "/ca/cert/filename");
   HttpFetcher::HttpResponse response;
-  EXPECT_THAT(fetcher.Get(kUrl, {}), StatusIs(error::GoogleError::INTERNAL));
+  EXPECT_THAT(fetcher.Get(kUrl, {}), StatusIs(absl::StatusCode::kInternal));
 }
 
 }  // namespace

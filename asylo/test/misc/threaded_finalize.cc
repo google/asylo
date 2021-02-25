@@ -19,6 +19,7 @@
 #include <pthread.h>
 #include <unistd.h>
 
+#include "absl/status/status.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/status.h"
@@ -40,23 +41,23 @@ class ThreadedFinalize : public TrustedApplication {
     pthread_t thread;
     int ret = pthread_create(&thread, nullptr, finalizer_function, nullptr);
     if (ret != 0) {
-      return Status(error::GoogleError::INTERNAL, "Unable to pthread_create");
+      return absl::InternalError("Unable to pthread_create");
     }
 
     ret = pthread_join(thread, nullptr);
     if (ret != 0) {
-      return Status(error::GoogleError::INTERNAL, "Unable to pthread_join");
+      return absl::InternalError("Unable to pthread_join");
     }
 
     ret =
         pthread_create(&thread, nullptr, sleeping_finalizer_function, nullptr);
     if (ret != 0) {
-      return Status(error::GoogleError::INTERNAL, "Unable to pthread_create");
+      return absl::InternalError("Unable to pthread_create");
     }
 
     ret = pthread_detach(thread);
     if (ret != 0) {
-      return Status(error::GoogleError::INTERNAL, "Unable to pthread_detach");
+      return absl::InternalError("Unable to pthread_detach");
     }
 
     return Status::OkStatus();

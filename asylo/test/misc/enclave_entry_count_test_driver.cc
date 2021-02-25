@@ -22,6 +22,7 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/test/misc/enclave_entry_count_test.pb.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/status_matchers.h"
@@ -33,8 +34,7 @@ namespace {
 
 // Enters the enclave and stays idle.
 void EnterEnclave(EnclaveClient *client, const EnclaveInput &enclave_input) {
-  EXPECT_THAT(client->EnterAndRun(enclave_input, /*output=*/nullptr),
-              IsOk());
+  EXPECT_THAT(client->EnterAndRun(enclave_input, /*output=*/nullptr), IsOk());
 }
 
 class EnclaveEntryCountTest : public EnclaveTest {
@@ -77,8 +77,7 @@ class EnclaveEntryCountTest : public EnclaveTest {
       entry_threads[i].join();
     }
     if (enclave_output.GetExtension(number_entries) != number_threads) {
-      return Status(error::GoogleError::INTERNAL,
-                    "number of threads is incorrect");
+      return absl::InternalError("number of threads is incorrect");
     }
     return Status::OkStatus();
   }

@@ -18,6 +18,7 @@
 
 #include <cstdlib>
 
+#include "absl/status/status.h"
 #include "asylo/trusted_application.h"
 #include "include/sgx_trts.h"
 
@@ -30,7 +31,7 @@ class TestDie : public TrustedApplication {
   Status Run(const EnclaveInput &input, EnclaveOutput *) override {
     // We shouldn't be allowed inside crashed enclaves.
     if (sgx_is_enclave_crashed()) {
-      return Status(error::GoogleError::INTERNAL, "Enclave is crashed");
+      return absl::InternalError("Enclave is crashed");
     }
 
     abort();

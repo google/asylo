@@ -21,6 +21,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
+
 #include <cerrno>
 #include <cstring>
 #include <thread>
@@ -28,6 +29,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/barrier.h"
@@ -58,13 +60,13 @@ TEST(FdUtilsTest, ReadAllNoBlockWriteAllNoBlockBlockingPipe) {
 
   EXPECT_THAT(
       WriteAllNoBlock(pipe.write_fd(), kData),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+      StatusIs(absl::StatusCode::kInvalidArgument,
                absl::StrCat("Cannot write to fd ", pipe.write_fd(),
                             " without blocking because ", pipe.write_fd(),
                             " is a blocking file descriptor")));
   EXPECT_THAT(
       ReadAllNoBlock(pipe.read_fd()),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+      StatusIs(absl::StatusCode::kInvalidArgument,
                absl::StrCat("Cannot read from fd ", pipe.read_fd(),
                             " without blocking because ", pipe.read_fd(),
                             " is a blocking file descriptor")));

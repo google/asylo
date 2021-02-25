@@ -98,7 +98,7 @@ StatusOr<std::string> GetAttestationDomain() {
   if (HMAC(digest, boot_uuid.data(), boot_uuid.size(),
            kAttestationDomainHmacData, sizeof(kAttestationDomainHmacData), mac,
            &attestation_domain_size) == nullptr) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    return absl::InternalError(BsslLastErrorString());
   }
 
   // Truncate the MAC to the size of the attestation domain.

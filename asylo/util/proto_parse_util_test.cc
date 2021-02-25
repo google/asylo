@@ -22,6 +22,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/proto_parse_util_test.pb.h"
@@ -70,7 +71,7 @@ TEST(ProtoParseUtilTest, ParseFullMessage) {
 TEST(ProtoParseUtilTest, ParseInvalidInput) {
   TestMessage expected;
   EXPECT_THAT(ParseTextProto<TestMessage>("garbage"),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+              StatusIs(absl::StatusCode::kInvalidArgument));
   EXPECT_DEATH_IF_SUPPORTED(TestMessage m = ParseTextProtoOrDie("junk"), "");
 }
 

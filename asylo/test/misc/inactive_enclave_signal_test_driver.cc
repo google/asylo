@@ -19,6 +19,7 @@
 #include <signal.h>
 
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "asylo/test/misc/signal_test.pb.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/status_matchers.h"
@@ -36,16 +37,14 @@ class InactiveEnclaveSignalTest : public EnclaveTest {
     // frame. At this moment no signals have been delivered yet.
     ASYLO_RETURN_IF_ERROR(client_->EnterAndRun(enclave_input, &enclave_output));
     if (enclave_output.GetExtension(signal_received)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "Signal received in enclave before sent");
+      return absl::InternalError("Signal received in enclave before sent");
     }
     raise(SIGUSR1);
     // Run the enclave again, this time a signal is raised and should have been
     // sent to enclave, so enclave should return OK status.
     ASYLO_RETURN_IF_ERROR(client_->EnterAndRun(enclave_input, &enclave_output));
     if (!enclave_output.GetExtension(signal_received)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "Signal not received in enclave");
+      return absl::InternalError("Signal not received in enclave");
     }
     return Status::OkStatus();
   }

@@ -31,9 +31,11 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <unistd.h>
+
 #include <cstddef>
 #include <sstream>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "asylo/util/logging.h"
@@ -178,8 +180,7 @@ StatusOr<std::string> ReadAllNoBlock(int fd) {
   int flags;
   ASYLO_ASSIGN_OR_RETURN(flags, GetFdFlags(fd));
   if (!(flags & O_NONBLOCK)) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         absl::StrCat("Cannot read from fd ", fd, " without blocking because ",
                      fd, " is a blocking file descriptor"));
   }
@@ -194,8 +195,7 @@ StatusOr<size_t> WriteAllNoBlock(int fd, absl::string_view data) {
   int flags;
   ASYLO_ASSIGN_OR_RETURN(flags, GetFdFlags(fd));
   if (~flags & O_NONBLOCK) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
+    return absl::InvalidArgumentError(
         absl::StrCat("Cannot write to fd ", fd, " without blocking because ",
                      fd, " is a blocking file descriptor"));
   }
@@ -249,21 +249,19 @@ StatusOr<short> WaitForEvents(int fd, short target_events, short ok_events) {
     }
     if (poll_result == 1 &&
         (wait_for_events.revents & ~(target_events | ok_events))) {
-      return Status(
-          error::GoogleError::UNKNOWN,
-          absl::StrCat(
-              "poll() did not return the expected events, instead gave:",
-              (wait_for_events.revents & POLLIN ? " POLLIN" : ""),
-              (wait_for_events.revents & POLLPRI ? " POLLPRI" : ""),
-              (wait_for_events.revents & POLLOUT ? " POLLOUT" : ""),
-              (wait_for_events.revents & POLLRDHUP ? " POLLRDHUP" : ""),
-              (wait_for_events.revents & POLLERR ? " POLLERR" : ""),
-              (wait_for_events.revents & POLLHUP ? " POLLHUP" : ""),
-              (wait_for_events.revents & POLLNVAL ? " POLLNVAL" : ""),
-              (wait_for_events.revents & POLLRDNORM ? " POLLRDNORM" : ""),
-              (wait_for_events.revents & POLLRDBAND ? " POLLRDBAND" : ""),
-              (wait_for_events.revents & POLLWRNORM ? " POLLWRNORM" : ""),
-              (wait_for_events.revents & POLLWRBAND ? " POLLWRBAND" : "")));
+      return absl::UnknownError(absl::StrCat(
+          "poll() did not return the expected events, instead gave:",
+          (wait_for_events.revents & POLLIN ? " POLLIN" : ""),
+          (wait_for_events.revents & POLLPRI ? " POLLPRI" : ""),
+          (wait_for_events.revents & POLLOUT ? " POLLOUT" : ""),
+          (wait_for_events.revents & POLLRDHUP ? " POLLRDHUP" : ""),
+          (wait_for_events.revents & POLLERR ? " POLLERR" : ""),
+          (wait_for_events.revents & POLLHUP ? " POLLHUP" : ""),
+          (wait_for_events.revents & POLLNVAL ? " POLLNVAL" : ""),
+          (wait_for_events.revents & POLLRDNORM ? " POLLRDNORM" : ""),
+          (wait_for_events.revents & POLLRDBAND ? " POLLRDBAND" : ""),
+          (wait_for_events.revents & POLLWRNORM ? " POLLWRNORM" : ""),
+          (wait_for_events.revents & POLLWRBAND ? " POLLWRBAND" : "")));
     }
   } while (poll_result == 0 ||
            ((wait_for_events.revents | ok_events) == ok_events));

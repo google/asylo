@@ -33,8 +33,8 @@ StatusOr<std::string> UrlDecode(absl::string_view url) {
   std::unique_ptr<char[], FunctionDeleter<&curl_free>> result_url(
       curl_easy_unescape(nullptr, url.data(), url.size(), &out_size));
   if (result_url == nullptr) {
-    return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("Decording URL '", url, "', fails"));
+    return absl::InternalError(
+        absl::StrCat("Decording URL '", url, "', fails"));
   }
   std::string return_str(result_url.get(), out_size);
   return return_str;

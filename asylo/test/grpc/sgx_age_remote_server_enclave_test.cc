@@ -24,6 +24,7 @@
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "asylo/crypto/certificate.pb.h"
@@ -94,9 +95,8 @@ class SgxAgeRemoteServerEnclaveTest : public EnclaveTest {
     // Establish a random UDS address for the AGE.
     char path[] = "/tmp/SgxAgeRemoteServerEnclaveTest.XXXXXX";
     if (mkdtemp(path) == nullptr) {
-      return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("Failed to create random test directory: ",
-                                 strerror(errno)));
+      return absl::InternalError(absl::StrCat(
+          "Failed to create random test directory: ", strerror(errno)));
     }
     std::string age_server_address = absl::StrCat("unix:", path, ".sock");
     EnclaveLoadConfig load_config =
