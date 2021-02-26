@@ -23,6 +23,7 @@
 #include <future>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "asylo/test/misc/signal_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/posix_error_space.h"
@@ -113,14 +114,18 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
                       "Failed to block signal");
       }
     }
-    struct sigaction act, oldact;
+    struct sigaction act = {};
+    struct sigaction oldact = {};
     sigemptyset(&act.sa_mask);
     switch (test_type) {
       case SignalTestInput::HANDLER:
         act.sa_handler = &HandleSignalWithHandler;
         break;
       case SignalTestInput::SIGNAL:
-        signal(SIGUSR1, &HandleSignalWithHandler);
+        if (signal(SIGUSR1, &HandleSignalWithHandler) == SIG_ERR) {
+          return Status(absl::StatusCode::kInternal,
+                        absl::StrCat("signal failed: ", errno));
+        }
         break;
       case SignalTestInput::SIGACTION:
         act.sa_sigaction = &HandleSignalWithSigAction;
@@ -136,7 +141,10 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
         sigemptyset(&mask);
         sigaddset(&mask, SIGUSR1);
         act.sa_mask = mask;
-        sigaction(SIGUSR2, &act, &oldact);
+        if (sigaction(SIGUSR2, &act, &oldact)) {
+          return Status(absl::StatusCode::kInternal,
+                        absl::StrCat("sigaction failed: ", errno));
+        }
         // Block SIGUSR2 during execution of SIGUSR1 handler.
         act.sa_handler = &HandleSignalWithSigActionMask;
         sigemptyset(&mask);
@@ -151,12 +159,18 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
         return Status(absl::StatusCode::kInvalidArgument, "No valid test type");
     }
     if (test_type != SignalTestInput::SIGNAL) {
-      sigaction(SIGUSR1, &act, &oldact);
+      if (sigaction(SIGUSR1, &act, &oldact)) {
+        return Status(absl::StatusCode::kInternal,
+                      absl::StrCat("sigaction failed: ", errno));
+      }
     }
     // Print to the pipe so that the signal thread will start sending the
     // signal.
     printf("ready to receive signal!");
-    fclose(stdout);
+    if (fclose(stdout)) {
+      return Status(absl::StatusCode::kInternal,
+                    absl::StrCat("fclose failed: ", errno));
+    }
     // Wait till the signal is received. Time out in 10 seconds.
     int count = 0;
     bool all_signals_handled = false;
