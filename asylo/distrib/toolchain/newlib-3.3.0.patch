@@ -4850,7 +4850,7 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/mman.c ./libgloss/enclave/mman.c
 diff -Naur ../newlib-3.3.0/libgloss/enclave/signal.c ./libgloss/enclave/signal.c
 --- ../newlib-3.3.0/libgloss/enclave/signal.c
 +++ ./libgloss/enclave/signal.c
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,41 @@
 +#ifndef _GNU_SOURCE
 +#define _GNU_SOURCE
 +#endif
@@ -4883,6 +4883,7 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/signal.c ./libgloss/enclave/signal.c
 +sighandler_t signal(int signum, sighandler_t handler) {
 +  struct sigaction act;
 +  act.sa_handler = handler;
++  act.sa_flags = 0;
 +  sigemptyset(&act.sa_mask);
 +  struct sigaction oldact;
 +  if (sigaction(signum, &act, &oldact)) {
