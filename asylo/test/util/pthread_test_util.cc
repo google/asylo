@@ -23,9 +23,11 @@
 
 #include <cstdint>
 #include <cstdio>
+#include <memory>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 
@@ -38,6 +40,38 @@ void BusyWork() {
   uint8_t buf[kBufferSize];
   OPENSSL_cleanse(buf, kBufferSize);
 }
+
+Heartbeat::Heartbeat(int periodms):periodms_(periodms), canceled_(false) {}
+
+Status Heartbeat::Create() {
+    int ret = pthread_create(&thread_, nullptr, Heartbeat::run, this);
+    if (ret != 0) {
+      return absl::InternalError(
+          absl::StrCat("Failed to create heartbeat thread: ", ret));
+    }
+    return OkStatus();
+  }
+
+void* Heartbeat::run(void* arg) {
+  Heartbeat* self = reinterpret_cast<Heartbeat*>(arg);
+  while (!self->canceled_) {
+    LOG(INFO) << "heartbeat";
+    usleep(self->periodms_);
+  }
+  return nullptr;
+}
+
+void Heartbeat::Stop() {
+  canceled_ = true;
+  pthread_join(thread_, nullptr);
+}
+
+StatusOr<std::unique_ptr<Heartbeat>> LaunchHeartbeat(int periodms) {
+  auto heartbeat = absl::make_unique<Heartbeat>(periodms);
+  ASYLO_RETURN_IF_ERROR(heartbeat->Create());
+  return StatusOr<std::unique_ptr<Heartbeat>>(std::move(heartbeat));
+}
+
 
 Status LaunchThreads(const int numThreads, void *(*start_routine)(void *),
                      void *arg, std::vector<pthread_t> *threads) {

@@ -24,6 +24,7 @@
 
 #include "absl/strings/string_view.h"
 #include "asylo/util/status.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 
@@ -37,6 +38,27 @@ Status LaunchThreads(const int numThreads, void *(*start_routine)(void *),
 
 // Joins all threads in the |threads| vector.
 Status JoinThreads(const std::vector<pthread_t> &threads);
+
+// Heartbeat encapsulates a stoppable thread that periodically logs a
+// heartbeat message.
+class Heartbeat {
+ public:
+  explicit Heartbeat(int periodms);
+
+  Status Create();
+  void Stop();
+
+  static void* run(void* arg);
+
+ private:
+  pthread_t thread_;
+  int periodms_;
+  bool canceled_;
+};
+
+// Creates a thread that logs a heartbeat message on the given millisecond
+// period.
+StatusOr<std::unique_ptr<Heartbeat>> LaunchHeartbeat(int periodms);
 
 // Check if |value| (called |debug_name|) is in the range from |min_allowed|
 // to |max_allowed|. Returns OkStatus() if so; error status otherwise.

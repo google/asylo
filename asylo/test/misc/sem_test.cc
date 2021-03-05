@@ -291,6 +291,12 @@ TEST_F(ProducerConsumerTest, ProducerConsumer) {
   // and multiple consumers. At the end, the semaphore's value should be 0.
   ASSERT_EQ(sem_init(&sem, /*pshared=*/0, /*value=*/0), 0);
 
+  // Launch a heartbeat thread to help diagnose scheduling weirdness versus
+  // a possible deadlock.
+  auto heartbeat_or = LaunchHeartbeat(/*periodms=*/1000);
+  ASSERT_THAT(heartbeat_or, IsOk());
+  auto heartbeat = std::move(heartbeat_or.ValueOrDie());
+
   std::vector<pthread_t> threads;
   ASSERT_THAT(LaunchThreads(kNumThreads, ProducerTrampoline, this, &threads),
               IsOk());
@@ -304,6 +310,8 @@ TEST_F(ProducerConsumerTest, ProducerConsumer) {
   int count;
   ASSERT_EQ(sem_getvalue(&sem, &count), 0);
   ASSERT_EQ(count, 0);
+
+  heartbeat->Stop();
 }
 
 }  // namespace
