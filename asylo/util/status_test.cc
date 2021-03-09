@@ -33,6 +33,11 @@
 #include "asylo/util/posix_error_space.h"
 #include "include/grpcpp/support/status.h"
 
+// Suppress deprecation warnings on deprecated methods of Status that we test
+// here. Many of those methods are currently used to implement their replacement
+// APIs.
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 namespace asylo {
 namespace {
 

@@ -23,13 +23,23 @@ namespace asylo {
 
 StatusProto StatusToProto(const Status &status) {
   StatusProto status_proto;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   status.SaveTo(&status_proto);
+#pragma GCC diagnostic pop
+
   return status_proto;
 }
 
 Status StatusFromProto(const StatusProto &status_proto) {
   Status status;
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   status.RestoreFrom(status_proto);
+#pragma GCC diagnostic pop
+
   return status;
 }
 

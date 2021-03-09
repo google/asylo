@@ -9,6 +9,7 @@ consumers of the Asylo project).
 # Customization of compiler-generated warning output.
 _WARNING_FLAGS = [
     "-Wall",
+    "-Wdeprecated-declarations",
     "-Wextra",
     "-Wformat-security",
     "-Wno-sign-compare",  # allow use of ints as loop variables

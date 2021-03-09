@@ -34,7 +34,10 @@ struct ConvertStatusImpl;
 template <typename FromStatusT>
 struct ConvertStatusImpl<Status, FromStatusT> {
   static Status Convert(const FromStatusT &from_status) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     return Status(from_status);
+#pragma GCC diagnostic pop
   }
 };
 
@@ -42,8 +45,11 @@ struct ConvertStatusImpl<Status, FromStatusT> {
 template <typename FromStatusT>
 struct ConvertStatusImpl<absl::Status, FromStatusT> {
   static absl::Status Convert(const FromStatusT &from_status) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     // Use operator absl::Status().
     return Status(from_status);
+#pragma GCC diagnostic pop
   }
 };
 
@@ -51,7 +57,10 @@ struct ConvertStatusImpl<absl::Status, FromStatusT> {
 template <typename ToStatusT, typename FromStatusT>
 struct ConvertStatusImpl {
   static ToStatusT Convert(const FromStatusT &from_status) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     return Status(from_status).ToOtherStatus<ToStatusT>();
+#pragma GCC diagnostic pop
   }
 };
 
