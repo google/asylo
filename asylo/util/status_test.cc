@@ -123,11 +123,27 @@ TEST(StatusTest, Equality) {
   error_status_with_payload.SetPayload(kTypeUrl, absl::Cord(kPayload));
 
   EXPECT_TRUE(ok_status == ok_status);
+  EXPECT_TRUE(ok_status == absl::OkStatus());
+  EXPECT_TRUE(absl::OkStatus() == ok_status);
+
   EXPECT_TRUE(error_status == error_status);
   EXPECT_TRUE(error_status_with_payload == error_status_with_payload);
+  EXPECT_TRUE(error_status_with_payload ==
+              absl::Status(error_status_with_payload));
+  EXPECT_TRUE(absl::Status(error_status_with_payload) ==
+              error_status_with_payload);
+
   EXPECT_FALSE(ok_status == error_status);
+  EXPECT_FALSE(ok_status == absl::Status(error_status));
+  EXPECT_FALSE(absl::OkStatus() == error_status);
+
   EXPECT_FALSE(error_status == error_status_with_payload);
+  EXPECT_FALSE(error_status == absl::Status(error_status_with_payload));
+  EXPECT_FALSE(absl::Status(error_status) == error_status_with_payload);
+
   EXPECT_FALSE(error_status_with_payload == ok_status);
+  EXPECT_FALSE(error_status_with_payload == absl::OkStatus());
+  EXPECT_FALSE(absl::Status(error_status_with_payload) == ok_status);
 }
 
 TEST(StatusTest, Inequality) {
@@ -139,14 +155,32 @@ TEST(StatusTest, Inequality) {
   internal_status_with_payload.SetPayload(kTypeUrl, absl::Cord(kPayload));
 
   EXPECT_FALSE(ok_status != ok_status);
+  EXPECT_FALSE(absl::OkStatus() != ok_status);
+  EXPECT_FALSE(ok_status != absl::OkStatus());
+
   EXPECT_FALSE(invalid_arg_status != invalid_arg_status);
+  EXPECT_FALSE(invalid_arg_status != absl::Status(invalid_arg_status));
+  EXPECT_FALSE(absl::Status(invalid_arg_status) != invalid_arg_status);
 
   EXPECT_TRUE(ok_status != invalid_arg_status);
+  EXPECT_TRUE(ok_status != absl::Status(invalid_arg_status));
+  EXPECT_TRUE(absl::OkStatus() != invalid_arg_status);
+
   EXPECT_TRUE(invalid_arg_status != ok_status);
+  EXPECT_TRUE(invalid_arg_status != absl::OkStatus());
+  EXPECT_TRUE(absl::Status(invalid_arg_status) != ok_status);
 
   EXPECT_TRUE(invalid_arg_status != internal_status);
+  EXPECT_TRUE(invalid_arg_status != absl::Status(internal_status));
+  EXPECT_TRUE(absl::Status(invalid_arg_status) != internal_status);
+
   EXPECT_TRUE(internal_status != invalid_arg_status);
+  EXPECT_TRUE(internal_status != absl::Status(invalid_arg_status));
+  EXPECT_TRUE(absl::Status(internal_status) != invalid_arg_status);
+
   EXPECT_TRUE(internal_status != internal_status_with_payload);
+  EXPECT_TRUE(internal_status != absl::Status(internal_status_with_payload));
+  EXPECT_TRUE(absl::Status(internal_status) != internal_status_with_payload);
 }
 
 TEST(StatusTest, ToCanonicalOk) {

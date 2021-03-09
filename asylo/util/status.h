@@ -366,6 +366,14 @@ bool operator!=(const Status &lhs, const Status &rhs);
 
 std::ostream &operator<<(std::ostream &os, const Status &status);
 
+bool operator==(const Status &lhs, const absl::Status &rhs);
+
+bool operator!=(const Status &lhs, const absl::Status &rhs);
+
+bool operator==(const absl::Status &lhs, const Status &rhs);
+
+bool operator!=(const absl::Status &lhs, const Status &rhs);
+
 /// Returns an OK status object.
 ///
 /// \return A Status indicating no error occurred.

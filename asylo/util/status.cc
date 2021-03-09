@@ -245,6 +245,22 @@ bool operator==(const Status &lhs, const Status &rhs) {
 
 bool operator!=(const Status &lhs, const Status &rhs) { return !(lhs == rhs); }
 
+bool operator==(const Status &lhs, const absl::Status &rhs) {
+  return lhs == Status(rhs);
+}
+
+bool operator!=(const Status &lhs, const absl::Status &rhs) {
+  return lhs != Status(rhs);
+}
+
+bool operator==(const absl::Status &lhs, const Status &rhs) {
+  return Status(lhs) == rhs;
+}
+
+bool operator!=(const absl::Status &lhs, const Status &rhs) {
+  return Status(lhs) != rhs;
+}
+
 std::ostream &operator<<(std::ostream &os, const Status &status) {
   return os << status.ToString();
 }
