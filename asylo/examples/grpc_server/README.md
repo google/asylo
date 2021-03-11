@@ -147,17 +147,17 @@ example defines the server enclave in
 class GrpcServerEnclave final : public asylo::TrustedApplication {
  public:
   asylo::Status Initialize(const asylo::EnclaveConfig &enclave_config)
-      LOCKS_EXCLUDED(server_mutex_) override;
+      ABSL_LOCKS_EXCLUDED(server_mutex_) override;
 
   asylo::Status Run(const asylo::EnclaveInput &enclave_input,
                     asylo::EnclaveOutput *enclave_output) override;
 
   asylo::Status Finalize(const asylo::EnclaveFinal &enclave_final)
-      LOCKS_EXCLUDED(server_mutex_) override;
+      ABSL_LOCKS_EXCLUDED(server_mutex_) override;
 
  private:
   absl::Mutex server_mutex_;
-  std::unique_ptr<::grpc::Server> server_ GUARDED_BY(server_mutex_);
+  std::unique_ptr<::grpc::Server> server_ ABSL_GUARDED_BY(server_mutex_);
   std::unique_ptr<TranslatorServerImpl> service_;
   int selected_port_;
 };
@@ -177,7 +177,8 @@ server fails to start, then `Initialize` returns a non-OK `Status`. Otherwise,
 
 ```cpp
 asylo::Status GrpcServerEnclave::Initialize(
-    const asylo::EnclaveConfig &enclave_config) LOCKS_EXCLUDED(server_mutex_) {
+    const asylo::EnclaveConfig &enclave_config)
+        ABSL_LOCKS_EXCLUDED(server_mutex_) {
   if (!enclave_config.HasExtension(server_address)) {
     return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
                          "Expected a server_address extension on config.");
@@ -246,7 +247,8 @@ shutting down:
 
 ```cpp
 asylo::Status GrpcServerEnclave::Finalize(
-    const asylo::EnclaveFinal &enclave_final) LOCKS_EXCLUDED(server_mutex_) {
+    const asylo::EnclaveFinal &enclave_final)
+        ABSL_LOCKS_EXCLUDED(server_mutex_) {
   absl::MutexLock lock(&server_mutex_);
 
   if (server_) {

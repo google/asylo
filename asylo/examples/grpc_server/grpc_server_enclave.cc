@@ -47,20 +47,20 @@ namespace grpc_server {
 class GrpcServerEnclave final : public asylo::TrustedApplication {
  public:
   asylo::Status Initialize(const asylo::EnclaveConfig &enclave_config)
-      LOCKS_EXCLUDED(server_mutex_) override;
+      ABSL_LOCKS_EXCLUDED(server_mutex_) override;
 
   asylo::Status Run(const asylo::EnclaveInput &enclave_input,
                     asylo::EnclaveOutput *enclave_output) override;
 
   asylo::Status Finalize(const asylo::EnclaveFinal &enclave_final)
-      LOCKS_EXCLUDED(server_mutex_) override;
+      ABSL_LOCKS_EXCLUDED(server_mutex_) override;
 
  private:
   // Guards the |server_| member.
   absl::Mutex server_mutex_;
 
   // A gRPC server hosting |service_|.
-  std::unique_ptr<::grpc::Server> server_ GUARDED_BY(server_mutex_);
+  std::unique_ptr<::grpc::Server> server_ ABSL_GUARDED_BY(server_mutex_);
 
   // The translation service.
   std::unique_ptr<TranslatorServerImpl> service_;
@@ -70,7 +70,8 @@ class GrpcServerEnclave final : public asylo::TrustedApplication {
 };
 
 asylo::Status GrpcServerEnclave::Initialize(
-    const asylo::EnclaveConfig &enclave_config) LOCKS_EXCLUDED(server_mutex_) {
+    const asylo::EnclaveConfig &enclave_config)
+    ABSL_LOCKS_EXCLUDED(server_mutex_) {
   // Fail if there is no server_address available.
   if (!enclave_config.HasExtension(server_address)) {
     return absl::InvalidArgumentError(
@@ -123,7 +124,8 @@ asylo::Status GrpcServerEnclave::Run(const asylo::EnclaveInput &enclave_input,
 }
 
 asylo::Status GrpcServerEnclave::Finalize(
-    const asylo::EnclaveFinal &enclave_final) LOCKS_EXCLUDED(server_mutex_) {
+    const asylo::EnclaveFinal &enclave_final)
+    ABSL_LOCKS_EXCLUDED(server_mutex_) {
   // Lock |server_mutex_| so that we can start shutting down the server.
   absl::MutexLock lock(&server_mutex_);
 
