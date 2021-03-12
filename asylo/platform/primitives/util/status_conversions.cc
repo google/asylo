@@ -18,6 +18,7 @@
 
 #include "asylo/platform/primitives/util/status_conversions.h"
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/primitive_status.h"
 
@@ -40,8 +41,8 @@ PrimitiveStatus MakePrimitiveStatus(const Status& status) {
 }
 
 Status MakeStatus(const PrimitiveStatus& primitiveStatus) {
-  return Status{error::GoogleErrorSpace::GetInstance(),
-                primitiveStatus.error_code(), primitiveStatus.error_message()};
+  return Status{static_cast<absl::StatusCode>(primitiveStatus.error_code()),
+                primitiveStatus.error_message()};
 }
 
 }  // namespace primitives

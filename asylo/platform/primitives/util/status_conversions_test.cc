@@ -20,6 +20,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 
 using ::testing::Eq;
@@ -57,13 +58,15 @@ class StatusConversionsTest : public ::testing::Test {
   error::ErrorSpace const *google_error_space_ =
       error::GoogleErrorSpace::GetInstance();
 
-  PrimitiveStatus reference_primitive_status_{error::GoogleError::INTERNAL,
+  PrimitiveStatus reference_primitive_status_{AbslStatusCode::kInternal,
                                               error_message_};
-  Status reference_google_error_status_ =
-      Status(google_error_space_, error::GoogleError::INTERNAL, error_message_);
+  Status reference_google_error_status_ = absl::InternalError(error_message_);
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   Status reference_non_google_error_status_ =
       Status(NonGoogleErrorSpace::GetInstance(), NonGoogleError::NOT_OK,
              error_message_);
+#pragma GCC diagnostic pop
 };
 
 // Validate members in Status set correctly during conversion.

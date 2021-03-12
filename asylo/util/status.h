@@ -55,9 +55,15 @@ class Status {
 
   /// Constructs a Status object containing an error code and message.
   ///
+  /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
+  ///             payloads to communicate additional error information if
+  ///             needed.
   /// \param space The ErrorSpace this code belongs to.
   /// \param code An integer error code.
   /// \param message The associated error message.
+  ABSL_DEPRECATED(
+      "Deprecated as part of Asylo's absl::Status migration. Use payloads to "
+      "communicate additional error information if needed.")
   Status(const error::ErrorSpace *space, int code, absl::string_view message);
 
   /// Constructs a Status object containing an error code and a message. The
