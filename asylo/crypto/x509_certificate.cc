@@ -185,6 +185,7 @@ StatusOr<bssl::UniquePtr<EVP_PKEY>> CreatePublicKey(
 
       return std::move(evp_key);
     }
+    case NID_rsassaPss:
     case NID_sha256WithRSAEncryption: {
       uint8_t const *public_key_data = public_key_der.data();
 
