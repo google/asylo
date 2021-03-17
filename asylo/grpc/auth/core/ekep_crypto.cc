@@ -28,6 +28,7 @@
 #include <cstdint>
 #include <memory>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bssl_util.h"
@@ -75,7 +76,7 @@ Status Hmac(const HandshakeCipher &ciphersuite, ByteContainerView key,
     LOG(ERROR) << "HMAC failed: " << BsslLastErrorString();
     return Status(Abort::INTERNAL_ERROR, "Internal error");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace
@@ -142,7 +143,7 @@ Status DeriveSecrets(const HandshakeCipher &ciphersuite,
   std::copy(output_key.cbegin() + kEkepPrimarySecretSize, output_key.cend(),
             std::back_inserter(*authenticator_secret));
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status DeriveRecordProtocolKey(const HandshakeCipher &ciphersuite,
@@ -190,7 +191,7 @@ Status DeriveRecordProtocolKey(const HandshakeCipher &ciphersuite,
     LOG(ERROR) << "HKDF failed: " << BsslLastErrorString();
     return Status(Abort::INTERNAL_ERROR, "Internal error");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ComputeClientHandshakeAuthenticator(

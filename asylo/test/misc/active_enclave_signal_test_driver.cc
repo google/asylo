@@ -24,6 +24,7 @@
 #include <unistd.h>
 
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/test/misc/signal_test.pb.h"
@@ -127,7 +128,7 @@ class ActiveEnclaveSignalTest : public EnclaveTest {
           static_cast<error::PosixError>(errno),
           absl::StrCat("Failed to join enclave thread: ", strerror(errno)));
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

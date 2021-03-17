@@ -92,7 +92,7 @@ class ByteContainerReader {
       OPENSSL_cleanse(&value, sizeof(value));
     }
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Read |size| bytes directly into the |output| buffer. Returns
@@ -104,7 +104,7 @@ class ByteContainerReader {
 
     memcpy(output, source_.data() + offset_, size);
     offset_ += size;
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
  private:

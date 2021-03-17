@@ -33,7 +33,7 @@ Status GrpcServerLauncher::RegisterService(
   }
   builder_.RegisterService(service.get());
   services_.emplace_back(std::move(service));
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GrpcServerLauncher::AddListeningPort(
@@ -47,7 +47,7 @@ Status GrpcServerLauncher::AddListeningPort(
   }
   builder_.AddListeningPort(address, std::move(creds), selected_port);
   LOG(INFO) << "Added listening port \"" << address << "\" to the server";
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GrpcServerLauncher::Start() {
@@ -63,7 +63,7 @@ Status GrpcServerLauncher::Start() {
                       "Failed to start the server ");
   }
   state_ = State::LAUNCHED;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GrpcServerLauncher::Shutdown() {
@@ -79,7 +79,7 @@ Status GrpcServerLauncher::Shutdown() {
   server_->Shutdown();
   state_ = State::TERMINATED;
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GrpcServerLauncher::Wait() const {
@@ -97,7 +97,7 @@ Status GrpcServerLauncher::Wait() const {
   // The ::grpc::Server object itself is thread-safe, and as a result, it is OK
   // to call the Wait() method on this object without grabbing |mu_|.
   server_->Wait();
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 GrpcServerLauncher::State GrpcServerLauncher::GetState() {

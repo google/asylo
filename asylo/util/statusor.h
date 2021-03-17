@@ -178,7 +178,7 @@ class StatusOr {
   StatusOr(const Status &status)
       : variant_(status), has_value_(false) {
     if (status.ok()) {
-      LOG(FATAL) << "Cannot instantiate StatusOr with Status::OkStatus()";
+      LOG(FATAL) << "Cannot instantiate StatusOr with absl::OkStatus()";
     }
   }
 
@@ -400,7 +400,7 @@ class StatusOr {
   ///
   /// \return The stored non-OK status object, or an OK status if this object
   ///         has a value.
-  Status status() const { return ok() ? Status::OkStatus() : variant_.status_; }
+  Status status() const { return ok() ? OkStatus() : variant_.status_; }
 
   /// Gets the stored `T` value.
   ///

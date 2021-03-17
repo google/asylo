@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/time/clock.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
 #include "asylo/util/status.h"
@@ -62,7 +63,7 @@ class ExitLogHook : public DispatchTable::ExitHook {
   Status PreExit(uint64_t untrusted_selector) override {
     start_ = absl::Now();
     untrusted_selector_ = untrusted_selector;
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status PostExit(Status result) override {

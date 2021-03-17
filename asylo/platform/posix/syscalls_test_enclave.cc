@@ -186,7 +186,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
     regfree(&regex);
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
  private:
@@ -318,7 +318,7 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(absl::StatusCode::kInternal,
                     "Bytes read from file does not match specified size");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status CompareFiles(int fd1, int fd2, int size) {
@@ -343,7 +343,7 @@ class SyscallsEnclave : public EnclaveTestCase {
           absl::StatusCode::kInternal,
           absl::StrCat("Fd:", fd1, " and fd:", fd2, " are different"));
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   //////////////////////////////////////
@@ -444,7 +444,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status ExpectErrno(int expected_errno, int retval) {
@@ -461,7 +461,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                                  saved_errno));
     }
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   //////////////////////////////////////
@@ -494,7 +494,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
     freeifaddrs(addrs);
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunIfNameToIndexTest() {
@@ -512,7 +512,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
     freeifaddrs(addrs);
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   //////////////////////////////////////
@@ -529,7 +529,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   //////////////////////////////////////
@@ -657,7 +657,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunSchedGetAffinityTest(EnclaveOutput *output) {
@@ -675,7 +675,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunSchedGetAffinityFailureTest(EnclaveOutput *output) {
@@ -692,7 +692,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   //////////////////////////////////////
@@ -718,7 +718,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                                  ", error: ", strerror(errno)));
     }
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   //////////////////////////////////////
@@ -746,7 +746,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (munmap(ptr, 10000) != 0) {
       return Status(static_cast<error::PosixError>(errno), "munmap() failed");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   //////////////////////////////////////
@@ -773,7 +773,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                     "The file descriptor number limit from getrlimit is "
                     "different from the value set");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunRlimitLowNoFileTest(const std::string &path) {
@@ -794,7 +794,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                                  " is used while the rlimit is set to: ",
                                  file_descriptor_used));
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunRlimitInvalidNoFileTest(const std::string &path) {
@@ -869,7 +869,7 @@ class SyscallsEnclave : public EnclaveTestCase {
           "setrlimit to increase the hard limit unexpectedly succeeded");
     }
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   //////////////////////////////////////
@@ -960,7 +960,7 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(static_cast<error::PosixError>(errno),
                     "getSockname failed");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
   // EBADF: Returned if you pass an invalid file descriptor.
   Status RunGetSocknameFailureTest_EBADF() {
@@ -1022,7 +1022,7 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(static_cast<error::PosixError>(errno),
                     absl::StrCat("chmod failed: ", strerror(errno)));
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunFChModTest(const std::string &path) {
@@ -1036,7 +1036,7 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(static_cast<error::PosixError>(errno),
                     absl::StrCat("fchmod failed: ", strerror(errno)));
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunFStatTest(const std::string &path, EnclaveOutput *output) {
@@ -1059,7 +1059,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunLStatTest(const std::string &path, EnclaveOutput *output) {
@@ -1073,7 +1073,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunMkdirTest(const std::string &path) {
@@ -1093,7 +1093,7 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(static_cast<error::PosixError>(errno),
                     absl::StrCat("Mkdir:", path, " failed: ", strerror(errno)));
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunStatTest(const std::string &path, EnclaveOutput *output) {
@@ -1107,7 +1107,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunUmaskTest(const std::string &path) {
@@ -1135,7 +1135,7 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(absl::StatusCode::kInternal,
                     "Open creates a file with masked file modes");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   //////////////////////////////////////
@@ -1180,7 +1180,7 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(absl::StatusCode::kInternal, "getitimer failure 2");
     }
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   //////////////////////////////////////
@@ -1227,7 +1227,7 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(absl::StatusCode::kInternal,
                     "Messages from readv do not match the expected message.");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunWritevTest(const std::string &path) {
@@ -1265,7 +1265,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                     absl::StrCat("Message read from fd:", fd, ":", buf,
                                  " is different from the message of writev."));
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   //////////////////////////////////////
@@ -1288,7 +1288,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   //////////////////////////////////////
@@ -1353,7 +1353,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                                  " error"));
     }
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunGetCwdTest(bool provide_buffer, int32_t buffer_size,
@@ -1369,7 +1369,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunGetEgidTest(EnclaveOutput *output) {
@@ -1378,7 +1378,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunGetEuidTest(EnclaveOutput *output) {
@@ -1387,7 +1387,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunGetHostNameTest(EnclaveOutput *output) {
@@ -1404,7 +1404,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunGetGidTest(EnclaveOutput *output) {
@@ -1413,7 +1413,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunGetPidTest(EnclaveOutput *output) {
@@ -1422,7 +1422,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunGetPpidTest(EnclaveOutput *output) {
@@ -1431,7 +1431,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunGetUidTest(EnclaveOutput *output) {
@@ -1440,7 +1440,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunLinkTest(const std::string &path) {
@@ -1477,7 +1477,7 @@ class SyscallsEnclave : public EnclaveTestCase {
           absl::StrCat("The content:", buf, " from linked path:", to_path,
                        " is different from the original path:", from_path));
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunPReadTest(const std::string &path) {
@@ -1509,7 +1509,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                        " does not match expected: ", message2.data()));
     }
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunRmDirTest(const std::string &path) {
@@ -1521,7 +1521,7 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(static_cast<error::PosixError>(errno),
                     absl::StrCat("Rmdir:", path, " failed: ", strerror(errno)));
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunSysconfTest(EnclaveOutput *output, int name) {
@@ -1530,7 +1530,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunTruncateTest(const std::string &path) {
@@ -1595,7 +1595,7 @@ class SyscallsEnclave : public EnclaveTestCase {
           absl::StrCat("Message read from truncated file is: ", buf1,
                        " and does not match expected: ", truncated_message));
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunUnlinkTest(const std::string &path) {
@@ -1614,7 +1614,7 @@ class SyscallsEnclave : public EnclaveTestCase {
           absl::StatusCode::kInternal,
           absl::StrCat("File ", path, " is still available after unlink"));
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status RunUtimesTest(const std::string &path) {
@@ -1664,7 +1664,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                     "Modification time is not set correctly");
     }
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

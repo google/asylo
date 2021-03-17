@@ -176,7 +176,7 @@ Status Communicator::ClientImpl::SendCommunication(
     communicator_->set_host_time_nanos(confirmation.host_time_nanos());
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 void Communicator::ClientImpl::SendDisconnect() {

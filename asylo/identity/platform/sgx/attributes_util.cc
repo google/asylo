@@ -110,7 +110,7 @@ Status SetAttributeBit(AttributeBit bit, Attributes *attributes) {
   } else {
     attributes->set_xfrm(attributes->xfrm() | mask);
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ClearAttributeBit(AttributeBit bit, Attributes *attributes) {
@@ -124,7 +124,7 @@ Status ClearAttributeBit(AttributeBit bit, Attributes *attributes) {
   } else {
     attributes->set_xfrm(attributes->xfrm() & ~mask);
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<bool> IsAttributeBitSet(AttributeBit bit,

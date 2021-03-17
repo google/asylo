@@ -126,7 +126,7 @@ class EnclaveDemo : public TrustedApplication {
         return absl::InvalidArgumentError("Action unspecified");
     }
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Retrieves user message from |input|.

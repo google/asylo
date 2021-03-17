@@ -109,7 +109,7 @@ Status ServerTransmit(SocketServer *socket_server) {
               kClientMsgSuccessStr2, msg_recv.msg_iov[1].iov_len)) {
     return absl::DataLossError("expected client-write string not found");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ClientTransmit(SocketClient *socket_client) {
@@ -163,7 +163,7 @@ Status ClientTransmit(SocketClient *socket_client) {
   if (!(status = socket_client->SendMsg(&msg_send, /*flags=*/0)).ok()) {
     return status;
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace asylo

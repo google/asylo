@@ -104,7 +104,7 @@ class DomainSocketTest : public EnclaveTestCase {
     if (!ClientTransmit(&enc_socket_client).ok()) {
       return absl::InternalError("Client transmit failed");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   SocketServer enc_socket_server_;

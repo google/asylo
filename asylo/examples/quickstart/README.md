@@ -330,7 +330,7 @@ class EnclaveDemo : public TrustedApplication {
     std::string result;
     ASYLO_ASSIGN_OR_RETURN(result, EncryptMessage(user_message));
     std::cout << "Encrypted message:" << std::endl << result << std::endl;
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   const std::string GetEnclaveUserMessage(const EnclaveInput &input) {

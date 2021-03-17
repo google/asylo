@@ -17,10 +17,12 @@
  */
 
 #include <sys/select.h>
+
 #include <algorithm>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/test/util/status_matchers.h"
@@ -45,7 +47,7 @@ class SelectTest : public ::testing::Test {
       }
       bytes_left -= bytes_written;
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   void RunSelectTest(bool is_read_test) {

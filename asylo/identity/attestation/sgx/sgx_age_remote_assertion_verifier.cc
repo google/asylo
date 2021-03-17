@@ -119,7 +119,7 @@ Status SgxAgeRemoteAssertionVerifier::Initialize(const std::string &config) {
 
   cleanup_members_view.release();
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 bool SgxAgeRemoteAssertionVerifier::IsInitialized() const {
@@ -143,7 +143,7 @@ Status SgxAgeRemoteAssertionVerifier::CreateAssertionRequest(
   }
 
   *request = members_view->assertion_request;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<bool> SgxAgeRemoteAssertionVerifier::CanVerify(
@@ -227,7 +227,7 @@ Status SgxAgeRemoteAssertionVerifier::Verify(
   ASYLO_ASSIGN_OR_RETURN(*peer_identity,
                          SerializeSgxIdentity(sgx_peer_identity));
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Static registration of the SgxAgeRemoteAssertionVerifier library.

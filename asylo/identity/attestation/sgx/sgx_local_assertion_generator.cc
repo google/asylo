@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
@@ -60,7 +61,7 @@ Status SgxLocalAssertionGenerator::Initialize(const std::string &config) {
 
   members_view->initialized = true;
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 bool SgxLocalAssertionGenerator::IsInitialized() const {
@@ -93,7 +94,7 @@ Status SgxLocalAssertionGenerator::CreateAssertionOffer(
         "Failed to serialize LocalAssertionOfferAdditionalInfo");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<bool> SgxLocalAssertionGenerator::CanGenerate(
@@ -185,7 +186,7 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
   assertion->mutable_description()->set_identity_type(IdentityType());
   assertion->mutable_description()->set_authority_type(AuthorityType());
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<sgx::LocalAssertionRequestAdditionalInfo>

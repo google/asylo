@@ -136,7 +136,7 @@ Status FmspcIsValidAndMatchesLayout(const Fmspc &fmspc) {
         absl::StrCat("Invalid FMSPC: bad SgxCaType: ",
                      ProtoEnumValueName(static_cast<SgxCaType>(layout->ca))));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Returns an error if |ppid| is not valid according to ValidatePpid() or does
@@ -174,7 +174,7 @@ Status IsValidFmspcTcbInfoPair(const Fmspc &fmspc, const TcbInfo &tcb_info) {
         absl::StrFormat("TCB info is for wrong PCE ID: expected %d, found %d",
                         layout->pce_id, tcb_info.impl().pce_id().value()));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Fills |buffer| with random bytes.
@@ -344,7 +344,7 @@ Status FakeSgxPcsClient::UpdateFmspc(const Fmspc &fmspc, TcbInfo tcb_info) {
         "Unknown FMSPC: 0x", absl::BytesToHexString(fmspc.value())));
   }
   it->second = std::move(tcb_info);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<GetPckCertificateResult> FakeSgxPcsClient::GetPckCertificate(

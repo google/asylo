@@ -44,7 +44,7 @@ class PipeTest : public EnclaveTestCase {
       return absl::InternalError("Read bad input from stdin");
     }
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

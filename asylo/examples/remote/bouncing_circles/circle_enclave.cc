@@ -127,7 +127,7 @@ class CirclesEnclave : public TrustedApplication {
     output->set_y(managed_circle_->y());
     output->set_radius(managed_circle_->radius());
     output->set_color(managed_circle_->color());
-    return asylo::Status::OkStatus();
+    return absl::OkStatus();
   }
 
   std::unique_ptr<CircleStatus> managed_circle_;

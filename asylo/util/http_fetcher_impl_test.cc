@@ -106,7 +106,7 @@ Status FakeCurl::Perform() {
     (*header_fn_)(header.data(), header.size(), 1, header_data_);
   }
   (*write_fn_)(body_.data(), body_.size(), 1, write_data_);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 void FakeCurl::Reset() {
@@ -146,7 +146,7 @@ Status FakeCurl::SetOpt(CURLoption option, void *value) {
     default:
       return absl::InternalError(absl::StrCat("Unexpected option ", option));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 TEST(ParseHttpHeaderTest, StatusLine) {

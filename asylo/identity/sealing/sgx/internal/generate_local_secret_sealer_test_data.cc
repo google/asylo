@@ -113,7 +113,7 @@ Status ReadTestData(const std::string &input_path,
   if (!google::protobuf::TextFormat::Parse(&stream, test_data)) {
     return absl::InternalError(absl::StrCat("Could not parse ", input_path));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Uses |sealer| to generate new test-data record for a random enclave identity
@@ -169,7 +169,7 @@ Status AddToTestData(uint64_t change_id, size_t plaintext_word_count,
       SgxLocalSecretSealer::CreateMrsignerSecretSealer(), change_id,
       plaintext_word_count, aad_word_count, test_data->add_records()));
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Writes |test_data| to the file pointed to by |output_path| in text format.
@@ -196,7 +196,7 @@ Status WriteTestData(const LocalSecretSealerTestData &test_data,
     return absl::InternalError(
         absl::StrCat("Error while writing to ", output_path));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace

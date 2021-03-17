@@ -69,6 +69,7 @@ cc_test(
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc++_codegen_base",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",

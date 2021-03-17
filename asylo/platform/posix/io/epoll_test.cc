@@ -48,7 +48,7 @@ class EpollTest : public ::testing::Test {
       }
       num_bytes_left -= num_bytes_written;
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status ReadData(int fd, char *buf, size_t bytes_to_read) {
@@ -59,7 +59,7 @@ class EpollTest : public ::testing::Test {
       }
       bytes_to_read -= num_bytes_read;
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   void WriteToPipes(const std::vector<int> &write_fds, const char *str) {

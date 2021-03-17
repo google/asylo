@@ -23,6 +23,7 @@
 #include <thread>
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/status.h"
@@ -59,7 +60,7 @@ class ExhaustTcsEnclave : public TrustedApplication {
     for (auto &thread : threads) {
       thread->join();
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

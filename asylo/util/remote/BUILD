@@ -102,6 +102,7 @@ cc_library(
         "//asylo/util:logging",
         "//asylo/util:status",
         "//asylo/util:thread",
+        "@com_google_absl//absl/status",
     ],
 )
 

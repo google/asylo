@@ -37,6 +37,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//asylo/util:error_codes",
+        "@com_google_absl//absl/status",
     ],
 )
 

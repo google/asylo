@@ -160,7 +160,7 @@ Status EnclaveStorageSecureTest::OpenWriteClose(off_t offset) {
         "Secure close the same fd a second time succeeded.");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status EnclaveStorageSecureTest::OpenReadVerifyClose(off_t offset,
@@ -209,7 +209,7 @@ Status EnclaveStorageSecureTest::OpenReadVerifyClose(off_t offset,
         "Secure close the same fd a second time succeeded.");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 //

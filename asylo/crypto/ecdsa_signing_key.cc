@@ -67,7 +67,7 @@ Status CheckKeyProtoValues(const AsymmetricSigningKeyProto &key_proto,
                         ProtoEnumValueName(key_proto.signature_scheme()),
                         ProtoEnumValueName(signature_scheme)));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<bssl::UniquePtr<EC_KEY>> GetPublicEcKeyFromDer(
@@ -172,7 +172,7 @@ Status VerifyEcdsa(ByteContainerView digest, ByteContainerView signature,
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status VerifyEcdsaWithRS(ByteContainerView r, ByteContainerView s,
@@ -192,7 +192,7 @@ Status VerifyEcdsaWithRS(ByteContainerView r, ByteContainerView s,
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<bssl::UniquePtr<EC_KEY>> CreatePrivateEcKey(int nid) {
@@ -305,7 +305,7 @@ Status EcdsaSign(std::vector<uint8_t> *signature, ByteContainerView digest,
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   signature->resize(signature_size);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status EcdsaSignDigestAndSetRS(SignatureScheme sig_scheme,
@@ -342,7 +342,7 @@ Status EcdsaSignDigestAndSetRS(SignatureScheme sig_scheme,
   signature->set_signature_scheme(sig_scheme);
   *signature->mutable_ecdsa_signature() = std::move(ecdsa_signature);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<std::pair<bssl::UniquePtr<BIGNUM>, bssl::UniquePtr<BIGNUM>>>

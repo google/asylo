@@ -86,7 +86,7 @@ Status CheckDescription(const AssertionDescription &description) {
     return absl::InvalidArgumentError("Assertion description does not match");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<CertificateChain> GetPckCertificateChainFromCertData(
@@ -118,7 +118,7 @@ Status VerifyQuoteHeader(const sgx::IntelQeQuote &quote) {
             intel::sgx::qvl::constants::INTEL_QE_VENDOR_ID)));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status VerifyQuoteBodySignature(
@@ -168,7 +168,7 @@ Status VerifyQeReportDataMatchesQuoteSigningKey(
         "key and authenticated data");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status VerifyPckSignatureFromPckCertChain(
@@ -240,7 +240,7 @@ Status VerifyPckCertificateChain(
                      root_certificate.SubjectName().value_or("Unknown CA")));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ParseAndAppendPeerMachineConfigurationFromPckCertChain(
@@ -257,7 +257,7 @@ Status ParseAndAppendPeerMachineConfigurationFromPckCertChain(
       *identity->mutable_machine_configuration(),
       sgx::ExtractMachineConfigurationFromPckCert(pck_cert.get()));
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ParseEnclaveIdentityFromQuote(const sgx::ReportBody &report_body,
@@ -271,7 +271,7 @@ Status ParseEnclaveIdentityFromQuote(const sgx::ReportBody &report_body,
           ParseAndAppendPeerMachineConfigurationFromPckCertChain(cert_data,
                                                                  &identity));
       ASYLO_ASSIGN_OR_RETURN(*enclave_identity, SerializeSgxIdentity(identity));
-      return Status::OkStatus();
+      return absl::OkStatus();
     }
   }
 
@@ -301,7 +301,7 @@ Status VerifyQeIdentityMatchesExpectation(
         absl::StrCat("QE identity did not match expectation: ", explanation));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace
@@ -334,7 +334,7 @@ Status SgxIntelEcdsaQeRemoteAssertionVerifier::Initialize(
   // do not initialize the verifier at all, as the caller did not specify enough
   // information for the verifier to determine trust in remote assertions.
   if (!config.has_verifier_info()) {
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   std::vector<std::unique_ptr<CertificateInterface>> root_certificates;
@@ -348,7 +348,7 @@ Status SgxIntelEcdsaQeRemoteAssertionVerifier::Initialize(
   members_view->root_certificates = std::move(root_certificates);
   members_view->is_initialized = true;
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 bool SgxIntelEcdsaQeRemoteAssertionVerifier::IsInitialized() const {
@@ -369,7 +369,7 @@ Status SgxIntelEcdsaQeRemoteAssertionVerifier::CreateAssertionRequest(
   ASYLO_RETURN_IF_ERROR(CheckInitialization(__func__));
 
   SetSgxIntelEcdsaQeRemoteAssertionDescription(request->mutable_description());
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<bool> SgxIntelEcdsaQeRemoteAssertionVerifier::CanVerify(
@@ -403,7 +403,7 @@ Status SgxIntelEcdsaQeRemoteAssertionVerifier::Verify(
   ASYLO_RETURN_IF_ERROR(ParseEnclaveIdentityFromQuote(
       quote.body, quote.cert_data, peer_identity));
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SgxIntelEcdsaQeRemoteAssertionVerifier::CheckInitialization(

@@ -64,7 +64,7 @@ Status SgxLocalAssertionVerifier::Initialize(const std::string &config) {
   absl::MutexLock lock(&initialized_mu_);
   initialized_ = true;
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 bool SgxLocalAssertionVerifier::IsInitialized() const {
@@ -110,7 +110,7 @@ Status SgxLocalAssertionVerifier::CreateAssertionRequest(
         "Failed to serialize LocalAssertionRequestAdditionalInfo");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<bool> SgxLocalAssertionVerifier::CanVerify(
@@ -185,7 +185,7 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
       sgx::ParseSgxIdentityFromHardwareReport(report.body);
   ASYLO_RETURN_IF_ERROR(sgx::SerializeSgxIdentity(sgx_identity, peer_identity));
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Static registration of the LocalAssertionVerifier library.

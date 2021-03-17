@@ -40,7 +40,7 @@ Status ValidateConfigurationId(const ConfigurationId &id) {
         "ConfigurationId does not have a \"value\" field");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ValidatePpid(const Ppid &ppid) {
@@ -54,7 +54,7 @@ Status ValidatePpid(const Ppid &ppid) {
         kPpidSize, " bytes)"));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ValidateCpuSvn(const CpuSvn &cpu_svn) {
@@ -68,7 +68,7 @@ Status ValidateCpuSvn(const CpuSvn &cpu_svn) {
         kCpusvnSize, " bytes)"));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ValidatePceSvn(const PceSvn &pce_svn) {
@@ -82,7 +82,7 @@ Status ValidatePceSvn(const PceSvn &pce_svn) {
         kPceSvnMaxValue, ")"));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ValidatePceId(const PceId &pce_id) {
@@ -96,7 +96,7 @@ Status ValidatePceId(const PceId &pce_id) {
                      kPceIdMaxValue, ")"));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ValidateFmspc(const Fmspc &fmspc) {
@@ -110,7 +110,7 @@ Status ValidateFmspc(const Fmspc &fmspc) {
                      kFmspcSize, " bytes)"));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ValidateReportProto(const ReportProto &report_proto) {

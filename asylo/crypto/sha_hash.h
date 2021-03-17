@@ -91,7 +91,7 @@ Status ShaHash<HashOptions>::CumulativeHash(
       digest_len != DigestSize()) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace asylo

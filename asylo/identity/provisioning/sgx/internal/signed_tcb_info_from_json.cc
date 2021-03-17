@@ -88,7 +88,7 @@ Status ParseSignedTcbInfoFromJson(const std::string &signed_tcb_info_json,
   // over the "tcbInfo" field without whitespaces.
   RE2::GlobalReplace(tcb_info_json, R"regexp(\s)regexp", "");
   *signature = *signature_str;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace

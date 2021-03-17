@@ -30,6 +30,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/platform/common/memory.h"
@@ -106,7 +107,7 @@ Status WriteRead(const char *path) {
   if (close(fd) != 0) {
     return GenerateErrorStatusFromErrno("Failed to close file", path);
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 TEST(ReadWriteMultiThreadTest, MultiThreadTest) {

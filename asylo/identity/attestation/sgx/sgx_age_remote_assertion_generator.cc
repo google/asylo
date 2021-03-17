@@ -111,7 +111,7 @@ Status SgxAgeRemoteAssertionGenerator::Initialize(const std::string &config) {
         std::move(cert_interface));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 bool SgxAgeRemoteAssertionGenerator::IsInitialized() const {
@@ -147,7 +147,7 @@ Status SgxAgeRemoteAssertionGenerator::CreateAssertionOffer(
         "Failed to serialize RemoteAssertionOfferAdditionalInfo");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<bool> SgxAgeRemoteAssertionGenerator::CanGenerate(
@@ -232,7 +232,7 @@ Status SgxAgeRemoteAssertionGenerator::Generate(const std::string &user_data,
   assertion->mutable_description()->set_identity_type(IdentityType());
   assertion->mutable_description()->set_authority_type(AuthorityType());
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Static registration of the SgxAgeRemoteAssertionGenerator library.

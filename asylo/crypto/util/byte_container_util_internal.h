@@ -67,7 +67,7 @@ Status AppendSerializedByteContainers(
     std::copy(view.cbegin(), view.cend(), std::back_inserter(*serialized));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // The following overloads of CreateByteContainerViewVector() package their

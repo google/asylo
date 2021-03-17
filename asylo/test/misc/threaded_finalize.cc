@@ -60,7 +60,7 @@ class ThreadedFinalize : public TrustedApplication {
       return absl::InternalError("Unable to pthread_detach");
     }
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

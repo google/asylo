@@ -95,6 +95,7 @@ dlopen_enclave_test(
         "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -149,6 +150,7 @@ enclave_test(
         "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],
 )

@@ -102,7 +102,7 @@ Status SgxLocalSecretSealer::SetDefaultHeader(
                          SerializeSgxIdentity(GetSelfSgxIdentity()));
   ASYLO_ASSIGN_OR_RETURN(*header->mutable_client_acl()->mutable_expectation(),
                          SerializeSgxIdentityExpectation(default_client_acl_));
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<size_t> SgxLocalSecretSealer::MaxMessageSize(

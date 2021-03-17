@@ -60,7 +60,7 @@ RemoteEnclaveProxyClient::~RemoteEnclaveProxyClient() {
 
 Status RemoteEnclaveProxyClient::Destroy() {
   if (IsClosed()) {
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
   MessageReader disconnect_out;
   const auto status =
@@ -69,7 +69,7 @@ Status RemoteEnclaveProxyClient::Destroy() {
       << "EnclaveCall(kSelectorRemoteDisconnect) failed with status=" << status;
   communicator_->Disconnect();
   config_->RunFinalize();
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status RemoteEnclaveProxyClient::EnclaveCallInternal(uint64_t selector,
@@ -197,7 +197,7 @@ Status RemoteEnclaveProxyClient::Connect(const EnclaveLoadConfig &load_config) {
       EnclaveCall(kSelectorRemoteConnect, &load_in, &load_out));
 
   // Ready to forward EnclaveCalls to remote server and receive ExitCalls back.
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status RemoteEnclaveProxyClient::StartServer() {
@@ -226,7 +226,7 @@ Status RemoteEnclaveProxyClient::RegisterExitHandlers() {
   if (loader_case_ == RemoteLoadConfig::LoaderCase::kSgxLoadConfig) {
     ASYLO_RETURN_IF_ERROR(RegisterSgxExitHandlers(exit_call_provider()));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace primitives

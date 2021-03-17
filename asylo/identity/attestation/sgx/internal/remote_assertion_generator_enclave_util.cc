@@ -293,7 +293,7 @@ Status CheckCertificateChainsForAttestationPublicKey(
     ASYLO_RETURN_IF_ERROR(VerifyCertificateChain(certificate_chain_interface,
                                                  verification_config));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace sgx

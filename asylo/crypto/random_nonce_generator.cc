@@ -54,7 +54,7 @@ Status RandomNonceGenerator::NextNonce(absl::Span<uint8_t> nonce) {
     return Status(absl::StatusCode::kInternal,
                   absl::StrCat("RAND_bytes failed: ", BsslLastErrorString()));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 RandomNonceGenerator::RandomNonceGenerator(size_t size) : nonce_size_(size) {}

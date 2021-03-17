@@ -70,14 +70,14 @@ Status SetMiscselectBit(MiscselectBit bit, uint32_t *miscselect) {
   ASYLO_ASSIGN_OR_RETURN(mask, GetMiscselectBitMask(bit_position));
 
   *miscselect |= mask;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SetMiscselectBit(MiscselectBit bit, Miscselect *miscselect) {
   uint32_t miscselect_value = miscselect->value();
   ASYLO_RETURN_IF_ERROR(SetMiscselectBit(bit, &miscselect_value));
   miscselect->set_value(miscselect_value);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ClearMiscselectBit(MiscselectBit bit, uint32_t *miscselect) {
@@ -87,14 +87,14 @@ Status ClearMiscselectBit(MiscselectBit bit, uint32_t *miscselect) {
   ASYLO_ASSIGN_OR_RETURN(mask, GetMiscselectBitMask(bit_position));
 
   *miscselect &= ~mask;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ClearMiscselectBit(MiscselectBit bit, Miscselect *miscselect) {
   uint32_t miscselect_value = miscselect->value();
   ASYLO_RETURN_IF_ERROR(ClearMiscselectBit(bit, &miscselect_value));
   miscselect->set_value(miscselect_value);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<bool> IsMiscselectBitSet(MiscselectBit bit, uint32_t miscselect) {

@@ -25,6 +25,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -89,7 +90,7 @@ class ProcessMainWrapper {
     // on a separate thread (to exclude any Mutex impact).
     Thread wait_thread([&wrapper] { wrapper->wrapped_instance_->Wait(); });
     wait_thread.Join();
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
  private:

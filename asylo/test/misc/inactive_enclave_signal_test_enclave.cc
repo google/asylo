@@ -71,7 +71,7 @@ class InactiveEnclaveSignalTest : public EnclaveTestCase {
       sigaction(SIGUSR1, &act, &oldact);
     }
     output->SetExtension(signal_received, signal_handled);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

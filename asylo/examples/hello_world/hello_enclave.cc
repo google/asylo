@@ -46,7 +46,7 @@ class HelloApplication : public asylo::TrustedApplication {
               absl::StrCat("Hello ", visitor, "! You are visitor #",
                            ++visitor_count_, " to this enclave."));
     }
-    return asylo::Status::OkStatus();
+    return absl::OkStatus();
   }
 
  private:

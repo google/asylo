@@ -67,7 +67,7 @@ class Inet6SocketTest : public EnclaveTestCase {
     if (output) {
       output->set_server_port(enc_socket_server_.GetPort());
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Runs INET6 socket server inside enclave.
@@ -78,7 +78,7 @@ class Inet6SocketTest : public EnclaveTestCase {
     if (!ServerTransmit(&enc_socket_server_).ok()) {
       return absl::InternalError("Server transmit failed");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Runs INET6 socket client inside enclave.
@@ -115,7 +115,7 @@ class Inet6SocketTest : public EnclaveTestCase {
     if (!ClientTransmit(&enc_socket_client).ok()) {
       return absl::InternalError("Client transmit failed");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   SocketServer enc_socket_server_;

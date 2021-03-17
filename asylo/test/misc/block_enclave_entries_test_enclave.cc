@@ -51,7 +51,7 @@ class BlockEnclaveEntriesTest : public EnclaveTestCase {
       check_thread_entered = true;
       // Check thread only checks whether it can enter the enclave. Return
       // success since it reaches here.
-      return Status::OkStatus();
+      return absl::OkStatus();
     } else if (test_input.thread_type() ==
                BlockEnclaveEntriesTestInput::BLOCK) {
       if (!test_input.has_socket()) {
@@ -97,7 +97,7 @@ class BlockEnclaveEntriesTest : public EnclaveTestCase {
       return absl::InvalidArgumentError("Unknown thread type");
     }
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

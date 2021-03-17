@@ -154,7 +154,7 @@ bool IsValidTimestampProto(int64_t seconds, int32_t nanos) {
 
 Status ToAbslDuration(absl::Duration source, absl::Duration *dest) {
   *dest = source;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ToAbslDuration(const google::protobuf::Duration &source,
@@ -171,7 +171,7 @@ Status ToAbslDuration(const google::protobuf::Duration &source,
                                 MessageToString(source));
   }
   *dest = duration;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ToAbslDuration(gpr_timespec source, absl::Duration *dest) {
@@ -186,12 +186,12 @@ Status ToAbslDuration(gpr_timespec source, absl::Duration *dest) {
   } else {
     *dest = absl::Seconds(source.tv_sec) + absl::Nanoseconds(source.tv_nsec);
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FromAbslDuration(absl::Duration source, absl::Duration *dest) {
   *dest = source;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FromAbslDuration(absl::Duration source,
@@ -205,17 +205,17 @@ Status FromAbslDuration(absl::Duration source,
   }
   dest->set_seconds(maybe_seconds_nanos.value().seconds);
   dest->set_nanos(maybe_seconds_nanos.value().nanos);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FromAbslDuration(absl::Duration source, gpr_timespec *dest) {
   if (source == -absl::InfiniteDuration()) {
     *dest = gpr_inf_past(GPR_TIMESPAN);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
   if (source == absl::InfiniteDuration()) {
     *dest = gpr_inf_future(GPR_TIMESPAN);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
   auto maybe_seconds_nanos = ToSecondsNanos(source);
   if (!maybe_seconds_nanos.has_value()) {
@@ -231,12 +231,12 @@ Status FromAbslDuration(absl::Duration source, gpr_timespec *dest) {
                                 absl::FormatDuration(source));
   }
   *dest = time;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ToAbslTime(absl::Time source, absl::Time *dest) {
   *dest = source;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ToAbslTime(const google::protobuf::Timestamp &source, absl::Time *dest) {
@@ -251,7 +251,7 @@ Status ToAbslTime(const google::protobuf::Timestamp &source, absl::Time *dest) {
                                 MessageToString(source));
   }
   *dest = time;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ToAbslTime(gpr_timespec source, absl::Time *dest) {
@@ -268,12 +268,12 @@ Status ToAbslTime(gpr_timespec source, absl::Time *dest) {
     *dest = absl::UnixEpoch() + absl::Seconds(source.tv_sec) +
             absl::Nanoseconds(source.tv_nsec);
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FromAbslTime(absl::Time source, absl::Time *dest) {
   *dest = source;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FromAbslTime(absl::Time source, google::protobuf::Timestamp *dest) {
@@ -294,17 +294,17 @@ Status FromAbslTime(absl::Time source, google::protobuf::Timestamp *dest) {
   }
   dest->set_seconds(seconds_nanos.seconds);
   dest->set_nanos(seconds_nanos.nanos);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FromAbslTime(absl::Time source, gpr_timespec *dest) {
   if (source == absl::InfinitePast()) {
     *dest = gpr_inf_past(GPR_CLOCK_REALTIME);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
   if (source == absl::InfiniteFuture()) {
     *dest = gpr_inf_future(GPR_CLOCK_REALTIME);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
   auto maybe_seconds_nanos = ToSecondsNanos(source - absl::UnixEpoch());
   if (!maybe_seconds_nanos.has_value()) {
@@ -321,7 +321,7 @@ Status FromAbslTime(absl::Time source, gpr_timespec *dest) {
                                 absl::FormatTime(source));
   }
   *dest = time;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace internal

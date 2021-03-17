@@ -24,6 +24,7 @@
 
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"

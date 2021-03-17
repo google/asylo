@@ -46,7 +46,7 @@ Status VerifyAndSetState(const EnclaveState &expected_state,
                        " expected state: ", expected_state));
   }
   global_enclave_state = new_state;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 EnclaveState GetState() ABSL_LOCKS_EXCLUDED(global_enclave_state_lock) {

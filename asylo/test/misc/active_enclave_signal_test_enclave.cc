@@ -194,9 +194,8 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
     // For signal tests other then SIGMASK, the signal should have been handled
     // by now.
     if (test_type != SignalTestInput::SIGMASK) {
-      return all_signals_handled
-                 ? Status::OkStatus()
-                 : Status(absl::StatusCode::kInternal, "Signal not received");
+      return all_signals_handled ? absl::OkStatus()
+                                 : absl::InternalError("Signal not received");
     }
     // For signal mask test, signal should not have been handled since it's
     // blocked.
@@ -209,9 +208,9 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
                     "Failed to unblock signal");
     }
     // The queued signal should have been handled by now.
-    return signal_handled ? Status::OkStatus()
-                          : Status(absl::StatusCode::kInternal,
-                                   "Signal not received after unblocked");
+    return signal_handled
+               ? absl::OkStatus()
+               : absl::InternalError("Signal not received after unblocked");
   }
 
   // Keeps unblocking the signal to test whether the signal mask in the other
@@ -227,7 +226,7 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
       }
       sleep(1);
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

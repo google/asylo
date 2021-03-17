@@ -57,7 +57,7 @@ class In6MacroTestEnclave : public TrustedApplication {
     results->set_multicast_org_local(IN6_IS_ADDR_MC_ORGLOCAL(&address));
     results->set_multicast_global(IN6_IS_ADDR_MC_GLOBAL(&address));
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

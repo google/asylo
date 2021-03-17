@@ -33,6 +33,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"

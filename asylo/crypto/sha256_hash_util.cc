@@ -49,7 +49,7 @@ Status ValidateSha256HashProto(const Sha256HashProto &hash_proto) {
                         "expected hash length for SHA-256 (%d)",
                         hash_proto.hash().size(), kSha256DigestLength));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 bool operator==(const Sha256HashProto &lhs, const Sha256HashProto &rhs) {

@@ -102,7 +102,7 @@ Status FakeCertificate::Verify(const CertificateInterface &issuer_certificate,
                                   issuer_subject_key, issuer_key_));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<std::string> FakeCertificate::SubjectKeyDer() const {

@@ -48,7 +48,7 @@ class ApplicationWrapperEnclave final : public TrustedApplication {
     args_unmarshaler_ =
         Argv(config.GetExtension(command_line_args).arguments());
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Run() executes the application with the command-line arguments from the
@@ -70,7 +70,7 @@ class ApplicationWrapperEnclave final : public TrustedApplication {
     // Run the application and store its return value in the EnclaveOutput.
     output->SetExtension(main_return_value, main(argc, argv));
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Finalize() logs a warning if the application has not run.
@@ -83,7 +83,7 @@ class ApplicationWrapperEnclave final : public TrustedApplication {
         << absl::StrCat(debug_application_name,
                         " enclave finalizing before application has run");
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
  private:

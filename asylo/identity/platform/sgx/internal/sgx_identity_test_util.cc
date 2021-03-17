@@ -244,7 +244,7 @@ Status SetRandomValidGenericIdentity(EnclaveIdentity *generic_identity,
     return absl::InvalidArgumentError("Failed to serialize SgxIdentity");
   }
   *corresponding_sgx_identity = sgx_identity;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SetRandomInvalidGenericIdentity(EnclaveIdentity *generic_identity) {
@@ -285,7 +285,7 @@ Status SetRandomInvalidGenericIdentity(EnclaveIdentity *generic_identity) {
     generic_identity->set_identity(identity_string);
     is_valid &= (identity_string == valid_identity_string);
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SetRandomValidGenericMatchSpec(
@@ -296,7 +296,7 @@ Status SetRandomValidGenericMatchSpec(
         "Failed to serialize CodeIdentityMatchSpec");
   }
   *corresponding_sgx_spec = spec;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SetRandomInvalidGenericMatchSpec(std::string *generic_spec) {
@@ -311,7 +311,7 @@ Status SetRandomInvalidGenericMatchSpec(std::string *generic_spec) {
     // (0.25)^100, or 2^-200.
     if (!IsValidMatchSpec(spec)) {
       spec.SerializeToString(generic_spec);
-      return Status::OkStatus();
+      return absl::OkStatus();
     }
   }
   return absl::InternalError("Exceeded max attempts");
@@ -331,7 +331,7 @@ Status SetRandomValidGenericExpectation(
     ASYLO_RETURN_IF_ERROR(
         SetExpectation(sgx_spec, sgx_identity, corresponding_sgx_expectation));
     if (IsValidExpectation(*corresponding_sgx_expectation)) {
-      return Status::OkStatus();
+      return absl::OkStatus();
     }
   }
   return absl::InternalError("Exceeded max attempts");
@@ -364,7 +364,7 @@ Status SetRandomInvalidGenericExpectation(
     *expectation.mutable_match_spec() = sgx_spec;
 
     if (!IsValidExpectation(expectation)) {
-      return Status::OkStatus();
+      return absl::OkStatus();
     }
   }
   return absl::InternalError("Exceeded max attempts");

@@ -70,7 +70,7 @@ Status SystemCallHandler(const std::shared_ptr<primitives::Client> &client,
   output->PushByCopy(response);
   free(response.data());
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status IsAttyHandler(const std::shared_ptr<primitives::Client> &client,
@@ -84,7 +84,7 @@ Status IsAttyHandler(const std::shared_ptr<primitives::Client> &client,
                // regardless of the return value of the host call. The caller is
                // responsible for evaluating the return value and setting the
                // errno appropriately in its local environment.
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status USleepHandler(const std::shared_ptr<primitives::Client> &client,
@@ -94,7 +94,7 @@ Status USleepHandler(const std::shared_ptr<primitives::Client> &client,
   auto usec = input->next<useconds_t>();
   output->Push<int>(usleep(usec));  // Push return value first.
   output->Push<int>(errno);         // Push errno next.
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SysconfHandler(const std::shared_ptr<primitives::Client> &client,
@@ -104,7 +104,7 @@ Status SysconfHandler(const std::shared_ptr<primitives::Client> &client,
   int kLinux_name = input->next<int>();
   output->Push<int64_t>(sysconf(kLinux_name));  // Push return value first.
   output->Push<int>(errno);                     // Push errno next.
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ReallocHandler(const std::shared_ptr<primitives::Client> &client,
@@ -116,7 +116,7 @@ Status ReallocHandler(const std::shared_ptr<primitives::Client> &client,
   void *out_ptr = realloc(in_ptr, size);
   output->Push(reinterpret_cast<uint64_t>(out_ptr));
   output->Push<int>(errno);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SleepHandler(const std::shared_ptr<primitives::Client> &client,
@@ -126,7 +126,7 @@ Status SleepHandler(const std::shared_ptr<primitives::Client> &client,
   auto seconds = input->next<uint32_t>();
   output->Push<uint32_t>(sleep(seconds));  // Push return value first.
   output->Push<int>(errno);                // Push errno next.
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SendMsgHandler(const std::shared_ptr<primitives::Client> &client,
@@ -158,7 +158,7 @@ Status SendMsgHandler(const std::shared_ptr<primitives::Client> &client,
   int flags = input->next<int>();
   output->Push<int64_t>(sendmsg(sockfd, &msg, flags));  // Push return value.
   output->Push<int>(errno);                             // Push errno.
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status RecvMsgHandler(const std::shared_ptr<primitives::Client> &client,
@@ -214,7 +214,7 @@ Status RecvMsgHandler(const std::shared_ptr<primitives::Client> &client,
   output->PushByCopy(
       Extent{msg.msg_control, msg.msg_controllen});  // Push control msg.
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GetSocknameHandler(const std::shared_ptr<primitives::Client> &client,
@@ -236,7 +236,7 @@ Status GetSocknameHandler(const std::shared_ptr<primitives::Client> &client,
   output->Push<int>(errno);
   output->Push<struct sockaddr_storage>(sock_addr);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status AcceptHandler(const std::shared_ptr<primitives::Client> &client,
@@ -257,7 +257,7 @@ Status AcceptHandler(const std::shared_ptr<primitives::Client> &client,
   output->Push<int>(errno);
   output->Push<struct sockaddr_storage>(sock_addr);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GetPeernameHandler(const std::shared_ptr<primitives::Client> &client,
@@ -279,7 +279,7 @@ Status GetPeernameHandler(const std::shared_ptr<primitives::Client> &client,
   output->Push<int>(errno);
   output->Push<struct sockaddr_storage>(sock_addr);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status RecvFromHandler(const std::shared_ptr<primitives::Client> &client,
@@ -305,7 +305,7 @@ Status RecvFromHandler(const std::shared_ptr<primitives::Client> &client,
   output->PushByCopy(Extent{buffer.get(), len});
   output->Push<struct sockaddr_storage>(sock_addr);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status RaiseHandler(const std::shared_ptr<primitives::Client> &client,
@@ -315,7 +315,7 @@ Status RaiseHandler(const std::shared_ptr<primitives::Client> &client,
   int klinux_sig = input->next<int>();
   output->Push<int>(raise(klinux_sig));
   output->Push<int>(errno);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GetSockOptHandler(const std::shared_ptr<primitives::Client> &client,
@@ -334,7 +334,7 @@ Status GetSockOptHandler(const std::shared_ptr<primitives::Client> &client,
   output->Push<int>(ret);
   output->Push<int>(errno);
   output->PushByCopy(Extent{reinterpret_cast<char *>(optval.data()), optlen});
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GetAddrInfoHandler(const std::shared_ptr<primitives::Client> &client,
@@ -371,7 +371,7 @@ Status GetAddrInfoHandler(const std::shared_ptr<primitives::Client> &client,
 
   // result has been copied to MessageWriter, so free it up.
   freeaddrinfo(result);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status InetPtonHandler(const std::shared_ptr<primitives::Client> &client,
@@ -396,7 +396,7 @@ Status InetPtonHandler(const std::shared_ptr<primitives::Client> &client,
   output->Push<int>(errno);
   output->PushByCopy(Extent{dst.get(), dst_len});
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status InetNtopHandler(const std::shared_ptr<primitives::Client> &client,
@@ -413,7 +413,7 @@ Status InetNtopHandler(const std::shared_ptr<primitives::Client> &client,
   output->PushByCopy(Extent{dst.get(), size});
   output->Push<int>(errno);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SigprocmaskHandler(const std::shared_ptr<primitives::Client> &client,
@@ -428,7 +428,7 @@ Status SigprocmaskHandler(const std::shared_ptr<primitives::Client> &client,
   output->Push<int>(sigprocmask(klinux_how, &klinux_set, &klinux_oldset));
   output->Push<int>(errno);
   output->Push<sigset_t>(klinux_oldset);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status IfNameToIndexHandler(const std::shared_ptr<primitives::Client> &client,
@@ -440,7 +440,7 @@ Status IfNameToIndexHandler(const std::shared_ptr<primitives::Client> &client,
   output->Push<unsigned int>(if_nametoindex(ifname_buffer.As<char>()));
   output->Push<int>(errno);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status IfIndexToNameHandler(const std::shared_ptr<primitives::Client> &client,
@@ -453,7 +453,7 @@ Status IfIndexToNameHandler(const std::shared_ptr<primitives::Client> &client,
   output->PushString(if_indextoname(ifindex, ifname));
   output->Push<int>(errno);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GetIfAddrsHandler(const std::shared_ptr<primitives::Client> &client,
@@ -467,7 +467,7 @@ Status GetIfAddrsHandler(const std::shared_ptr<primitives::Client> &client,
       SerializeIfAddrs(output, ifaddr_list, untrusted_abort_handler)));
 
   freeifaddrs(ifaddr_list);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GetCpuClockIdHandler(const std::shared_ptr<primitives::Client> &client,
@@ -478,7 +478,7 @@ Status GetCpuClockIdHandler(const std::shared_ptr<primitives::Client> &client,
   clockid_t klinux_clock_id;
   output->Push<int>(clock_getcpuclockid(pid, &klinux_clock_id));
   output->Push<uint64_t>(static_cast<uint64_t>(klinux_clock_id));
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GetPwUidHandler(const std::shared_ptr<primitives::Client> &client,
@@ -492,7 +492,7 @@ Status GetPwUidHandler(const std::shared_ptr<primitives::Client> &client,
   if (password) {
     SerializePasswd(output, password);
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status HexDumpHandler(const std::shared_ptr<primitives::Client> &client,
@@ -505,7 +505,7 @@ Status HexDumpHandler(const std::shared_ptr<primitives::Client> &client,
       fprintf(stderr, "%s\n",
               asylo::BufferToDebugHexString(buf.data(), buf.size()).c_str()));
   output->Push<int>(errno);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status OpenLogHandler(const std::shared_ptr<primitives::Client> &client,
@@ -519,7 +519,7 @@ Status OpenLogHandler(const std::shared_ptr<primitives::Client> &client,
 
   openlog(ident, option, facility);
   output->Push<int>(errno);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status InotifyReadHandler(const std::shared_ptr<primitives::Client> &client,
@@ -543,7 +543,7 @@ Status InotifyReadHandler(const std::shared_ptr<primitives::Client> &client,
                              &serialized_len)) {
     output->Push<int>(-1);
     output->Push<int>(errno);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   asylo::MallocUniquePtr<char> serialized_events_deleter(serialized_events);
@@ -551,7 +551,7 @@ Status InotifyReadHandler(const std::shared_ptr<primitives::Client> &client,
   output->Push<int>(errno);
   output->PushByCopy(Extent{serialized_events, serialized_len});
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ClockGettimeHandler(const std::shared_ptr<primitives::Client> &client,
@@ -564,7 +564,7 @@ Status ClockGettimeHandler(const std::shared_ptr<primitives::Client> &client,
   output->Push<int>(errno);
   output->Push<struct timespec>(tp);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SysFutexWaitHandler(const std::shared_ptr<primitives::Client> &client,
@@ -592,7 +592,7 @@ Status LocalLifetimeAllocHandler(
   // obscure the fact that it is actually a pointer.
   output->Push<uintptr_t>(reinterpret_cast<uintptr_t>(result));
   output->Push<int>(errno);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace host_call

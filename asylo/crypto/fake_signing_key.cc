@@ -87,7 +87,7 @@ Status FakeVerifyingKey::Verify(ByteContainerView message,
                   "Signature does not match the expected value");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FakeVerifyingKey::Verify(ByteContainerView message,
@@ -126,7 +126,7 @@ Status FakeSigningKey::Sign(ByteContainerView message,
   signature->clear();
   std::copy(key_der.cbegin(), key_der.cend(), std::back_inserter(*signature));
   std::copy(message.cbegin(), message.cend(), std::back_inserter(*signature));
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FakeSigningKey::Sign(ByteContainerView message,

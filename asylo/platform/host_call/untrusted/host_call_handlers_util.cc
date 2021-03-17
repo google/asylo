@@ -18,6 +18,7 @@
 
 #include "asylo/platform/host_call/untrusted/host_call_handlers_util.h"
 
+#include "absl/status/status.h"
 #include "asylo/platform/common/futex.h"
 
 namespace asylo {
@@ -32,7 +33,7 @@ Status SysFutexWaitHelper(primitives::MessageReader *input,
   int64_t timeout_microsec = input->next<int64_t>();
   output->Push<int>(sys_futex_wait(futex, expected, timeout_microsec));
   output->Push<int>(errno);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SysFutexWakeHelper(primitives::MessageReader *input,
@@ -42,7 +43,7 @@ Status SysFutexWakeHelper(primitives::MessageReader *input,
   int32_t num = input->next<int32_t>();
   output->Push<int>(sys_futex_wake(futex, num));
   output->Push<int>(errno);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace host_call

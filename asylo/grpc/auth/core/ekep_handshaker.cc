@@ -155,7 +155,7 @@ Status EkepHandshaker::EncodeFrame(
   // Write the serialized message.
   handshake_message.SerializeWithCachedSizes(&encoded_frame);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status EkepHandshaker::ParseFrameHeader(
@@ -190,7 +190,7 @@ Status EkepHandshaker::ParseFrameHeader(
 
   *message_type = static_cast<HandshakeMessageType>(message_type_encoded);
   *message_size = frame_size - sizeof(*message_type);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status EkepHandshaker::ParseFrameMessage(uint32_t message_size,
@@ -200,7 +200,7 @@ Status EkepHandshaker::ParseFrameMessage(uint32_t message_size,
     return Status(Abort::DESERIALIZATION_FAILED,
                   "Failed to deserialize handshake message");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<std::string> EkepHandshaker::GetUnusedBytes() {
@@ -327,7 +327,7 @@ Status EkepHandshaker::WriteFrameAndUpdateTranscript(
   // from the most recently-written frame to the transcript.
   UpdateTranscriptWithOutgoingBytes(output->data() + offset,
                                     output->size() - offset);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 void EkepHandshaker::AddPeerIdentity(const EnclaveIdentity &identity) {
@@ -358,7 +358,7 @@ Status EkepHandshaker::GetTranscriptHash(std::string *transcript_hash) {
     LOG(ERROR) << "Transcript hash function is not set";
     return Status(Abort::INTERNAL_ERROR, "Unable to retrieve transcript hash");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 void EkepHandshaker::UpdateTranscriptWithOutgoingBytes(

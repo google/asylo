@@ -335,7 +335,7 @@ Status SetExpectation(const SgxIdentityMatchSpec &match_spec,
 
   *expectation->mutable_match_spec() = match_spec;
   *expectation->mutable_reference_identity() = identity;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 bool IsValidSignerAssignedIdentity(const SignerAssignedIdentity &identity) {
@@ -508,7 +508,7 @@ Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
   if (!IsValidSgxIdentity(*sgx_identity)) {
     return absl::InvalidArgumentError("Parsed SGX identity is invalid");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ParseSgxMatchSpec(const std::string &generic_match_spec,
@@ -521,7 +521,7 @@ Status ParseSgxMatchSpec(const std::string &generic_match_spec,
     return Status(::absl::StatusCode::kInvalidArgument,
                   "Parsed SGX match spec is invalid");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ParseSgxExpectation(
@@ -539,7 +539,7 @@ Status ParseSgxExpectation(
     return Status(::absl::StatusCode::kInvalidArgument,
                   "Parsed SGX expectation is invalid");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SerializeSgxIdentity(const SgxIdentity &sgx_identity,
@@ -555,7 +555,7 @@ Status SerializeSgxIdentity(const SgxIdentity &sgx_identity,
   // Set version string to indicate that the serialized |identity| is an
   // SgxIdentity, rather than a (legacy) CodeIdentity.
   generic_identity->set_version(kSgxIdentityVersionString);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SerializeSgxMatchSpec(const SgxIdentityMatchSpec &sgx_match_spec,
@@ -568,7 +568,7 @@ Status SerializeSgxMatchSpec(const SgxIdentityMatchSpec &sgx_match_spec,
     return Status(::absl::StatusCode::kInternal,
                   "Could not serialize SgxIdentityMatchSpec to a string");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SerializeSgxExpectation(
@@ -617,7 +617,7 @@ Status VerifyHardwareReport(const Report &report) {
   if (actual_mac != report.mac) {
     return absl::InternalError("MAC verification failed");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace sgx

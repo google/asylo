@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <unistd.h>
 
+#include "absl/status/status.h"
 #include "asylo/util/posix_error_space.h"
 
 namespace asylo {
@@ -51,7 +52,7 @@ Status SocketTransmit::Read(int fd, void *buf, size_t read_len) {
   if (read_bytes < read_len) {
     return Status(static_cast<error::PosixError>(errno), "read error");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SocketTransmit::Write(int fd, const void *buf, size_t write_len) {
@@ -76,7 +77,7 @@ Status SocketTransmit::Write(int fd, const void *buf, size_t write_len) {
   if (write_bytes < write_len) {
     return Status(static_cast<error::PosixError>(errno), "write error");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SocketTransmit::RecvMsg(int sockfd, struct msghdr *msg, int flags) {
@@ -84,7 +85,7 @@ Status SocketTransmit::RecvMsg(int sockfd, struct msghdr *msg, int flags) {
     return Status(static_cast<error::PosixError>(errno),
                   std::string("recvmsg error:") + strerror(errno));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SocketTransmit::SendMsg(int sockfd, const struct msghdr *msg,
@@ -93,7 +94,7 @@ Status SocketTransmit::SendMsg(int sockfd, const struct msghdr *msg,
     return Status(static_cast<error::PosixError>(errno),
                   std::string("sendmsg error:") + strerror(errno));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SocketTransmit::RecvFrom(int socket, void *buffer, size_t length,
@@ -103,7 +104,7 @@ Status SocketTransmit::RecvFrom(int socket, void *buffer, size_t length,
     return Status(static_cast<error::PosixError>(errno),
                   std::string("recvfrom error:") + strerror(errno));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 int SocketTransmit::GetWrite() const { return write_count_; }

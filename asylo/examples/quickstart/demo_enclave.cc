@@ -115,7 +115,7 @@ class EnclaveDemo : public TrustedApplication {
 
     std::cout << "Encrypted message:" << std::endl << result << std::endl;
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Retrieves user message from |input|.

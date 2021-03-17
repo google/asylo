@@ -79,7 +79,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
-        "//asylo/util:logging",
+        "@com_google_absl//absl/status",
         "//asylo/util:status",
     ] + select({
         "@com_google_asylo//asylo": [
@@ -98,6 +98,7 @@ cc_library(
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         ":socket_transmit",
+        "@com_google_absl//absl/status",
         "//asylo/util:logging",
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/util:status",
@@ -118,6 +119,7 @@ cc_library(
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         ":socket_transmit",
+        "@com_google_absl//absl/status",
         "//asylo/util:logging",
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/util:status",

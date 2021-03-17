@@ -29,6 +29,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/hash_interface.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -63,7 +64,7 @@ class FakeHash final : public HashInterface {
 
   Status CumulativeHash(std::vector<uint8_t> *digest) const override {
     *digest = data_;
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
  private:

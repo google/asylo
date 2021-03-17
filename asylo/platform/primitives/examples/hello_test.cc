@@ -22,6 +22,7 @@
 
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
 #include "asylo/platform/primitives/examples/hello_enclave.h"
 #include "asylo/platform/primitives/extent.h"
@@ -67,7 +68,7 @@ class HelloTest : public ::testing::Test {
 
     // Push our message on to the MessageWriter to pass to the enclave.
     out->PushString("Hello");
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

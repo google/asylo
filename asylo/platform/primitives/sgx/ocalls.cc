@@ -21,6 +21,7 @@
 // For |domainname| field in pipe2().
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
+#include "absl/status/status.h"
 #endif
 
 #include <sys/file.h>
@@ -145,7 +146,7 @@ asylo::Status DoSnapshotKeyTransfer(int self_socket, int peer_socket,
   ASYLO_RETURN_IF_ERROR(primitive_client->EnterAndTransferSecureSnapshotKey(
       fork_handshake_config));
 
-  return asylo::Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // A helper class to free the snapshot memory allocated during fork.

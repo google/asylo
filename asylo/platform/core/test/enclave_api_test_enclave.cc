@@ -52,7 +52,7 @@ class EnclaveApi : public EnclaveTestCase {
     output_test.add_test_repeated("output repeated 2");
     output->MutableExtension(enclave_api_test_output)->CopyFrom(output_test);
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

@@ -18,6 +18,7 @@
 
 #include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
 
+#include "absl/status/status.h"
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/host_call/untrusted/host_call_handlers.h"
 #include "asylo/util/status_macros.h"
@@ -119,7 +120,7 @@ Status AddHostCallHandlersToExitCallProvider(
       kLocalLifetimeAllocHandler,
       primitives::ExitHandler{LocalLifetimeAllocHandler}));
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace host_call

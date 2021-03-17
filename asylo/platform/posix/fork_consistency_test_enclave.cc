@@ -157,7 +157,7 @@ class ForkTest : public EnclaveTestCase {
         return absl::InternalError("child enclave aborted");
       }
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

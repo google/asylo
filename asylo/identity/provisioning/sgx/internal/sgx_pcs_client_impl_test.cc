@@ -895,7 +895,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificate_Success) {
   EXPECT_CALL(*ppid_enc_key_mock_, Encrypt(Eq(ppid.value()), NotNull()))
       .Times(1)
       .WillOnce(
-          DoAll(SetArgPointee<1>(ppid_encrypted), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(ppid_encrypted), Return(absl::OkStatus())));
   std::vector<HttpFetcher::HttpHeaderField> expected_custom_headers;
   expected_custom_headers.push_back(std::make_pair(kHttpHeaderApiKey, kApiKey));
   HttpFetcher::HttpResponse response;
@@ -973,7 +973,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedIssuerCertChain) {
   EXPECT_CALL(*ppid_enc_key_mock_, Encrypt(Eq(ppid.value()), NotNull()))
       .Times(1)
       .WillOnce(
-          DoAll(SetArgPointee<1>(ppid_encrypted), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(ppid_encrypted), Return(absl::OkStatus())));
   std::vector<HttpFetcher::HttpHeaderField> expected_custom_headers;
   expected_custom_headers.push_back(std::make_pair(kHttpHeaderApiKey, kApiKey));
   HttpFetcher::HttpResponse response;
@@ -1001,7 +1001,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedTcbm) {
   EXPECT_CALL(*ppid_enc_key_mock_, Encrypt(Eq(ppid.value()), NotNull()))
       .Times(1)
       .WillOnce(
-          DoAll(SetArgPointee<1>(ppid_encrypted), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(ppid_encrypted), Return(absl::OkStatus())));
   std::vector<HttpFetcher::HttpHeaderField> expected_custom_headers;
   expected_custom_headers.push_back(std::make_pair(kHttpHeaderApiKey, kApiKey));
   HttpFetcher::HttpResponse response;
@@ -1029,7 +1029,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificate_MalformedPckCertificate) {
   EXPECT_CALL(*ppid_enc_key_mock_, Encrypt(Eq(ppid.value()), NotNull()))
       .Times(1)
       .WillOnce(
-          DoAll(SetArgPointee<1>(ppid_encrypted), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(ppid_encrypted), Return(absl::OkStatus())));
   std::vector<HttpFetcher::HttpHeaderField> expected_custom_headers;
   expected_custom_headers.push_back(std::make_pair(kHttpHeaderApiKey, kApiKey));
   HttpFetcher::HttpResponse response;
@@ -1055,7 +1055,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificates_Success) {
   EXPECT_CALL(*ppid_enc_key_mock_, Encrypt(Eq(ppid.value()), NotNull()))
       .Times(1)
       .WillOnce(
-          DoAll(SetArgPointee<1>(ppid_encrypted), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(ppid_encrypted), Return(absl::OkStatus())));
   std::vector<HttpFetcher::HttpHeaderField> expected_custom_headers;
   expected_custom_headers.push_back(std::make_pair(kHttpHeaderApiKey, kApiKey));
   HttpFetcher::HttpResponse response;
@@ -1103,7 +1103,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificates_MalformedIssuerCertChain) {
   EXPECT_CALL(*ppid_enc_key_mock_, Encrypt(Eq(ppid.value()), NotNull()))
       .Times(1)
       .WillOnce(
-          DoAll(SetArgPointee<1>(ppid_encrypted), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(ppid_encrypted), Return(absl::OkStatus())));
   std::vector<HttpFetcher::HttpHeaderField> expected_custom_headers;
   expected_custom_headers.push_back(std::make_pair(kHttpHeaderApiKey, kApiKey));
   HttpFetcher::HttpResponse response;
@@ -1127,7 +1127,7 @@ TEST_F(SgxPcsClientTest, GetPckCertificates_MalformedPckCertificates) {
   EXPECT_CALL(*ppid_enc_key_mock_, Encrypt(Eq(ppid.value()), NotNull()))
       .Times(1)
       .WillOnce(
-          DoAll(SetArgPointee<1>(ppid_encrypted), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(ppid_encrypted), Return(absl::OkStatus())));
   std::vector<HttpFetcher::HttpHeaderField> expected_custom_headers;
   expected_custom_headers.push_back(std::make_pair(kHttpHeaderApiKey, kApiKey));
   HttpFetcher::HttpResponse response;
@@ -1306,7 +1306,7 @@ TEST_P(SgxPcsClientErrorTest, GetPckCertificate) {
   EXPECT_CALL(*ppid_enc_key_mock_, Encrypt(Eq(ppid.value()), NotNull()))
       .Times(1)
       .WillOnce(
-          DoAll(SetArgPointee<1>(ppid_encrypted), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(ppid_encrypted), Return(absl::OkStatus())));
   std::vector<HttpFetcher::HttpHeaderField> expected_custom_headers;
   expected_custom_headers.push_back(std::make_pair(kHttpHeaderApiKey, kApiKey));
   const StatusOr<HttpFetcher::HttpResponse> fetch_result =
@@ -1327,7 +1327,7 @@ TEST_P(SgxPcsClientErrorTest, GetPckCertificates) {
   EXPECT_CALL(*ppid_enc_key_mock_, Encrypt(Eq(ppid.value()), NotNull()))
       .Times(1)
       .WillOnce(
-          DoAll(SetArgPointee<1>(ppid_encrypted), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(ppid_encrypted), Return(absl::OkStatus())));
   std::vector<HttpFetcher::HttpHeaderField> expected_custom_headers;
   expected_custom_headers.push_back(std::make_pair(kHttpHeaderApiKey, kApiKey));
   const StatusOr<HttpFetcher::HttpResponse> fetch_result =

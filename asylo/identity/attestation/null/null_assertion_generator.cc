@@ -40,7 +40,7 @@ Status NullAssertionGenerator::Initialize(const std::string &config) {
 
   absl::MutexLock lock(&initialized_mu_);
   initialized_ = true;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 bool NullAssertionGenerator::IsInitialized() const {
@@ -72,7 +72,7 @@ Status NullAssertionGenerator::CreateAssertionOffer(
   // the same additional information. The fixed string is also known to
   // NullAssertionVerifier, which processes offers from this generator.
   offer->set_additional_information(kNullAssertionOfferAdditionalInfo);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<bool> NullAssertionGenerator::CanGenerate(
@@ -117,7 +117,7 @@ Status NullAssertionGenerator::Generate(const std::string &user_data,
   if (!null_assertion.SerializeToString(assertion->mutable_assertion())) {
     return absl::InternalError("Assertion serialization failed");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 bool NullAssertionGenerator::IsValidAssertionRequest(

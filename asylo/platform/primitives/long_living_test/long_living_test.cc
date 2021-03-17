@@ -28,6 +28,7 @@
 #include "absl/debugging/leak_check.h"
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "asylo/util/logging.h"
@@ -64,7 +65,7 @@ class LongLivingTest : public ::testing::Test {
       auto delay = in->next<absl::Duration>();
       LOG(ERROR) << "SleepFor exit call, delay=" << delay;
       absl::SleepFor(delay);
-      return Status::OkStatus();
+      return absl::OkStatus();
     };
     ASYLO_EXPECT_OK(client->exit_call_provider()->RegisterExitHandler(
         kSleepForExitCall, ExitHandler{sleep_for_handler}));
@@ -73,7 +74,7 @@ class LongLivingTest : public ::testing::Test {
             MessageWriter *out) -> Status {
       ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
       out->Push(absl::Now());
-      return Status::OkStatus();
+      return absl::OkStatus();
     };
     ASYLO_EXPECT_OK(client->exit_call_provider()->RegisterExitHandler(
         kCurrentTimeExitCall, ExitHandler{current_time_handler}));

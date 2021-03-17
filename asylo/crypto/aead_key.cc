@@ -132,7 +132,7 @@ Status AeadKey::Seal(ByteContainerView plaintext,
         absl::StrCat("EVP_AEAD_CTX_seal failed: ", BsslLastErrorString()));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status AeadKey::Open(ByteContainerView ciphertext,
@@ -163,7 +163,7 @@ Status AeadKey::Open(ByteContainerView ciphertext,
         absl::StrCat("EVP_AEAD_CTX_open failed: ", BsslLastErrorString()));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 AeadKey::AeadKey(AeadScheme aead_scheme, ByteContainerView key)

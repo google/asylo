@@ -134,7 +134,7 @@ Status RsaX509Signer::SignX509(X509* x509) const {
   if (X509_sign_ctx(x509, &hash) == 0) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 RsaX509Signer::RsaX509Signer(bssl::UniquePtr<RSA> private_key,

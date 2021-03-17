@@ -60,7 +60,7 @@ class EnclaveGetenvTest : public EnclaveTestCase {
                          name, ": ", negative_value));
       }
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status Run(const EnclaveInput &input, EnclaveOutput *) {
@@ -78,7 +78,7 @@ class EnclaveGetenvTest : public EnclaveTestCase {
     for (const auto &test : enclave_input_test.test_repeated()) {
       ASYLO_RETURN_IF_ERROR(RunTest(test));
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

@@ -96,7 +96,7 @@ Status EnclaveManager::DestroyEnclave(EnclaveClient *client,
                                       const EnclaveFinal &final_input,
                                       bool skip_finalize) {
   if (!client) {
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status finalize_status;
@@ -167,7 +167,7 @@ StatusOr<EnclaveManager *> EnclaveManager::Instance() {
 }
 
 Status EnclaveManager::Configure(const EnclaveManagerOptions & /*options*/) {
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status EnclaveManager::LoadEnclave(absl::string_view name,

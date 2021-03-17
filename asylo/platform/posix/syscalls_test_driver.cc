@@ -102,7 +102,7 @@ Status RunEnclaveSyscall(EnclaveClient *client,
     }
     *test_output = enclave_output.GetExtension(syscalls_test_output);
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Extracts a cpu_set_t from the bit_mask_syscall_outptr field of a

@@ -74,7 +74,7 @@ class SgxRemoteAssertionGeneratorTestEnclave final : public TrustedApplication {
       case SgxRemoteAssertionGeneratorTestEnclaveInput::kSgxSelfIdentityInput:
         *output->mutable_sgx_self_identity_output()->mutable_identity() =
             GetSelfSgxIdentity();
-        return Status::OkStatus();
+        return absl::OkStatus();
 
       case SgxRemoteAssertionGeneratorTestEnclaveInput::kResetGeneratorInput:
         return ResetGenerator(generator_->IdentityType(),
@@ -86,7 +86,7 @@ class SgxRemoteAssertionGeneratorTestEnclave final : public TrustedApplication {
       case SgxRemoteAssertionGeneratorTestEnclaveInput::kIsInitializedInput:
         output->mutable_is_initialized_output()->set_is_initialized(
             generator_->IsInitialized());
-        return Status::OkStatus();
+        return absl::OkStatus();
 
       case SgxRemoteAssertionGeneratorTestEnclaveInput::
           kCreateAssertionOfferInput:
@@ -99,7 +99,7 @@ class SgxRemoteAssertionGeneratorTestEnclave final : public TrustedApplication {
             can_generate,
             generator_->CanGenerate(input.can_generate_input().request()));
         output->mutable_can_generate_output()->set_can_generate(can_generate);
-        return Status::OkStatus();
+        return absl::OkStatus();
       }
 
       case SgxRemoteAssertionGeneratorTestEnclaveInput::kGenerateInput:
@@ -120,11 +120,11 @@ class SgxRemoteAssertionGeneratorTestEnclave final : public TrustedApplication {
     if (identity_type == CODE_IDENTITY) {
       if (authority_type == kSgxAgeRemoteAssertionAuthority) {
         generator_ = absl::make_unique<SgxAgeRemoteAssertionGenerator>();
-        return Status::OkStatus();
+        return absl::OkStatus();
       } else if (authority_type == kSgxIntelEcdsaQeRemoteAssertionAuthority) {
         generator_ =
             absl::make_unique<SgxIntelEcdsaQeRemoteAssertionGenerator>();
-        return Status::OkStatus();
+        return absl::OkStatus();
       }
     }
 

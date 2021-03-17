@@ -113,6 +113,7 @@ cc_library(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/status",
     ],
 )
 

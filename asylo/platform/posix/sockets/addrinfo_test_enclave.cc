@@ -110,7 +110,7 @@ class AddrinfoTestEnclave : public EnclaveTestCase {
           "getaddrinfo() returned incorrect address string");
     }
     freeaddrinfo(info);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status AddrInfoTest_UnspecHints() {
@@ -154,7 +154,7 @@ class AddrinfoTestEnclave : public EnclaveTestCase {
           "getaddrinfo() returned incorrect canonical name");
     }
     freeaddrinfo(info);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

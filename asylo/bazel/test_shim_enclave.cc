@@ -20,6 +20,7 @@
 
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "asylo/bazel/test_shim_enclave.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/test/util/test_flags.h"
@@ -57,14 +58,14 @@ class TestShimEnclave : public EnclaveTestCase {
       test_in_initialize_ = false;
     }
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) override {
     if (!test_in_initialize_) {
       EnclaveRunAllTests();
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
  private:

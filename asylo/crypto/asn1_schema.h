@@ -155,7 +155,7 @@ class Asn1SequenceOfImpl : public Asn1Schema<std::vector<ValueTypeT>> {
               "Sequence has size %d, but a size between %d and %d was expected",
               size, min_size_, max_size_));
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   std::unique_ptr<Asn1Schema<ValueTypeT>> element_schema_;

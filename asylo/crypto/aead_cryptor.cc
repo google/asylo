@@ -116,7 +116,7 @@ Status AeadCryptor::Seal(ByteContainerView plaintext,
   ASYLO_RETURN_IF_ERROR(key_->Seal(plaintext, associated_data, nonce,
                                    ciphertext, ciphertext_size));
   number_of_sealed_messages_++;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status AeadCryptor::Open(ByteContainerView ciphertext,

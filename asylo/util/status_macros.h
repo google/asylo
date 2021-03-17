@@ -23,6 +23,7 @@
 #include <utility>
 
 #include "absl/base/optimization.h"
+#include "absl/status/status.h"
 
 namespace asylo {
 namespace internal {
@@ -66,7 +67,7 @@ inline T ToStatus(T&& status_like) {
 ///   ::asylo::Status MultiStepFunction() {
 ///     ASYLO_RETURN_IF_ERROR(Function(args...));
 ///     ASYLO_RETURN_IF_ERROR(foo.Method(args...));
-///     return ::asylo::Status::OkStatus();
+///     return ::absl::OkStatus();
 ///   }
 /// ```
 #define ASYLO_RETURN_IF_ERROR(expr)                                         \

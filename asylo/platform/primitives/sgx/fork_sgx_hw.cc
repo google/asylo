@@ -161,7 +161,7 @@ Status BlockAndWaitOnEntries(int calling_thread_entry_count, int timeout) {
                   "Timeout while waiting for other TCS to exit the enclave");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Encrypts the enclave memory from |source_base| with |source_size| with
@@ -204,7 +204,7 @@ Status EncryptToUntrustedMemory(AeadCryptor *cryptor, const void *source_base,
   snapshot_entry->set_ciphertext_size(static_cast<uint64_t>(destination_size));
   snapshot_entry->set_nonce_base(reinterpret_cast<uint64_t>(nonce_base));
   snapshot_entry->set_nonce_size(static_cast<uint64_t>(nonce_size));
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Decrypts the untrusted source from |snapshot_entry| with |cryptor| to the
@@ -275,7 +275,7 @@ Status EncryptToSnapshot(AeadCryptor *cryptor, void *source_base,
     bytes_left -= plaintext_size;
     current_position += plaintext_size;
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Decrypts a whole memory region with |cryptor| from |entry|. The memory region
@@ -312,7 +312,7 @@ Status DecryptFromSnapshot(
     bytes_left -= actual_plaintext_size;
     current_position += actual_plaintext_size;
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace
@@ -530,7 +530,7 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
   // enclave snapshot and host fork() are consistent. Also to make sure other
   // threads are not holding locks while entering/exiting the enclave when
   // fork() is invoked on the host..
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Decrypts and restores the enclave data/bss section and heap from
@@ -577,7 +577,7 @@ Status DecryptAndRestoreEnclaveDataBssHeap(
   // data and bss. We should set to the memory address before overwriting the
   // data, to avoid overwriting the existing memory on the switched heap.
   heap_switch(switched_heap_next, switched_heap_remaining);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Decrypts and restores the thread information and stack of the thread that
@@ -608,7 +608,7 @@ Status DecryptAndRestoreThreadStack(
       DecryptFromSnapshot(cryptor.get(), thread_layout.stack_limit, stack_size,
                           snapshot_layout.stack()));
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Restore the current enclave states from an untrusted snapshot.
@@ -695,7 +695,7 @@ Status RestoreForFork(const char *input, size_t input_len) {
 
   // Only allow other entries if restoring the child enclave succeeds.
   enc_unblock_entries();
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Do a full EKEP handshake between the parent and the child enclave.
@@ -768,7 +768,7 @@ Status RunEkepHandshake(EkepHandshaker *handshaker, bool is_parent,
       return Status(static_cast<error::PosixError>(errno), "Write failed");
     }
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Compares the identity of the current enclave with |peer_identity|. In the
@@ -800,7 +800,7 @@ Status ComparePeerAndSelfIdentity(const EnclaveIdentity &peer_identity) {
             "The identity of the peer enclave does not match expectation: ",
             explanation));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Encrypts and transfers snapshot key to the child.
@@ -846,7 +846,7 @@ Status EncryptAndSendSnapshotKey(std::unique_ptr<AeadCryptor> cryptor,
     return Status(static_cast<error::PosixError>(errno), "Write failed");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Receives the snapshot key from the parent, and decrypts the key.
@@ -887,7 +887,7 @@ Status ReceiveSnapshotKey(std::unique_ptr<AeadCryptor> cryptor, int socket) {
     return Status(absl::StatusCode::kInternal,
                   "Failed to save snapshot key inside enclave");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Securely transfer the snapshot key. First create a shared secret from an EKEP

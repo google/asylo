@@ -19,6 +19,7 @@
 #include "asylo/platform/primitives/remote/metrics/proc_system_service.h"
 
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/platform/primitives/remote/metrics/proc_system.grpc.pb.h"
 #include "asylo/platform/primitives/remote/metrics/proc_system.pb.h"
 #include "asylo/platform/primitives/remote/metrics/proc_system_parser.h"
@@ -105,7 +106,7 @@ ProcSystemServiceImpl::CreateProcSystemParser() const {
   response_proc_stat->set_env_start(proc_stat.env_start);
   response_proc_stat->set_env_end(proc_stat.env_end);
   response_proc_stat->set_exit_code(proc_stat.exit_code);
-  return ::asylo::Status::OkStatus();
+  return ::absl::OkStatus();
 }
 
 }  // namespace primitives

@@ -38,7 +38,7 @@ Status SharedResourceManager::InstallResource(ResourceHandle *handle) {
         "Cannot install resource \"", name, "\": Resource already exists."));
   }
   shared_resources_[handle->resource_name] = absl::WrapUnique(handle);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 bool SharedResourceManager::ReleaseResource(const SharedName &name) {

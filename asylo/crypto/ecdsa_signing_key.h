@@ -92,7 +92,7 @@ Status BsslSignX509(X509 *x509, EC_KEY *private_key) {
   if (X509_sign(x509, evp_pkey.get(), hasher.GetBsslHashFunction()) == 0) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Boring SSL Helper functions to create keys.
@@ -307,7 +307,7 @@ class EcdsaSigningKey : public SigningKey {
     ASYLO_RETURN_IF_ERROR(EcdsaSignDigestAndSetRS(GetSignatureScheme(), digest,
                                                   private_key_.get(),
                                                   kCoordinateSize, signature));
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status SignX509(X509 *x509) const override {

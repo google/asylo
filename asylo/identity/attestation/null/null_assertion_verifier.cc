@@ -42,7 +42,7 @@ Status NullAssertionVerifier::Initialize(const std::string &config) {
 
   absl::MutexLock lock(&initialized_mu_);
   initialized_ = true;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 bool NullAssertionVerifier::IsInitialized() const {
@@ -74,7 +74,7 @@ Status NullAssertionVerifier::CreateAssertionRequest(
   // the same additional information. The fixed string is also known to
   // NullAssertionGenerator, which processes requests from this verifier.
   request->set_additional_information(kNullAssertionRequestAdditionalInfo);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<bool> NullAssertionVerifier::CanVerify(
@@ -127,7 +127,7 @@ Status NullAssertionVerifier::Verify(const std::string &user_data,
   peer_identity->set_identity(kNullIdentity);
 
   // Verification succeeded.
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Static registration of the NullAssertionVerifier library.

@@ -52,7 +52,7 @@ class EnclaveEntryCountTest : public EnclaveTestCase {
     }
 
     if (test_input.thread_type() == EnclaveEntryCountTestInput::DONOTHING) {
-      return Status::OkStatus();
+      return absl::OkStatus();
     }
 
     active_entries++;
@@ -88,7 +88,7 @@ class EnclaveEntryCountTest : public EnclaveTestCase {
     } else {
       return absl::InvalidArgumentError("Unknown thread type");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

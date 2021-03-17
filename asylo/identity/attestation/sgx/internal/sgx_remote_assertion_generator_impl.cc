@@ -49,7 +49,7 @@ Status ExtractSgxIdentity(const EnclaveAuthContext &auth_context,
 
   ASYLO_ASSIGN_OR_RETURN(*sgx_identity,
                          ParseSgxIdentity(*identity_result.ValueOrDie()));
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace

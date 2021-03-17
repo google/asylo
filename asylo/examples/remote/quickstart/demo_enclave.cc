@@ -116,7 +116,7 @@ class EnclaveDemo : public TrustedApplication {
 
     SetEnclaveOutputMessage(output, result);
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Retrieves user message from |input|.

@@ -79,7 +79,7 @@ class EnclaveEntryCountTest : public EnclaveTest {
     if (enclave_output.GetExtension(number_entries) != number_threads) {
       return absl::InternalError("number of threads is incorrect");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

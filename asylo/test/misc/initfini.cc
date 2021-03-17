@@ -16,6 +16,7 @@
  *
  */
 
+#include "absl/status/status.h"
 #include "asylo/test/util/enclave_test_application.h"
 
 // These attributes attempt to forcibly create a global constructor/destructor.
@@ -32,15 +33,13 @@ class Initfini : public EnclaveTestCase {
  public:
   Initfini() = default;
 
-  Status Initialize(const EnclaveConfig &config) { return Status::OkStatus(); }
+  Status Initialize(const EnclaveConfig &config) { return absl::OkStatus(); }
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
-  Status Finalize(const EnclaveFinal &final_input) {
-    return Status::OkStatus();
-  }
+  Status Finalize(const EnclaveFinal &final_input) { return absl::OkStatus(); }
 };
 
 TrustedApplication *BuildTrustedApplication() { return new Initfini; }

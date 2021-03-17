@@ -59,11 +59,11 @@ StatusOr<std::unique_ptr<FakePce>> FakePce::CreateFromFakePki() {
 }
 
 Status FakePce::SetPckCertificateChain(const CertificateChain &chain) {
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FakePce::SetEnclaveDir(const std::string &path) {
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FakePce::GetPceTargetinfo(Targetinfo *targetinfo, uint16_t *pce_svn) {
@@ -75,7 +75,7 @@ Status FakePce::GetPceTargetinfo(Targetinfo *targetinfo, uint16_t *pce_svn) {
 
   *pce_svn = pce_svn_;
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FakePce::PceSignReport(const Report &report, uint16_t /*target_pce_svn*/,
@@ -88,7 +88,7 @@ Status FakePce::PceSignReport(const Report &report, uint16_t /*target_pce_svn*/,
   const EcdsaSignature &ecdsa_signature = pck_signature.ecdsa_signature();
   *signature = absl::StrCat(ecdsa_signature.r(), ecdsa_signature.s());
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FakePce::GetPceInfo(const Report &report,
@@ -118,7 +118,7 @@ Status FakePce::GetPceInfo(const Report &report,
   *pce_id = pce_id_;
   *signature_scheme = pck_->GetSignatureScheme();
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<Targetinfo> FakePce::GetQeTargetinfo() {

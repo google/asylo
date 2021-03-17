@@ -20,6 +20,7 @@
 
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
@@ -124,7 +125,7 @@ std::unique_ptr<OpenCensusClient> OpenCensusClient::Create(
       absl::SleepFor(config_.granularity);
     }
   });
-  return ::asylo::Status::OkStatus();
+  return ::absl::OkStatus();
 }
 
 void OpenCensusClient::StopCensus() {

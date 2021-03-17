@@ -172,7 +172,7 @@ Status SgxInfrastructuralEnclaveManager::AgeGenerateKeyAndCsr(
   *report = generate_key_and_csr_output.report();
   *pce_sign_report_payload =
       generate_key_and_csr_output.pce_sign_report_payload();
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<sgx::ReportProto>
@@ -266,7 +266,7 @@ Status SgxInfrastructuralEnclaveManager::PceGetTargetInfo(
       ConvertTrivialObjectToBinaryString(pce_target_info_out));
   pce_svn->set_value(pce_svn_out);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SgxInfrastructuralEnclaveManager::PceGetInfo(
@@ -291,7 +291,7 @@ Status SgxInfrastructuralEnclaveManager::PceGetInfo(
   pce_svn->set_value(pce_svn_out);
   pce_id->set_value(pce_id_out);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<Signature> SgxInfrastructuralEnclaveManager::PceSignReport(

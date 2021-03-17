@@ -45,6 +45,7 @@ cc_library(
         "//asylo:enclave_cc_proto",
         "//asylo/binding/java/src/main/native:enclave_client_jni",
         "//asylo/binding/java/src/test/java/com/asylo/client:jni_utils_test_cc_proto",
+        "@com_google_absl//absl/status",
     ],
     alwayslink = 1,
 )

@@ -136,7 +136,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests, InitializeWorksOnce) {
   EXPECT_FALSE(generator_.IsInitialized());
   EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
-      .WillOnce(Return(Status::OkStatus()));
+      .WillOnce(Return(absl::OkStatus()));
   EXPECT_THAT(generator_.Initialize(valid_config_), IsOk());
   EXPECT_TRUE(generator_.IsInitialized());
   EXPECT_THAT(generator_.Initialize(valid_config_),
@@ -183,7 +183,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
   auto expected_certs = sgx::GetFakePckCertificateChain();
   EXPECT_CALL(*mock_intel_enclaves_,
               SetPckCertificateChain(EqualsProto(expected_certs)))
-      .WillOnce(Return(Status::OkStatus()));
+      .WillOnce(Return(absl::OkStatus()));
   EXPECT_THAT(generator_.Initialize(valid_config_), IsOk());
 }
 
@@ -199,7 +199,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests, AuthorityType) {
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
        CreateAssertionOfferSuccess) {
   EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
-      .WillOnce(Return(Status::OkStatus()));
+      .WillOnce(Return(absl::OkStatus()));
   ASSERT_THAT(generator_.Initialize(valid_config_), IsOk());
 
   AssertionOffer assertion_offer;
@@ -219,7 +219,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
 
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests, CanGenerateSuccess) {
   EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
-      .WillOnce(Return(Status::OkStatus()));
+      .WillOnce(Return(absl::OkStatus()));
   ASSERT_THAT(generator_.Initialize(valid_config_), IsOk());
   AssertionRequest request;
   *request.mutable_description() = CreateValidAssertionDescription();
@@ -236,7 +236,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
        CanGenerateFailsForIncompatibleDescription) {
   EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
-      .WillOnce(Return(Status::OkStatus()));
+      .WillOnce(Return(absl::OkStatus()));
   ASSERT_THAT(generator_.Initialize(valid_config_), IsOk());
   AssertionRequest request;
 
@@ -263,7 +263,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests, GenerateSucceeds) {
                                     kAadUuid);
 
   EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
-      .WillOnce(Return(Status::OkStatus()));
+      .WillOnce(Return(absl::OkStatus()));
   ASSERT_THAT(generator_.Initialize(valid_config_), IsOk());
   AssertionRequest request;
   *request.mutable_description() = CreateValidAssertionDescription();
@@ -302,7 +302,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
 TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
        GenerateFailsForIncompatibleDescription) {
   EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
-      .WillOnce(Return(Status::OkStatus()));
+      .WillOnce(Return(absl::OkStatus()));
   ASSERT_THAT(generator_.Initialize(valid_config_), IsOk());
   AssertionRequest request;
   Assertion assertion;
@@ -325,7 +325,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
   constexpr int kNumThreads = 10;
 
   EXPECT_CALL(*mock_intel_enclaves_, SetPckCertificateChain(_))
-      .WillOnce(Return(Status::OkStatus()));
+      .WillOnce(Return(absl::OkStatus()));
 
   std::atomic<int> success_count(0);
   std::vector<Thread> threads;

@@ -27,6 +27,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/identity/attestation/sgx/internal/dcap_intel_architectural_enclave_path_setter.h"
 #include "asylo/identity/attestation/sgx/internal/intel_certs/qe_identity.h"
@@ -114,7 +115,7 @@ class SgxIntelEcdsaQeRemoteAssertionE2eTest : public Test {
             enclave_config));
     test_enclave_ = wrapper.release();
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

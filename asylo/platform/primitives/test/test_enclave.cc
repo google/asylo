@@ -16,6 +16,7 @@
  *
  */
 
+#include "absl/status/status.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/test/test_selectors.h"

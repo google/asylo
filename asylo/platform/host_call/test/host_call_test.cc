@@ -186,7 +186,7 @@ class HostCallTest : public ::testing::Test {
         return absl::InternalError(absl::StrCat("spare", i));
       }
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Fills the struct statfs with the information from MessageReader.

@@ -25,6 +25,7 @@
 
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/util/logging.h"
@@ -118,7 +119,7 @@ void ClientEkepHandshaker::AbortHandshake(const Status &abort_status,
 ClientEkepHandshaker::Result ClientEkepHandshaker::HandleHandshakeMessage(
     HandshakeMessageType message_type, const google::protobuf::Message &handshake_message,
     std::string *output) {
-  Status status = Status::OkStatus();
+  Status status = absl::OkStatus();
   switch (message_type) {
     case SERVER_PRECOMMIT:
       expected_message_type_ = SERVER_ID;

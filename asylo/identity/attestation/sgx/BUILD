@@ -401,6 +401,7 @@ enclave_test(
         "//asylo/util:proto_parse_util",
         "//asylo/util:status",
         "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
     ],
@@ -426,6 +427,7 @@ cc_library(
         "//asylo/identity/platform/sgx/internal:hardware_types",
         "//asylo/util:mutex_guarded",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
     ],
     alwayslink = 1,
 )
@@ -590,6 +592,7 @@ transitions.cc_binary(
         "//asylo/util:status",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
         "@com_google_protobuf//:protobuf",

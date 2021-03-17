@@ -26,6 +26,7 @@
 #include <iostream>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_join.h"
 #include "asylo/crypto/sha256_hash.pb.h"
@@ -450,7 +451,7 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
     report->mac.Cleanse();
     return Status(SGX_ERROR_UNEXPECTED, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FakeEnclave::DeriveKey(const KeyDependencies &key_dependencies,
@@ -465,7 +466,7 @@ Status FakeEnclave::DeriveKey(const KeyDependencies &key_dependencies,
     key->Cleanse();
     return Status(SGX_ERROR_UNEXPECTED, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace sgx

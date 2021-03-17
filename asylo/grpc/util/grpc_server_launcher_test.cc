@@ -23,6 +23,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "asylo/test/grpc/messenger_client_impl.h"
@@ -104,7 +105,7 @@ class GrpcServerLauncherTest : public ::testing::Test {
     // Only overwrite |server_address_| if a port was bound successfully.
     server_address_ = absl::StrCat(kLocalhostAddress, ":", port);
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Connects channel_ to the server listening on server_address_.
@@ -131,7 +132,7 @@ class GrpcServerLauncherTest : public ::testing::Test {
                            messenger_client2.Hello(kMessengerClientName));
     EXPECT_EQ(response,
               test::MessengerServer2::ResponseString(kMessengerClientName));
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   GrpcServerLauncher launcher_;

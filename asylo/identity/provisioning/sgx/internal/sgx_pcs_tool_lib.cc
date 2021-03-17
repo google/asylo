@@ -164,7 +164,7 @@ StatusOr<std::string> GetCertFilePath() {
 Status WritePemCert(const Certificate &cert_proto, std::ofstream &output) {
   if (cert_proto.format() == Certificate::X509_PEM) {
     output << cert_proto.data();
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   std::unique_ptr<X509Certificate> cert;
@@ -174,7 +174,7 @@ Status WritePemCert(const Certificate &cert_proto, std::ofstream &output) {
   ASYLO_ASSIGN_OR_RETURN(pem_cert_proto,
                          cert->ToCertificateProto(Certificate::X509_PEM));
   output << pem_cert_proto.data();
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status WritePemOutput(const GetPckCertificateResult &cert_result,
@@ -185,7 +185,7 @@ Status WritePemOutput(const GetPckCertificateResult &cert_result,
     ASYLO_RETURN_IF_ERROR(WritePemCert(cert, output));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status WriteTextProtoOutput(asylo::sgx::GetPckCertificateResult cert_result,
@@ -205,7 +205,7 @@ Status WriteTextProtoOutput(asylo::sgx::GetPckCertificateResult cert_result,
   google::protobuf::io::FileOutputStream output(output_fd);
   google::protobuf::TextFormat::Print(chain, &output);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace

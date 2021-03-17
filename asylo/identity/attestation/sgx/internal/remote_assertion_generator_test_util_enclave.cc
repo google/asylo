@@ -57,7 +57,7 @@ Status GetRemoteAssertion(const GetRemoteAssertionInput &input,
   ASYLO_ASSIGN_OR_RETURN(*output->mutable_assertion(),
                          client.GenerateSgxRemoteAssertion("My User Data"));
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GetTargetInfo(GetTargetInfoOutput *output) {
@@ -65,7 +65,7 @@ Status GetTargetInfo(GetTargetInfoOutput *output) {
   SetTargetinfoFromSelfIdentity(targetinfo.get());
   output->mutable_target_info_proto()->set_value(
       ConvertTrivialObjectToBinaryString(*targetinfo));
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status VerifyReport(const VerifyReportInput &input) {
@@ -83,7 +83,7 @@ Status GetSealedSecret(const GetSealedSecretInput &input,
   ASYLO_ASSIGN_OR_RETURN(*output->mutable_sealed_secret(),
                          CreateSealedSecret(header, input.certificate_chains(),
                                             *attestation_key.get()));
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace

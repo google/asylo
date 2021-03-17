@@ -22,6 +22,7 @@
 #include <cstddef>
 #include <numeric>
 
+#include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/system_call/message.h"

@@ -64,7 +64,7 @@ asylo::Status LoadGrpcClientEnclave(const std::string &enclave_path,
   asylo::EnclaveManager *manager = nullptr;
   ASYLO_ASSIGN_OR_RETURN(manager, asylo::EnclaveManager::Instance());
   ASYLO_RETURN_IF_ERROR(manager->LoadEnclave(load_config));
-  return asylo::Status::OkStatus();
+  return absl::OkStatus();
 }
 
 asylo::StatusOr<std::string> GrpcClientEnclaveGetTranslation(

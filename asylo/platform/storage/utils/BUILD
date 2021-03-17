@@ -93,6 +93,7 @@ cc_library(
     deps = [
         "//asylo/util:asylo_macros",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -122,6 +123,7 @@ cc_library(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/status",
     ],
 )
 

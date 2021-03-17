@@ -183,7 +183,7 @@ Status VerifyAgeExpectation(const IdentityAclPredicate &age_expectation,
     return absl::UnauthenticatedError(
         absl::StrCat("AGE identity did not match expectation: ", explanation));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace
@@ -217,7 +217,7 @@ Status MakeRemoteAssertion(const std::string &user_data,
   std::vector<uint8_t> signature;
   ASYLO_RETURN_IF_ERROR(signing_key.Sign(assertion->payload(), &signature));
   assertion->set_signature(CopyToByteContainer<std::string>(signature));
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status VerifyRemoteAssertion(
@@ -284,7 +284,7 @@ Status VerifyRemoteAssertion(
   *identity = payload.identity();
   *identity->mutable_machine_configuration() = std::move(peer_machine_config);
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace sgx

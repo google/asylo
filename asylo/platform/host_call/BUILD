@@ -75,6 +75,7 @@ cc_library(
         "//asylo/platform/common:futex",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -90,6 +91,7 @@ cc_library(
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/system_call/type_conversions",
         "//asylo/util:status_macros",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -125,6 +127,7 @@ cc_library(
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:status_macros",
+        "@com_google_absl//absl/status",
     ],
 )
 
@@ -151,6 +154,7 @@ cc_library(
         ":untrusted_host_calls",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/util:status",
+        "@com_google_absl//absl/status",
     ],
 )
 

@@ -57,7 +57,7 @@ Status SetTrivialObjectFromHexString(absl::string_view view, T *obj) {
   }
   absl::HexStringToBytes(view).copy(reinterpret_cast<char *>(obj),
                                     sizeof(*obj));
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 template <class T>
@@ -110,7 +110,7 @@ Status SetTrivialObjectFromBinaryString(absl::string_view view, T *obj) {
                                " from a string of size ", view.size()));
   }
   memcpy(obj, view.data(), view.size());
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 template <class T>

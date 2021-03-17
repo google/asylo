@@ -41,7 +41,7 @@ Status hello_handler(std::shared_ptr<Client> client, void *context,
 
   // Push our message on to the MessageWriter to pass to the enclave
   out->PushString("Hello");
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status call_enclave() {
@@ -72,7 +72,7 @@ Status call_enclave() {
   }
 
   LOG(INFO) << out.next().As<char>();
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace primitives

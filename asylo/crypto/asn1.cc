@@ -526,7 +526,7 @@ Status Asn1Value::SetInteger(const BIGNUM &value) {
   }
 
   ASN1_TYPE_set(value_.get(), V_ASN1_INTEGER, value_asn1_integer.release());
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Asn1Value::SetEnumerated(const BIGNUM &value) {
@@ -538,7 +538,7 @@ Status Asn1Value::SetEnumerated(const BIGNUM &value) {
 
   ASN1_TYPE_set(value_.get(), V_ASN1_ENUMERATED,
                 value_asn1_enumerated.release());
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Asn1Value::SetBitString(const std::vector<bool> &value) {
@@ -551,7 +551,7 @@ Status Asn1Value::SetBitString(const std::vector<bool> &value) {
   }
 
   ASN1_TYPE_set(value_.get(), V_ASN1_BIT_STRING, bssl_bit_string.release());
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Asn1Value::SetOctetString(ByteContainerView value) {
@@ -564,14 +564,14 @@ Status Asn1Value::SetOctetString(ByteContainerView value) {
 
   ASN1_TYPE_set(value_.get(), V_ASN1_OCTET_STRING,
                 value_octet_string.release());
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Asn1Value::SetObjectId(const ObjectId &value) {
   bssl::UniquePtr<ASN1_OBJECT> object;
   ASYLO_ASSIGN_OR_RETURN(object, value.GetBsslObjectCopy());
   ASN1_TYPE_set(value_.get(), V_ASN1_OBJECT, object.release());
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Asn1Value::SetSequence(absl::Span<const Asn1Value> elements) {
@@ -597,7 +597,7 @@ Status Asn1Value::SetIA5String(absl::string_view value) {
 
   ASN1_TYPE_set(value_.get(), V_ASN1_IA5STRING, ia5_string.release());
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Asn1Value::SetSequenceFromStatusOrs(
@@ -742,42 +742,42 @@ Status Asn1Value::SetBsslBoolean(ASN1_BOOLEAN bssl_value) {
 
   ASN1_TYPE_set(value_.get(), V_ASN1_BOOLEAN,
                 bssl_value ? kNonNullPointer : nullptr);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Asn1Value::SetBsslInteger(const ASN1_INTEGER &bssl_value) {
   if (ASN1_TYPE_set1(value_.get(), V_ASN1_INTEGER, &bssl_value) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Asn1Value::SetBsslEnumerated(const ASN1_ENUMERATED &bssl_value) {
   if (ASN1_TYPE_set1(value_.get(), V_ASN1_ENUMERATED, &bssl_value) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Asn1Value::SetBsslBitString(const ASN1_BIT_STRING &bssl_value) {
   if (ASN1_TYPE_set1(value_.get(), V_ASN1_BIT_STRING, &bssl_value) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Asn1Value::SetBsslOctetString(const ASN1_OCTET_STRING &bssl_value) {
   if (ASN1_TYPE_set1(value_.get(), V_ASN1_OCTET_STRING, &bssl_value) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Asn1Value::SetBsslObjectId(const ASN1_OBJECT &bssl_value) {
   if (ASN1_TYPE_set1(value_.get(), V_ASN1_OBJECT, &bssl_value) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Asn1Value::SetBsslSequence(const ASN1_SEQUENCE_ANY &bssl_value) {
@@ -795,14 +795,14 @@ Status Asn1Value::SetBsslSequence(const ASN1_SEQUENCE_ANY &bssl_value) {
   }
 
   ASN1_TYPE_set(value_.get(), V_ASN1_SEQUENCE, der_string.release());
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Asn1Value::SetBsslIA5String(const ASN1_IA5STRING &bssl_value) {
   if (ASN1_TYPE_set1(value_.get(), V_ASN1_IA5STRING, &bssl_value) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Asn1Value::Asn1Value(bssl::UniquePtr<ASN1_TYPE> value)
@@ -821,7 +821,7 @@ Status Asn1Value::CheckIsType(Asn1Type type) const {
                                   OpensslTypeName(openssl_type)));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 bool operator==(const Asn1Value &lhs, const Asn1Value &rhs) {

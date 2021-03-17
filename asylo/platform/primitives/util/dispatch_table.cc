@@ -37,7 +37,7 @@ Status DispatchTable::RegisterExitHandler(uint64_t untrusted_selector,
     return absl::AlreadyExistsError("Invalid selector in RegisterExitHandler.");
   }
   locked_exit_table->emplace(untrusted_selector, handler);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status DispatchTable::PerformUnknownExit(uint64_t untrusted_selector,

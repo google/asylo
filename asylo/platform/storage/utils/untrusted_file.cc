@@ -21,6 +21,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include "absl/status/status.h"
 #include "asylo/util/posix_error_space.h"
 
 namespace asylo {
@@ -58,7 +59,7 @@ Status UntrustedFile::Read(void *buffer, off_t offset, size_t size) {
     count += result;
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<size_t> UntrustedFile::Size() const {
@@ -75,7 +76,7 @@ Status UntrustedFile::Sync() {
     return Status{static_cast<error::PosixError>(errno),
                   "fsync() failed in UntrustedFile::Sync()"};
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status UntrustedFile::Write(const void *buffer, off_t offset, size_t size) {
@@ -115,7 +116,7 @@ Status UntrustedFile::Write(const void *buffer, off_t offset, size_t size) {
     count += result;
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status UntrustedFile::Truncate(size_t size) {
@@ -124,7 +125,7 @@ Status UntrustedFile::Truncate(size_t size) {
                   "ftruncate() failed in UntrustedFile::Truncate()"};
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace asylo

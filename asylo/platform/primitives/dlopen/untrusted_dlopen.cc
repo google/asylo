@@ -161,7 +161,7 @@ Status DlopenEnclaveClient::Destroy() {
     dlclose(dl_handle_);
     dl_handle_ = nullptr;
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status DlopenEnclaveClient::EnclaveCallInternal(uint64_t selector,

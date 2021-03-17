@@ -146,7 +146,7 @@ class SgxAgeRemoteServerEnclaveTest : public EnclaveTest {
     ServerConfig server_config = output.GetExtension(server_output_config);
     server_address_ =
         absl::StrCat(server_config.host(), ":", server_config.port());
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status SetUpClient() {

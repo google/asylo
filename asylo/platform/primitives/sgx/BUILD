@@ -120,6 +120,7 @@ cc_library(
         no_match_error = "Trusted SGX components must be built with an SGX backend selected",
     ) + [
         ":sgx_params",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "//asylo/util:lock_guard",
         "//asylo/platform/primitives/util:message_reader_writer",

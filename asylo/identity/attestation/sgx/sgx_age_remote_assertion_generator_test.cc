@@ -200,7 +200,7 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     ASYLO_RETURN_IF_ERROR(wrapper.status());
     test_enclave_wrapper_ = wrapper.ValueOrDie().release();
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Creates an assertion request for the SGX AGE remote assertion generator.

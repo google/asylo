@@ -20,10 +20,11 @@
 
 #include <string>
 
-#include "absl/strings/str_cat.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -33,8 +34,8 @@ namespace {
 
 TEST(ReturnIfError, ReturnsOnErrorStatus) {
   auto func = []() -> Status {
-    ASYLO_RETURN_IF_ERROR(Status::OkStatus());
-    ASYLO_RETURN_IF_ERROR(Status::OkStatus());
+    ASYLO_RETURN_IF_ERROR(absl::OkStatus());
+    ASYLO_RETURN_IF_ERROR(absl::OkStatus());
     ASYLO_RETURN_IF_ERROR(Status(error::GoogleError::UNKNOWN, "EXPECTED"));
     return Status(error::GoogleError::UNKNOWN, "ERROR");
   };
@@ -44,7 +45,7 @@ TEST(ReturnIfError, ReturnsOnErrorStatus) {
 
 TEST(ReturnIfError, ReturnsOnErrorStatusOr) {
   auto func = []() -> Status {
-    ASYLO_RETURN_IF_ERROR(Status::OkStatus());
+    ASYLO_RETURN_IF_ERROR(absl::OkStatus());
     ASYLO_RETURN_IF_ERROR(
         StatusOr<int>(Status(error::GoogleError::UNKNOWN, "EXPECTED")));
     return Status(error::GoogleError::UNKNOWN, "ERROR");
@@ -55,7 +56,7 @@ TEST(ReturnIfError, ReturnsOnErrorStatusOr) {
 
 TEST(ReturnIfError, ReturnsOnErrorFromLambda) {
   auto func = []() -> Status {
-    ASYLO_RETURN_IF_ERROR([] { return Status::OkStatus(); }());
+    ASYLO_RETURN_IF_ERROR([] { return absl::OkStatus(); }());
     ASYLO_RETURN_IF_ERROR(
         [] { return Status(error::GoogleError::UNKNOWN, "EXPECTED"); }());
     return Status(error::GoogleError::UNKNOWN, "ERROR");
@@ -118,7 +119,7 @@ TEST(AssignOrReturn, DoesNotAssignUniquePtrOnErrorStatus) {
     ASYLO_ASSIGN_OR_RETURN(ptr, StatusOr<std::unique_ptr<int>>(Status(
                                     error::GoogleError::UNKNOWN, "EXPECTED")));
     EXPECT_EQ(ptr, nullptr);
-    return Status::OkStatus();
+    return absl::OkStatus();
   };
 
   EXPECT_THAT(func(), StatusIs(error::GoogleError::UNKNOWN, "EXPECTED"));

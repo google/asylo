@@ -47,7 +47,7 @@ Status ValidateCertificateSigningRequest(const CertificateSigningRequest &csr) {
                   "CertificateSigningRequest has an unknown format");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status FullyValidateCertificate(const Certificate &certificate) {
@@ -83,7 +83,7 @@ Status ValidateCertificate(const Certificate &certificate) {
                   "Certificate has an unknown format");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ValidateCertificateChain(const CertificateChain &certificate_chain) {
@@ -91,7 +91,7 @@ Status ValidateCertificateChain(const CertificateChain &certificate_chain) {
     ASYLO_RETURN_IF_ERROR(ValidateCertificate(certificate));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ValidateCertificateRevocationList(const CertificateRevocationList &crl) {
@@ -109,7 +109,7 @@ Status ValidateCertificateRevocationList(const CertificateRevocationList &crl) {
                   "CertificateRevocationList has an unknown format");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<std::unique_ptr<CertificateInterface>> CreateCertificateInterface(
@@ -195,7 +195,7 @@ Status VerifyCertificateChain(CertificateInterfaceSpan certificate_chain,
     return status.WithPrependedContext("Failed to verify root certificate");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<Certificate> GetCertificateFromPem(absl::string_view pem_cert) {

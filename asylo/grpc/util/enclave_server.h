@@ -101,12 +101,12 @@ class EnclaveServer final : public TrustedApplication {
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) override {
     GetServerAddress(output);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status Finalize(const EnclaveFinal &enclave_final) override {
     FinalizeServer();
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
  private:
@@ -116,11 +116,11 @@ class EnclaveServer final : public TrustedApplication {
     // Ensure that the server is only created and initialized once.
     auto server_view(server_.Lock());
     if (*server_view) {
-      return Status::OkStatus();
+      return absl::OkStatus();
     }
 
     ASYLO_ASSIGN_OR_RETURN(*server_view, CreateServer());
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Creates a gRPC server that hosts service_ on host_ and port_ with

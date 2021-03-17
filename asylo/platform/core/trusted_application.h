@@ -23,6 +23,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/platform/core/entry_points.h"
 #include "asylo/util/status.h"
@@ -40,17 +41,17 @@ namespace asylo {
 ///  public:
 ///   Status Initialize(const EnclaveConfig &config) override {
 ///     primitives::TrustedPrimitives::DebugPuts("Hello!");
-///     return Status::OkStatus();
+///     return absl::OkStatus();
 ///   }
 ///
 ///   Status Run(const EnclaveInput &input, EnclaveOutput *output) override {
 ///     primitives::TrustedPrimitives::DebugPuts("Running!");
-///     return Status::OkStatus();
+///     return absl::OkStatus();
 ///   }
 ///
 ///   Status Finalize(const EnclaveFinal &fini) override {
 ///     primitives::TrustedPrimitives::DebugPuts("Goodbye!");
-///     return Status::OkStatus();
+///     return absl::OkStatus();
 ///   }
 /// };
 /// ```
@@ -78,7 +79,7 @@ class TrustedApplication {
   /// \return An OK status or an error if the enclave could not be initialized.
   /// \anchor initialize
   virtual Status Initialize(const EnclaveConfig &config) {
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   /// Implements enclave execution entry-point.
@@ -88,7 +89,7 @@ class TrustedApplication {
   /// \return OK status or error
   /// \anchor run
   virtual Status Run(const EnclaveInput &input, EnclaveOutput *output) {
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   /// Implements enclave finalization behavior.
@@ -97,7 +98,7 @@ class TrustedApplication {
   /// \return OK status or error
   /// \anchor finalize
   virtual Status Finalize(const EnclaveFinal &final_input) {
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   /// Trivial destructor.

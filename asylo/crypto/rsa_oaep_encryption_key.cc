@@ -68,7 +68,7 @@ Status CheckKeySize(int key_size) {
     return Status(absl::StatusCode::kInvalidArgument,
                   absl::StrCat("Invalid key size: ", key_size));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Checks if |hash_alg| is a valid hash and returns an error if it's not.
@@ -77,14 +77,14 @@ Status CheckHashAlgorithm(HashAlgorithm hash_alg) {
     return Status(absl::StatusCode::kInvalidArgument,
                   "UNKNOWN_HASH_ALGORITHM is not valid for RSA-OAEP hashing.");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status CheckEncryptionScheme(AsymmetricEncryptionScheme scheme) {
   switch (scheme) {
     case AsymmetricEncryptionScheme::RSA2048_OAEP:
     case AsymmetricEncryptionScheme::RSA3072_OAEP:
-      return Status::OkStatus();
+      return absl::OkStatus();
     case AsymmetricEncryptionScheme::UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME:
       break;  // Error handled below
   }
@@ -148,7 +148,7 @@ class RsaOaepOperation {
       return Status(absl::StatusCode::kInternal, BsslLastErrorString());
     }
     output->resize(out_len);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
  private:
@@ -340,7 +340,7 @@ Status RsaOaepDecryptionKey::SerializeToDer(
   }
   bssl::UniquePtr<uint8_t> deleter(buffer);
   serialized_key->assign(buffer, buffer + out_len);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<std::unique_ptr<AsymmetricEncryptionKey>>

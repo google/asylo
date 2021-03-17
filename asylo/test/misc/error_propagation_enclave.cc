@@ -32,14 +32,14 @@ class ErrorPropagationEnclave : public EnclaveTestCase {
   ErrorPropagationEnclave() = default;
 
   Status Initialize(const EnclaveConfig &config) final {
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) final {
     std::string test_name = GetEnclaveInputTestString(input);
 
     if (test_name == "OK") {
-      return Status::OkStatus();
+      return absl::OkStatus();
     } else if (test_name == "absl::StatusCode::kUnauthenticated") {
       return absl::UnauthenticatedError(kErrorString);
     } else if (test_name == "error::PosixError::P_EINVAL") {
@@ -51,7 +51,7 @@ class ErrorPropagationEnclave : public EnclaveTestCase {
   }
 
   Status Finalize(const EnclaveFinal &final_input) final {
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

@@ -43,7 +43,7 @@ class ClockTimeTestEnclave : public TrustedApplication {
       return absl::FailedPreconditionError("clock_gettime failed");
     time_test_output->set_clock_gettime(ts.tv_sec * kNs + ts.tv_nsec);
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

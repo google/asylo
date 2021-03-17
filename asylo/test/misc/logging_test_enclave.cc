@@ -17,10 +17,12 @@
  */
 
 #include <string.h>
+
 #include <cfloat>
 #include <climits>
 #include <string>
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/status.h"
@@ -59,7 +61,7 @@ class Logging : public EnclaveTestCase {
     LOG_IF(INFO, false) << "Test false conditional logging";
     VLOG(0) << "Test VLOG below level";
     VLOG(1) << "Test VLOG above level";
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

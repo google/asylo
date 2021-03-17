@@ -65,7 +65,7 @@ OutT CheckedPointerCast(InT in) {
 Status PceErrorToStatus(sgx_pce_error_t pce_error) {
   switch (pce_error) {
     case SGX_PCE_SUCCESS:
-      return Status::OkStatus();
+      return absl::OkStatus();
     case SGX_PCE_UNEXPECTED:
       return absl::InternalError("Unexpected error");
     case SGX_PCE_OUT_OF_EPC:

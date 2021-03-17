@@ -64,7 +64,7 @@ Status GenericEnclaveClient::Initialize(const char *name, size_t name_len,
   *output_len = output_extent.size();
   output->reset(new char[*output_len]);
   memcpy(output->get(), output_extent.As<char>(), *output_len);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GenericEnclaveClient::Run(const char *input, size_t input_len,
@@ -80,7 +80,7 @@ Status GenericEnclaveClient::Run(const char *input, size_t input_len,
   *output_len = output_extent.size();
   output->reset(new char[*output_len]);
   memcpy(output->get(), output_extent.As<char>(), *output_len);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GenericEnclaveClient::Finalize(const char *input, size_t input_len,
@@ -96,7 +96,7 @@ Status GenericEnclaveClient::Finalize(const char *input, size_t input_len,
   *output_len = output_extent.size();
   output->reset(new char[*output_len]);
   memcpy(output->get(), output_extent.As<char>(), *output_len);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status GenericEnclaveClient::EnterAndInitialize(const EnclaveConfig &config) {

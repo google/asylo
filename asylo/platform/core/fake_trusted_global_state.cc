@@ -55,7 +55,7 @@ Status SetEnclaveConfig(const EnclaveConfig &config) {
   // single test, we emulate multiple enclaves.
   delete enclave_config;
   enclave_config = new EnclaveConfig(config);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<const EnclaveConfig *> GetEnclaveConfig() {

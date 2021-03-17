@@ -101,6 +101,7 @@ cc_library(
         "//asylo/platform/primitives",
         "//asylo/util:status_macros",
         "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
 )
@@ -138,6 +139,7 @@ cc_library(
         ":metadata",
         "//asylo/platform/primitives",
         "//asylo/platform/system_call/type_conversions",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],
 )
@@ -191,6 +193,7 @@ cc_test(
         "//asylo/test/util:test_main",
         "//asylo/util:status_macros",
         "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],

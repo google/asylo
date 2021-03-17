@@ -69,11 +69,11 @@ class PrimitivesTest : public ::testing::Test {
     if (reload) {
       EXPECT_CALL(mock_init_handler, Call(NotNull(), _, _, _))
           .WillRepeatedly(DoAll(WithArgs<2, 3>(Invoke(CopyInOut)),
-                                Return(Status::OkStatus())));
+                                Return(absl::OkStatus())));
     } else {
       EXPECT_CALL(mock_init_handler, Call(NotNull(), _, _, _))
           .WillOnce(DoAll(WithArgs<2, 3>(Invoke(CopyInOut)),
-                          Return(Status::OkStatus())));
+                          Return(absl::OkStatus())));
     }
     ASYLO_EXPECT_OK(exit_call_provider->RegisterExitHandler(
         kUntrustedInit, ExitHandler{mock_init_handler.AsStdFunction()}));
@@ -280,7 +280,7 @@ TEST_F(PrimitivesTest, CallChain) {
           "UntrustedFibonacci called with invalid argument.");
     }
     out->Push(n < 2 ? n : trusted_fibonacci(n - 1) + trusted_fibonacci(n - 2));
-    return Status::OkStatus();
+    return absl::OkStatus();
   };
 
   // Register the Fibonacci exit handler.

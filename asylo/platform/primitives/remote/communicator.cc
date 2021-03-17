@@ -71,7 +71,7 @@ class Communicator::ThreadActivityWorkQueue {
   // Pushes a message to be processed in the context of this thread.
   Status QueueMessage(CommunicationMessagePtr wrapped_message) {
     wrapped_messages_queue_.Lock()->queue.emplace(std::move(wrapped_message));
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Runs a loop getting messages and processing requests until response is
@@ -266,7 +266,7 @@ Status Communicator::CreateStub(const RemoteProxyConfig &config,
                                 absl::string_view remote_address) {
   ASYLO_ASSIGN_OR_RETURN(client_,
                          ClientImpl::Create(config, remote_address, this));
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Communicator::StartServer(
@@ -280,7 +280,7 @@ Status Communicator::StartServer(
       service_, ServiceImpl::Create(requested_port, server_creds, this));
   // Success.
   is_server_ready_.store(true);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 void Communicator::ServerRpcLoop() {
@@ -294,7 +294,7 @@ Status Communicator::Connect(const RemoteProxyConfig &config,
   ASYLO_RETURN_IF_ERROR(CreateStub(config, remote_address));
   // Success.
   is_client_ready_.store(true);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Communicator::Communicator(bool is_host)
@@ -429,7 +429,7 @@ Status Communicator::IsMessageValid(const CommunicationMessage &message) {
     return Status{absl::StatusCode::kFailedPrecondition,
                   "Message has no selector"};
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace primitives

@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/test/util/enclave_test_application.h"
 
@@ -30,19 +31,19 @@ class HelloWorld : public EnclaveTestCase {
   Status Initialize(const EnclaveConfig &config) {
     std::string str_config = GetEnclaveConfigTestString(config);
     primitives::TrustedPrimitives::DebugPuts(str_config.c_str());
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
     std::string str_input = GetEnclaveInputTestString(input);
     primitives::TrustedPrimitives::DebugPuts(str_input.c_str());
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status Finalize(const EnclaveFinal &final_input) {
     std::string str_final = GetEnclaveFinalTestString(final_input);
     primitives::TrustedPrimitives::DebugPuts(str_final.c_str());
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

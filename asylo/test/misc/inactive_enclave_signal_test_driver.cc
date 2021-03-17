@@ -46,7 +46,7 @@ class InactiveEnclaveSignalTest : public EnclaveTest {
     if (!enclave_output.GetExtension(signal_received)) {
       return absl::InternalError("Signal not received in enclave");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

@@ -156,7 +156,7 @@ Status Pipe::CloseReadFd() {
                   absl::StrCat("Failed to close pipe read fd ", read_fd_));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Pipe::CloseWriteFd() {
@@ -165,7 +165,7 @@ Status Pipe::CloseWriteFd() {
                   absl::StrCat("Failed to close pipe write fd ", write_fd_));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Pipe::Pipe(int read_fd, int write_fd)
@@ -216,7 +216,7 @@ Status SetFdFlags(int fd, int flags) {
     return Status(static_cast<error::PosixError>(errno),
                   absl::StrCat("Failed to set file status flags on fd ", fd));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status AddFdFlags(int fd, int flags) {

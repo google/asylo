@@ -44,13 +44,13 @@ class MockedEnclaveClient : public primitives::Client {
 
   Status Destroy() override {
     LOG(FATAL);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status EnclaveCallInternal(uint64_t selector, primitives::MessageWriter *in,
                              primitives::MessageReader *out) override {
     LOG(FATAL);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

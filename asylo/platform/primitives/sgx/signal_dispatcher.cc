@@ -72,7 +72,7 @@ Status EnclaveSignalDispatcher::DeregisterAllSignalsForClient(
   sigset_t mask, oldmask;
   sigfillset(&mask);
   sigprocmask(SIG_SETMASK, &mask, &oldmask);
-  Status status = Status::OkStatus();
+  Status status = absl::OkStatus();
   {
     std::lock_guard<std::recursive_mutex> lock(signal_enclave_map_lock_);
     // If this enclave has registered any signals, deregister them and set the

@@ -65,7 +65,7 @@ class GetTimeExitCallHandler
       output->Push<int32_t>(0);  // result
       output->Push<int32_t>(0);  // errno
       output->Push<struct timespec>(host_time);
-      return Status::OkStatus();
+      return absl::OkStatus();
     }
     // Otherwise return no-value status.
     return Status{absl::StatusCode::kNotFound,

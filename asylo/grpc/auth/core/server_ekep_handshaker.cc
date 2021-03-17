@@ -23,6 +23,7 @@
 
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include "absl/memory/memory.h"
+#include "absl/status/status.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/util/logging.h"
 #include "asylo/grpc/auth/core/ekep_crypto.h"
@@ -123,7 +124,7 @@ void ServerEkepHandshaker::AbortHandshake(const Status &abort_status,
 ServerEkepHandshaker::Result ServerEkepHandshaker::HandleHandshakeMessage(
     HandshakeMessageType message_type, const google::protobuf::Message &handshake_message,
     std::string *output) {
-  Status status = Status::OkStatus();
+  Status status = absl::OkStatus();
 
   switch (message_type) {
     case CLIENT_PRECOMMIT:
@@ -352,7 +353,7 @@ Status ServerEkepHandshaker::HandleClientFinish(
     return Status(Abort::BAD_AUTHENTICATOR,
                   "Client handshake authenticator value is incorrect");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ServerEkepHandshaker::WriteServerPrecommit(std::string *output) {

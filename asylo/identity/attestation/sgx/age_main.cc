@@ -26,6 +26,7 @@
 #include <google/protobuf/text_format.h>
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/status/status.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -181,7 +182,7 @@ asylo::Status PrintSgxPlatformInfo(
   std::cout << "pce_svn { " << pce_svn.ShortDebugString() << " }" << std::endl;
   std::cout << "pce_id { " << pce_id.ShortDebugString() << " }" << std::endl;
 
-  return asylo::Status::OkStatus();
+  return absl::OkStatus();
 }
 
 asylo::StatusOr<std::unique_ptr<asylo::RsaOaepDecryptionKey>>

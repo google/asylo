@@ -18,6 +18,7 @@
 
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 
+#include "absl/status/status.h"
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"

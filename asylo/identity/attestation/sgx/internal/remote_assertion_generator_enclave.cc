@@ -61,7 +61,7 @@ Status RemoteAssertionGeneratorEnclave::Initialize(
     return absl::InvalidArgumentError(
         "EnclaveConfig does not include a server address");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status RemoteAssertionGeneratorEnclave::Run(const EnclaveInput &input,
@@ -94,7 +94,7 @@ Status RemoteAssertionGeneratorEnclave::Run(const EnclaveInput &input,
     case RemoteAssertionGeneratorEnclaveInput::kGetEnclaveIdentityInput:
       SetSelfSgxIdentity(enclave_output->mutable_get_enclave_identity_output()
                              ->mutable_sgx_identity());
-      return Status::OkStatus();
+      return absl::OkStatus();
     default:
       return absl::InvalidArgumentError(
           "EnclaveInput invalid: did not contain a valid input");
@@ -109,7 +109,7 @@ Status RemoteAssertionGeneratorEnclave::Finalize(
     server_service_pair_locked->server->Shutdown();
     server_service_pair_locked->server = nullptr;
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status RemoteAssertionGeneratorEnclave::StartRemoteAssertionGeneratorGrpcServer(
@@ -145,7 +145,7 @@ Status RemoteAssertionGeneratorEnclave::StartRemoteAssertionGeneratorGrpcServer(
       server_service_pair_locked->server,
       CreateAndStartServer(remote_assertion_generator_server_address_,
                            server_service_pair_locked->service.get()));
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status RemoteAssertionGeneratorEnclave::GeneratePceInfoSgxHardwareReport(
@@ -170,7 +170,7 @@ Status RemoteAssertionGeneratorEnclave::GeneratePceInfoSgxHardwareReport(
   output->mutable_report()->set_value(
       ConvertTrivialObjectToBinaryString(report));
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status RemoteAssertionGeneratorEnclave::GenerateKeyAndCsr(
@@ -202,7 +202,7 @@ Status RemoteAssertionGeneratorEnclave::GenerateKeyAndCsr(
 
   auto attestation_key_certs_pair_locked = attestation_key_certs_pair_.Lock();
   attestation_key_certs_pair_locked->attestation_key = std::move(signing_key);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status RemoteAssertionGeneratorEnclave::UpdateCerts(
@@ -247,7 +247,7 @@ Status RemoteAssertionGeneratorEnclave::UpdateCerts(
         std::move(attestation_key_certs_pair_locked->attestation_key),
         attestation_key_certs_pair_locked->certificate_chains);
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace sgx

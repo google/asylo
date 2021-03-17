@@ -53,7 +53,7 @@ Status CreateThreadHandler(const std::shared_ptr<primitives::Client> &client,
   Thread::StartDetached(donate_thread, client.get());
 
   output->Push<int>(0);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status RegisterSgxExitHandlers(Client::ExitCallProvider *exit_call_provider) {
@@ -65,7 +65,7 @@ Status RegisterSgxExitHandlers(Client::ExitCallProvider *exit_call_provider) {
   ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
       kSelectorCreateThread, ExitHandler{CreateThreadHandler}));
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace primitives

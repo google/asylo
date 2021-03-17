@@ -90,14 +90,14 @@ class EnclaveCommunicationTest : public ::testing::Test {
     server_address_ = absl::StrCat(final_server_config.host(), ":",
                                    final_server_config.port());
 
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status SetUpClient(const EnclaveConfig &config) {
     ASYLO_RETURN_IF_ERROR(client_launcher_.SetUp(
         absl::GetFlag(FLAGS_client_enclave_path), config, "/grpc/client"));
     grpc_client_enclave_ = client_launcher_.mutable_client();
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   void TearDown() override {

@@ -65,7 +65,7 @@ class ForkSecurityTest : public EnclaveTestCase {
     } else {
       return absl::InvalidArgumentError("Unrecognized thread type");
     }
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

@@ -200,7 +200,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGenerateKeyAndCsrSuccess) {
   *output->mutable_targeted_csr() = TargetedCertificateSigningRequest();
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
       .WillOnce(DoAll(SetArgPointee<1>(expected_enclave_output),
-                      Return(Status::OkStatus())));
+                      Return(absl::OkStatus())));
 
   sgx::TargetInfoProto pce_target_info;
   sgx::ReportProto report;
@@ -240,7 +240,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest,
        ->mutable_report() = expected_report;
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
       .WillOnce(DoAll(SetArgPointee<1>(expected_enclave_output),
-                      Return(Status::OkStatus())));
+                      Return(absl::OkStatus())));
 
   asylo::AsymmetricEncryptionKeyProto ppidek = Ppidek();
   sgx::TargetInfoProto pce_target_info;
@@ -274,7 +274,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeUpdateCertsSuccess) {
        ->mutable_sealed_secret() = expected_sealed_secret;
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
       .WillOnce(DoAll(SetArgPointee<1>(expected_enclave_output),
-                      Return(Status::OkStatus())));
+                      Return(absl::OkStatus())));
 
   std::vector<CertificateChain> certificate_chains;
   SetCertificateChain(&certificate_chains);
@@ -299,7 +299,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeUpdateCertsFailure) {
 TEST_F(SgxInfrastructuralEnclaveManagerTest,
        AgeStartServerWithoutSecretSuccess) {
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
-      .WillOnce(Return(Status::OkStatus()));
+      .WillOnce(Return(absl::OkStatus()));
   ASYLO_ASSERT_OK(sgx_infrastructural_enclave_manager_->AgeStartServer());
 }
 
@@ -316,7 +316,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest,
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeStartServerWithSecretSuccess) {
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
-      .WillOnce(Return(Status::OkStatus()));
+      .WillOnce(Return(absl::OkStatus()));
 
   SealedSecret sealed_secret = GetSealedSecret();
   ASYLO_ASSERT_OK(
@@ -344,7 +344,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGetSgxIdentitySuccess) {
       sgx::GetRandomValidSgxIdentity();
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
       .WillOnce(DoAll(SetArgPointee<1>(expected_enclave_output),
-                      Return(Status::OkStatus())));
+                      Return(absl::OkStatus())));
 
   SgxIdentity sgx_identity;
   ASYLO_ASSERT_OK_AND_ASSIGN(
@@ -366,7 +366,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetTargetInfoSuccess) {
   sgx::Targetinfo expected_targetinfo = PceTargetinfo();
   EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
       .WillOnce(DoAll(SetArgPointee<0>(expected_targetinfo),
-                      SetArgPointee<1>(kPceSvn), Return(Status::OkStatus())));
+                      SetArgPointee<1>(kPceSvn), Return(absl::OkStatus())));
 
   sgx::TargetInfoProto pce_target_info;
   sgx::PceSvn pce_svn;
@@ -395,7 +395,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetInfoSuccess) {
       .WillOnce(DoAll(SetArgPointee<3>(kEncryptedPpid),
                       SetArgPointee<4>(kPceSvn), SetArgPointee<5>(kPceId),
                       SetArgPointee<6>(kPckSignatureScheme),
-                      Return(Status::OkStatus())));
+                      Return(absl::OkStatus())));
 
   sgx::ReportProto report = Report();
   asylo::AsymmetricEncryptionKeyProto ppidek = Ppidek();
@@ -465,7 +465,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetInfoWithBadPpidekFails) {
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportSuccess) {
   EXPECT_CALL(*mock_intel_ae_, PceSignReport(_, _, _, _))
       .WillOnce(
-          DoAll(SetArgPointee<3>(PckSignature()), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<3>(PckSignature()), Return(absl::OkStatus())));
 
   sgx::PceSvn pck_target_pce_svn = PceSvn();
   sgx::CpuSvn pck_target_cpu_svn = CreateCpuSvn();
@@ -532,7 +532,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest,
   EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
       .WillOnce(DoAll(SetArgPointee<0>(PceTargetinfo()),
                       SetArgPointee<1>(PceSvn().value()),
-                      Return(Status::OkStatus())));
+                      Return(absl::OkStatus())));
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
       .WillOnce(
           Return(Status(absl::StatusCode::kUnknown, kUnknownErrorMessage)));
@@ -545,7 +545,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgeGetSgxIdentityFailure) {
   EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
       .WillOnce(DoAll(SetArgPointee<0>(PceTargetinfo()),
                       SetArgPointee<1>(PceSvn().value()),
-                      Return(Status::OkStatus())));
+                      Return(absl::OkStatus())));
   EnclaveOutput expected_enclave_output;
   sgx::GenerateKeyAndCsrOutput *output =
       expected_enclave_output
@@ -557,7 +557,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgeGetSgxIdentityFailure) {
 
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
       .WillOnce(DoAll(SetArgPointee<1>(expected_enclave_output),
-                      Return(Status::OkStatus())))
+                      Return(absl::OkStatus())))
       .WillOnce(
           Return(Status(absl::StatusCode::kUnknown, kUnknownErrorMessage)));
 
@@ -570,7 +570,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgePceSignReportFailure) {
   EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
       .WillOnce(DoAll(SetArgPointee<0>(PceTargetinfo()),
                       SetArgPointee<1>(pck_target_pce_svn.value()),
-                      Return(Status::OkStatus())));
+                      Return(absl::OkStatus())));
 
   EnclaveOutput expected_gen_key_and_csr_output;
   sgx::GenerateKeyAndCsrOutput *output =
@@ -595,9 +595,9 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgePceSignReportFailure) {
        ->mutable_sgx_identity() = age_identity;
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
       .WillOnce(DoAll(SetArgPointee<1>(expected_gen_key_and_csr_output),
-                      Return(Status::OkStatus())))
+                      Return(absl::OkStatus())))
       .WillOnce(DoAll(SetArgPointee<1>(expected_get_enclave_identity_output),
-                      Return(Status::OkStatus())));
+                      Return(absl::OkStatus())));
 
   sgx::Report expected_report;
   SetTrivialObjectFromBinaryString(report.value(), &expected_report);
@@ -619,7 +619,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgeSuccess) {
   EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
       .WillOnce(DoAll(SetArgPointee<0>(PceTargetinfo()),
                       SetArgPointee<1>(pck_target_pce_svn.value()),
-                      Return(Status::OkStatus())));
+                      Return(absl::OkStatus())));
 
   EnclaveOutput expected_gen_key_and_csr_output;
   sgx::GenerateKeyAndCsrOutput *output =
@@ -644,9 +644,9 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgeSuccess) {
        ->mutable_sgx_identity() = age_identity;
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
       .WillOnce(DoAll(SetArgPointee<1>(expected_gen_key_and_csr_output),
-                      Return(Status::OkStatus())))
+                      Return(absl::OkStatus())))
       .WillOnce(DoAll(SetArgPointee<1>(expected_get_enclave_identity_output),
-                      Return(Status::OkStatus())));
+                      Return(absl::OkStatus())));
 
   sgx::Report expected_report;
   SetTrivialObjectFromBinaryString(report.value(), &expected_report);
@@ -657,7 +657,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, CertifyAgeSuccess) {
                       age_identity.machine_configuration().cpu_svn().value()),
                   NotNull()))
       .WillOnce(
-          DoAll(SetArgPointee<3>(PckSignature()), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<3>(PckSignature()), Return(absl::OkStatus())));
 
   Certificate expected_certificate;
   ASYLO_ASSERT_OK_AND_ASSIGN(
@@ -673,7 +673,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest,
   EXPECT_CALL(*mock_intel_ae_, GetPceTargetinfo(NotNull(), NotNull()))
       .WillOnce(DoAll(SetArgPointee<0>(PceTargetinfo()),
                       SetArgPointee<1>(PceSvn().value()),
-                      Return(Status::OkStatus())));
+                      Return(absl::OkStatus())));
 
   EnclaveOutput expected_gen_key_and_csr_output;
   sgx::GenerateKeyAndCsrOutput *output =
@@ -688,7 +688,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest,
 
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
       .WillOnce(DoAll(SetArgPointee<1>(expected_gen_key_and_csr_output),
-                      Return(Status::OkStatus())));
+                      Return(absl::OkStatus())));
 
   sgx::CpuSvn pck_target_cpu_svn = CreateCpuSvn();
   sgx::PceSvn pck_target_pce_svn;
@@ -702,7 +702,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest,
           TrivialObjectEq(expected_report), pck_target_pce_svn.value(),
           UnsafeBytes<sgx::kCpusvnSize>(pck_target_cpu_svn.value()), NotNull()))
       .WillOnce(
-          DoAll(SetArgPointee<3>(PckSignature()), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<3>(PckSignature()), Return(absl::OkStatus())));
 
   Certificate expected_certificate;
   ASYLO_ASSERT_OK_AND_ASSIGN(

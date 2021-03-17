@@ -95,7 +95,7 @@ TEST_F(ApplicationWrapperDriverMainTest,
   EXPECT_CALL(*client_, EnterAndInitialize(_));
   EXPECT_CALL(*client_, EnterAndRun(_, _))
       .WillOnce(
-          DoAll(SetArgPointee<1>(enclave_output), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(enclave_output), Return(absl::OkStatus())));
   EXPECT_CALL(*client_, EnterAndFinalize(_));
   EXPECT_CALL(*client_, DestroyEnclave());
 
@@ -197,7 +197,7 @@ TEST_F(ApplicationWrapperDriverMainTest,
   EXPECT_CALL(*client_, EnterAndInitialize(_));
   EXPECT_CALL(*client_, EnterAndRun(_, _))
       .WillOnce(
-          DoAll(SetArgPointee<1>(enclave_output), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(enclave_output), Return(absl::OkStatus())));
   EXPECT_CALL(*client_, EnterAndFinalize(_))
       .WillOnce(Return(destroy_enclave_failure));
   EXPECT_CALL(*client_, DestroyEnclave());
@@ -220,7 +220,7 @@ TEST_F(ApplicationWrapperDriverMainTest, PropagatesApplicationConfig) {
   EXPECT_CALL(*client_, EnterAndInitialize(Partially(expected_config)));
   EXPECT_CALL(*client_, EnterAndRun(_, _))
       .WillOnce(
-          DoAll(SetArgPointee<1>(enclave_output), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(enclave_output), Return(absl::OkStatus())));
   EXPECT_CALL(*client_, EnterAndFinalize(_));
   EXPECT_CALL(*client_, DestroyEnclave());
 
@@ -250,7 +250,7 @@ TEST_F(ApplicationWrapperDriverMainTest, PropagatesCommandLineArgs) {
   EXPECT_CALL(*client_, EnterAndInitialize(Partially(expected_config)));
   EXPECT_CALL(*client_, EnterAndRun(_, _))
       .WillOnce(
-          DoAll(SetArgPointee<1>(enclave_output), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(enclave_output), Return(absl::OkStatus())));
   EXPECT_CALL(*client_, EnterAndFinalize(_));
   EXPECT_CALL(*client_, DestroyEnclave());
 
@@ -273,7 +273,7 @@ TEST_F(ApplicationWrapperDriverMainTest, PropagatesMainReturnValue) {
   EXPECT_CALL(*client_, EnterAndInitialize(_));
   EXPECT_CALL(*client_, EnterAndRun(_, _))
       .WillOnce(
-          DoAll(SetArgPointee<1>(enclave_output), Return(Status::OkStatus())));
+          DoAll(SetArgPointee<1>(enclave_output), Return(absl::OkStatus())));
   EXPECT_CALL(*client_, EnterAndFinalize(_));
   EXPECT_CALL(*client_, DestroyEnclave());
 

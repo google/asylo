@@ -99,13 +99,13 @@ Status SgxIntelEcdsaQeRemoteAssertionGenerator::Initialize(
   // configuration. This is not an error, as the application may want to use
   // assertion verification (e.g. it is not hosting any enclaves).
   if (!parsed_config.has_generator_info()) {
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   ASYLO_RETURN_IF_ERROR(ReadCertificationData(parsed_config));
 
   members_view->is_initialized = true;
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SgxIntelEcdsaQeRemoteAssertionGenerator::ReadCertificationData(
@@ -120,7 +120,7 @@ Status SgxIntelEcdsaQeRemoteAssertionGenerator::ReadCertificationData(
           config.generator_info().pck_certificate_chain());
 
     case GeneratorInfo::kUseDcapDefault:
-      return Status::OkStatus();
+      return absl::OkStatus();
   }
 
   return absl::InvalidArgumentError(absl::StrCat(
@@ -153,7 +153,7 @@ Status SgxIntelEcdsaQeRemoteAssertionGenerator::CreateAssertionOffer(
   offer->mutable_description()->set_authority_type(AuthorityType());
   offer->mutable_description()->set_identity_type(IdentityType());
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<bool> SgxIntelEcdsaQeRemoteAssertionGenerator::CanGenerate(
@@ -195,7 +195,7 @@ Status SgxIntelEcdsaQeRemoteAssertionGenerator::Generate(
   assertion->mutable_description()->set_authority_type(AuthorityType());
   assertion->mutable_description()->set_identity_type(IdentityType());
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 SET_STATIC_MAP_VALUE_OF_DERIVED_TYPE(AssertionGeneratorMap,

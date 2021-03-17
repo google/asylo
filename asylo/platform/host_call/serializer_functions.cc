@@ -20,6 +20,7 @@
 
 #include <ifaddrs.h>
 
+#include "absl/status/status.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/util/status_macros.h"

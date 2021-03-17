@@ -105,7 +105,7 @@ Status EkepHandshakerOptions::Validate() const {
     }
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 std::vector<AssertionDescription>::const_iterator FindAssertionDescription(

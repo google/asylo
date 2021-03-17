@@ -623,7 +623,7 @@ class Asn1Test<Asn1IntegerConversionTag<IntT>> : public Test {
 
   static Status SetBssl(Asn1Value *asn1, const BsslValueType &bssl_value) {
     *asn1 = bssl_value;
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 };
 

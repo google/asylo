@@ -104,7 +104,7 @@ asylo::Status GrpcClientEnclave::Run(const asylo::EnclaveInput &input,
       *client_output->mutable_translation_response(),
       GetTranslation(client_input.translation_request(), stub.get()));
 
-  return asylo::Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace secure_grpc

@@ -157,7 +157,7 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
     ASYLO_RETURN_IF_ERROR(enclave_manager_->LoadEnclave(load_config));
     remote_assertion_generator_enclave_client_ =
         enclave_manager_->GetClient(load_config.name());
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status StartTestUtilEnclave() {
@@ -182,7 +182,7 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
     remote_assertion_generator_test_util_enclave_client_ =
         enclave_manager_->GetClient(
             kRemoteAssertionGeneratorTestUtilEnclaveName);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Creates an unix domain socket server address at a randomly generated
@@ -363,7 +363,7 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
             ->mutable_generate_pce_info_sgx_hardware_report_input()
             ->mutable_ppid_encryption_key();
     SetTestAsymmetricEncryptionKeyProto(asymmetric_encryption_key_proto);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   static EnclaveManager *enclave_manager_;

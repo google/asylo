@@ -154,7 +154,7 @@ Status ValidateTimestamp(const google::protobuf::Timestamp &timestamp) {
         "999999999 (inclusive)");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Validates a TcbStatus message. Returns an OK status if and only if the
@@ -178,7 +178,7 @@ Status ValidateTcbStatus(const TcbStatus &tcb_status) {
         "TcbStatus has an unknown \"known_status\"");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Validates a TcbLevel message under |tcb_info_version|. Returns an OK status
@@ -226,7 +226,7 @@ Status ValidateTcbLevel(const TcbLevel &tcb_level, int tcb_info_version) {
       return UnknownTcbInfoVersionError(tcb_info_version);
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Validates a TcbInfoImpl message with a |version| of 1 or 2. Returns an OK
@@ -321,7 +321,7 @@ Status ValidateTcbInfoImplV1andV2(const TcbInfoImpl &tcb_info_impl) {
     }
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Validates a TcbInfoImpl message. Returns an OK status if and only if the
@@ -384,7 +384,7 @@ Status ValidateRawTcb(const RawTcb &raw_tcb) {
   ASYLO_RETURN_IF_ERROR(ValidateCpuSvn(raw_tcb.cpu_svn()));
   ASYLO_RETURN_IF_ERROR(ValidatePceSvn(raw_tcb.pce_svn()));
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status ValidateTcbInfo(const TcbInfo &tcb_info) {

@@ -62,7 +62,10 @@ cc_library(
             ],
         },
         "Trusted dlopen components must be built with Asylo toolchain",
-    ) + ["//asylo/util:cleanup"],
+    ) + [
+        "@com_google_absl//absl/status",
+        "//asylo/util:cleanup",
+    ],
     alwayslink = 1,
 )
 

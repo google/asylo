@@ -47,7 +47,7 @@ Status SetEnclaveConfig(const EnclaveConfig &config) {
     return absl::FailedPreconditionError("EnclaveConfig is already set");
   }
   global_enclave_config = new EnclaveConfig(config);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<const EnclaveConfig *> GetEnclaveConfig() {

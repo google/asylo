@@ -18,6 +18,7 @@
 
 #include "asylo/binding/java/src/test/native/enclave_native_jni_utils_tests.h"
 
+#include "absl/status/status.h"
 #include "asylo/binding/java/src/main/native/jni_utils.h"
 #include "asylo/binding/java/src/test/java/com/asylo/client/jni_utils_test.pb.h"
 #include "asylo/enclave.pb.h"
@@ -38,7 +39,7 @@ Java_com_asylo_client_EnclaveNativeJniUtilsTest_nativeCheckJniException(
 JNIEXPORT void JNICALL
 Java_com_asylo_client_EnclaveNativeJniUtilsTest_nativeThrowEnclaveExceptionUsingStatus(
     JNIEnv *env, jobject this_obj) {
-  asylo::jni::ThrowEnclaveException(env, asylo::Status::OkStatus());
+  asylo::jni::ThrowEnclaveException(env, absl::OkStatus());
 }
 
 JNIEXPORT void JNICALL

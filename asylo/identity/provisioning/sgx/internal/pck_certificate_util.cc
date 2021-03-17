@@ -248,33 +248,33 @@ Status ValidateSgxExtensions(const SgxExtensions &extensions) {
     return absl::InvalidArgumentError(
         absl::StrCat("Invalid SgxType: ", extensions.sgx_type));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Reads |asn1| as a TCB ASN.1 value into |tcb| and |cpu_svn|.
 Status ReadTcb(const Asn1Value &asn1, Tcb *tcb, CpuSvn *cpu_svn) {
   absl::flat_hash_map<ObjectId, ReadInfo> read_functions(
       {{GetSgxOids().pce_svn,
-        {[tcb](const Asn1Value &asn1) {
+        {[tcb](const Asn1Value &asn1) -> Status {
            uint16_t pce_svn;
            ASYLO_ASSIGN_OR_RETURN(pce_svn, asn1.GetIntegerAsInt<uint16_t>());
            tcb->mutable_pce_svn()->set_value(pce_svn);
-           return Status::OkStatus();
+           return absl::OkStatus();
          },
          Optionality::REQUIRED}},
        {GetSgxOids().cpu_svn,
-        {[cpu_svn](const Asn1Value &asn1) {
+        {[cpu_svn](const Asn1Value &asn1) -> Status {
            std::vector<uint8_t> cpu_svn_bytes;
            ASYLO_ASSIGN_OR_RETURN(cpu_svn_bytes,
                                   ReadOctetStringWithSize(asn1, kCpusvnSize));
            cpu_svn->set_value(cpu_svn_bytes.data(), cpu_svn_bytes.size());
-           return Status::OkStatus();
+           return absl::OkStatus();
          },
          Optionality::REQUIRED}}});
   ObjectId oid;
   for (int i = 0; i < kTcbComponentsSize; ++i) {
     read_functions.insert({GetSgxOids().sgx_tcb_comp_svns[i],
-                           {[tcb, i](const Asn1Value &asn1) {
+                           {[tcb, i](const Asn1Value &asn1) -> Status {
                               // Read as a uint8_t and cast to disallow negative
                               // values.
                               uint8_t component;
@@ -282,7 +282,7 @@ Status ReadTcb(const Asn1Value &asn1, Tcb *tcb, CpuSvn *cpu_svn) {
                                   component, asn1.GetIntegerAsInt<uint8_t>());
                               (*tcb->mutable_components())[i] =
                                   *reinterpret_cast<char *>(&component);
-                              return Status::OkStatus();
+                              return absl::OkStatus();
                             },
                             Optionality::REQUIRED}});
   }
@@ -354,46 +354,46 @@ StatusOr<SgxExtensions> ReadSgxExtensions(const Asn1Value &extensions_asn1) {
   absl::flat_hash_set<ObjectId> sequence_oids;
   ASYLO_RETURN_IF_ERROR(ReadOidAnySequence(
       {{GetSgxOids().ppid,
-        {[&extensions](const Asn1Value &asn1) {
+        {[&extensions](const Asn1Value &asn1) -> Status {
            std::vector<uint8_t> ppid_bytes;
            ASYLO_ASSIGN_OR_RETURN(ppid_bytes,
                                   ReadOctetStringWithSize(asn1, kPpidSize));
            extensions.ppid.set_value(ppid_bytes.data(), ppid_bytes.size());
-           return Status::OkStatus();
+           return absl::OkStatus();
          },
          Optionality::REQUIRED}},
        {GetSgxOids().tcb,
-        {[&extensions](const Asn1Value &asn1) {
+        {[&extensions](const Asn1Value &asn1) -> Status {
            return ReadTcb(asn1, &extensions.tcb, &extensions.cpu_svn);
          },
          Optionality::REQUIRED}},
        {GetSgxOids().pce_id,
-        {[&extensions](const Asn1Value &asn1) {
+        {[&extensions](const Asn1Value &asn1) -> Status {
            std::vector<uint8_t> pce_id_bytes;
            ASYLO_ASSIGN_OR_RETURN(
                pce_id_bytes, ReadOctetStringWithSize(asn1, sizeof(uint16_t)));
            extensions.pce_id.set_value(
                le16toh(*reinterpret_cast<uint16_t *>(pce_id_bytes.data())));
-           return Status::OkStatus();
+           return absl::OkStatus();
          },
          Optionality::REQUIRED}},
        {GetSgxOids().fmspc,
-        {[&extensions](const Asn1Value &asn1) {
+        {[&extensions](const Asn1Value &asn1) -> Status {
            std::vector<uint8_t> fmspc_bytes;
            ASYLO_ASSIGN_OR_RETURN(fmspc_bytes,
                                   ReadOctetStringWithSize(asn1, kFmspcSize));
            extensions.fmspc.set_value(fmspc_bytes.data(), fmspc_bytes.size());
-           return Status::OkStatus();
+           return absl::OkStatus();
          },
          Optionality::REQUIRED}},
        {GetSgxOids().sgx_type,
-        {[&extensions](const Asn1Value &asn1) {
+        {[&extensions](const Asn1Value &asn1) -> Status {
            using UnderlyingType = std::underlying_type<SgxTypeRaw>::type;
            UnderlyingType raw;
            ASYLO_ASSIGN_OR_RETURN(raw,
                                   asn1.GetEnumeratedAsInt<UnderlyingType>());
            ASYLO_ASSIGN_OR_RETURN(extensions.sgx_type, FromRawSgxType(raw));
-           return Status::OkStatus();
+           return absl::OkStatus();
          },
       Optionality::REQUIRED}}},
       sequence));
@@ -456,7 +456,7 @@ Status ValidatePckCertificates(const PckCertificates &pck_certificates) {
     tcbms.insert(cert_info.tcbm());
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<SgxExtensions> ExtractSgxExtensionsFromPckCert(

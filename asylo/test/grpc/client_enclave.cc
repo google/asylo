@@ -124,7 +124,7 @@ Status ClientEnclave::Run(const EnclaveInput &input, EnclaveOutput *output) {
   std::string result;
   ASYLO_ASSIGN_OR_RETURN(result, client.Hello(rpc_input));
   output->SetExtension(rpc_result, result);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 TrustedApplication *BuildTrustedApplication() { return new ClientEnclave(); }

@@ -93,7 +93,7 @@ std::string CreateUrl(absl::string_view path, absl::string_view command,
 Status ParseHttpResponseError(const HttpFetcher::HttpResponse &response) {
   switch (response.status_code) {
     case 200:  // OK
-      return Status::OkStatus();
+      return absl::OkStatus();
     case 400:  // Bad Request
       return absl::InvalidArgumentError("Invalid request parameters");
     case 401:  // Unauthorized

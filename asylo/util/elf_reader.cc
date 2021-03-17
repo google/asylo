@@ -265,7 +265,7 @@ Status ElfReaderCreator::InitializeSectionMaps() {
     }
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<const Elf64_Ehdr *> ElfReaderCreator::ElfHeader() const {

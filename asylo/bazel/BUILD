@@ -88,6 +88,7 @@ cc_library(
         "//asylo/test/util:test_flags",
         "@com_github_google_benchmark//:benchmark",
         "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",
     ],
     alwayslink = 1,

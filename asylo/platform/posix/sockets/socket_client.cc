@@ -28,6 +28,7 @@
 
 #include <memory>
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/posix_error_space.h"
 
@@ -74,7 +75,7 @@ Status SocketClient::GetPeername(struct sockaddr *peeraddr_out,
     return Status(static_cast<error::PosixError>(errno), "getpeername failure");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SocketClient::ClientSetup(const std::string &server_ip, int server_port,
@@ -139,7 +140,7 @@ Status SocketClient::ClientSetup(const std::string &socket_name,
 }
 
 Status SocketClient::ClientRoundtripTransmit(int buf_len, int round_trip) {
-  Status status = Status::OkStatus();
+  Status status = absl::OkStatus();
   std::unique_ptr<char[]> transmit_buf(new char[buf_len]);
   char *buf = transmit_buf.get();
 
@@ -171,7 +172,7 @@ Status SocketClient::ClientConnection(int fd, struct sockaddr *serv_addr,
     return Status(static_cast<error::PosixError>(errno), "connect failure");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace asylo

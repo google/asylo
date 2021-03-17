@@ -25,6 +25,7 @@
 #include <type_traits>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/storage/utils/random_access_storage.h"
 #include "asylo/util/asylo_macros.h"
@@ -91,7 +92,7 @@ class RecordStore {
       ASYLO_RETURN_IF_ERROR(Commit(it));
     }
     ASYLO_RETURN_IF_ERROR(io_->Sync());
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Reads a record from storage into |item|, returning an error status on
@@ -125,7 +126,7 @@ class RecordStore {
       index_[offset] = first;
     }
     *item = cache_.begin()->value;
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Writes |item| to the record store, returning an error status on failure.
@@ -153,7 +154,7 @@ class RecordStore {
     auto first = cache_.begin();
     first->value = item;
     first->dirty = true;
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Returns true if a record specified by its byte-offset is present in the
@@ -174,7 +175,7 @@ class RecordStore {
   ASYLO_MUST_USE_RESULT Status Commit(NodeRef entry) {
     ASYLO_RETURN_IF_ERROR(io_->Write(&entry->value, entry->offset, sizeof(T)));
     entry->dirty = false;
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Evicts an entry from the cache and moves the evicted cache node to the
@@ -184,7 +185,7 @@ class RecordStore {
     ASYLO_RETURN_IF_ERROR(Commit(last));
     index_.erase(last->offset);
     MoveToFront(last);
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // Moves an LRU list node to the front of the list.

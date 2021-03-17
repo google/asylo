@@ -113,7 +113,7 @@ static Status TakeSnapshot(sgx_enclave_id_t eid, char **output,
     return absl::InternalError("No output from enclave");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Enters the enclave and invokes the restoring entry-point. If the ecall fails,
@@ -136,7 +136,7 @@ static Status Restore(sgx_enclave_id_t eid, const char *input, size_t input_len,
     // boundary.
     return absl::InternalError("No output from enclave");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace
@@ -278,7 +278,7 @@ Status SgxEnclaveClient::Destroy() {
   ASYLO_RETURN_IF_ERROR(
       EnclaveSignalDispatcher::GetInstance()->DeregisterAllSignalsForClient(
           this));
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SgxEnclaveClient::RegisterExitHandlers() {
@@ -334,7 +334,7 @@ Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
   if (params.output) {
     output->Deserialize(params.output, static_cast<size_t>(params.output_size));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 int SgxEnclaveClient::EnterAndHandleSignal(int signum, int sigcode) {

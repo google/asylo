@@ -26,6 +26,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/posix_error_space.h"
 
@@ -130,11 +131,11 @@ Status SocketServer::ServerAccept() {
     LOG(ERROR) << kLogOrigin << "server accept error";
     return Status(static_cast<error::PosixError>(errno), "accept error");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status SocketServer::ServerRoundtripTransmit(int buf_len, int round_trip) {
-  Status status = Status::OkStatus();
+  Status status = absl::OkStatus();
   std::unique_ptr<char[]> transmit_buf(new char[buf_len]);
   char *buf = transmit_buf.get();
 
@@ -187,7 +188,7 @@ Status SocketServer::ServerConnection(int fd, struct sockaddr *serv_addr,
     LOG(ERROR) << kLogOrigin << "server listen error";
     return Status(static_cast<error::PosixError>(errno), "listen error");
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace asylo

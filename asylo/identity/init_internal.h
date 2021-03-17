@@ -21,6 +21,7 @@
 
 #include <string>
 
+#include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/status.h"
 
@@ -34,7 +35,7 @@ namespace internal {
 template <class IteratorT>
 Status TryInitialize(const std::string &config, IteratorT authority_it) {
   if (authority_it->IsInitialized()) {
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   Status status = authority_it->Initialize(config);

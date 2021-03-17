@@ -51,7 +51,7 @@ Status VerifySgxLocalAssertionAuthorityConfig(
         kAttestationDomainNameSize, config.attestation_domain().size()));
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status VerifySgxAgeRemoteAssertionAuthorityConfig(
@@ -67,7 +67,7 @@ Status VerifySgxAgeRemoteAssertionAuthorityConfig(
         "SGX AGE remote authority config must have a server address");
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
@@ -113,7 +113,7 @@ Status VerifySgxIntelEcdsaQeRemoteAssertionAuthorityConfig(
     }
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace asylo

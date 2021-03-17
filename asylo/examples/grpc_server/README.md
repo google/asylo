@@ -216,7 +216,7 @@ asylo::Status GrpcServerEnclave::Initialize(
                          "Failed to start server");
   }
 
-  return asylo::Status::OkStatus();
+  return absl::OkStatus();
 }
 ```
 
@@ -235,7 +235,7 @@ port assigned to the gRPC server:
 asylo::Status GrpcServerEnclave::Run(const asylo::EnclaveInput &enclave_input,
                                      asylo::EnclaveOutput *enclave_output) {
   enclave_output->SetExtension(server_port, selected_port_);
-  return asylo::Status::OkStatus();
+  return absl::OkStatus();
 }
 ```
 
@@ -259,7 +259,7 @@ asylo::Status GrpcServerEnclave::Finalize(
     server_.reset(nullptr);
   }
 
-  return asylo::Status::OkStatus();
+  return absl::OkStatus();
 }
 ```
 

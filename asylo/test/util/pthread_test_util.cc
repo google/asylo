@@ -85,7 +85,7 @@ Status LaunchThreads(const int numThreads, void *(*start_routine)(void *),
     threads->emplace_back(new_thread);
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status JoinThreads(const std::vector<pthread_t> &threads) {
@@ -96,7 +96,7 @@ Status JoinThreads(const std::vector<pthread_t> &threads) {
     }
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status CheckInRange(const int value, absl::string_view debug_name,
@@ -106,7 +106,7 @@ Status CheckInRange(const int value, absl::string_view debug_name,
         absl::StrCat("illegal value of ", debug_name, ": currently ", value,
                      "; must be in range ", min_allowed, "-", max_allowed));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace asylo

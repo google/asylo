@@ -123,9 +123,8 @@ Status InitializeEnclaveAssertionAuthorities(ConfigIteratorT configs_begin,
     }
   }
 
-  return ok ? Status::OkStatus()
-            : Status(
-                  absl::StatusCode::kInternal,
+  return ok ? absl::OkStatus()
+            : absl::InvalidArgumentError(
                   "One or more errors occurred while attempting to initialize "
                   "assertion generators and assertion verifiers");
 }

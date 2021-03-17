@@ -94,7 +94,7 @@ class CurlImpl : public Curl {
   // |err_msg_|.
   Status ToStatus(CURLcode error_code) {
     if (error_code == CURLE_OK) {
-      return Status::OkStatus();
+      return absl::OkStatus();
     }
     return Status(absl::StatusCode::kInternal,
                   absl::StrFormat(

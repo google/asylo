@@ -373,7 +373,7 @@ Status AddSingleExtension(X509_EXTENSION *x509_extension, X509 *x509) {
   if (X509_add_ext(x509, x509_extension, /*loc=*/kAddExtensionToEnd) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Sets the X.509 version in |x509|.
@@ -381,7 +381,7 @@ Status SetVersion(X509Version version, X509 *x509) {
   if (X509_set_version(x509, static_cast<long>(version)) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Sets the serial number in |x509|.
@@ -400,7 +400,7 @@ Status SetSerialNumber(const BIGNUM &serial_number, X509 *x509) {
   if (X509_set_serialNumber(x509, serial_asn1_integer.get()) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Sets the issuer name in |x509|.
@@ -410,7 +410,7 @@ Status SetIssuerName(const X509Name &name, X509 *x509) {
   if (X509_set_issuer_name(x509, x509_name.get()) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Sets the validity period in |x509|.
@@ -424,7 +424,7 @@ Status SetValidity(X509Validity validity, X509 *x509) {
   if (X509_set_notAfter(x509, asn1_time.get()) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Sets the subject name in |x509|.
@@ -434,7 +434,7 @@ Status SetSubjectName(const X509Name &name, X509 *x509) {
   if (X509_set_subject_name(x509, x509_name.get()) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Sets the subject key in |x509|.
@@ -449,7 +449,7 @@ Status SetSubjectPublicKey(absl::string_view subject_key_der, X509 *x509) {
   if (X509_set_pubkey(x509, evp_pkey.get()) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Sets the authority key identifier in |x509|.
@@ -621,7 +621,7 @@ Status AddExtensions(absl::Span<const X509Extension> extensions, X509 *x509) {
     }
     ASYLO_RETURN_IF_ERROR(AddSingleExtension(x509_extension.get(), x509));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 }  // namespace
@@ -898,7 +898,7 @@ Status X509Certificate::Verify(const CertificateInterface &issuer_certificate,
     }
   }
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<std::string> X509Certificate::SubjectKeyDer() const {

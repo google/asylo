@@ -79,7 +79,7 @@ Status ParseKeyGenerationParamsFromSealedSecretHeader(
         absl::StrCat("Identity of the current enclave does not match the ACL: ",
                      explanation));
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 uint16_t ConvertMatchSpecToKeypolicy(const SgxIdentityMatchSpec &spec) {
@@ -164,7 +164,7 @@ Status GenerateCryptorKey(AeadScheme aead_scheme, const std::string &key_id,
               std::back_inserter(*key));
     ++key_subscript;
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<std::unique_ptr<AeadCryptor>> MakeCryptor(AeadScheme aead_scheme,
@@ -190,7 +190,7 @@ Status Seal(AeadCryptor *cryptor, ByteContainerView secret,
   sealed_secret->set_secret_ciphertext(ciphertext.data(), ciphertext_size);
   sealed_secret->set_iv(iv.data(), iv.size());
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status Open(AeadCryptor *cryptor, const SealedSecret &sealed_secret,
@@ -202,7 +202,7 @@ Status Open(AeadCryptor *cryptor, const SealedSecret &sealed_secret,
       sealed_secret.secret_ciphertext(), additional_data, sealed_secret.iv(),
       absl::MakeSpan(*secret), &plaintext_size));
   secret->resize(plaintext_size);
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<AeadScheme> GetAeadSchemeFromSealedSecretHeader(

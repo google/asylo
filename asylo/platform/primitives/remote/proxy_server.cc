@@ -153,7 +153,7 @@ Status RemoteEnclaveProxyServer::Start(
           case kSelectorRemoteDisconnect:
             // Unload local client.
             local_enclave_client_.reset();
-            invocation->status = Status::OkStatus();
+            invocation->status = absl::OkStatus();
             return;
           default:
             // Invoke the entry point handler of the local enclave.
@@ -179,7 +179,7 @@ Status RemoteEnclaveProxyServer::Start(
       });
 
   // Ready to run ServerRpcLoop of the target communicator.
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status RemoteEnclaveProxyServer::ExitCallForwarder(uint64_t exit_call_selector,

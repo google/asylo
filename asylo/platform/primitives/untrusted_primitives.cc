@@ -75,7 +75,7 @@ PrimitiveStatus Client::ExitCallback(uint64_t untrusted_selector,
 
 // This provides a default, no-op implementation if this function is not
 // overridden for any backend.
-Status Client::RegisterExitHandlers() { return Status::OkStatus(); }
+Status Client::RegisterExitHandlers() { return absl::OkStatus(); }
 
 }  // namespace primitives
 }  // namespace asylo

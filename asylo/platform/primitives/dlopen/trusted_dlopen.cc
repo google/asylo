@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include "absl/status/status.h"
 #include "asylo/platform/primitives/dlopen/shared_dlopen.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"

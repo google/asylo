@@ -269,7 +269,7 @@ Status GenerateIntelChain(bool include_pck_cert, CertificateChain *intel_chain,
       *intel_chain->add_certificates(),
       intel_root->get()->ToCertificateProto(Certificate::X509_PEM));
 
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 StatusOr<RemoteAssertionInputs> GenerateRemoteAssertionInputs() {

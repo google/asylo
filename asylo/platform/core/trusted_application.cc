@@ -165,7 +165,7 @@ Status VerifyOutputArguments(char **output, size_t *output_len) {
     LogError(status);
     return status;
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 // Application instance returned by BuildTrustedApplication.
@@ -196,7 +196,7 @@ Status InitializeEnvironmentVariables(
     int overwrite = 0;
     setenv(variable.name().c_str(), variable.value().c_str(), overwrite);
   }
-  return Status::OkStatus();
+  return absl::OkStatus();
 }
 
 Status TrustedApplication::InitializeInternal(const EnclaveConfig &config) {

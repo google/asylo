@@ -63,7 +63,7 @@ StatusOr<std::string> DirPathFromLocations(absl::string_view locations) {
 Status SetIntelEnclaveDirFromFlags() {
   std::string locations = absl::GetFlag(FLAGS_intel_enclave_locations);
   if (locations.empty()) {
-    return Status::OkStatus();
+    return absl::OkStatus();
   }
 
   // The enclave path is global for all calls into the DCAP API.
