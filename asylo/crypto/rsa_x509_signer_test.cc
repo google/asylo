@@ -70,6 +70,17 @@ ha4neT5oIgt8QLlArA5ht1upi98lpDKV8FdAlvrTzaCijc0uRbFxB47a+823wnom
 cqVY/gERtlxncjBb+w3nJ4PjFH8I8r6sPNw0tkXe/vOoMZpy0IQ2iw==
 -----END RSA PRIVATE KEY-----)";
 
+// Public key component of kTestSigningKeyPem.
+constexpr char kTestSigningKeyPublicDerHex[] =
+    "30820122300d06092a864886f70d01010105000382010f003082010a0282010100afbd5d57"
+    "50e0e7253511bce61f27ebf0982857cc5def8930d0f48202ef91ce25708d3a46fbc39c57fe"
+    "e2155937fe8e11579a594d12cf2c6b37902bdb0a3ca47a496b9a991a5aeae32f388ddc67a9"
+    "dcc425a0c03d8d9d283219021e92e46a84d76c74159f08e74d234d0369ed0ffbf982d3138b"
+    "d9c898e6c607b0ab48d2e9e189f1a540fce4cad9c5d489afc4ab97edb4c64535b043f210bd"
+    "82fb7d2a8eeb649d6d7276ea193a9a46fca9f7c794ae749ae68bb892a6c415b0b864be4775"
+    "ff431b5fae0829ba5d19490fec7ccee29a227d798ac0ac2813bcb3270ada5ef76c02f6b4ce"
+    "c9372b96a98023fecb275d4890fbd7c42c89ae9c0cab86ac7a5de0775c7b0203010001";
+
 constexpr char kVerifyingCert[] =
     R"(-----BEGIN CERTIFICATE-----
 MIIERTCCAy2gAwIBAgIUXDJ9cbadmHmEY/gn2ahwSzwJH6EwDQYJKoZIhvcNAQEL
@@ -102,7 +113,8 @@ class RsaX509SignerTest : public ::testing::Test {
   void SetUp() override {
     ASYLO_ASSERT_OK_AND_ASSIGN(
         signing_key_,
-        RsaX509Signer::CreateFromPem(kTestSigningKeyPem, EVP_sha256()));
+        RsaX509Signer::CreateFromPem(kTestSigningKeyPem,
+                                     RsaX509Signer::RSASSA_PSS_WITH_SHA384));
 
     // Initialize X509Builder
     static constexpr int kSerialNumberByteSize = 20;
@@ -166,13 +178,27 @@ TEST_F(RsaX509SignerTest, CreateAndSerializePemMatchesOriginal) {
   std::unique_ptr<X509Signer> signing_key_pem;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       signing_key_pem,
-      RsaX509Signer::CreateFromPem(kTestSigningKeyPem, EVP_sha256()));
+      RsaX509Signer::CreateFromPem(kTestSigningKeyPem,
+                                   RsaX509Signer::RSASSA_PSS_WITH_SHA384));
 
   CleansingVector<char> serialized_pem;
   ASYLO_ASSERT_OK_AND_ASSIGN(serialized_pem, signing_key_pem->SerializeToPem());
 
   EXPECT_THAT(CopyToByteContainer<std::string>(serialized_pem),
               EqualIgnoreWhiteSpace(kTestSigningKeyPem));
+}
+
+TEST_F(RsaX509SignerTest, SerializePublicKeytoDer) {
+  std::unique_ptr<RsaX509Signer> signing_key_pem;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      signing_key_pem,
+      RsaX509Signer::CreateFromPem(kTestSigningKeyPem,
+                                   RsaX509Signer::RSASSA_PSS_WITH_SHA384));
+
+  std::string der_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(der_key,
+                             signing_key_pem->SerializePublicKeyToDer());
+  EXPECT_EQ(absl::BytesToHexString(der_key), kTestSigningKeyPublicDerHex);
 }
 
 // Verify that the test RsaX509Signer is created with the expected key size.
@@ -187,8 +213,10 @@ TEST_F(RsaX509SignerTest, SignX509SucceedsInX509CertificateSignAndBuild) {
   std::unique_ptr<X509Certificate> certificate;
   ASYLO_ASSERT_OK_AND_ASSIGN(certificate, builder_.SignAndBuild(*signing_key_));
 
-  ASSERT_THAT(certificate->ToCertificateProto(asylo::Certificate::X509_PEM),
-              IsOk());
+  Certificate cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      cert, certificate->ToCertificateProto(asylo::Certificate::X509_PEM));
+  LOG(INFO) << cert.data();
 
   // Create verifying certificate.
   std::unique_ptr<CertificateInterface> verifying_x509;

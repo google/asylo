@@ -18,10 +18,14 @@
 
 #include <openssl/base.h>
 #include <openssl/bio.h>
+#include <openssl/bytestring.h>
+#include <openssl/digest.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 
+#include <cstdint>
+#include <string>
 #include <utility>
 
 #include "absl/memory/memory.h"
@@ -35,7 +39,8 @@
 namespace asylo {
 
 StatusOr<std::unique_ptr<RsaX509Signer>> RsaX509Signer::CreateFromPem(
-    ByteContainerView serialized_private_key, const EVP_MD* hash) {
+    ByteContainerView serialized_private_key,
+    SignatureAlgorithm signature_algorithm) {
   // The input bio object containing the serialized key.
   bssl::UniquePtr<BIO> private_key_bio(BIO_new_mem_buf(
       serialized_private_key.data(), serialized_private_key.size()));
@@ -48,12 +53,33 @@ StatusOr<std::unique_ptr<RsaX509Signer>> RsaX509Signer::CreateFromPem(
   }
 
   return absl::WrapUnique<RsaX509Signer>(
-      new RsaX509Signer(std::move(private_key), hash));
+      new RsaX509Signer(std::move(private_key), signature_algorithm));
 }
 
 int RsaX509Signer::KeySizeInBits() const {
   // RSA_size returns the number of bytes in the modulus, mutiply by 8 for bits
   return RSA_size(private_key_.get()) * 8;
+}
+
+StatusOr<std::string> RsaX509Signer::SerializePublicKeyToDer() const {
+  bssl::UniquePtr<EVP_PKEY> evp_pkey(EVP_PKEY_new());
+  if (EVP_PKEY_set1_RSA(evp_pkey.get(), private_key_.get()) != 1) {
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+
+  CBB buffer;
+  if (!CBB_init(&buffer, /*initial_capacity=*/0) ||
+      !EVP_marshal_public_key(&buffer, evp_pkey.get())) {
+    CBB_cleanup(&buffer);
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+
+  uint8_t* key_data;
+  size_t key_data_size;
+  CBB_finish(&buffer, &key_data, &key_data_size);
+  bssl::UniquePtr<uint8_t> deleter(key_data);
+
+  return std::string(reinterpret_cast<char*>(key_data), key_data_size);
 }
 
 StatusOr<CleansingVector<char>> RsaX509Signer::SerializeToPem() const {
@@ -89,14 +115,31 @@ Status RsaX509Signer::SignX509(X509* x509) const {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 
-  if (X509_sign(x509, evp_pkey.get(), hash_) == 0) {
+  EVP_MD_CTX hash;
+  EVP_MD_CTX_init(&hash);
+  switch (signature_algorithm_) {
+    case RSASSA_PSS_WITH_SHA384: {
+      EVP_PKEY_CTX* pkey_ctx;
+      if (!EVP_DigestSignInit(&hash, &pkey_ctx, EVP_sha384(), /*e=*/nullptr,
+                              evp_pkey.get()) ||
+          !EVP_PKEY_CTX_set_rsa_padding(pkey_ctx, RSA_PKCS1_PSS_PADDING) ||
+          !EVP_PKEY_CTX_set_rsa_mgf1_md(pkey_ctx, EVP_sha384()) ||
+          !EVP_PKEY_CTX_set_rsa_pss_saltlen(pkey_ctx, 0x30)) {
+        return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+      }
+      break;
+    }
+  }
+
+  if (X509_sign_ctx(x509, &hash) == 0) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return Status::OkStatus();
 }
 
 RsaX509Signer::RsaX509Signer(bssl::UniquePtr<RSA> private_key,
-                             const EVP_MD* hash)
-    : private_key_(std::move(private_key)), hash_(hash) {}
+                             SignatureAlgorithm signature_algorithm)
+    : private_key_(std::move(private_key)),
+      signature_algorithm_(signature_algorithm) {}
 
 }  // namespace asylo
