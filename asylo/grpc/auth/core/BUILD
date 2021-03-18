@@ -124,6 +124,23 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "ekep_error_matchers",
+    testonly = 1,
+    srcs = ["ekep_error_matchers.cc"],
+    hdrs = ["ekep_error_matchers.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":ekep_errors",
+        ":handshake_cc_proto",
+        "//asylo/test/util:status_matchers",
+        "//asylo/util:proto_enum_util",
+        "//asylo/util:status",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Error functions for EKEP Abort errors.
 cc_library(
     name = "ekep_errors",
@@ -146,6 +163,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "ekep_errors_enclave_test",
     deps = [
+        ":ekep_error_matchers",
         ":ekep_errors",
         ":handshake_cc_proto",
         "//asylo/test/util:status_matchers",

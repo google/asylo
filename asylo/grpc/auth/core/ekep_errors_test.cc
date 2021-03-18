@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 #include "absl/status/status.h"
 #include "absl/types/optional.h"
+#include "asylo/grpc/auth/core/ekep_error_matchers.h"
 #include "asylo/grpc/auth/core/handshake.pb.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -51,6 +52,24 @@ TEST(EkepErrorsTest, GetEkepErrorCodeReturnsEkepErrorCodeFromEkepError) {
   EXPECT_THAT(
       GetEkepErrorCode(EkepError(Abort::BAD_RECORD_PROTOCOL, "message")),
       Optional(Abort::BAD_RECORD_PROTOCOL));
+}
+
+TEST(EkepErrorsTest, EkepErrorIsDoesNotMatchOnNonEkepStatus) {
+  EXPECT_THAT(absl::OkStatus(), Not(EkepErrorIs(Abort::BAD_RECORD_PROTOCOL)));
+  EXPECT_THAT(absl::InvalidArgumentError("foobar"),
+              Not(EkepErrorIs(Abort::BAD_RECORD_PROTOCOL)));
+}
+
+TEST(EkepErrorsTest, EkepErrorIsDoesNotMatchEkepErrorWithDifferentCode) {
+  EXPECT_THAT(EkepError(Abort::BAD_HANDSHAKE_CIPHER, "message"),
+              Not(EkepErrorIs(Abort::BAD_RECORD_PROTOCOL)));
+}
+
+TEST(EkepErrorsTest, EkepErrorIsMatchesEkepErrorWithEqualCode) {
+  EXPECT_THAT(EkepError(Abort::BAD_RECORD_PROTOCOL, "message"),
+              EkepErrorIs(Abort::BAD_RECORD_PROTOCOL));
+  EXPECT_THAT(EkepError(Abort::BAD_RECORD_PROTOCOL, "other message"),
+              EkepErrorIs(Abort::BAD_RECORD_PROTOCOL));
 }
 
 }  // namespace
