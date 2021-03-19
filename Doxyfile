@@ -847,7 +847,9 @@ asylo/test/util/exec_tester.h \
 asylo/util/cleansing_types.h \
 asylo/util/error_space.h \
 asylo/util/logging.h \
+asylo/util/posix_error_matchers.h \
 asylo/util/posix_error_space.h \
+asylo/util/posix_errors.h \
 asylo/util/proto_flag.h \
 asylo/util/status.h \
 asylo/util/statusor.h \

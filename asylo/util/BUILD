@@ -495,6 +495,21 @@ cc_test(
 )
 
 cc_library(
+    name = "posix_error_matchers",
+    testonly = 1,
+    srcs = ["posix_error_matchers.cc"],
+    hdrs = ["posix_error_matchers.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":posix_errors",
+        ":status",
+        "//asylo/test/util:status_matchers",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "posix_errors",
     srcs = ["posix_errors.cc"],
     hdrs = ["posix_errors.h"],
@@ -513,6 +528,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "posix_errors_enclave_test",
     deps = [
+        ":posix_error_matchers",
         ":posix_errors",
         ":status",
         "//asylo/test/util:status_matchers",

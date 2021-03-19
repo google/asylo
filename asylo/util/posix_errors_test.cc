@@ -24,6 +24,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/posix_error_matchers.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -51,7 +52,7 @@ TEST(PosixErrorsTest, PosixErrorContainsStrerrorAndMessage) {
 }
 
 TEST(PosixErrorsTest, GetErrnoReturnsZeroOnNonPosixStatus) {
-  EXPECT_THAT(GetErrno(OkStatus()), Eq(0));
+  EXPECT_THAT(GetErrno(absl::OkStatus()), Eq(0));
   EXPECT_THAT(GetErrno(absl::InvalidArgumentError("foobar")), Eq(0));
 }
 
@@ -63,6 +64,20 @@ TEST(PosixErrorsTest, GetErrnoReturnsErrnoFromPosixError) {
 TEST(PosixErrorsTest, LastPosixErrorRepresentsErrno) {
   errno = EBADF;
   EXPECT_THAT(GetErrno(LastPosixError()), Eq(EBADF));
+}
+
+TEST(PosixErrorstest, PosixErrorIsDoesNotMatchNonPosixStatus) {
+  EXPECT_THAT(absl::OkStatus(), Not(PosixErrorIs(EINVAL)));
+  EXPECT_THAT(absl::InvalidArgumentError("foobar"), Not(PosixErrorIs(EINVAL)));
+}
+
+TEST(PosixErrorstest, PosixErrorIsDoesNotMatchPosixErrorWithDifferentErrnum) {
+  EXPECT_THAT(PosixError(ENOMEM), Not(PosixErrorIs(EINVAL)));
+}
+
+TEST(PosixErrorstest, PosixErrorIsMatchesPosixErrorWithGivenErrnum) {
+  EXPECT_THAT(PosixError(EINVAL), PosixErrorIs(EINVAL));
+  EXPECT_THAT(PosixError(EINVAL, "extra words"), PosixErrorIs(EINVAL));
 }
 
 }  // namespace
