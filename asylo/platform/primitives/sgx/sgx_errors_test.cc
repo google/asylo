@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "asylo/platform/primitives/sgx/sgx_error_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 #include "include/sgx_error.h"
@@ -54,6 +55,24 @@ TEST(SgxErrorsTest, GetSgxErrorCodeReturnsSuccessOnNonSgxStatus) {
 TEST(SgxErrorsTest, GetSgxErrorCodeReturnsSgxErrorCodeFromSgxError) {
   EXPECT_THAT(GetSgxErrorCode(SgxError(SGX_ERROR_OUT_OF_TCS, "message")),
               Eq(SGX_ERROR_OUT_OF_TCS));
+}
+
+TEST(SgxErrorsTest, SgxErrorIsDoesNotMatchOnNonSgxStatus) {
+  EXPECT_THAT(absl::OkStatus(), Not(SgxErrorIs(SGX_ERROR_OUT_OF_TCS)));
+  EXPECT_THAT(absl::InvalidArgumentError("foobar"),
+              Not(SgxErrorIs(SGX_ERROR_OUT_OF_TCS)));
+}
+
+TEST(SgxErrorsTest, SgxErrorIsDoesNotMatchSgxErrorWithDifferentCode) {
+  EXPECT_THAT(SgxError(SGX_ERROR_ENCLAVE_LOST, "message"),
+              Not(SgxErrorIs(SGX_ERROR_OUT_OF_TCS)));
+}
+
+TEST(SgxErrorsTest, SgxErrorIsMatchesSgxErrorWithEqualCode) {
+  EXPECT_THAT(SgxError(SGX_ERROR_OUT_OF_TCS, "message"),
+              SgxErrorIs(SGX_ERROR_OUT_OF_TCS));
+  EXPECT_THAT(SgxError(SGX_ERROR_OUT_OF_TCS, "other message"),
+              SgxErrorIs(SGX_ERROR_OUT_OF_TCS));
 }
 
 }  // namespace

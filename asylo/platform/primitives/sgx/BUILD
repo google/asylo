@@ -189,6 +189,22 @@ cc_library(
 )
 
 cc_library(
+    name = "sgx_error_matchers",
+    testonly = 1,
+    srcs = ["sgx_error_matchers.cc"],
+    hdrs = ["sgx_error_matchers.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":sgx_error_space",
+        ":sgx_errors",
+        "//asylo/test/util:status_matchers",
+        "//asylo/util:status",
+        "@com_google_googletest//:gtest",
+        "@linux_sgx//:public",
+    ],
+)
+
+cc_library(
     name = "sgx_errors",
     srcs = ["sgx_errors.cc"],
     hdrs = ["sgx_errors.h"],
@@ -207,6 +223,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "sgx_errors_enclave_test",
     deps = [
+        ":sgx_error_matchers",
         ":sgx_errors",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
