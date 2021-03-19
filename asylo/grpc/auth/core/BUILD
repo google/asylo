@@ -181,7 +181,7 @@ cc_library(
     hdrs = ["ekep_crypto.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":ekep_error_space",
+        ":ekep_errors",
         ":handshake_cc_proto",
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:bssl_util",
@@ -204,7 +204,7 @@ cc_test(
     enclave_test_name = "ekep_crypto_enclave_test",
     deps = [
         ":ekep_crypto",
-        ":ekep_error_space",
+        ":ekep_error_matchers",
         ":handshake_cc_proto",
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:bytes",
@@ -224,7 +224,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":ekep_crypto",
-        ":ekep_error_space",
+        ":ekep_errors",
         ":handshake_cc_proto",
         ":transcript",
         "//asylo/crypto:hash_interface",
@@ -253,7 +253,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":ekep_crypto",
-        ":ekep_error_space",
+        ":ekep_errors",
         ":ekep_handshaker",
         ":ekep_handshaker_util",
         ":handshake_cc_proto",
@@ -279,7 +279,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":ekep_crypto",
-        ":ekep_error_space",
+        ":ekep_errors",
         ":ekep_handshaker",
         ":ekep_handshaker_util",
         ":handshake_cc_proto",

@@ -27,7 +27,7 @@
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/util/logging.h"
 #include "asylo/grpc/auth/core/ekep_crypto.h"
-#include "asylo/grpc/auth/core/ekep_error_space.h"
+#include "asylo/grpc/auth/core/ekep_errors.h"
 #include "asylo/grpc/auth/core/ekep_handshaker_util.h"
 #include "asylo/grpc/auth/core/handshake.pb.h"
 #include "asylo/identity/identity.pb.h"
@@ -93,9 +93,9 @@ HandshakeMessageType ServerEkepHandshaker::GetExpectedMessageType() const {
 ServerEkepHandshaker::Result ServerEkepHandshaker::StartHandshake(
     std::string *output) {
   LOG(DFATAL) << "StartHandshake() was called on a ServerEkepHandshaker";
-  AbortHandshake(
-      Status(Abort::PROTOCOL_ERROR, "Server cannot start an EKEP handshaker"),
-      output);
+  AbortHandshake(EkepError(Abort::PROTOCOL_ERROR,
+                           "Server cannot start an EKEP handshaker"),
+                 output);
   return Result::ABORTED;
 }
 
@@ -146,7 +146,7 @@ ServerEkepHandshaker::Result ServerEkepHandshaker::HandleHandshakeMessage(
       // This should never happen because the message_type should be verified
       // before calling this method.
       status =
-          Status(Abort::BAD_MESSAGE, "Unrecognized handshake message type");
+          EkepError(Abort::BAD_MESSAGE, "Unrecognized handshake message type");
   }
   if (!status.ok()) {
     if (message_type != CLIENT_FINISH) {
@@ -193,19 +193,19 @@ Status ServerEkepHandshaker::HandleClientPrecommit(
   if (!client_precommit_ptr) {
     LOG(QFATAL) << "HandleClientPrecommit() was passed a non-ClientPrecommit "
                 << "handshake message";
-    return Status(Abort::INTERNAL_ERROR, "Internal error");
+    return EkepError(Abort::INTERNAL_ERROR, "Internal error");
   }
   const ClientPrecommit &client_precommit = *client_precommit_ptr;
 
   // Choose the first compatible EKEP version offered by the client.
   if (!SetSelectedEkepVersion(client_precommit.available_ekep_versions())) {
-    return Status(Abort::BAD_PROTOCOL_VERSION,
-                  "No compatible EKEP protocol version");
+    return EkepError(Abort::BAD_PROTOCOL_VERSION,
+                     "No compatible EKEP protocol version");
   }
 
   // Choose the first compatible cipher suite offered by the client.
   if (!SetSelectedCipherSuite(client_precommit.available_cipher_suites())) {
-    return Status(Abort::BAD_HANDSHAKE_CIPHER, "No compatible cipher suite");
+    return EkepError(Abort::BAD_HANDSHAKE_CIPHER, "No compatible cipher suite");
   }
 
   // Set the transcript hash function using the selected cipher suite.
@@ -216,19 +216,21 @@ Status ServerEkepHandshaker::HandleClientPrecommit(
     default:
       LOG(ERROR) << "Server handshaker has bad cipher suite configuration"
                  << ProtoEnumValueName(selected_cipher_suite_);
-      return Status(Abort::INTERNAL_ERROR, "Error using selected cipher suite");
+      return EkepError(Abort::INTERNAL_ERROR,
+                       "Error using selected cipher suite");
   }
 
   // Choose the first compatible record protocol offered by the client.
   if (!SetSelectedRecordProtocol(
           client_precommit.available_record_protocols())) {
-    return Status(Abort::BAD_RECORD_PROTOCOL, "No compatible record_protocol");
+    return EkepError(Abort::BAD_RECORD_PROTOCOL,
+                     "No compatible record_protocol");
   }
 
   // Verify that the client sent an adequately-sized challenge.
   if (client_precommit.challenge().size() != kEkepChallengeSize) {
-    return Status(Abort::PROTOCOL_ERROR,
-                  "Received a challenge with incorrect size");
+    return EkepError(Abort::PROTOCOL_ERROR,
+                     "Received a challenge with incorrect size");
   }
 
   for (const AssertionOffer &offer : client_precommit.client_offers()) {
@@ -244,8 +246,8 @@ Status ServerEkepHandshaker::HandleClientPrecommit(
     }
   }
   if (expected_peer_assertions_.empty()) {
-    return Status(Abort::BAD_ASSERTION_TYPE,
-                  "No acceptable client assertion offers");
+    return EkepError(Abort::BAD_ASSERTION_TYPE,
+                     "No acceptable client assertion offers");
   }
 
   for (const AssertionRequest &request : client_precommit.client_requests()) {
@@ -264,8 +266,8 @@ Status ServerEkepHandshaker::HandleClientPrecommit(
     }
   }
   if (promised_assertions_.empty()) {
-    return Status(Abort::BAD_ASSERTION_TYPE,
-                  "No acceptable client assertion requests");
+    return EkepError(Abort::BAD_ASSERTION_TYPE,
+                     "No acceptable client assertion requests");
   }
 
   return WriteServerPrecommit(output);
@@ -277,7 +279,7 @@ Status ServerEkepHandshaker::HandleClientId(const google::protobuf::Message &mes
   if (!client_id_ptr) {
     LOG(QFATAL) << "HandleClientId() was passed a non-ClientId handshake "
                 << "message";
-    return Status(Abort::INTERNAL_ERROR, "Internal error");
+    return EkepError(Abort::INTERNAL_ERROR, "Internal error");
   }
   const ClientId &client_id = *client_id_ptr;
 
@@ -287,16 +289,16 @@ Status ServerEkepHandshaker::HandleClientId(const google::protobuf::Message &mes
   std::string ekep_context;
   if (!MakeEkepContextBlob(client_id.dh_public_key(),
                            client_assertion_transcript_, &ekep_context)) {
-    return Status(Abort::INTERNAL_ERROR, "Failed to generate context");
+    return EkepError(Abort::INTERNAL_ERROR, "Failed to generate context");
   }
 
   for (const Assertion &assertion : client_id.assertions()) {
     auto desc_it = FindAssertionDescription(expected_peer_assertions_,
                                             assertion.description());
     if (desc_it == expected_peer_assertions_.cend()) {
-      return Status(Abort::BAD_ASSERTION,
-                    "Client provided an assertion that was not previously "
-                    "requested");
+      return EkepError(Abort::BAD_ASSERTION,
+                       "Client provided an assertion that was not previously "
+                       "requested");
     }
 
     EnclaveIdentity identity;
@@ -307,7 +309,7 @@ Status ServerEkepHandshaker::HandleClientId(const google::protobuf::Message &mes
                         ->Verify(ekep_context, assertion, &identity);
     if (!status.ok()) {
       LOG(ERROR) << "Assertion could not be verified: " << status;
-      return Status(Abort::BAD_ASSERTION, "Assertion could not be verified");
+      return EkepError(Abort::BAD_ASSERTION, "Assertion could not be verified");
     }
     AddPeerIdentity(identity);
     expected_peer_assertions_.erase(desc_it);
@@ -315,8 +317,8 @@ Status ServerEkepHandshaker::HandleClientId(const google::protobuf::Message &mes
 
   if (!expected_peer_assertions_.empty()) {
     // The client did not provide all the expected assertions.
-    return Status(Abort::BAD_ASSERTION,
-                  "Client did not provide all expected assertions");
+    return EkepError(Abort::BAD_ASSERTION,
+                     "Client did not provide all expected assertions");
   }
 
   std::copy(client_id.dh_public_key().cbegin(),
@@ -332,7 +334,7 @@ Status ServerEkepHandshaker::HandleClientFinish(
   if (!client_finish_ptr) {
     LOG(DFATAL) << "HandleClientFinish() was passed a non-ClientFinish "
                 << "handshake message";
-    return Status(Abort::INTERNAL_ERROR, "Internal error");
+    return EkepError(Abort::INTERNAL_ERROR, "Internal error");
   }
   const ClientFinish &client_finish = *client_finish_ptr;
 
@@ -350,8 +352,8 @@ Status ServerEkepHandshaker::HandleClientFinish(
   // Validate the client's handshake authenticator value.
   if (!CheckMacEquality(expected_client_handshake_authenticator,
                         actual_client_handshake_authenticator)) {
-    return Status(Abort::BAD_AUTHENTICATOR,
-                  "Client handshake authenticator value is incorrect");
+    return EkepError(Abort::BAD_AUTHENTICATOR,
+                     "Client handshake authenticator value is incorrect");
   }
   return absl::OkStatus();
 }
@@ -371,7 +373,7 @@ Status ServerEkepHandshaker::WriteServerPrecommit(std::string *output) {
 
   std::vector<uint8_t> challenge(kEkepChallengeSize);
   if (RAND_bytes(challenge.data(), kEkepChallengeSize) != 1) {
-    return Status(Abort::INTERNAL_ERROR, "Internal error");
+    return EkepError(Abort::INTERNAL_ERROR, "Internal error");
   }
   server_precommit.set_challenge(challenge.data(), challenge.size());
 
@@ -414,7 +416,8 @@ Status ServerEkepHandshaker::WriteServerId(std::string *output) {
       break;
     default:
       LOG(ERROR) << "Server handshaker has bad cipher suite configuration";
-      return Status(Abort::INTERNAL_ERROR, "Error using selected cipher suite");
+      return EkepError(Abort::INTERNAL_ERROR,
+                       "Error using selected cipher suite");
   }
 
   ServerId server_id;
@@ -434,7 +437,7 @@ Status ServerEkepHandshaker::WriteServerId(std::string *output) {
   // hash of the current transcript and the server's public key.
   std::string ekep_context;
   if (!MakeEkepContextBlob(public_key, transcript_hash, &ekep_context)) {
-    return Status(Abort::INTERNAL_ERROR, "Assertion generation failed");
+    return EkepError(Abort::INTERNAL_ERROR, "Assertion generation failed");
   }
 
   // Generate all assertions that the client requested and that the server
@@ -448,7 +451,7 @@ Status ServerEkepHandshaker::WriteServerId(std::string *output) {
             ->Generate(ekep_context, request, server_id.add_assertions());
     if (!status.ok()) {
       LOG(ERROR) << "Assertion generation failed: " << status;
-      return Status(Abort::INTERNAL_ERROR, "Assertion generation failed");
+      return EkepError(Abort::INTERNAL_ERROR, "Assertion generation failed");
     }
   }
 
