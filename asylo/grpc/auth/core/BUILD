@@ -111,19 +111,6 @@ cc_test(
     ],
 )
 
-# Error space implementation for EKEP Abort error codes.
-cc_library(
-    name = "ekep_error_space",
-    srcs = ["ekep_error_space.cc"],
-    hdrs = ["ekep_error_space.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":handshake_cc_proto",
-        "//asylo/util:status",
-        "@com_google_absl//absl/status",
-    ],
-)
-
 cc_library(
     name = "ekep_error_matchers",
     testonly = 1,
@@ -148,10 +135,12 @@ cc_library(
     hdrs = ["ekep_errors.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":ekep_error_space",
         ":handshake_cc_proto",
         "//asylo/util:status",
+        "//asylo/util:status_helpers",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:cord",
         "@com_google_absl//absl/types:optional",
     ],
 )
