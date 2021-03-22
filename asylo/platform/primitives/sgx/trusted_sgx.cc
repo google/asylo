@@ -34,7 +34,7 @@
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/sgx/generated_bridge_t.h"
-#include "asylo/platform/primitives/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/sgx_errors.h"
 #include "asylo/platform/primitives/sgx/sgx_params.h"
 #include "asylo/platform/primitives/sgx/untrusted_cache_malloc.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
@@ -48,15 +48,15 @@
 #include "asylo/util/status_macros.h"
 #include "include/sgx_trts.h"
 
-#define CHECK_OCALL(status)                                                  \
-  do {                                                                       \
-    sgx_status_t sgx_status = status;                                        \
-    if (sgx_status != SGX_SUCCESS) {                                         \
-      TrustedPrimitives::BestEffortAbort(                                    \
-          absl::StrCat(__FILE__, ":", __LINE__, ": ",                        \
-                       asylo::Status(sgx_status, "ocall failed").ToString()) \
-              .c_str());                                                     \
-    }                                                                        \
+#define CHECK_OCALL(status)                                                    \
+  do {                                                                         \
+    sgx_status_t sgx_status = status;                                          \
+    if (sgx_status != SGX_SUCCESS) {                                           \
+      TrustedPrimitives::BestEffortAbort(                                      \
+          absl::StrCat(__FILE__, ":", __LINE__, ": ",                          \
+                       asylo::SgxError(sgx_status, "ocall failed").ToString()) \
+              .c_str());                                                       \
+    }                                                                          \
   } while (0)
 
 namespace asylo {

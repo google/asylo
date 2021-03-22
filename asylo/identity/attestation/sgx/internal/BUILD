@@ -469,7 +469,7 @@ enclave_test(
         ":report_oracle_enclave_wrapper",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity/platform/sgx/internal:hardware_types",
-        "//asylo/platform/primitives/sgx:sgx_error_space",
+        "//asylo/platform/primitives/sgx:sgx_error_matchers",
         "//asylo/test/util:memory_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",

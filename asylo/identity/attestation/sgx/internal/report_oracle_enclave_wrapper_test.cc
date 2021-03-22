@@ -27,7 +27,7 @@
 #include "absl/status/status.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
-#include "asylo/platform/primitives/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/sgx_error_matchers.h"
 #include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -42,7 +42,7 @@ constexpr char kReportOracleSectionName[] = "report_oracle";
 
 TEST(ReportOracleEnclaveWrapperTest, LoadFromFileFailsWithInvalidPath) {
   EXPECT_THAT(ReportOracleEnclaveWrapper::LoadFromFile("/bad/path"),
-              StatusIs(SGX_ERROR_ENCLAVE_FILE_ACCESS));
+              SgxErrorIs(SGX_ERROR_ENCLAVE_FILE_ACCESS));
 }
 
 TEST(ReportOracleEnclaveWrapperTest, LoadFromFileThenGetReport) {

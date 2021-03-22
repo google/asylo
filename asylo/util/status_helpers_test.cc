@@ -28,7 +28,7 @@
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
 #include "asylo/enclave.pb.h"
-#include "asylo/platform/primitives/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/sgx_errors.h"
 #include "asylo/util/error_codes.h"
 #include "asylo/util/status.h"
 #include "include/grpcpp/support/status.h"
@@ -75,7 +75,7 @@ struct StatusInfo<Status> {
 
   static std::vector<Status> TestData() {
     return {Status(kCanonicalCode, kErrorMessage),
-            Status(SGX_ERROR_OUT_OF_MEMORY, kErrorMessage)};
+            SgxError(SGX_ERROR_OUT_OF_MEMORY, kErrorMessage)};
   }
 };
 

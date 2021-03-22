@@ -19,7 +19,7 @@
 #include "absl/memory/memory.h"
 #include "asylo/identity/platform/sgx/internal/hardware_interface.h"
 #include "asylo/identity/platform/sgx/internal/identity_key_management_structs.h"
-#include "asylo/platform/primitives/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/sgx_errors.h"
 #include "include/sgx.h"
 
 // The following functions are defined by the Intel SGX SDK. However,
@@ -68,8 +68,8 @@ class RealHardwareInterface : public HardwareInterface {
     int rc = do_egetkey(reinterpret_cast<const sgx_key_request_t *>(&request),
                         reinterpret_cast<sgx_key_128bit_t *>(key.get()));
     if (rc != 0) {
-      return Status(egetkey_status_to_sgx_status(rc),
-                    "Call to do_egetkey failed.");
+      return SgxError(egetkey_status_to_sgx_status(rc),
+                      "Call to do_egetkey failed.");
     }
     return *key;
   }

@@ -39,7 +39,7 @@
 #include "asylo/identity/platform/sgx/internal/proto_format.h"
 #include "asylo/identity/platform/sgx/internal/secs_attributes.h"
 #include "asylo/identity/platform/sgx/machine_configuration.pb.h"
-#include "asylo/platform/primitives/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/sgx_errors.h"
 
 namespace asylo {
 namespace sgx {
@@ -267,16 +267,16 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
       // ordering between CPUSVNs.
       //
       if (request.cpusvn != cpusvn_) {
-        return Status(SGX_ERROR_INVALID_CPUSVN,
-                      "Access to seal key denied due to incorrect CPUSVN.");
+        return SgxError(SGX_ERROR_INVALID_CPUSVN,
+                        "Access to seal key denied due to incorrect CPUSVN.");
       }
       if (request.isvsvn > isvsvn_) {
-        return Status(SGX_ERROR_INVALID_ISVSVN,
-                      "ISVSVN value in KEYREQUEST is too large.");
+        return SgxError(SGX_ERROR_INVALID_ISVSVN,
+                        "ISVSVN value in KEYREQUEST is too large.");
       }
       if (request.configsvn > configsvn_) {
-        return Status(SGX_ERROR_INVALID_ISVSVN,
-                      "CONFIGSVN value in KEYREQUEST is too large.");
+        return SgxError(SGX_ERROR_INVALID_ISVSVN,
+                        "CONFIGSVN value in KEYREQUEST is too large.");
       }
       dependencies->keyname = KeyrequestKeyname::SEAL_KEY;
       if (request.keypolicy & kKeypolicyIsvfamilyidBitMask) {
@@ -352,7 +352,7 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
       break;
 
     default:
-      return Status(
+      return SgxError(
           SGX_ERROR_INVALID_KEYNAME,
           absl::StrCat("Key name ", static_cast<uint64_t>(request.keyname),
                        " is not supported"));
@@ -439,7 +439,7 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
   // The last two fields (KEYID and MAC) from the REPORT struct are not
   // included in the MAC computation.
   if (report->mac.size() != AES_BLOCK_SIZE) {
-    return Status(
+    return SgxError(
         SGX_ERROR_INVALID_PARAMETER,
         "Size of the mac field in the REPORT structure is incorrect.");
   }
@@ -449,7 +449,7 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
                sizeof(report->body)) != 1) {
     // Clear-out any leftover state from the output.
     report->mac.Cleanse();
-    return Status(SGX_ERROR_UNEXPECTED, BsslLastErrorString());
+    return SgxError(SGX_ERROR_UNEXPECTED, BsslLastErrorString());
   }
   return absl::OkStatus();
 }
@@ -464,7 +464,7 @@ Status FakeEnclave::DeriveKey(const KeyDependencies &key_dependencies,
                sizeof(key_dependencies)) != 1) {
     // Clear-out any leftover state from the output.
     key->Cleanse();
-    return Status(SGX_ERROR_UNEXPECTED, BsslLastErrorString());
+    return SgxError(SGX_ERROR_UNEXPECTED, BsslLastErrorString());
   }
   return absl::OkStatus();
 }

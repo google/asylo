@@ -36,7 +36,7 @@
 #include "asylo/identity/platform/sgx/internal/secs_attributes.h"
 #include "asylo/identity/platform/sgx/internal/self_identity.h"
 #include "asylo/identity/platform/sgx/miscselect_util.h"
-#include "asylo/platform/primitives/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/sgx_error_matchers.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -448,7 +448,7 @@ void TestKeyIsvsvnAccessControl(Keyrequest *request) {
   // Request a key corresponding to a higher ISVSVN.
   request->isvsvn = enclave->get_isvsvn() + 1;
   key = hardware->GetKey(*request);
-  EXPECT_THAT(key, StatusIs(SGX_ERROR_INVALID_ISVSVN))
+  EXPECT_THAT(key, SgxErrorIs(SGX_ERROR_INVALID_ISVSVN))
       << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
 }
 
@@ -475,7 +475,7 @@ void TestKeyConfigsvnAccessControl(Keyrequest *request) {
   // Request a key corresponding to a higher CONFIGSVN.
   request->configsvn = enclave->get_configsvn() + 1;
   key = hardware->GetKey(*request);
-  EXPECT_THAT(key, StatusIs(SGX_ERROR_INVALID_ISVSVN))
+  EXPECT_THAT(key, SgxErrorIs(SGX_ERROR_INVALID_ISVSVN))
       << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
 }
 

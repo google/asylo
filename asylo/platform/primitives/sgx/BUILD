@@ -53,7 +53,7 @@ cc_library(
 
 # Trusted runtime components for SGX.
 _TRUSTED_SGX_BACKEND_DEPS = [
-    ":sgx_error_space",
+    ":sgx_errors",
     ":trusted_sgx_bridge",
     "//asylo:enclave_cc_proto",
     "//asylo/util:logging",
@@ -149,7 +149,7 @@ cc_library(
         ":exit_handlers",
         ":fork_cc_proto",
         ":loader_cc_proto",
-        ":sgx_error_space",
+        ":sgx_errors",
         ":sgx_params",
         "//asylo:enclave_cc_proto",
         "//asylo/platform/common:memory",
@@ -314,7 +314,6 @@ _TRUSTED_FORK_HW_DEPS = [
     "//asylo/crypto/util:byte_container_view",
     "//asylo/crypto/util:trivial_object_util",
     "//asylo/platform/posix/memory:memory",
-    "//asylo/platform/primitives/sgx:sgx_error_space",
     "//asylo/util:logging",
     "//asylo/grpc/auth/core:client_ekep_handshaker",
     "//asylo/grpc/auth/core:server_ekep_handshaker",

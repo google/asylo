@@ -213,7 +213,7 @@ cc_library(
         "//asylo/identity/platform/sgx:attributes_cc_proto",
         "//asylo/identity/platform/sgx:machine_configuration_cc_proto",
         "//asylo/identity/platform/sgx:sgx_identity_cc_proto",
-        "//asylo/platform/primitives/sgx:sgx_error_space",
+        "//asylo/platform/primitives/sgx:sgx_errors",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@boringssl//:crypto",
@@ -242,7 +242,7 @@ cc_library(
         "//asylo/util:status",
     ] + select({
         "@com_google_asylo//asylo": [
-            "//asylo/platform/primitives/sgx:sgx_error_space",
+            "//asylo/platform/primitives/sgx:sgx_errors",
             "@linux_sgx//:trts",
         ],
         "//conditions:default": [":fake_enclave"],
@@ -281,7 +281,7 @@ cc_test(
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity/platform/sgx:architecture_bits",
         "//asylo/identity/platform/sgx:miscselect_util",
-        "//asylo/platform/primitives/sgx:sgx_error_space",
+        "//asylo/platform/primitives/sgx:sgx_error_matchers",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
