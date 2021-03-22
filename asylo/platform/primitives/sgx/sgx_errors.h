@@ -17,11 +17,16 @@
 #ifndef ASYLO_PLATFORM_PRIMITIVES_SGX_SGX_ERRORS_H_
 #define ASYLO_PLATFORM_PRIMITIVES_SGX_SGX_ERRORS_H_
 
+#include <string>
+
 #include "absl/strings/string_view.h"
 #include "asylo/util/status.h"
 #include "include/sgx_error.h"
 
 namespace asylo {
+
+// Returns a human-readable description of an SGX status.
+std::string DescribeSgxStatus(sgx_status_t sgx_status);
 
 // Returns a Status representing an SGX error. If |sgx_status| is SGX_SUCCESS,
 // SgxError() returns an OK status.

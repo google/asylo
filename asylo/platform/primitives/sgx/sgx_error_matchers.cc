@@ -21,7 +21,6 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/primitives/sgx/sgx_errors.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
@@ -36,13 +35,12 @@ class SgxErrorMatcher : public ::testing::MatcherInterface<const Status &> {
   explicit SgxErrorMatcher(sgx_status_t sgx_status) : sgx_status_(sgx_status) {}
 
   void DescribeTo(std::ostream *os) const override {
-    *os << "is an SGX error with error code "
-        << error::SgxErrorSpace::GetInstance()->String(sgx_status_);
+    *os << "is an SGX error with error code " << DescribeSgxStatus(sgx_status_);
   }
 
   void DescribeNegationTo(std::ostream *os) const override {
     *os << "is not an SGX error with error code "
-        << error::SgxErrorSpace::GetInstance()->String(sgx_status_);
+        << DescribeSgxStatus(sgx_status_);
   }
 
   bool MatchAndExplain(
@@ -55,7 +53,7 @@ class SgxErrorMatcher : public ::testing::MatcherInterface<const Status &> {
     }
     if (actual_error != sgx_status_) {
       *listener << "which has SGX error code "
-                << error::SgxErrorSpace::GetInstance()->String(actual_error);
+                << DescribeSgxStatus(actual_error);
       return false;
     }
     return true;

@@ -176,16 +176,14 @@ cc_library(
     ],
 )
 
-# An error space for SGX.
-cc_library(
-    name = "sgx_error_space",
-    srcs = ["sgx_error_space.cc"],
-    hdrs = ["sgx_error_space.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        "//asylo/util:status",
-        "@linux_sgx//:public",
-    ],
+proto_library(
+    name = "sgx_error_code_proto",
+    srcs = ["sgx_error_code.proto"],
+)
+
+cc_proto_library(
+    name = "sgx_error_code_cc_proto",
+    deps = [":sgx_error_code_proto"],
 )
 
 cc_library(
@@ -195,7 +193,6 @@ cc_library(
     hdrs = ["sgx_error_matchers.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":sgx_error_space",
         ":sgx_errors",
         "//asylo/test/util:status_matchers",
         "//asylo/util:status",
@@ -210,9 +207,13 @@ cc_library(
     hdrs = ["sgx_errors.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":sgx_error_space",
+        ":sgx_error_code_cc_proto",
         "//asylo/util:status",
+        "//asylo/util:status_helpers",
+        "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:cord",
+        "@com_google_absl//absl/types:optional",
         "@linux_sgx//:public",
     ],
 )
