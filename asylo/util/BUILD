@@ -410,6 +410,8 @@ cc_library(
         ":status",
         ":status_cc_proto",
         "@com_google_absl//absl/status",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -422,12 +424,14 @@ cc_test(
         ":error_codes",
         ":status",
         ":status_helpers",
+        "//asylo:enclave_cc_proto",
         "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/test/util:test_main",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
         "@com_google_protobuf//:protobuf_lite",
         "@linux_sgx//:public",
     ],

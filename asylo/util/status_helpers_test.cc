@@ -22,10 +22,12 @@
 #include <vector>
 
 #include <google/protobuf/stubs/status.h>
+#include "google/protobuf/timestamp.pb.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "asylo/enclave.pb.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/util/error_codes.h"
 #include "asylo/util/status.h"
@@ -176,6 +178,13 @@ TYPED_TEST(ConvertStatusTest, HasCorrectPropertiesAfterConversion) {
     // space information to the error message.
     EXPECT_THAT(ToInfo::GetErrorMessage(to_status), HasSubstr(kErrorMessage));
   }
+}
+
+TEST(StatusHelpersTest, GetTypeUrlReturnsExpectedUrl) {
+  EXPECT_THAT(GetTypeUrl<EnclaveInput>(),
+              Eq("type.googleapis.com/asylo.EnclaveInput"));
+  EXPECT_THAT(GetTypeUrl<google::protobuf::Timestamp>(),
+              Eq("type.googleapis.com/google.protobuf.Timestamp"));
 }
 
 }  // namespace

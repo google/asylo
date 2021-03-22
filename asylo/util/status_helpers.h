@@ -17,6 +17,11 @@
 #ifndef ASYLO_UTIL_STATUS_HELPERS_H_
 #define ASYLO_UTIL_STATUS_HELPERS_H_
 
+#include <string>
+#include <type_traits>
+
+#include <google/protobuf/message.h>
+#include "absl/strings/str_cat.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status.pb.h"
 #include "asylo/util/status_helpers_internal.h"
@@ -77,6 +82,19 @@ StatusProto StatusToProto(const Status &status);
 /// \param status_proto A protobuf object to unpack.
 /// \return A `Status` based on the contents of `status_proto`.
 Status StatusFromProto(const StatusProto &status_proto);
+
+/// Returns the type URL associated with a given protobuf message type. This
+/// should be used when embedding a message of that type as a payload in a
+/// `Status`.
+///
+/// \return The type URL to use for `MessageT` payloads.
+template <typename MessageT>
+std::string GetTypeUrl() {
+  static_assert(std::is_base_of<google::protobuf::Message, MessageT>::value,
+                "MessageT must be a protobuf message type");
+  return absl::StrCat("type.googleapis.com/",
+                      MessageT::GetDescriptor()->full_name());
+}
 
 }  // namespace asylo
 
