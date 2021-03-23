@@ -78,8 +78,8 @@ class Status {
 
   Status(const Status &other) = default;
 
-  // Non-default move constructor since the moved status should be set to
-  // indicate an invalid state, which changes the code and error_space.
+  // Non-default move constructor since the moved status should be changed to a
+  // valid but unspecified state.
   Status(Status &&other);
 
   /// Constructs a Status object from `StatusT`. `StatusT` must be a status-type
@@ -111,8 +111,8 @@ class Status {
 
   Status &operator=(const Status &other) = default;
 
-  // Non-default move assignment operator since the moved status should be set
-  // to indicate an invalid state, which changes the code and error_space.
+  // Non-default move assignment operator since the moved status should be
+  // changed to a valid but unspecified state.
   Status &operator=(Status &&other);
 
   /// Constructs an OK status object.
@@ -264,9 +264,9 @@ class Status {
   /// that the error message is only set if `status_proto` represents a non-ok
   /// Status.
   ///
-  /// If the given `status_proto` is invalid, sets the error code of this
-  /// object to `error::StatusError::INVALID_STATUS_PROTO`. A StatusProto is
-  /// valid if and only if all the following conditions hold:
+  /// If the given `status_proto` is invalid, sets an appropriate error code and
+  /// message. A StatusProto is valid if and only if all the following
+  /// conditions hold:
   ///
   ///   * If `code()` is 0, then `canonical_code()` is set to 0.
   ///   * If `canonical_code()` is 0, then `code()` is set to 0.

@@ -67,12 +67,12 @@ StatusProto StatusToProto(const Status &status);
 /// returned `Status` is in the canonical error space and has an error code
 /// equal to `status_proto.canonical_code()`. If `status_proto` has no canonical
 /// code, the returned `Status` has an error code of
-/// `error::GoogleError::UNKNOWN`. Note that the error message is only set if
+/// `absl::StatusCode::kUnknown`. Note that the error message is only set if
 /// `status_proto` represents a non-OK status.
 ///
-/// If the given `status_proto` is invalid, the error code of the returned
-/// `Status` is `error::StatusError::INVALID_STATUS_PROTO`. A `StatusProto` is
-/// valid if and only if all the following conditions hold:
+/// If the given `status_proto` is invalid, then the returned `Status` has an
+/// appropriate error code and message. A `StatusProto` is valid if and only if
+/// all the following conditions hold:
 ///
 ///   * If `code()` is 0, then `canonical_code()` is set to 0.
 ///   * If `canonical_code()` is 0, then `code()` is set to 0.

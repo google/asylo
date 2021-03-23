@@ -306,10 +306,9 @@ class StatusOr {
   /// contents of a `StatusOr<U>`. `T` must be implicitly constructible from `U
   /// &&`.
   ///
-  /// Sets `other` to contain a non-OK status with a`StatusError::MOVED`
-  /// error code.
+  /// Sets `other` to a valid but unspecified state.
   ///
-  /// \param other The StatusOr object to move from and set to a non-OK status.
+  /// \param other The StatusOr object to move from.
   template <typename U, typename E = typename std::enable_if<
                             is_implicitly_constructible<T, U &&>::value>::type>
   StatusOr(StatusOr<U> &&other) : has_value_(other.has_value_) {
@@ -346,11 +345,9 @@ class StatusOr {
 
   /// Move-assignment operator.
   ///
-  /// Sets `other` to contain a non-OK status with a `StatusError::MOVED` error
-  /// code.
+  /// Sets `other` to a valid but unspecified state.
   ///
-  /// \param other The StatusOr object to assign from and set to a non-OK
-  /// status.
+  /// \param other The StatusOr object to assign from.
   StatusOr &operator=(StatusOr &&other) {
     // Check for self-assignment.
     if (this == &other) {
@@ -433,7 +430,7 @@ class StatusOr {
   /// Moves and returns the internally-stored `T` value.
   ///
   /// The StatusOr object is invalidated after this call and will be updated to
-  /// contain a non-OK status with a `StatusError::MOVED` error code.
+  /// a valid but unspecified state.
   ///
   /// If this StatusOr object is not OK, then this method either throws an
   /// `absl::BadStatusOrAccess` exception or aborts the program, depending on
@@ -467,8 +464,8 @@ class StatusOr {
   ///
   /// This method should only be called if this StatusOr object's status is OK
   /// (i.e. a call to ok() returns true), otherwise this call will abort. The
-  /// StatusOr object is invalidated after this call and will be updated to
-  /// contain a non-OK status with a `StatusError::MOVED` error code.
+  /// StatusOr object is changed after this call to a valid but unspecified
+  /// state.
   ///
   /// \return The stored `T` value.
   T ValueOrDie() && { return *std::move(*this); }
@@ -505,9 +502,8 @@ class StatusOr {
   ///
   /// This method should only be called if this StatusOr object's status is OK
   /// (i.e. a call to ok() returns true), otherwise the behavior of this method
-  /// is undefined. The StatusOr object is invalidated after this call and will
-  /// be updated to contain a non-OK status with a `StatusError::MOVED` error
-  /// code.
+  /// is undefined. The StatusOr object is changed after this call to a valid
+  /// but unspecified state.
   ///
   /// \return The stored `T` value.
   T operator*() && {
