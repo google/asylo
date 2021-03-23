@@ -28,7 +28,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/test/util/test_string.pb.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -61,7 +61,7 @@ Status EnclaveTestLauncher::SetUp(const std::string &enclave_path,
 
   client_ = manager_->GetClient(enclave_url);
   if (!client_) {
-    Status status(error::PosixError::P_ENOENT, "Client is null");
+    Status status = PosixError(ENOENT, "Client is null");
     LOG(ERROR) << "SetUp failed:" << status;
     return status;
   }

@@ -33,7 +33,7 @@
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/test/util/enclave_test_application.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -149,9 +149,7 @@ class ForkTest : public EnclaveTestCase {
       // normally.
       int status;
       if (wait(&status) == -1) {
-        return Status(
-            static_cast<error::PosixError>(errno),
-            absl::StrCat("Error waiting for child: ", strerror(errno)));
+        return LastPosixError("Error waiting for child");
       }
       if (!WIFEXITED(status)) {
         return absl::InternalError("child enclave aborted");

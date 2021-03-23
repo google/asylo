@@ -92,6 +92,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/util:asylo_macros",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
         "@com_google_absl//absl/status",
     ],

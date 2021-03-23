@@ -132,6 +132,7 @@ cc_unsigned_enclave(
     deps = [
         ":signal_test_cc_proto",
         "//asylo/test/util:enclave_test_application",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
     ],
 )
@@ -247,6 +248,7 @@ cc_unsigned_enclave(
     deps = [
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
         "@com_google_absl//absl/status",
     ],
@@ -267,6 +269,7 @@ cc_unsigned_enclave(
         "//asylo/platform/host_call",
         "//asylo/platform/primitives:trusted_runtime",
         "//asylo/test/util:enclave_test_application",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
@@ -565,6 +568,7 @@ enclave_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:logging",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
@@ -606,6 +610,7 @@ enclave_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:logging",
+        "//asylo/util:posix_error_matchers",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",

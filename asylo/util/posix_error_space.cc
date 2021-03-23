@@ -16,10 +16,11 @@
  *
  */
 
+#include "asylo/util/posix_error_space.h"
+
 #include <cstring>
 
 #include "asylo/util/error_space.h"
-#include "asylo/util/posix_error_space.h"
 
 namespace asylo {
 namespace error {

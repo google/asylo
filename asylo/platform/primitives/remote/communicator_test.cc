@@ -50,7 +50,6 @@
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/cleanup.h"
 #include "asylo/util/mutex_guarded.h"
-#include "asylo/util/posix_error_space.h"
 #include "asylo/util/remote/provision.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"

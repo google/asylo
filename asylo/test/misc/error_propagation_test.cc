@@ -21,7 +21,7 @@
 #include "absl/status/status.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/status_matchers.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_error_matchers.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -29,6 +29,7 @@ namespace {
 
 constexpr char kErrorString[] = "Secret error message";
 
+using ::testing::HasSubstr;
 using ::testing::Not;
 
 // Tests error propagation over the enclave boundary.
@@ -63,12 +64,12 @@ TEST_F(ErrorPropagationTest, ErrorCanonical) {
 // error code from inside the enclave.
 TEST_F(ErrorPropagationTest, ErrorNonCanonical) {
   EnclaveInput enclave_input;
-  SetEnclaveInputTestString(&enclave_input, "error::PosixError::P_EINVAL");
+  SetEnclaveInputTestString(&enclave_input, "EINVAL");
 
   Status status = client_->EnterAndRun(enclave_input, /*output=*/nullptr);
   EXPECT_THAT(status, Not(IsOk()));
-  EXPECT_THAT(status, StatusIs(error::PosixError::P_EINVAL));
-  EXPECT_EQ(status.error_message(), kErrorString);
+  EXPECT_THAT(status, PosixErrorIs(EINVAL));
+  EXPECT_THAT(status.error_message(), HasSubstr(kErrorString));
 }
 
 }  // namespace

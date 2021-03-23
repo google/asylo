@@ -41,7 +41,6 @@
 #include "asylo/util/elf_reader.h"
 #include "asylo/util/file_mapping.h"
 #include "asylo/util/function_deleter.h"
-#include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"

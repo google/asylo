@@ -39,7 +39,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "asylo/util/logging.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -67,8 +67,7 @@ StatusOr<std::string> ReadInternal(int fd, bool return_on_eagain) {
         }
       }
 
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("Failed to read from fd ", fd));
+      return LastPosixError(absl::StrCat("Failed to read from fd ", fd));
     }
     fd_contents.write(read_buf, read_result);
   } while (read_result != 0);
@@ -98,8 +97,7 @@ StatusOr<size_t> WriteInternal(int fd, absl::string_view data,
         }
       }
 
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("Failed to write to fd ", fd));
+      return LastPosixError(absl::StrCat("Failed to write to fd ", fd));
     }
 
     bytes_written += write_result;
@@ -143,8 +141,7 @@ StatusOr<Pipe> Pipe::CreatePipe(int flags) {
   int pipe_fds[2];
 
   if (pipe2(pipe_fds, flags) == -1) {
-    return Status(static_cast<error::PosixError>(errno),
-                  "Failed to create a pipe");
+    return LastPosixError("Failed to create a pipe");
   }
 
   return Pipe(pipe_fds[0], pipe_fds[1]);
@@ -152,8 +149,8 @@ StatusOr<Pipe> Pipe::CreatePipe(int flags) {
 
 Status Pipe::CloseReadFd() {
   if (!read_closed_.exchange(true) && close(read_fd_) == -1) {
-    return Status(static_cast<error::PosixError>(errno),
-                  absl::StrCat("Failed to close pipe read fd ", read_fd_));
+    return LastPosixError(
+        absl::StrCat("Failed to close pipe read fd ", read_fd_));
   }
 
   return absl::OkStatus();
@@ -161,8 +158,8 @@ Status Pipe::CloseReadFd() {
 
 Status Pipe::CloseWriteFd() {
   if (!write_closed_.exchange(true) && close(write_fd_) == -1) {
-    return Status(static_cast<error::PosixError>(errno),
-                  absl::StrCat("Failed to close pipe write fd ", write_fd_));
+    return LastPosixError(
+        absl::StrCat("Failed to close pipe write fd ", write_fd_));
   }
 
   return absl::OkStatus();
@@ -205,16 +202,16 @@ StatusOr<size_t> WriteAllNoBlock(int fd, absl::string_view data) {
 StatusOr<int> GetFdFlags(int fd) {
   int flags = fcntl(fd, F_GETFL, 0);
   if (flags == -1) {
-    return Status(static_cast<error::PosixError>(errno),
-                  absl::StrCat("Failed to read file status flags on fd ", fd));
+    return LastPosixError(
+        absl::StrCat("Failed to read file status flags on fd ", fd));
   }
   return flags;
 }
 
 Status SetFdFlags(int fd, int flags) {
   if (fcntl(fd, F_SETFL, flags) == -1) {
-    return Status(static_cast<error::PosixError>(errno),
-                  absl::StrCat("Failed to set file status flags on fd ", fd));
+    return LastPosixError(
+        absl::StrCat("Failed to set file status flags on fd ", fd));
   }
   return absl::OkStatus();
 }
@@ -244,8 +241,7 @@ StatusOr<short> WaitForEvents(int fd, short target_events, short ok_events) {
         poll(&wait_for_events, 1, kPollTimeout / absl::Milliseconds(1));
 
     if (poll_result == -1) {
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("Failed to poll fd ", fd));
+      return LastPosixError(absl::StrCat("Failed to poll fd ", fd));
     }
     if (poll_result == 1 &&
         (wait_for_events.revents & ~(target_events | ok_events))) {

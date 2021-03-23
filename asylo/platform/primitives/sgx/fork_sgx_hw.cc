@@ -46,7 +46,7 @@
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/cleanup.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -716,7 +716,7 @@ Status RunEkepHandshake(EkepHandshaker *handshaker, bool is_parent,
     // enc_untrusted_write to write to it.
     if (enc_untrusted_write(socket, outgoing_bytes.c_str(),
                             outgoing_bytes.size()) <= 0) {
-      return Status(static_cast<error::PosixError>(errno), "Write failed");
+      return LastPosixError("Write failed");
     }
   }
 
@@ -731,7 +731,7 @@ Status RunEkepHandshake(EkepHandshaker *handshaker, bool is_parent,
           enc_untrusted_recvfrom(socket, buf, sizeof(buf), MSG_PEEK,
                                  /*src_addr=*/nullptr, /*addrlen=*/nullptr);
       if (bytes_received <= 0) {
-        return Status(static_cast<error::PosixError>(errno), "Read failed");
+        return LastPosixError("Read failed");
       }
       result =
           handshaker->NextHandshakeStep(buf, bytes_received, &outgoing_bytes);
@@ -765,7 +765,7 @@ Status RunEkepHandshake(EkepHandshaker *handshaker, bool is_parent,
 
     if (enc_untrusted_write(socket, outgoing_bytes.c_str(),
                             outgoing_bytes.size()) <= 0) {
-      return Status(static_cast<error::PosixError>(errno), "Write failed");
+      return LastPosixError("Write failed");
     }
   }
   return absl::OkStatus();
@@ -843,7 +843,7 @@ Status EncryptAndSendSnapshotKey(std::unique_ptr<AeadCryptor> cryptor,
   // Sends the serialized encrypted snapshot key to the child.
   if (enc_untrusted_write(socket, encrypted_snapshot_key_string.data(),
                           encrypted_snapshot_key_string.size()) <= 0) {
-    return Status(static_cast<error::PosixError>(errno), "Write failed");
+    return LastPosixError("Write failed");
   }
 
   return absl::OkStatus();
@@ -855,7 +855,7 @@ Status ReceiveSnapshotKey(std::unique_ptr<AeadCryptor> cryptor, int socket) {
   char buf[1024];
   int rc = enc_untrusted_read(socket, buf, sizeof(buf));
   if (rc <= 0) {
-    return Status(static_cast<error::PosixError>(errno), "Read failed");
+    return LastPosixError("Read failed");
   }
 
   EncryptedSnapshotKey encrypted_snapshot_key;

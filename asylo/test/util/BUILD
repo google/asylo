@@ -111,6 +111,7 @@ cc_library(
         "//asylo:enclave_client",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/util:logging",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",

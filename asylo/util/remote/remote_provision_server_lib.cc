@@ -36,7 +36,7 @@
 #include "asylo/util/cleanup.h"
 #include "asylo/util/mutex_guarded.h"
 #include "asylo/util/path.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/remote/grpc_server_main_wrapper.h"
 #include "asylo/util/remote/process_main_wrapper.h"
 #include "asylo/util/remote/remote_provision.grpc.pb.h"
@@ -102,8 +102,7 @@ StatusOr<std::string> ProvisionServiceImpl::PrepareEnclave(
     int fd = open(filename.c_str(), O_CREAT | O_WRONLY,
                   S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
     if (fd < 0) {
-      return Status{static_cast<error::PosixError>(errno),
-                    absl::StrCat("Failed to open file ", filename)};
+      return LastPosixError(absl::StrCat("Failed to open file ", filename));
     }
     Cleanup closer([fd] { close(fd); });
 
@@ -119,8 +118,8 @@ StatusOr<std::string> ProvisionServiceImpl::PrepareEnclave(
         int write_res = write(fd, request.enclave_binary().data(),
                               request.enclave_binary().size());
         if (write_res < request.enclave_binary().size()) {
-          return Status{static_cast<error::PosixError>(errno),
-                        absl::StrCat("Failed to write into file ", filename)};
+          return LastPosixError(
+              absl::StrCat("Failed to write into file ", filename));
         }
       }
       if (!request.client_address().empty()) {

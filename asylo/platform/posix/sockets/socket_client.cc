@@ -30,7 +30,7 @@
 
 #include "absl/status/status.h"
 #include "asylo/util/logging.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 
 namespace asylo {
 namespace {
@@ -72,7 +72,7 @@ Status SocketClient::GetPeername(struct sockaddr *peeraddr_out,
                                  socklen_t *peeraddr_len_out) {
   if (getpeername(connection_fd_, peeraddr_out, peeraddr_len_out) < 0) {
     LOG(ERROR) << "getpeername failure: " << strerror(errno);
-    return Status(static_cast<error::PosixError>(errno), "getpeername failure");
+    return LastPosixError("getpeername failure");
   }
 
   return absl::OkStatus();
@@ -83,7 +83,7 @@ Status SocketClient::ClientSetup(const std::string &server_ip, int server_port,
   connection_fd_ = socket(AF_INET6, SOCK_STREAM, 0);
   if (connection_fd_ < 0) {
     LOG(ERROR) << kLogOrigin << "client socket error";
-    return Status(static_cast<error::PosixError>(errno), "socket error");
+    return LastPosixError("socket error");
   }
 
   fd_closer_.reset(connection_fd_);
@@ -95,7 +95,7 @@ Status SocketClient::ClientSetup(const std::string &server_ip, int server_port,
   serv_addr.sin6_port = htons(server_port);
   if (inet_pton(AF_INET6, server_ip.c_str(), &serv_addr.sin6_addr) <= 0) {
     LOG(ERROR) << kLogOrigin << "client inet_pton error";
-    return Status(static_cast<error::PosixError>(errno), "inet_pton error");
+    return LastPosixError("inet_pton error");
   }
 
   if (out_addr != nullptr) {
@@ -113,7 +113,7 @@ Status SocketClient::ClientSetup(const std::string &socket_name,
   connection_fd_ = socket(AF_UNIX, SOCK_STREAM, 0);
   if (connection_fd_ < 0) {
     LOG(ERROR) << kLogOrigin << "client socket error";
-    return Status(static_cast<error::PosixError>(errno), "socket error");
+    return LastPosixError("socket error");
   }
 
   fd_closer_.reset(connection_fd_);
@@ -169,7 +169,7 @@ Status SocketClient::ClientConnection(int fd, struct sockaddr *serv_addr,
                                       socklen_t addrlen) {
   if (connect(fd, serv_addr, addrlen) < 0) {
     LOG(ERROR) << kLogOrigin << "client connect failure: " << strerror(errno);
-    return Status(static_cast<error::PosixError>(errno), "connect failure");
+    return LastPosixError("connect failure");
   }
 
   return absl::OkStatus();

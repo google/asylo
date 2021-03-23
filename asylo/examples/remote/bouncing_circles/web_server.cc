@@ -39,7 +39,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/util/cleanup.h"
 #include "asylo/util/mutex_guarded.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -69,8 +69,7 @@ StatusOr<std::string> ReadRequest(int fd) {
   memset(buffer.get(), '\0', BUFSIZE + 1);
   const ssize_t ret = read(fd, buffer.get(), BUFSIZE);
   if (ret < -1) {
-    return Status{static_cast<error::PosixError>(errno),
-                  "Failed to read browser request"};
+    return LastPosixError("Failed to read browser request");
   }
   if (ret == 0) {
     return Status{absl::StatusCode::kFailedPrecondition,

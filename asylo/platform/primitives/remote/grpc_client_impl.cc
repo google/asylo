@@ -33,7 +33,6 @@
 #include "asylo/platform/primitives/remote/grpc_service.pb.h"
 #include "asylo/platform/primitives/remote/metrics/clients/opencensus_client.h"
 #include "asylo/platform/primitives/util/message.h"
-#include "asylo/util/posix_error_space.h"
 #include "asylo/util/remote/remote_proxy_config.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_helpers.h"

@@ -22,7 +22,7 @@
 #include <unistd.h>
 
 #include "absl/status/status.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 
 namespace asylo {
 
@@ -43,14 +43,14 @@ Status SocketTransmit::Read(int fd, void *buf, size_t read_len) {
           break;
       }
     } else if (!nbytes) {
-      return Status(error::PosixError::P_EPIPE, "connection closed by peer");
+      return PosixError(EPIPE, "connection closed by peer");
     } else {
       read_bytes += nbytes;
       ++read_count_;
     }
   }
   if (read_bytes < read_len) {
-    return Status(static_cast<error::PosixError>(errno), "read error");
+    return LastPosixError("read error");
   }
   return absl::OkStatus();
 }
@@ -75,15 +75,14 @@ Status SocketTransmit::Write(int fd, const void *buf, size_t write_len) {
     }
   }
   if (write_bytes < write_len) {
-    return Status(static_cast<error::PosixError>(errno), "write error");
+    return LastPosixError("write error");
   }
   return absl::OkStatus();
 }
 
 Status SocketTransmit::RecvMsg(int sockfd, struct msghdr *msg, int flags) {
   if (recvmsg(sockfd, msg, flags) == -1) {
-    return Status(static_cast<error::PosixError>(errno),
-                  std::string("recvmsg error:") + strerror(errno));
+    return LastPosixError("recvmsg error");
   }
   return absl::OkStatus();
 }
@@ -91,8 +90,7 @@ Status SocketTransmit::RecvMsg(int sockfd, struct msghdr *msg, int flags) {
 Status SocketTransmit::SendMsg(int sockfd, const struct msghdr *msg,
                                int flags) {
   if (sendmsg(sockfd, msg, flags) == -1) {
-    return Status(static_cast<error::PosixError>(errno),
-                  std::string("sendmsg error:") + strerror(errno));
+    return LastPosixError("sendmsg error");
   }
   return absl::OkStatus();
 }
@@ -101,8 +99,7 @@ Status SocketTransmit::RecvFrom(int socket, void *buffer, size_t length,
                                 int flags, struct sockaddr *address,
                                 socklen_t *address_len) {
   if (recvfrom(socket, buffer, length, flags, address, address_len) == -1) {
-    return Status(static_cast<error::PosixError>(errno),
-                  std::string("recvfrom error:") + strerror(errno));
+    return LastPosixError("recvfrom error");
   }
   return absl::OkStatus();
 }

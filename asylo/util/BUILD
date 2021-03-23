@@ -140,6 +140,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
+        ":posix_errors",
         ":status",
         "//asylo/util:logging",
         "@com_google_absl//absl/status",
@@ -174,6 +175,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":cleanup",
+        ":posix_errors",
         ":status",
         "//asylo/util:logging",
         "@com_google_absl//absl/strings",

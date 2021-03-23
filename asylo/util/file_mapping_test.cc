@@ -36,7 +36,6 @@
 #include "absl/flags/flag.h"
 #include "absl/strings/string_view.h"
 #include "asylo/test/util/status_matchers.h"
-#include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 
 ABSL_FLAG(std::string, test_file, "", "Location of test data file");

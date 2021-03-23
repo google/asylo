@@ -31,7 +31,6 @@
 #include "asylo/platform/primitives/sgx/generated_bridge_t.h"
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
-#include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "include/sgx_trts.h"
 

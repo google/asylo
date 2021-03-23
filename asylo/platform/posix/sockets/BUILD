@@ -80,6 +80,7 @@ cc_library(
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         "@com_google_absl//absl/status",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
     ] + select({
         "@com_google_asylo//asylo": [
@@ -101,6 +102,7 @@ cc_library(
         "@com_google_absl//absl/status",
         "//asylo/util:logging",
         "//asylo/platform/storage/utils:fd_closer",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
     ] + select({
         "@com_google_asylo//asylo": [
@@ -122,6 +124,7 @@ cc_library(
         "@com_google_absl//absl/status",
         "//asylo/util:logging",
         "//asylo/platform/storage/utils:fd_closer",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
     ] + select({
         "@com_google_asylo//asylo": [

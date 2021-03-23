@@ -163,6 +163,7 @@ cc_library(
         "//asylo/util:file_mapping",
         "//asylo/util:function_deleter",
         "//asylo/util:logging",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
         "//asylo/util:status_helpers",
         "//asylo/util:status_macros",
@@ -326,6 +327,7 @@ _TRUSTED_FORK_HW_DEPS = [
     "//asylo/identity/platform/sgx:sgx_identity_util",
     "//asylo/util:cleansing_types",
     "//asylo/util:cleanup",
+    "//asylo/util:posix_errors",
     "@boringssl//:crypto",
 ]
 

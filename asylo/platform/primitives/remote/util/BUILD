@@ -28,6 +28,7 @@ cc_library(
     deps = [
         "//asylo/util:cleanup",
         "//asylo/util:logging",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/flags:flag",
@@ -48,6 +49,7 @@ cc_test(
         "//asylo/test/util:test_flags",
         "//asylo/test/util:test_main",
         "//asylo/util:cleanup",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/flags:flag",

@@ -19,7 +19,7 @@
 #include "absl/status/status.h"
 #include "asylo/util/logging.h"
 #include "asylo/test/util/enclave_test_application.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -42,8 +42,8 @@ class ErrorPropagationEnclave : public EnclaveTestCase {
       return absl::OkStatus();
     } else if (test_name == "absl::StatusCode::kUnauthenticated") {
       return absl::UnauthenticatedError(kErrorString);
-    } else if (test_name == "error::PosixError::P_EINVAL") {
-      return Status(error::PosixError::P_EINVAL, kErrorString);
+    } else if (test_name == "EINVAL") {
+      return PosixError(EINVAL, kErrorString);
     }
 
     LOG(ERROR) << "Unexpected test name: '" << test_name << "'";

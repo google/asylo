@@ -26,7 +26,7 @@
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/test/misc/block_enclave_entries_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -69,8 +69,7 @@ class BlockEnclaveEntriesTest : public EnclaveTestCase {
       enc_block_entries();
       std::string message = "Enclave entries blocked";
       if (enc_untrusted_write(socket, message.data(), message.size()) < 0) {
-        return Status(static_cast<error::PosixError>(errno),
-                      absl::StrCat("Write failed: ", strerror(errno)));
+        return LastPosixError("Write failed");
       }
 
       struct timespec ts;

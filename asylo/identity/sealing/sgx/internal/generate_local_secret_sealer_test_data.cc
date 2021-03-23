@@ -41,7 +41,7 @@
 #include "asylo/identity/platform/sgx/sgx_identity_util.h"
 #include "asylo/identity/sealing/sgx/internal/local_secret_sealer_test_data.pb.h"
 #include "asylo/identity/sealing/sgx/sgx_local_secret_sealer.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
@@ -105,8 +105,8 @@ Status ReadTestData(const std::string &input_path,
                     LocalSecretSealerTestData *test_data) {
   int fd = open(input_path.c_str(), O_RDONLY);
   if (fd < 0) {
-    return Status(static_cast<error::PosixError>(errno),
-                  absl::StrCat("Could not open ", input_path, " for reading"));
+    return LastPosixError(
+        absl::StrCat("Could not open ", input_path, " for reading"));
   }
   google::protobuf::io::FileInputStream stream(fd);
   stream.SetCloseOnDelete(true);
@@ -183,8 +183,7 @@ Status WriteTestData(const LocalSecretSealerTestData &test_data,
     fd = open(output_path.c_str(), O_CREAT | O_WRONLY | O_TRUNC,
               S_IRUSR | S_IWUSR);
     if (fd < 0) {
-      return Status(
-          static_cast<error::PosixError>(errno),
+      return LastPosixError(
           absl::StrCat("Could not open ", output_path, " for writing"));
     }
   }

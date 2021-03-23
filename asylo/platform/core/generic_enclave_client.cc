@@ -29,7 +29,6 @@
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/util/message.h"
-#include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"

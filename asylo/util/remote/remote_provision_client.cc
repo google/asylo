@@ -28,7 +28,7 @@
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/platform/primitives/remote/util/grpc_credential_builder.h"
 #include "asylo/util/cleanup.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/remote/grpc_channel_builder.h"
 #include "asylo/util/remote/provision.h"
 #include "asylo/util/remote/remote_provision.grpc.pb.h"
@@ -99,8 +99,8 @@ class RemoteProvisionClient : public RemoteProvision {
     LOG(INFO) << "Read file: " << enclave_file_path;
     int fd = open(std::string(enclave_file_path).c_str(), O_RDONLY);
     if (fd < 0) {
-      return Status{static_cast<error::PosixError>(errno),
-                    absl::StrCat("Failed to open file ", enclave_file_path)};
+      return LastPosixError(
+          absl::StrCat("Failed to open file ", enclave_file_path));
     }
     Cleanup closer([fd] { close(fd); });
 
@@ -135,9 +135,8 @@ class RemoteProvisionClient : public RemoteProvision {
           if (errno == EAGAIN || errno == EWOULDBLOCK || errno == EINTR) {
             continue;
           } else {
-            return Status{
-                static_cast<error::PosixError>(errno),
-                absl::StrCat("Failed to read file ", enclave_file_path)};
+            return LastPosixError(
+                absl::StrCat("Failed to read file ", enclave_file_path));
           }
         }
 

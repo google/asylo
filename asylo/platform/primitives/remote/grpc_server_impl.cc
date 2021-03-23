@@ -35,7 +35,6 @@
 #include "asylo/platform/primitives/remote/grpc_service.grpc.pb.h"
 #include "asylo/platform/primitives/remote/grpc_service.pb.h"
 #include "asylo/platform/primitives/remote/metrics/proc_system_service.h"
-#include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"

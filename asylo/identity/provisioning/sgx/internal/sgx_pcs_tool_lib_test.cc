@@ -38,6 +38,7 @@
 #include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/posix_error_matchers.h"
 #include "asylo/util/proto_parse_util.h"
 
 namespace asylo {
@@ -335,7 +336,7 @@ TEST_F(SgxPcsToolLibTest, WriteProtoOutputWithInvalidPath) {
   absl::SetFlag(&FLAGS_outfile, "/totally/bogus/path/that/does/not/exist");
   absl::SetFlag(&FLAGS_outfmt, "textproto");
   EXPECT_THAT(WriteOutputAccordingToFlags(GetPckCertificateResult{}),
-              StatusIs(absl::StatusCode::kInvalidArgument));
+              PosixErrorIs(ENOENT));
 }
 
 TEST_F(SgxPcsToolLibTest, WritePemCertResultAsPem) {

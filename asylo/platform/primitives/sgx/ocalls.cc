@@ -48,7 +48,7 @@
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h"
@@ -134,8 +134,7 @@ asylo::Status DoSnapshotKeyTransfer(int self_socket, int peer_socket,
   // Close the socket for the other side, and enters the enclave to send the
   // snapshot key through the socket.
   if (close(peer_socket) < 0) {
-    return asylo::Status(static_cast<asylo::error::PosixError>(errno),
-                         absl::StrCat("close failed: ", strerror(errno)));
+    return asylo::LastPosixError("close failed");
   }
 
   asylo::ForkHandshakeConfig fork_handshake_config;

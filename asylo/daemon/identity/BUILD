@@ -30,6 +30,7 @@ cc_library(
     deps = [
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:bssl_util",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/status",

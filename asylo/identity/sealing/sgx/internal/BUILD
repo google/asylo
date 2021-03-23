@@ -83,6 +83,7 @@ cc_binary(
         "//asylo/identity/platform/sgx/internal:hardware_types",
         "//asylo/identity/sealing/sgx:sgx_local_secret_sealer",
         "//asylo/util:logging",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",

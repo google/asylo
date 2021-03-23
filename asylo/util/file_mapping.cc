@@ -24,13 +24,14 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <cstddef>
 #include <cstring>
 
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/cleanup.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
@@ -48,8 +49,7 @@ StatusOr<FileMapping> FileMapping::CreateFromFile(absl::string_view file_name) {
   // Open the file.
   int fd = open(file_name_string.data(), O_RDONLY);
   if (fd == -1) {
-    return Status(static_cast<error::PosixError>(errno),
-                  absl::StrCat("Failed to open ", file_name));
+    return LastPosixError(absl::StrCat("Failed to open ", file_name));
   }
 
   // Closing the file will not invalidate the memory mapping.
@@ -57,16 +57,15 @@ StatusOr<FileMapping> FileMapping::CreateFromFile(absl::string_view file_name) {
   {
     Cleanup close_fd([fd, file_name, &close_status]() {
       if (close(fd) == -1) {
-        close_status = Status(static_cast<error::PosixError>(errno),
-                              absl::StrCat("Failed to close ", file_name));
+        close_status =
+            LastPosixError(absl::StrCat("Failed to close ", file_name));
       }
     });
 
     // Determine the size of the file.
     struct stat file_stat;
     if (fstat(fd, &file_stat) == -1) {
-      return Status(
-          static_cast<error::PosixError>(errno),
+      return LastPosixError(
           absl::StrCat("Failed to determine the size of ", file_name));
     }
     file_size = static_cast<size_t>(file_stat.st_size);
@@ -75,8 +74,7 @@ StatusOr<FileMapping> FileMapping::CreateFromFile(absl::string_view file_name) {
     buffer_ptr =
         mmap(nullptr, file_size, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
     if (buffer_ptr == MAP_FAILED) {
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("Failed to mmap ", file_name));
+      return LastPosixError(absl::StrCat("Failed to mmap ", file_name));
     }
   }
 

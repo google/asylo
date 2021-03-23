@@ -40,6 +40,7 @@ cc_library(
         "//asylo/util:cleanup",
         "//asylo/util:logging",
         "//asylo/util:mutex_guarded",
+        "//asylo/util:posix_errors",
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",

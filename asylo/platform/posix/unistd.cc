@@ -29,6 +29,7 @@
 #include "asylo/platform/posix/io/io_manager.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/statusor.h"
 
 using asylo::io::IOManager;
@@ -213,7 +214,7 @@ int chdir(const char *path) {
   asylo::Status status =
       IOManager::GetInstance().SetCurrentWorkingDirectory(path);
   if (!status.ok()) {
-    errno = status.error_code();
+    errno = GetErrno(status);
     return -1;
   }
 

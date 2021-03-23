@@ -34,8 +34,8 @@ namespace asylo {
 //       int fd =
 //           open(string(file_name.data(), file_name.size()).data(), O_RDONLY);
 //       if (fd == -1) {
-//         return Status(static_cast<error::PosixError>(errno),
-//                       absl::StrCat("Failed to open file ", file_name));
+//         return LastPosixError(
+//             absl::StrCat("Failed to open file ", file_name));
 //       }
 //
 //       // Create a Cleanup object to close the file here. This ensures that
@@ -46,8 +46,8 @@ namespace asylo {
 //       ssize_t read_result =
 //           read(fd, const_cast<char *>(read_buf.data()), num_bytes);
 //       if (read_result == -1) {
-//         return Status(static_cast<error::PosixError>(errno),
-//                       absl::StrCat("Failed to read file ", file_name));
+//         return LastPosixError(
+//             absl::StrCat("Failed to read file ", file_name));
 //       } else if (read_result < num_bytes) {
 //         return Status(error::GoogleError::INVALID_ARGUMENT,
 //                       absl::StrCat("Could not read ", num_bytes,

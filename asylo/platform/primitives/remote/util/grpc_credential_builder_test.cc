@@ -35,7 +35,7 @@
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/test_flags.h"
 #include "asylo/util/cleanup.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "include/grpcpp/security/credentials.h"
 #include "include/grpcpp/security/server_credentials.h"
 
@@ -49,15 +49,13 @@ namespace {
 Status WriteFile(absl::string_view path, absl::string_view data) {
   int fd = open(std::string(path).c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
   if (fd == -1) {
-    return Status(static_cast<error::PosixError>(errno),
-                  absl::StrCat("Failed to open, file=", path));
+    return LastPosixError(absl::StrCat("Failed to open, file=", path));
   }
   Cleanup close_fd([fd]() { close(fd); });
 
   const auto write_result = write(fd, data.data(), data.size());
   if (write_result == -1) {
-    return Status(static_cast<error::PosixError>(errno),
-                  absl::StrCat("Failed to write, file=", path));
+    return LastPosixError(absl::StrCat("Failed to write, file=", path));
   }
   if (write_result < data.size()) {
     return absl::InvalidArgumentError(

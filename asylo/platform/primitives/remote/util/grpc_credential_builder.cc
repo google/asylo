@@ -34,7 +34,7 @@
 #include "absl/strings/string_view.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/cleanup.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
@@ -88,21 +88,18 @@ absl::string_view UnparseFlag(SecurityType in) {
 StatusOr<std::string> ReadFile(absl::string_view path) {
   int fd = open(std::string(path).c_str(), O_RDONLY);
   if (fd == -1) {
-    return Status(static_cast<error::PosixError>(errno),
-                  absl::StrCat("Failed to open, file=", path));
+    return LastPosixError(absl::StrCat("Failed to open, file=", path));
   }
   Cleanup close_fd([fd]() { close(fd); });
 
   struct stat statbuf;
   if (fstat(fd, &statbuf) < 0) {
-    return Status(static_cast<error::PosixError>(errno),
-                  absl::StrCat("Failed to stat, file=", path));
+    return LastPosixError(absl::StrCat("Failed to stat, file=", path));
   }
   auto buf = absl::make_unique<char[]>(statbuf.st_size);
   const auto read_result = read(fd, buf.get(), statbuf.st_size);
   if (read_result == -1) {
-    return Status(static_cast<error::PosixError>(errno),
-                  absl::StrCat("Failed to read, file=", path));
+    return LastPosixError(absl::StrCat("Failed to read, file=", path));
   }
   if (read_result < statbuf.st_size) {
     return absl::InvalidArgumentError(absl::StrCat(

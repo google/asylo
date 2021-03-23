@@ -34,7 +34,7 @@
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bssl_util.h"
-#include "asylo/util/posix_error_space.h"
+#include "asylo/util/posix_errors.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
@@ -57,18 +57,16 @@ StatusOr<std::string> GetPerBootUuid() {
   std::array<char, kFormattedUuidSize> uuid;
   int fd = open(kBootUuidFile, O_RDONLY);
   if (fd < 0) {
-    return Status(static_cast<error::PosixError>(errno),
-                  absl::StrCat("Unexpected error while attempting to open ",
-                               kBootUuidFile));
+    return LastPosixError(absl::StrCat(
+        "Unexpected error while attempting to open ", kBootUuidFile));
   }
 
   int retval = read(fd, uuid.data(), uuid.size());
   close(fd);
 
   if (retval < 0) {
-    return Status(static_cast<error::PosixError>(errno),
-                  absl::StrCat("Unexpected error while attempting to read ",
-                               kBootUuidFile));
+    return LastPosixError(absl::StrCat(
+        "Unexpected error while attempting to read ", kBootUuidFile));
   }
   if (retval != kFormattedUuidSize) {
     return Status(
