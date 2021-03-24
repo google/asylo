@@ -32,24 +32,30 @@
 #include <sys/un.h>
 #include <sys/utsname.h>
 
+#include "absl/types/optional.h"
 #include "asylo/platform/system_call/type_conversions/generated_types.h"
 #include "asylo/platform/system_call/type_conversions/kernel_types.h"
 
+// Converts a Linux based errno to an enclave based errno. If the error number
+// is not known, then this function returns 0x8000 | klinux_errno to facilitate
+// ease of debugging when things go wrong.
+int FromkLinuxErrno(int klinux_errno);
+
 // Converts an enclave based socket type to a Linux socket type value. Returns
 // -1 if socket type is not recognized.
-int TokLinuxSocketType(int input);
+absl::optional<int> TokLinuxSocketType(int input);
 
 // Converts a Linux based socket type to an enclave based socket type. Returns
 // -1 if socket type is not recognized.
-int FromkLinuxSocketType(int input);
+absl::optional<int> FromkLinuxSocketType(int input);
 
 // Converts an enclave based socket option name to a Linux socket option.
 // Returns -1 if socket type is not recognized.
-int TokLinuxOptionName(int level, int option_name);
+absl::optional<int> TokLinuxOptionName(int level, int option_name);
 
 // Converts a Linux based socket option name to an enclave based socket option.
 // Returns -1 if socket type is not recognized.
-int FromkLinuxOptionName(int level, int klinux_option_name);
+absl::optional<int> FromkLinuxOptionName(int level, int klinux_option_name);
 
 // Converts a kernel stat to an enclave stat.
 bool FromkLinuxStat(const struct klinux_stat *input, struct stat *output);
@@ -133,11 +139,11 @@ bool TokLinuxFdSet(const fd_set *input, struct klinux_fd_set *output);
 
 // Converts a kernel based signal number (including realtime signals) to an
 // enclave based signal.
-int FromkLinuxSignalNumber(int input);
+absl::optional<int> FromkLinuxSignalNumber(int input);
 
 // Converts an enclave based signal number (including realtime signals) to a
 // kernel based signal.
-int TokLinuxSignalNumber(int input);
+absl::optional<int> TokLinuxSignalNumber(int input);
 
 // Converts a Linux based cpu set bitmask to an enclave based cpu set bitmask.
 bool FromkLinuxCpuSet(klinux_cpu_set_t *input, cpu_set_t *output);
@@ -192,12 +198,7 @@ bool FromkLinuxUtsName(const struct klinux_utsname *input,
 
 // Converts an enclave based syslog priority value to a kernel based syslog
 // priority.
-int TokLinuxSyslogPriority(int input);
-
-// Converts an enclave based siginfo_t struct to a Linux based siginfo struct.
-// Only performs conversions on fields of interest currently, i.e. si_signo and
-// si_code, keeping others members intact.
-bool TokLinuxSiginfo(const siginfo_t *input, klinux_siginfo_t *output);
+absl::optional<int> TokLinuxSyslogPriority(int input);
 
 // Converts a Linux based siginfo_t struct to an enclave based siginfo struct.
 // Only performs conversions on fields of interest currently, i.e. si_signo and

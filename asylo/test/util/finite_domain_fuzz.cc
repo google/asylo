@@ -18,8 +18,12 @@
 
 #include "asylo/test/util/finite_domain_fuzz.h"
 
+#include <utility>
+
 #include <gmock/gmock.h>
+#include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
+#include "asylo/util/logging.h"
 
 namespace asylo {
 
@@ -38,51 +42,56 @@ int random_flag() {
   return 1 << index;
 }
 
-absl::optional<std::vector<std::pair<int64_t, int64_t>>>
-FuzzBitsetTranslationFunction(const std::vector<int64_t>& input,
-                              const std::vector<int64_t>& output,
-                              int iter_bound) {
-  auto all_cases = zip(input, output);
-  if (!all_cases) {
-    return all_cases;
+absl::optional<std::vector<std::pair<int64_t, absl::optional<int64_t>>>>
+FuzzBitsetTranslationFunction(
+    const std::vector<int64_t> &input,
+    const std::vector<absl::optional<int64_t>> &output, int iter_bound) {
+  auto all_cases_pairs = zip(input, output);
+  if (!all_cases_pairs) {
+    return all_cases_pairs;
   }
-  all_cases->push_back(std::make_pair(0, 0));
+  std::map<int64_t, absl::optional<int64_t>> all_cases(all_cases_pairs->begin(),
+                                                       all_cases_pairs->end());
+  all_cases[0] = 0;
 
   // Grab multiple random flags at the same time
-  size_t size = input.size();
-  auto begin = input.begin();
-  auto end = input.end();
   for (int i = 0; i < iter_bound; i++) {
     // Test multiple flags in the defined domain
     int in = 0;
-    int out = 0;
-    for (int j = 0; j < size; j++) {
+    absl::optional<int> out = 0;
+    for (int j = 0; j < input.size(); j++) {
       if (rand()%2) {
         in |= input[j];
-        out |= output[j];
+        *out |= *output[j];
       }
-      all_cases->push_back(std::make_pair(in, out));
+      auto insert_result = all_cases.insert({in, out});
+      CHECK(insert_result.second || insert_result.first->second == out)
+          << "Input " << in << " is mapped to both "
+          << *insert_result.first->second << " and " << *out << ".";
     }
-
     // Test multiple flags in and outside the defined domain
     in = 0;
-    out = 0;
-    for (int j = 0; j < sizeof(int64_t) * 8; j++) {
+    out.reset();
+    for (int j = 0; j < sizeof(int64_t) * 8 / 8; j++) {
       int flag = random_flag();
-      auto found = std::find(begin, end, flag);
-      size_t index = found - begin;
+      auto found = std::find(input.begin(), input.end(), flag);
+      size_t index = found - input.begin();
       // If flag is not in input, then OR it in without a translated
       // output counterpart.
-      if (found == end) {
+      if (found == input.end()) {
         in |= flag;
       } else {
         in |= input[index];
-        out |= output[index];
+        out = (out ? *out : 0) | *output[index];
       }
     }
-    all_cases->push_back(std::make_pair(in, out));
+    auto insert_result = all_cases.insert({in, out});
+    CHECK(insert_result.second || insert_result.first->second == out)
+        << "Input " << in << " is mapped to both "
+        << *insert_result.first->second << " and " << *out << ".";
   }
-  return all_cases;
+  return std::vector<std::pair<int64_t, absl::optional<int64_t>>>{
+      all_cases.begin(), all_cases.end()};
 }
 
 }  // namespace asylo

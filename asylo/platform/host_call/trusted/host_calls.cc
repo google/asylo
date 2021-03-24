@@ -27,9 +27,11 @@
 
 #include <algorithm>
 
+#include "absl/types/optional.h"
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/host_call/serializer_functions.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
+#include "asylo/platform/system_call/type_conversions/generated_types_functions.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 
 using ::asylo::host_call::NonSystemCallDispatcher;
@@ -176,14 +178,14 @@ gid_t enc_untrusted_getegid() {
 }
 
 int enc_untrusted_kill(pid_t pid, int sig) {
-  int klinux_sig = TokLinuxSignalNumber(sig);
-  if (klinux_sig < 0) {
+  absl::optional<int> klinux_sig = TokLinuxSignalNumber(sig);
+  if (!klinux_sig) {
     errno = EINVAL;
     return -1;
   }
 
   return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_kill, pid,
-                                             klinux_sig);
+                                             *klinux_sig);
 }
 
 int enc_untrusted_link(const char *oldpath, const char *newpath) {
@@ -210,9 +212,15 @@ int enc_untrusted_open(const char *pathname, int flags, ...) {
     va_end(ap);
   }
 
+  absl::optional<int> klinux_flags = TokLinuxFileStatusFlag(flags);
+  absl::optional<int> klinux_mode = TokLinuxFileModeFlag(mode);
+  if (!klinux_flags || !klinux_mode) {
+    errno = EINVAL;
+    return -1;
+  }
+
   return EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_open, pathname, TokLinuxFileStatusFlag(flags),
-      TokLinuxFileModeFlag(mode));
+      asylo::system_call::kSYS_open, pathname, *klinux_flags, *klinux_mode);
 }
 
 int enc_untrusted_unlink(const char *pathname) {
@@ -281,14 +289,26 @@ int enc_untrusted_pipe2(int pipefd[2], int flags) {
     return -1;
   }
 
-  return EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_pipe2, pipefd, TokLinuxFileStatusFlag(flags));
+  absl::optional<int> klinux_flags = TokLinuxFileStatusFlag(flags);
+  if (!klinux_flags) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_pipe2,
+                                             pipefd, *klinux_flags);
 }
 
 int enc_untrusted_socket(int domain, int type, int protocol) {
+  absl::optional<int> klinux_domain = TokLinuxAfFamily(domain);
+  absl::optional<int> klinux_type = TokLinuxSocketType(type);
+  if (!klinux_domain || !klinux_type) {
+    errno = EINVAL;
+    return -1;
+  }
+
   return EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_socket, TokLinuxAfFamily(domain),
-      TokLinuxSocketType(type), protocol);
+      asylo::system_call::kSYS_socket, *klinux_domain, *klinux_type, protocol);
 }
 
 int enc_untrusted_listen(int sockfd, int backlog) {
@@ -317,8 +337,8 @@ int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
   arg = va_arg(ap, int64_t);
   va_end(ap);
 
-  int klinux_cmd = TokLinuxFcntlCommand(cmd);
-  if (klinux_cmd == -1) {
+  absl::optional<int> klinux_cmd = TokLinuxFcntlCommand(cmd);
+  if (!klinux_cmd) {
     errno = EINVAL;
     return -1;
   }
@@ -326,36 +346,47 @@ int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
   int intarg = arg;
   switch (cmd) {
     case F_SETFL: {
+      absl::optional<int> klinux_flags = TokLinuxFileStatusFlag(intarg);
+      if (!klinux_flags) {
+        errno = EINVAL;
+        return -1;
+      }
       return EnsureInitializedAndDispatchSyscall(
-          asylo::system_call::kSYS_fcntl, fd, klinux_cmd,
-          TokLinuxFileStatusFlag(intarg));
+          asylo::system_call::kSYS_fcntl, fd, *klinux_cmd, *klinux_flags);
     }
     case F_SETFD: {
-      return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_fcntl,
-                                                 fd, klinux_cmd,
-                                                 TokLinuxFDFlag(intarg));
+      absl::optional<int> klinux_flags = TokLinuxFDFlag(intarg);
+      if (!klinux_flags) {
+        errno = EINVAL;
+        return -1;
+      }
+      return EnsureInitializedAndDispatchSyscall(
+          asylo::system_call::kSYS_fcntl, fd, *klinux_cmd, *klinux_flags);
     }
     case F_GETFL: {
       int retval = EnsureInitializedAndDispatchSyscall(
-          asylo::system_call::kSYS_fcntl, fd, klinux_cmd, arg);
-      if (retval != -1) {
-        retval = FromkLinuxFileStatusFlag(retval);
+          asylo::system_call::kSYS_fcntl, fd, *klinux_cmd, arg);
+      absl::optional<int> flags = FromkLinuxFileStatusFlag(retval);
+      if (!flags) {
+        errno = EINVAL;
+        return -1;
       }
-
-      return retval;
+      return *flags;
     }
     case F_GETFD: {
       int retval = EnsureInitializedAndDispatchSyscall(
-          asylo::system_call::kSYS_fcntl, fd, klinux_cmd, arg);
-      if (retval != -1) {
-        retval = FromkLinuxFDFlag(retval);
+          asylo::system_call::kSYS_fcntl, fd, *klinux_cmd, arg);
+      absl::optional<int> flags = FromkLinuxFDFlag(retval);
+      if (!flags) {
+        errno = EINVAL;
+        return -1;
       }
-      return retval;
+      return *flags;
     }
     case F_GETPIPE_SZ:
     case F_SETPIPE_SZ: {
       return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_fcntl,
-                                                 fd, klinux_cmd, arg);
+                                                 fd, *klinux_cmd, arg);
     }
     // We do not handle the case for F_DUPFD. It is expected to be handled at
     // a higher abstraction, as we need not exit the enclave for duplicating
@@ -379,14 +410,24 @@ int enc_untrusted_fchown(int fd, uid_t owner, gid_t group) {
 
 int enc_untrusted_setsockopt(int sockfd, int level, int optname,
                              const void *optval, socklen_t optlen) {
+  absl::optional<int> klinux_optname = TokLinuxOptionName(level, optname);
+  if (!klinux_optname) {
+    errno = EINVAL;
+    return -1;
+  }
   return EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_setsockopt, sockfd, level,
-      TokLinuxOptionName(level, optname), optval, optlen);
+      asylo::system_call::kSYS_setsockopt, sockfd, level, *klinux_optname,
+      optval, optlen);
 }
 
 int enc_untrusted_flock(int fd, int operation) {
+  absl::optional<int> klinux_operation = TokLinuxFLockOperation(operation);
+  if (!klinux_operation) {
+    errno = EINVAL;
+    return -1;
+  }
   return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_flock, fd,
-                                             TokLinuxFLockOperation(operation));
+                                             *klinux_operation);
 }
 
 int enc_untrusted_wait(int *wstatus) {
@@ -400,15 +441,25 @@ int enc_untrusted_wait(int *wstatus) {
 }
 
 int enc_untrusted_inotify_init1(int flags) {
+  absl::optional<int> klinux_flags = TokLinuxInotifyFlag(flags);
+  if (!klinux_flags) {
+    errno = EINVAL;
+    return -1;
+  }
   return EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_inotify_init1, TokLinuxInotifyFlag(flags));
+      asylo::system_call::kSYS_inotify_init1, *klinux_flags);
 }
 
 int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
                                     uint32_t mask) {
+  absl::optional<int> klinux_mask = TokLinuxInotifyEventMask(mask);
+  if (!klinux_mask) {
+    errno = EINVAL;
+    return -1;
+  }
+
   return EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_inotify_add_watch, fd, pathname,
-      TokLinuxInotifyEventMask(mask));
+      asylo::system_call::kSYS_inotify_add_watch, fd, pathname, *klinux_mask);
 }
 
 int enc_untrusted_inotify_rm_watch(int fd, int wd) {
@@ -490,7 +541,7 @@ int enc_untrusted_isatty(int fd) {
   // terminal; otherwise 0 is returned, and errno is set to indicate the error.
   if (result == 0) {
     int klinux_errno = output.next<int>();
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
   }
   return result;
 }
@@ -510,7 +561,7 @@ int enc_untrusted_usleep(useconds_t usec) {
   // usleep() returns 0 on success. On error, -1 is returned, with errno set to
   // indicate the cause of the error.
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
   }
 
   return result;
@@ -521,9 +572,18 @@ int enc_untrusted_fstat(int fd, struct stat *statbuf) {
   int result = EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_fstat, fd, &stat_kernel);
 
-  if (FromkLinuxStat(&stat_kernel, statbuf)) {
-    statbuf->st_mode = FromkLinuxFileModeFlag(stat_kernel.klinux_st_mode);
+  if (!FromkLinuxStat(&stat_kernel, statbuf)) {
+    errno = EINVAL;
+    return -1;
   }
+
+  absl::optional<int> mode = FromkLinuxFileModeFlag(stat_kernel.klinux_st_mode);
+  if (!mode) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  statbuf->st_mode = *mode;
   return result;
 }
 
@@ -543,9 +603,18 @@ int enc_untrusted_lstat(const char *pathname, struct stat *statbuf) {
   int result = EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_lstat, pathname, &stat_kernel);
 
-  if (FromkLinuxStat(&stat_kernel, statbuf)) {
-    statbuf->st_mode = FromkLinuxFileModeFlag(stat_kernel.klinux_st_mode);
+  if (!FromkLinuxStat(&stat_kernel, statbuf)) {
+    errno = EINVAL;
+    return -1;
   }
+
+  absl::optional<int> mode = FromkLinuxFileModeFlag(stat_kernel.klinux_st_mode);
+  if (!mode) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  statbuf->st_mode = *mode;
   return result;
 }
 
@@ -553,9 +622,19 @@ int enc_untrusted_stat(const char *pathname, struct stat *statbuf) {
   struct klinux_stat stat_kernel;
   int result = EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_stat, pathname, &stat_kernel);
-  if (FromkLinuxStat(&stat_kernel, statbuf)) {
-    statbuf->st_mode = FromkLinuxFileModeFlag(stat_kernel.klinux_st_mode);
+
+  if (!FromkLinuxStat(&stat_kernel, statbuf)) {
+    errno = EINVAL;
+    return -1;
   }
+
+  absl::optional<int> mode = FromkLinuxFileModeFlag(stat_kernel.klinux_st_mode);
+  if (!mode) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  statbuf->st_mode = *mode;
   return result;
 }
 
@@ -622,8 +701,8 @@ ssize_t enc_untrusted_flistxattr(int fd, char *list, size_t size) {
 }
 
 int64_t enc_untrusted_sysconf(int name) {
-  int kLinux_name = TokLinuxSysconfConstant(name);
-  if (kLinux_name == -1) {
+  absl::optional<int> kLinux_name = TokLinuxSysconfConstant(name);
+  if (!kLinux_name) {
     errno = EINVAL;
     return -1;
   }
@@ -639,7 +718,7 @@ int64_t enc_untrusted_sysconf(int name) {
   int64_t result = output.next<int>();
   int klinux_errno = output.next<int>();
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
   }
 
   return result;
@@ -667,7 +746,7 @@ void *enc_untrusted_realloc(void *ptr, size_t size) {
   // realloc only sets the errno (ENOMEM) when output pointer is null and a
   // non-zero |size| is provided.
   if (!result && size != 0) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
   }
 
   if (!::asylo::primitives::TrustedPrimitives::IsOutsideEnclave(result, size)) {
@@ -706,14 +785,14 @@ int enc_untrusted_nanosleep(const struct timespec *req, struct timespec *rem) {
 }
 
 int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
-  clockid_t klinux_clk_id = TokLinuxClockId(clk_id);
-  if (klinux_clk_id == -1) {
+  absl::optional<clockid_t> klinux_clk_id = TokLinuxClockId(clk_id);
+  if (!klinux_clk_id) {
     errno = EINVAL;
     return -1;
   }
 
   MessageWriter input;
-  input.Push<int64_t>(klinux_clk_id);
+  input.Push<int64_t>(*klinux_clk_id);
   MessageReader output;
   asylo::primitives::PrimitiveStatus status =
       asylo::host_call::NonSystemCallDispatcher(
@@ -726,7 +805,7 @@ int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
 
   // clock_gettime returns -1 on error and sets the errno.
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
     return -1;
   }
 
@@ -747,11 +826,17 @@ int enc_untrusted_clock_getcpuclockid(pid_t pid, clockid_t *clock_id) {
   // The value must still be translated in order to be interpreted.
   int klinux_errno_result = output.next<int32_t>();
   if (klinux_errno_result != 0) {
-    return FromkLinuxErrorNumber(klinux_errno_result);
+    return FromkLinuxErrno(klinux_errno_result);
   }
 
   clockid_t klinux_clk_id = output.next<uint64_t>();
-  *clock_id = FromkLinuxClockId(klinux_clk_id);
+  absl::optional<int> opt_clock_id = FromkLinuxClockId(klinux_clk_id);
+  if (!opt_clock_id) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  *clock_id = *opt_clock_id;
   return 0;
 }
 
@@ -820,7 +905,7 @@ ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
   // sendmsg() returns the number of characters sent. On error, -1 is returned,
   // with errno set to indicate the cause of the error.
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
   }
   return result;
 }
@@ -849,7 +934,7 @@ ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
   // recvmsg() returns the number of characters received. On error, -1 is
   // returned, with errno set to indicate the cause of the error.
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
     return result;
   }
 
@@ -913,7 +998,7 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
   // getsockname() returns 0 on success. On error, -1 is returned, with errno
   // set to indicate the cause of the error.
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
     return result;
   }
 
@@ -943,7 +1028,7 @@ int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
   // accept() returns -1 on failure, with errno set to indicate the cause
   // of the error.
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
     return result;
   }
 
@@ -979,7 +1064,7 @@ int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
   // getpeername() returns -1 on failure, with errno set to indicate the cause
   // of the error.
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
     return result;
   }
 
@@ -993,8 +1078,8 @@ int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
 
 ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
                                struct sockaddr *src_addr, socklen_t *addrlen) {
-  int klinux_flags = TokLinuxRecvSendFlag(flags);
-  if (klinux_flags == 0 && flags != 0) {
+  absl::optional<int> klinux_flags = TokLinuxRecvSendFlag(flags);
+  if (!klinux_flags) {
     errno = EINVAL;
     return -1;
   }
@@ -1002,7 +1087,7 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
   MessageWriter input;
   input.Push<int>(sockfd);
   input.Push<uint64_t>(len);
-  input.Push<int>(klinux_flags);
+  input.Push<int>(*klinux_flags);
   MessageReader output;
   const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kRecvFromHandler, &input, &output);
@@ -1013,7 +1098,7 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
   // recvfrom() returns -1 on failure, with errno set to indicate the cause
   // of the error.
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
     return result;
   }
 
@@ -1079,14 +1164,14 @@ int enc_untrusted_fsync(int fd) {
 }
 
 int enc_untrusted_raise(int sig) {
-  int klinux_sig = TokLinuxSignalNumber(sig);
-  if (klinux_sig < 0) {
+  absl::optional<int> klinux_sig = TokLinuxSignalNumber(sig);
+  if (!klinux_sig) {
     errno = EINVAL;
     return -1;
   }
 
   MessageWriter input;
-  input.Push<int>(klinux_sig);
+  input.Push<int>(*klinux_sig);
   MessageReader output;
   const auto status = NonSystemCallDispatcher(::asylo::host_call::kRaiseHandler,
                                               &input, &output);
@@ -1095,14 +1180,15 @@ int enc_untrusted_raise(int sig) {
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
   if (result != 0) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
   }
   return result;
 }
 
 int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
                              socklen_t *optlen) {
-  if (!optval || !optlen || *optlen == 0) {
+  absl::optional<int> klinux_optname = TokLinuxOptionName(level, optname);
+  if (!optval || !optlen || *optlen == 0 || !klinux_optname) {
     errno = EINVAL;
     return -1;
   }
@@ -1110,7 +1196,7 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
   MessageWriter input;
   input.Push<int>(sockfd);
   input.Push<int>(level);
-  input.Push<int>(TokLinuxOptionName(level, optname));
+  input.Push<int>(*klinux_optname);
   input.PushByReference(Extent{reinterpret_cast<char *>(optval), *optlen});
   MessageReader output;
   const auto status = NonSystemCallDispatcher(
@@ -1122,7 +1208,7 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
   Extent opt_received = output.next();
 
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
     return -1;
   }
 
@@ -1135,10 +1221,15 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
 }
 
 int enc_untrusted_getitimer(int which, struct itimerval *curr_value) {
+  absl::optional<int> klinux_which = TokLinuxItimerType(which);
+  if (!klinux_which) {
+    errno = EINVAL;
+    return -1;
+  }
+
   struct klinux_itimerval klinux_curr_value {};
   int result = EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_getitimer, TokLinuxItimerType(which),
-      &klinux_curr_value);
+      asylo::system_call::kSYS_getitimer, *klinux_which, &klinux_curr_value);
 
   if (!curr_value || !FromkLinuxItimerval(&klinux_curr_value, curr_value)) {
     errno = EFAULT;
@@ -1156,9 +1247,15 @@ int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
     return -1;
   }
 
+  absl::optional<int> klinux_which = TokLinuxItimerType(which);
+  if (!klinux_which) {
+    errno = EINVAL;
+    return -1;
+  }
+
   int result = EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_setitimer, TokLinuxItimerType(which),
-      &klinux_new_value, &klinux_old_value);
+      asylo::system_call::kSYS_setitimer, *klinux_which, &klinux_new_value,
+      &klinux_old_value);
 
   if (old_value != nullptr &&
       !FromkLinuxItimerval(&klinux_old_value, old_value)) {
@@ -1188,9 +1285,25 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
   input.PushByReference(
       Extent{service, (service != nullptr) ? strlen(service) + 1 : 0});
   if (hints != nullptr) {
-    input.Push<int>(TokLinuxAddressInfoFlag(hints->ai_flags));
-    input.Push<int>(TokLinuxAfFamily(hints->ai_family));
-    input.Push<int>(TokLinuxSocketType(hints->ai_socktype));
+    absl::optional<int> klinux_af_family = TokLinuxAfFamily(hints->ai_family);
+    if (!klinux_af_family) {
+      return EAI_ADDRFAMILY;
+    }
+
+    absl::optional<int> klinux_flags = TokLinuxAddressInfoFlag(hints->ai_flags);
+    if (!klinux_flags) {
+      return EAI_BADFLAGS;
+    }
+
+    absl::optional<int> klinux_socktype =
+        TokLinuxSocketType(hints->ai_socktype);
+    if (!klinux_socktype) {
+      return EAI_SOCKTYPE;
+    }
+
+    input.Push<int>(*klinux_flags);
+    input.Push<int>(*klinux_af_family);
+    input.Push<int>(*klinux_socktype);
     input.Push<int>(hints->ai_protocol);
   }
 
@@ -1203,12 +1316,18 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
   int klinux_ret = output.next<int>();
   int klinux_errno = output.next<int>();
 
-  int ret = FromkLinuxAddressInfoError(klinux_ret);
-  if (ret != 0) {
-    if (ret == EAI_SYSTEM) {
-      errno = FromkLinuxErrorNumber(klinux_errno);
+  int result = 0;
+  if (klinux_ret != 0) {
+    absl::optional<int> ret = FromkLinuxAddressInfoError(klinux_ret);
+    if (!ret) {
+      result = EAI_SYSTEM;
+      errno = EINVAL;
+    } else if (*ret != 0) {
+      if (ret == EAI_SYSTEM) {
+        errno = FromkLinuxErrno(klinux_errno);
+      }
+      return *ret;
     }
-    return ret;
   }
 
   if (!asylo::host_call::DeserializeAddrinfo(
@@ -1217,7 +1336,7 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
         "enc_untrusted_getaddrinfo: Invalid addrinfo in response.");
     return -1;
   }
-  return 0;
+  return result;
 }
 
 void enc_freeaddrinfo(struct addrinfo *res) {
@@ -1288,8 +1407,14 @@ int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
     return 0;
   }
 
+  absl::optional<int> klinux_af_family = TokLinuxAfFamily(af);
+  if (!klinux_af_family) {
+    errno = EAFNOSUPPORT;
+    return -1;
+  }
+
   MessageWriter input;
-  input.Push<int>(TokLinuxAfFamily(af));
+  input.Push<int>(*klinux_af_family);
   input.PushByReference(Extent{
       src, std::min(strlen(src) + 1, static_cast<size_t>(INET6_ADDRSTRLEN))});
   MessageReader output;
@@ -1301,7 +1426,7 @@ int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
     return -1;
   }
 
@@ -1341,8 +1466,14 @@ const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
     return nullptr;
   }
 
+  absl::optional<int> klinux_af_family = TokLinuxAfFamily(af);
+  if (!klinux_af_family) {
+    errno = EAFNOSUPPORT;
+    return nullptr;
+  }
+
   MessageWriter input;
-  input.Push<int>(TokLinuxAfFamily(af));
+  input.Push<int>(*klinux_af_family);
   input.PushByReference(Extent{reinterpret_cast<const char *>(src), src_size});
   input.Push(size);
   MessageReader output;
@@ -1354,7 +1485,7 @@ const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
   auto result = output.next();
   int klinux_errno = output.next<int>();
   if (result.empty()) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
     return nullptr;
   }
 
@@ -1372,14 +1503,14 @@ int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
     return -1;
   }
 
-  int klinux_how = TokLinuxSigMaskAction(how);
-  if (klinux_how == -1) {
+  absl::optional<int> klinux_how = TokLinuxSigMaskAction(how);
+  if (!klinux_how) {
     errno = EINVAL;
     return -1;
   }
 
   MessageWriter input;
-  input.Push<int>(klinux_how);
+  input.Push<int>(*klinux_how);
   input.Push<klinux_sigset_t>(klinux_set);
   MessageReader output;
   const auto status = NonSystemCallDispatcher(
@@ -1391,7 +1522,7 @@ int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
   // sigprocmask() returns -1 on failure, with errno set to indicate the cause
   // of the error.
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
     return result;
   }
 
@@ -1417,7 +1548,7 @@ unsigned int enc_untrusted_if_nametoindex(const char *ifname) {
   auto result = output.next<unsigned int>();
   int klinux_errno = output.next<int>();
   if (result == 0) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
   }
   return result;
 }
@@ -1440,7 +1571,7 @@ char *enc_untrusted_if_indextoname(unsigned int ifindex, char *ifname) {
          std::min(ifname_buffer.size(), static_cast<size_t>(IF_NAMESIZE)));
   int klinux_errno = output.next<int>();
   if (ifname_buffer.empty()) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
   }
   return ifname;
 }
@@ -1452,16 +1583,16 @@ int enc_untrusted_epoll_ctl(int epfd, int op, int fd,
     errno = EINVAL;
     return -1;
   }
-  int klinux_op = TokLinuxEpollCtlOp(op);
-  if (klinux_op == 0) {
+  absl::optional<int> klinux_op = TokLinuxEpollCtlOp(op);
+  if (!klinux_op) {
     errno = EINVAL;
     return -1;
   }
 
   struct klinux_epoll_event *klinux_event =
       (event != nullptr) ? &klinux_event_tmp : nullptr;
-  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_epoll_ctl,
-                                             epfd, klinux_op, fd, klinux_event);
+  return EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_epoll_ctl, epfd, *klinux_op, fd, klinux_event);
 }
 
 int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
@@ -1510,7 +1641,7 @@ int enc_untrusted_getifaddrs(struct ifaddrs **ifap) {
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
   if (result != 0) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
     return result;
   }
 
@@ -1528,10 +1659,14 @@ void enc_freeifaddrs(struct ifaddrs *ifa) {
 }
 
 int enc_untrusted_getrusage(int who, struct rusage *usage) {
+  absl::optional<int> klinux_who = TokLinuxRusageTarget(who);
+  if (!klinux_who) {
+    errno = EINVAL;
+    return -1;
+  }
   struct klinux_rusage klinux_usage {};
   int result = EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_getrusage, TokLinuxRusageTarget(who),
-      &klinux_usage);
+      asylo::system_call::kSYS_getrusage, *klinux_who, &klinux_usage);
 
   if (result != -1) {
     if (!FromkLinuxRusage(&klinux_usage, usage)) {
@@ -1545,9 +1680,14 @@ int enc_untrusted_getrusage(int who, struct rusage *usage) {
 pid_t enc_untrusted_wait3(int *status, int options, struct rusage *rusage) {
   int klinux_status;
   struct klinux_rusage klinux_usage;
+  absl::optional<int> klinux_options = TokLinuxWaitOption(options);
+  if (!klinux_options) {
+    errno = EINVAL;
+    return -1;
+  }
   pid_t result = EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_wait4, /*pid=*/-1, &klinux_status,
-      TokLinuxWaitOption(options), &klinux_usage);
+      *klinux_options, &klinux_usage);
 
   if (status) {
     *status = FromkLinuxToNewlibWstatus(klinux_status);
@@ -1565,9 +1705,14 @@ pid_t enc_untrusted_wait4(pid_t pid, int *status, int options,
                           struct rusage *rusage) {
   int klinux_status;
   struct klinux_rusage klinux_usage;
+  absl::optional<int> klinux_options = TokLinuxWaitOption(options);
+  if (!klinux_options) {
+    errno = EINVAL;
+    return -1;
+  }
   pid_t result = EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_wait4, pid, &klinux_status,
-      TokLinuxWaitOption(options), &klinux_usage);
+      asylo::system_call::kSYS_wait4, pid, &klinux_status, *klinux_options,
+      &klinux_usage);
 
   if (status) {
     *status = FromkLinuxToNewlibWstatus(klinux_status);
@@ -1583,9 +1728,14 @@ pid_t enc_untrusted_wait4(pid_t pid, int *status, int options,
 
 pid_t enc_untrusted_waitpid(pid_t pid, int *status, int options) {
   int klinux_status;
+  absl::optional<int> klinux_options = TokLinuxWaitOption(options);
+  if (!klinux_options) {
+    errno = EINVAL;
+    return -1;
+  }
   pid_t result = EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_wait4, pid, &klinux_status,
-      TokLinuxWaitOption(options), /*rusage=*/nullptr);
+      asylo::system_call::kSYS_wait4, pid, &klinux_status, *klinux_options,
+      /*rusage=*/nullptr);
 
   if (status) {
     *status = FromkLinuxToNewlibWstatus(klinux_status);
@@ -1619,7 +1769,7 @@ struct passwd *enc_untrusted_getpwuid(uid_t uid) {
 
   int klinux_errno = output.next<int>();
   if (output.size() == 1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
     return nullptr;
   }
 
@@ -1645,17 +1795,22 @@ void enc_untrusted_hex_dump(const void *buf, size_t nbytes) {
 }
 
 void enc_untrusted_syslog(int priority, const char *message, int len) {
-  EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_syslog,
-                                      TokLinuxSyslogPriority(priority), message,
-                                      len);
+  // syslog does not fail if priority is unknown, so fail open and use a
+  // sensible default log level if the input is uknown.
+  EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_syslog,
+      TokLinuxSyslogPriority(priority).value_or(kLinux_LOG_NOTICE), message,
+      len);
 }
 
 void enc_untrusted_openlog(const char *ident, int option, int facility) {
   MessageWriter input;
   MessageReader output;
   input.PushString(ident);
-  input.Push<int>(TokLinuxSyslogOption(option));
-  input.Push<int>(TokLinuxSyslogFacility(facility));
+  // openlog does not fail on invalid inputs. The best we can do is make the
+  // call with some sensible default values.
+  input.Push<int>(TokLinuxSyslogOption(option).value_or(0));
+  input.Push<int>(TokLinuxSyslogFacility(facility).value_or(LOG_KERN));
 
   const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kOpenLogHandler, &input, &output);
@@ -1676,7 +1831,7 @@ int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
     return -1;
   }
 

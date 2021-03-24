@@ -39,8 +39,11 @@ cc_library(
         ":host_call_dispatcher",
         ":serializer_functions",
         "//asylo/platform/primitives:trusted_primitives",
+        "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/system_call",
         "//asylo/platform/system_call/type_conversions",
+        "//asylo/platform/system_call/type_conversions:types_functions",
+        "@com_google_absl//absl/types:optional",
     ],
 )
 

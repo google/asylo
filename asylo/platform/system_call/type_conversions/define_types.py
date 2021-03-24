@@ -55,9 +55,7 @@ define_constants(
         "F_GETFD", "F_SETFD", "F_GETFL", "F_SETFL", "F_GETPIPE_SZ",
         "F_SETPIPE_SZ"
     ],
-    include_header_file="fcntl.h",
-    default_value_host=-1,
-    default_value_enclave=-1)
+    include_header_file="fcntl.h")
 
 define_constants(
     name="AfFamily",
@@ -67,9 +65,7 @@ define_constants(
         "AF_PACKET", "AF_RDS", "AF_PPPOX", "AF_LLC", "AF_CAN", "AF_TIPC",
         "AF_BLUETOOTH", "AF_ALG", "AF_VSOCK", "AF_UNSPEC"
     ],
-    include_header_file="sys/socket.h",
-    default_value_host="AF_UNSPEC",
-    default_value_enclave="AF_UNSPEC")
+    include_header_file="sys/socket.h")
 
 define_constants(
     name="SocketType",
@@ -89,9 +85,7 @@ define_constants(
 define_constants(
     name="TcpOptionName",
     values=["TCP_NODELAY", "TCP_KEEPIDLE", "TCP_KEEPINTVL", "TCP_KEEPCNT"],
-    include_header_file="netinet/tcp.h",
-    default_value_host=-1,
-    default_value_enclave=-1)
+    include_header_file="netinet/tcp.h")
 
 define_constants(
     name="IpV6OptionName",
@@ -101,9 +95,7 @@ define_constants(
         "IPV6_RTHDRDSTOPTS", "IPV6_RECVRTHDR", "IPV6_RTHDR", "IPV6_RECVDSTOPTS",
         "IPV6_DSTOPTS"
     ],
-    include_header_file="netinet/in.h",
-    default_value_host=-1,
-    default_value_enclave=-1)
+    include_header_file="netinet/in.h")
 
 define_constants(
     name="SocketOptionName",
@@ -114,9 +106,7 @@ define_constants(
         "SO_PRIORITY", "SO_LINGER", "SO_BSDCOMPAT", "SO_REUSEPORT",
         "SO_RCVTIMEO", "SO_SNDTIMEO"
     ],
-    include_header_file="sys/socket.h",
-    default_value_host=-1,
-    default_value_enclave=-1)
+    include_header_file="sys/socket.h")
 
 define_constants(
     name="FLockOperation",
@@ -174,10 +164,7 @@ define_constants(
         "ETOOMANYREFS", "ETXTBSY", "EUNATCH", "EUSERS", "EXDEV", "EXFULL"
     ],
     include_header_file="errno.h",
-    multi_valued=False,
-    default_value_host=0x8000,
-    default_value_enclave=0x8000,
-    or_input_to_default_value=True)
+    multi_valued=False)
 
 define_constants(
     name="SysconfConstant",
@@ -192,9 +179,7 @@ define_constants(
         "_SC_EXPR_NEST_MAX", "_SC_LINE_MAX", "_SC_2_VERSION", "_SC_2_C_DEV",
         "_SC_2_FORT_DEV", "_SC_2_FORT_RUN", "_SC_2_LOCALEDEF", "_SC_2_SW_DEV"
     ],
-    include_header_file="unistd.h",
-    default_value_host=-1,
-    default_value_enclave=-1)
+    include_header_file="unistd.h")
 
 define_constants(
     name="RecvSendFlag",
@@ -219,16 +204,12 @@ define_constants(
         "SIGRTMAX", "NSIG"
     ],
     include_header_file="signal.h",
-    default_value_enclave=-1,
-    default_value_host=-1,
     wrap_macros_with_if_defined=True)
 
 define_constants(
     name="SigMaskAction",
     values=["SIG_BLOCK", "SIG_UNBLOCK", "SIG_SETMASK"],
-    include_header_file="signal.h",
-    default_value_enclave=-1,
-    default_value_host=-1)
+    include_header_file="signal.h")
 
 define_constants(
     name="ClockId",
@@ -237,16 +218,12 @@ define_constants(
         "CLOCK_MONOTONIC",
     ],
     include_header_file="time.h",
-    default_value_enclave=-1,
-    default_value_host=-1,
     data_type="clockid_t")
 
 define_constants(
     name="ItimerType",
     values=["ITIMER_REAL", "ITIMER_VIRTUAL", "ITIMER_PROF"],
-    include_header_file="sys/time.h",
-    default_value_host=-1,
-    default_value_enclave=-1)
+    include_header_file="sys/time.h")
 
 define_constants(
     name="AddressInfoFlag",
@@ -265,8 +242,7 @@ define_constants(
         "EAI_SYSTEM", "EAI_OVERFLOW", "EAI_INPROGRESS", "EAI_CANCELED",
         "EAI_ALLDONE", "EAI_INTR", "EAI_IDN_ENCODE"
     ],
-    include_header_file="netdb.h",
-    or_input_to_default_value=True)
+    include_header_file="netdb.h")
 
 define_constants(
     name="PollEvent",
@@ -326,8 +302,8 @@ define_constants(
 define_constants(
     name="SyslogFacility",
     values=[
-        "LOG_USER", "LOG_LOCAL0", "LOG_LOCAL1", "LOG_LOCAL2", "LOG_LOCAL3",
-        "LOG_LOCAL4", "LOG_LOCAL5", "LOG_LOCAL6", "LOG_LOCAL7"
+        "LOG_KERN", "LOG_USER", "LOG_LOCAL0", "LOG_LOCAL1", "LOG_LOCAL2",
+        "LOG_LOCAL3", "LOG_LOCAL4", "LOG_LOCAL5", "LOG_LOCAL6", "LOG_LOCAL7"
     ],
     include_header_file="syslog.h")
 
@@ -359,9 +335,7 @@ define_constants(
 define_constants(
     name="SignalCode",
     values=["SI_USER", "SI_QUEUE", "SI_TIMER", "SI_ASYNCIO", "SI_MESGQ"],
-    include_header_file="signal.h",
-    default_value_host=-1,
-    default_value_enclave=-1)
+    include_header_file="signal.h")
 
 define_struct(
     name="timespec",

@@ -35,7 +35,7 @@ class TypesParseFunctionsTest(TestCase):
     define_constants('TestEnum', ['a', 'b'], 'iostream')
     self.assertEqual(
         get_constants(), '#define ENUMS_INIT \\\n'
-        '{"TestEnum", {0, 0, false, false, false, false, "int", '
+        '{"TestEnum", {false, false, false, "int", '
         '{{"a", a}, {"b", b}}}}\n')
 
   def test_get_enums_with_all_vals(self):
@@ -43,16 +43,13 @@ class TypesParseFunctionsTest(TestCase):
         name='TestEnum',
         values=['a'],
         include_header_file='stdio',
-        default_value_host=1,
-        default_value_enclave=2,
         multi_valued=True,
         skip_conversions=True,
-        or_input_to_default_value=True,
         wrap_macros_with_if_defined=True,
         data_type='int64_t')
     self.assertEqual(
         get_constants(),
-        '#define ENUMS_INIT \\\n{"TestEnum", {1, 2, true, true, true, true, '
+        '#define ENUMS_INIT \\\n{"TestEnum", {true, true, true, '
         '"int64_t", {{"a", a}}}}\n')
 
   def test_get_structs_with_only_default_vals(self):

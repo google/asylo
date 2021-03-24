@@ -139,6 +139,7 @@ cc_library(
         ":metadata",
         "//asylo/platform/primitives",
         "//asylo/platform/system_call/type_conversions",
+        "//asylo/platform/system_call/type_conversions:types_functions",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
     ],

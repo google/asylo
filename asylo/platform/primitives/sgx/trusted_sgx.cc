@@ -26,6 +26,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/posix/signal/signal_manager.h"
@@ -66,8 +67,15 @@ int RegisterSignalHandler(int signum,
                           void (*klinux_sigaction)(int, klinux_siginfo_t *,
                                                    void *),
                           const sigset_t mask, int flags) {
-  int klinux_signum = TokLinuxSignalNumber(signum);
-  if (klinux_signum < 0) {
+  // Never pass SA_SIGINFO through this layer. It's always appended to the flags
+  // over in the untrusted layer.
+  flags &= ~SA_SIGINFO;
+
+  flags &= SA_NODEFER | SA_RESETHAND;
+
+  absl::optional<int> klinux_signum = TokLinuxSignalNumber(signum);
+  absl::optional<int> klinux_flags = TokLinuxSignalFlag(flags);
+  if (!klinux_signum || !klinux_flags) {
     errno = EINVAL;
     return -1;
   }
@@ -75,29 +83,29 @@ int RegisterSignalHandler(int signum,
   TokLinuxSigset(&mask, &klinux_mask);
   int ret;
   CHECK_OCALL(ocall_enc_untrusted_register_signal_handler(
-      &ret, klinux_signum, reinterpret_cast<void *>(klinux_sigaction),
+      &ret, *klinux_signum, reinterpret_cast<void *>(klinux_sigaction),
       reinterpret_cast<void *>(&klinux_mask), sizeof(klinux_mask),
-      TokLinuxSignalFlag(flags)));
+      *klinux_flags));
   return ret;
 }
 
 int DeliverSignal(int linux_signum, int linux_sigcode) {
-  int signum = FromkLinuxSignalNumber(linux_signum);
-  if (signum < 0) {
+  absl::optional<int> signum = FromkLinuxSignalNumber(linux_signum);
+  if (!signum) {
     return 1;
   }
   siginfo_t info;
-  info.si_signo = signum;
+  info.si_signo = *signum;
   info.si_code = linux_sigcode;
   SignalManager *signal_manager = SignalManager::GetInstance();
   const sigset_t mask = signal_manager->GetSignalMask();
 
   // If the signal is blocked and still passed into the enclave. The signal
   // masks inside the enclave is out of sync with the untrusted signal mask.
-  if (sigismember(&mask, signum)) {
+  if (sigismember(&mask, *signum)) {
     return -1;
   }
-  signal_manager->HandleSignal(signum, &info, /*ucontext=*/nullptr);
+  signal_manager->HandleSignal(*signum, &info, /*ucontext=*/nullptr);
   return 0;
 }
 

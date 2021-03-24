@@ -22,6 +22,7 @@
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
+#include "asylo/platform/system_call/type_conversions/manual_types_functions.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 
 using ::asylo::host_call::NonSystemCallDispatcher;
@@ -57,7 +58,7 @@ int enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected,
   // it returns a zero when the caller is woken up. Otherwise, it returns the
   // appropriate errno.
   if (result != 0) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
   }
   return result;
 }
@@ -79,7 +80,7 @@ int enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num) {
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
   if (result == -1) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
   }
   return result;
 }
@@ -99,7 +100,7 @@ int32_t *enc_untrusted_create_wait_queue() {
   }
   int klinux_errno = output.next<int>();
   if (queue == nullptr) {
-    errno = FromkLinuxErrorNumber(klinux_errno);
+    errno = FromkLinuxErrno(klinux_errno);
   }
   enc_untrusted_disable_waiting(queue);
   return queue;

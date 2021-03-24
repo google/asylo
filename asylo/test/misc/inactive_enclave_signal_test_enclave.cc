@@ -19,6 +19,7 @@
 #include <signal.h>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "asylo/test/misc/signal_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/status.h"
@@ -51,7 +52,7 @@ class InactiveEnclaveSignalTest : public EnclaveTestCase {
     if (!test_input.has_signal_test_type()) {
       return absl::InvalidArgumentError("Missing signal_handler_type");
     }
-    struct sigaction act;
+    struct sigaction act = {};
     switch (test_input.signal_test_type()) {
       case SignalTestInput::HANDLER:
         act.sa_handler = &HandleSignalWithHandler;
@@ -60,15 +61,26 @@ class InactiveEnclaveSignalTest : public EnclaveTestCase {
         act.sa_sigaction = &HandleSignalWithSigAction;
         act.sa_flags |= SA_SIGINFO;
         break;
-      case SignalTestInput::SIGNAL:
-        signal(SIGUSR1, &HandleSignalWithHandler);
-        break;
+      case SignalTestInput::SIGNAL: {
+        auto result = signal(SIGUSR1, &HandleSignalWithHandler);
+        if (result == SIG_ERR) {
+          return Status(
+              error::GoogleError::INTERNAL,
+              absl::StrCat("Error installing signal handler with `signal`: ",
+                           errno));
+        }
+      } break;
       default:
         return absl::InvalidArgumentError("No valid test type");
     }
     if (test_input.signal_test_type() != SignalTestInput::SIGNAL) {
       struct sigaction oldact;
-      sigaction(SIGUSR1, &act, &oldact);
+      if (sigaction(SIGUSR1, &act, &oldact)) {
+        return Status(
+            error::GoogleError::INTERNAL,
+            absl::StrCat("Error installing signal handler with `sigaction`: ",
+                         errno));
+      }
     }
     output->SetExtension(signal_received, signal_handled);
     return absl::OkStatus();

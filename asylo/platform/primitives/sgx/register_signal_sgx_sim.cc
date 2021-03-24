@@ -20,6 +20,7 @@
 
 #include "asylo/platform/posix/signal/signal_manager.h"
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 
 namespace asylo {
@@ -29,23 +30,29 @@ namespace asylo {
 void TranslateAndHandleSignal(int klinux_signum,
                               klinux_siginfo_t *klinux_siginfo,
                               void *ucontext) {
-  int signum = FromkLinuxSignalNumber(klinux_signum);
-  if (signum < 0) {
+  absl::optional<int> signum = FromkLinuxSignalNumber(klinux_signum);
+  if (!signum) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "received unexpected signal number from untrusted code");
     return;
   }
   siginfo_t info;
   if (!FromkLinuxSiginfo(klinux_siginfo, &info)) {
-    // Malformed siginfo struct.
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "signal handler received malformed siginfo structure");
     return;
   }
   SignalManager *signal_manager = SignalManager::GetInstance();
   sigset_t mask = signal_manager->GetSignalMask();
   // If the signal is blocked and still passed into the enclave. The signal
   // masks inside the enclave is out of sync with the untrusted signal mask.
-  if (sigismember(&mask, signum)) {
+  // This is not considered a fatal error, as untrusted code could conceivably
+  // altered the signal mask, leaving the trusted code out of the loop. The best
+  // course of action is to ignore the unexpected signal.
+  if (sigismember(&mask, *signum)) {
     return;
   }
-  signal_manager->HandleSignal(signum, &info, ucontext);
+  signal_manager->HandleSignal(*signum, &info, ucontext);
 }
 
 }  // namespace asylo

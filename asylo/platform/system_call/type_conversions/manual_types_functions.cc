@@ -28,6 +28,7 @@
 #include <cstring>
 
 #include "absl/strings/str_cat.h"
+#include "asylo/platform/system_call/type_conversions/generated_types.h"
 #include "asylo/platform/system_call/type_conversions/generated_types_functions.h"
 
 namespace {
@@ -92,7 +93,12 @@ bool CStringCopy(const char *source_buf, char *dest_buf, size_t size) {
 
 }  // namespace
 
-int TokLinuxSocketType(int input) {
+int FromkLinuxErrno(int klinux_errno) {
+  absl::optional<int> error_number = FromkLinuxErrorNumber(klinux_errno);
+  return error_number ? *error_number : 0x8000 | klinux_errno;
+}
+
+absl::optional<int> TokLinuxSocketType(int input) {
   int sock_type = input;
   int output = 0;
 
@@ -130,12 +136,12 @@ int TokLinuxSocketType(int input) {
       output |= kLinux_SOCK_PACKET;
       break;
     default:
-      output = -1;  // Unsupported
+      return absl::nullopt;
   }
   return output;
 }
 
-int FromkLinuxSocketType(int input) {
+absl::optional<int> FromkLinuxSocketType(int input) {
   int kLinux_sock_type = input;
   int output = 0;
 
@@ -174,12 +180,12 @@ int FromkLinuxSocketType(int input) {
       output |= SOCK_PACKET;
       break;
     default:
-      output = -1;  // Unsupported
+      return absl::nullopt;
   }
   return output;
 }
 
-int TokLinuxOptionName(int level, int option_name) {
+absl::optional<int> TokLinuxOptionName(int level, int option_name) {
   if (level == IPPROTO_TCP) {
     return TokLinuxTcpOptionName(option_name);
   } else if (level == IPPROTO_IPV6) {
@@ -188,19 +194,19 @@ int TokLinuxOptionName(int level, int option_name) {
     return TokLinuxSocketOptionName(option_name);
   }
 
-  return -1;
+  return absl::nullopt;
 }
 
-int FromkLinuxOptionName(int level, int klinux_option_name) {
+absl::optional<int> FromkLinuxOptionName(int level, int klinux_option_name) {
   if (level == IPPROTO_TCP) {
     return FromkLinuxTcpOptionName(klinux_option_name);
   } else if (level == IPPROTO_IPV6) {
-    return TokLinuxIpV6OptionName(klinux_option_name);
+    return FromkLinuxIpV6OptionName(klinux_option_name);
   } else if (level == SOL_SOCKET) {
     return FromkLinuxSocketOptionName(klinux_option_name);
   }
 
-  return -1;
+  return absl::nullopt;
 }
 
 bool FromkLinuxStat(const struct klinux_stat *input, struct stat *output) {
@@ -567,7 +573,7 @@ bool TokLinuxFdSet(const fd_set *input, struct klinux_fd_set *output) {
   return true;
 }
 
-int FromkLinuxSignalNumber(int input) {
+absl::optional<int> FromkLinuxSignalNumber(int input) {
 #if defined(SIGRTMIN) && defined(SIGRTMAX)
   if (input >= kLinux_SIGRTMIN && input <= kLinux_SIGRTMAX) {
     return SIGRTMIN + input - kLinux_SIGRTMIN;
@@ -576,7 +582,7 @@ int FromkLinuxSignalNumber(int input) {
   return FromkLinuxBaseSignalNumber(input);
 }
 
-int TokLinuxSignalNumber(int input) {
+absl::optional<int> TokLinuxSignalNumber(int input) {
 #if defined(SIGRTMIN) && defined(SIGRTMAX)
   if (input >= SIGRTMIN && input <= SIGRTMAX) {
     return kLinux_SIGRTMIN + input - SIGRTMIN;
@@ -593,9 +599,9 @@ bool TokLinuxSigset(const sigset_t *input, klinux_sigset_t *output) {
   klinux_sigemptyset(output);
   for (int sig = 1; sig < NSIG; sig++) {
     if (sigismember(input, sig)) {
-      int klinux_sig = TokLinuxSignalNumber(sig);
-      if (klinux_sig != -1) {
-        klinux_sigaddset(output, klinux_sig);
+      absl::optional<int> klinux_sig = TokLinuxSignalNumber(sig);
+      if (klinux_sig) {
+        klinux_sigaddset(output, *klinux_sig);
       }
     }
   }
@@ -609,11 +615,9 @@ bool FromkLinuxSigset(const klinux_sigset_t *input, sigset_t *output) {
   }
   sigemptyset(output);
   for (int klinux_sig = 1; klinux_sig < kLinux_NSIG; klinux_sig++) {
-    if (klinux_sigismember(input, klinux_sig)) {
-      int sig = FromkLinuxSignalNumber(klinux_sig);
-      if (sig != -1) {
-        sigaddset(output, sig);
-      }
+    absl::optional<int> sig = FromkLinuxSignalNumber(klinux_sig);
+    if (klinux_sigismember(input, klinux_sig) && sig) {
+      sigaddset(output, *sig);
     }
   }
   return true;
@@ -674,9 +678,17 @@ bool FromkLinuxItimerval(const struct klinux_itimerval *input,
 bool TokLinuxPollfd(const struct pollfd *input, struct klinux_pollfd *output) {
   if (!input || !output) return false;
 
+  absl::optional<int> klinux_events =
+      input->events ? TokLinuxPollEvent(input->events) : 0;
+  absl::optional<int> klinux_revents =
+      input->revents ? TokLinuxPollEvent(input->revents) : 0;
+  if (!klinux_events || !klinux_revents) {
+    return false;
+  }
+
   output->klinux_fd = input->fd;
-  output->klinux_events = TokLinuxPollEvent(input->events);
-  output->klinux_revents = TokLinuxPollEvent(input->revents);
+  output->klinux_events = *klinux_events;
+  output->klinux_revents = *klinux_revents;
   return true;
 }
 
@@ -684,16 +696,24 @@ bool FromkLinuxPollfd(const struct klinux_pollfd *input,
                       struct pollfd *output) {
   if (!input || !output) return false;
 
+  absl::optional<int> events =
+      input->klinux_events ? FromkLinuxPollEvent(input->klinux_events) : 0;
+  absl::optional<int> revents =
+      input->klinux_revents ? FromkLinuxPollEvent(input->klinux_revents) : 0;
+  if (!events || !revents) {
+    return false;
+  }
+
   output->fd = input->klinux_fd;
-  output->events = FromkLinuxPollEvent(input->klinux_events);
-  output->revents = FromkLinuxPollEvent(input->klinux_revents);
+  output->events = *events;
+  output->revents = *revents;
   return true;
 }
 
 bool TokLinuxEpollEvent(const struct epoll_event *input,
                         struct klinux_epoll_event *output) {
   if (!input || !output) return false;
-  output->events = TokLinuxEpollEvents(input->events);
+  output->events = TokLinuxEpollEvents(input->events).value_or(0);
   if (input->events != 0 && output->events == 0) {
     return false;
   }
@@ -704,7 +724,7 @@ bool TokLinuxEpollEvent(const struct epoll_event *input,
 bool FromkLinuxEpollEvent(const struct klinux_epoll_event *input,
                           struct epoll_event *output) {
   if (!input || !output) return false;
-  output->events = FromkLinuxEpollEvents(input->events);
+  output->events = FromkLinuxEpollEvents(input->events).value_or(0);
   if (input->events != 0 && output->events == 0) {
     return false;
   }
@@ -780,27 +800,25 @@ bool FromkLinuxUtsName(const struct klinux_utsname *input,
 
 // Priorities are encoded into a single 32-bit integer. The bottom 3 bits are
 // the level and the rest are the facility.
-int TokLinuxSyslogPriority(int input) {
-  int syslog_level = input & 0x07;
-  int syslog_facility = input & ~0x07;
-  return TokLinuxSyslogLevel(syslog_level) |
-         TokLinuxSyslogFacility(syslog_facility);
-}
-
-bool TokLinuxSiginfo(const siginfo_t *input, klinux_siginfo_t *output) {
-  if (!input || !output) {
-    return false;
+absl::optional<int> TokLinuxSyslogPriority(int input) {
+  absl::optional<int> syslog_level = TokLinuxSyslogLevel(input & 0x07);
+  absl::optional<int> syslog_facility = TokLinuxSyslogFacility(input & ~0x07);
+  if (!syslog_level || !syslog_facility) {
+    return absl::nullopt;
   }
-  output->si_signo = TokLinuxSignalNumber(input->si_signo);
-  output->si_code = TokLinuxSignalNumber(input->si_code);
-  return true;
+  return *syslog_level | *syslog_facility;
 }
 
 bool FromkLinuxSiginfo(const klinux_siginfo_t *input, siginfo_t *output) {
   if (!input || !output) {
     return false;
   }
-  output->si_signo = FromkLinuxSignalNumber(input->si_signo);
-  output->si_code = FromkLinuxSignalNumber(input->si_code);
+  absl::optional<int> si_signo = FromkLinuxSignalNumber(input->si_signo);
+  if (!si_signo) {
+    return false;
+  }
+  output->si_signo = *si_signo;
+  output->si_code =
+      FromkLinuxSignalCode(input->si_code).value_or(kLinux_SI_USER);
   return true;
 }

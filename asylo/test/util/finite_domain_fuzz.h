@@ -73,8 +73,8 @@ PolymorphicMatcher<FiniteDomainMatcher<Domain, Range>> IsFiniteRestrictionOf(
 }
 
 template <typename T, typename U>
-absl::optional<std::vector<std::pair<T, U>>> zip(std::vector<T> ts,
-                                                 std::vector<U> us) {
+absl::optional<std::vector<std::pair<T, U>>> zip(const std::vector<T>& ts,
+                                                 const std::vector<U>& us) {
   if (ts.size() != us.size()) {
     return absl::nullopt;
   }
@@ -87,34 +87,34 @@ absl::optional<std::vector<std::pair<T, U>>> zip(std::vector<T> ts,
 }
 
 template <typename T>
-absl::optional<std::vector<std::pair<int, T>>> FuzzFiniteFunctionWithFallback(
-    std::vector<int>& input, std::vector<T>& output, T fallback,
+absl::optional<std::vector<std::pair<int, T>>> FuzzFiniteFunction(
+    const std::vector<int>& input, const std::vector<T>& output,
     int iter_bound) {
   auto all_cases = zip(input, output);
   if (!all_cases) {
     return all_cases;
   }
-  // Test that elements not in defined range map to fallback
+  // Test that elements not in defined range return nullopt
   auto begin = input.begin();
   auto end = input.end();
 
   // Every number 0 through iter_bound which is not defined input
   for (int i = 0; i < iter_bound; i++) {
     if (find(begin, end, i) == end) {
-      all_cases->push_back(std::make_pair(i, fallback));
+      all_cases->push_back(std::make_pair(i, absl::nullopt));
     }
     int rand_int = rand();
     if (find(begin, end, rand_int) == end) {
-      all_cases->push_back(std::make_pair(rand_int, fallback));
+      all_cases->push_back(std::make_pair(rand_int, absl::nullopt));
     }
   }
   return all_cases;
 }
 
-absl::optional<std::vector<std::pair<int64_t, int64_t>>>
-FuzzBitsetTranslationFunction(const std::vector<int64_t>& input,
-                              const std::vector<int64_t>& output,
-                              int iter_bound);
+absl::optional<std::vector<std::pair<int64_t, absl::optional<int64_t>>>>
+FuzzBitsetTranslationFunction(
+    const std::vector<int64_t>& input,
+    const std::vector<absl::optional<int64_t>>& output, int iter_bound);
 
 }  // namespace asylo
 

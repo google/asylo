@@ -72,11 +72,8 @@ def set_klinux_prefix(prefix):
 def define_constants(name,
                      values,
                      include_header_file,
-                     default_value_host=0,
-                     default_value_enclave=0,
                      multi_valued=False,
                      skip_conversions=False,
-                     or_input_to_default_value=False,
                      wrap_macros_with_if_defined=False,
                      data_type='int'):
   """Defines a collection of related constants/macros and their properties.
@@ -91,12 +88,6 @@ def define_constants(name,
       host implementation at compile time, then by the generated conversion
       functions for converting the constant values between enclave C library and
       the target host C library at runtime.
-    default_value_host: Default constant value on the target host
-      implementation. This can be an actual numerical (|data_type|) value or the
-      unresolved constant name provided as a string.
-    default_value_enclave: Default constant value in enclave C library. This can
-      be an actual numerical (|data_type|) value or the unresolved constant name
-      provided as a string.
     multi_valued: Boolean indicating if the constant values can be combined
       using bitwise OR operations.
     skip_conversions: Boolean indicating if generation of types conversion
@@ -104,12 +95,6 @@ def define_constants(name,
       when conversion functions are complex and need to be written manually, but
       the constants definitions can be generated automatically by resolving the
       constants for the target host implementation.
-    or_input_to_default_value: Boolean indicating if the input be bitwise OR'ed
-      with default_value_host (or default_value_enclave) in the generated
-      conversion function, if no match for the input constant value is found.
-      This is useful for cases when we wish to preserve the input for debugging,
-      while providing a default output in case no matching constant value for
-      the input is found.
     wrap_macros_with_if_defined: Boolean indicating if each constant value in
       the collection is to be wrapped inside a #if defined(value) ...#endif
       while generating the conversion functions. This allows define_constants()
@@ -133,11 +118,8 @@ def define_constants(name,
   _enum_map[name]['values'] = ', '.join(
       '{{"{}", {}}}'.format(val, val) for val in values)
 
-  _enum_map[name]['default_value_host'] = default_value_host
-  _enum_map[name]['default_value_enclave'] = default_value_enclave
   _enum_map[name]['multi_valued'] = multi_valued
   _enum_map[name]['skip_conversions'] = skip_conversions
-  _enum_map[name]['or_input_to_default_value'] = or_input_to_default_value
   _enum_map[name]['wrap_macros_with_if_defined'] = wrap_macros_with_if_defined
   _enum_map[name]['data_type'] = '"{}"'.format(data_type)
   add_include_header_file(include_header_file)
@@ -230,30 +212,24 @@ def get_constants():
   typical output of get_constants() looks like the following -
 
   #define ENUMS_INIT \
-  {"FcntlCmd", {-1, -1, false, false, false, false, "int",
+  {"FcntlCmd", {false, false, false, "int",
   {{"F_GETFD", F_GETFD}, {"F_SETFD", F_SETFD}}}}, \
   {"FileFlags", {0, 0, true, false, false, false, "int", {{"O_RDONLY",
   O_RDONLY}, {"O_WRONLY", O_WRONLY}}}}
 
   Each line contains an enum, and has the following pattern -
-  {"EnumName", {defaultValueHost, defaultValueEnclave, multi_valued,
-  skip_conversions, or_input_to_default_value, wrap_macros_with_if_defined,
+  {"EnumName", {multi_valued, skip_conversions, wrap_macros_with_if_defined,
   data_type, {{"const_val1", const_val1}, {"const_val2", const_val2}}}}, \
   """
   enum_rows = []
   for enum_name, enum_properties in sorted(_enum_map.items()):
     enum_rows.append(
-        '{{{name}, {{{default_value_host}, {default_value_enclave}, '
-        '{multi_valued}, {skip_conversions}, {or_input_to_default_value}, '
+        '{{{name}, {{{multi_valued}, {skip_conversions}, '
         '{wrap_macros_with_if_defined}, {data_type}, {{{values}}}}}}}'.format(
             name='"{}"'.format(enum_name),
-            default_value_host=enum_properties['default_value_host'],
-            default_value_enclave=enum_properties['default_value_enclave'],
             multi_valued='true' if enum_properties['multi_valued'] else 'false',
             skip_conversions='true'
             if enum_properties['skip_conversions'] else 'false',
-            or_input_to_default_value='true'
-            if enum_properties['or_input_to_default_value'] else 'false',
             wrap_macros_with_if_defined='true'
             if enum_properties['wrap_macros_with_if_defined'] else 'false',
             data_type=enum_properties['data_type'],

@@ -35,6 +35,7 @@
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/message.h"
+#include "asylo/platform/system_call/type_conversions/generated_types_functions.h"
 #include "asylo/platform/system_call/type_conversions/types.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/util/status_macros.h"
@@ -121,9 +122,13 @@ PrimitiveStatus TestKill(void *context, MessageReader *in, MessageWriter *out) {
 
   pid_t pid = in->next<pid_t>();
   int klinux_sig = in->next<int>();
-  int sig = FromkLinuxSignalNumber(klinux_sig);
+  absl::optional<int> sig = FromkLinuxSignalNumber(klinux_sig);
+  if (!sig) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestKill: Conversion from klinux_sig failed."};
+  }
 
-  out->Push<int>(enc_untrusted_kill(pid, sig));
+  out->Push<int>(enc_untrusted_kill(pid, *sig));
   return PrimitiveStatus::OkStatus();
 }
 
@@ -164,18 +169,29 @@ PrimitiveStatus TestOpen(void *context, MessageReader *in, MessageWriter *out) {
   // open() can assume 2 or 3 arguments.
   if (in->size() == 3) {
     const auto pathname = in->next();
-    int linux_flags = in->next<int>();
-    int linux_mode = in->next<mode_t>();
+    absl::optional<int> flags = FromkLinuxFileStatusFlag(in->next<int>());
+    absl::optional<int> mode = FromkLinuxFileModeFlag(in->next<mode_t>());
 
-    out->Push<int>(enc_untrusted_open(pathname.As<char>(),
-                                      FromkLinuxFileStatusFlag(linux_flags),
-                                      FromkLinuxFileModeFlag(linux_mode)));
+    if (!flags) {
+      return {error::GoogleError::INVALID_ARGUMENT,
+              "TestOpen: Conversion from klinux flags failed."};
+    }
+
+    if (!mode) {
+      return {error::GoogleError::INVALID_ARGUMENT,
+              "TestOpen: Conversion from klinux mode failed."};
+    }
+
+    out->Push<int>(enc_untrusted_open(pathname.As<char>(), *flags, *mode));
   } else if (in->size() == 2) {
     const auto pathname = in->next();
-    int kLinux_flags = in->next<int>();
+    absl::optional<int> flags = FromkLinuxFileStatusFlag(in->next<int>());
+    if (!flags) {
+      return {error::GoogleError::INVALID_ARGUMENT,
+              "TestOpen: Conversion to flags failed."};
+    }
 
-    out->Push<int>(enc_untrusted_open(pathname.As<char>(),
-                                      FromkLinuxFileStatusFlag(kLinux_flags)));
+    out->Push<int>(enc_untrusted_open(pathname.As<char>(), *flags));
   } else {
     return {primitives::AbslStatusCode::kInvalidArgument,
             "Unexpected number of arguments. open() expects 2 or 3 arguments."};
@@ -408,14 +424,19 @@ PrimitiveStatus TestFcntl(void *context, MessageReader *in,
   int fd = in->next<int>();
   int cmd = in->next<int>();
   int arg = in->next<int>();
-  int result = enc_untrusted_fcntl(fd, cmd, arg);
+  absl::optional<int> result = enc_untrusted_fcntl(fd, cmd, arg);
   if (cmd == F_GETFL) {
-    result = TokLinuxFileStatusFlag(result);
+    result = TokLinuxFileStatusFlag(*result);
   } else if (cmd == F_GETFD) {
-    result = TokLinuxFDFlag(result);
+    result = TokLinuxFDFlag(*result);
   }
 
-  out->Push<int>(result);
+  if (!result) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestGetRusage: Conversion to klinux result failed."};
+  }
+
+  out->Push<int>(*result);
 
   return PrimitiveStatus::OkStatus();
 }
@@ -451,8 +472,12 @@ PrimitiveStatus TestSetsockopt(void *context, MessageReader *in,
   int klinux_optname = in->next<int>();
   int option = in->next<int>();
 
-  int optname = FromkLinuxOptionName(level, klinux_optname);
-  out->Push<int>(enc_untrusted_setsockopt(sockfd, level, optname,
+  absl::optional<int> optname = FromkLinuxOptionName(level, klinux_optname);
+  if (!optname) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestSetsockopt: Conversion from klinux_optname failed."};
+  }
+  out->Push<int>(enc_untrusted_setsockopt(sockfd, level, *optname,
                                           (void *)&option, sizeof(option)));
 
   return PrimitiveStatus::OkStatus();
@@ -465,8 +490,12 @@ PrimitiveStatus TestFlock(void *context, MessageReader *in,
   int fd = in->next<int>();
   int kLinux_operation = in->next<int>();  // The operation is expected to be
                                            // a kLinux_ operation.
-  int operation = FromkLinuxFLockOperation(kLinux_operation);
-  out->Push<int>(enc_untrusted_flock(fd, operation));
+  absl::optional<int> operation = FromkLinuxFLockOperation(kLinux_operation);
+  if (!operation) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestFlock: Conversion from klinux_operation failed."};
+  }
+  out->Push<int>(enc_untrusted_flock(fd, *operation));
 
   return PrimitiveStatus::OkStatus();
 }
@@ -509,8 +538,12 @@ PrimitiveStatus TestInotifyInit1(void *context, MessageReader *in,
 
   int kLinux_flags = in->next<int>();  // The operation is expected to be
                                        // a kLinux_ operation.
-  int flags = FromkLinuxInotifyFlag(kLinux_flags);
-  out->Push<int>(enc_untrusted_inotify_init1(flags));
+  absl::optional<int> flags = FromkLinuxInotifyFlag(kLinux_flags);
+  if (!flags) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestInotifyInit1: Conversion from klinux_flags failed."};
+  }
+  out->Push<int>(enc_untrusted_inotify_init1(*flags));
   return PrimitiveStatus::OkStatus();
 }
 
@@ -522,9 +555,13 @@ PrimitiveStatus TestInotifyAddWatch(void *context, MessageReader *in,
   const auto pathname = in->next();
   int kLinux_mask = in->next<uint32_t>();  // The operation is expected to be
                                            // a kLinux_ operation.
-  int mask = FromkLinuxInotifyEventMask(kLinux_mask);
+  absl::optional<int> mask = FromkLinuxInotifyEventMask(kLinux_mask);
+  if (!mask) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestInotifyAddWatch: Conversion from klinux_mask failed."};
+  }
   out->Push<int>(
-      enc_untrusted_inotify_add_watch(fd, pathname.As<char>(), mask));
+      enc_untrusted_inotify_add_watch(fd, pathname.As<char>(), *mask));
 
   return PrimitiveStatus::OkStatus();
 }
@@ -574,8 +611,12 @@ PrimitiveStatus TestIsAtty(void *context, MessageReader *in,
   int fd = in->next<int>();
   out->Push<int>(enc_untrusted_isatty(fd));  // Push return value.
 
-  int enclave_errno = errno;
-  out->Push<int>(TokLinuxErrorNumber(enclave_errno));
+  absl::optional<int> klinux_errno = TokLinuxErrorNumber(errno);
+  if (!klinux_errno) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestIsAtty: Conversion to klinux_errno failed."};
+  }
+  out->Push<int>(*klinux_errno);
   return PrimitiveStatus::OkStatus();
 }
 
@@ -589,9 +630,13 @@ PrimitiveStatus TestUSleep(void *context, MessageReader *in,
 }
 
 // Push meaningful stat attributes to MessageWriter.
-void PushStatAttributes(MessageWriter *out, struct stat *st) {
+PrimitiveStatus PushStatAttributes(MessageWriter *out, struct stat *st) {
   int mode = st->st_mode;
-  int kLinux_mode = TokLinuxFileModeFlag(mode);
+  absl::optional<int> kLinux_mode = TokLinuxFileModeFlag(mode);
+  if (!kLinux_mode) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "PushStatAttributes: Conversion to kLinux_mode failed."};
+  }
 
   out->Push<uint64_t>(st->st_atime);
   out->Push<int64_t>(st->st_blksize);
@@ -600,17 +645,22 @@ void PushStatAttributes(MessageWriter *out, struct stat *st) {
   out->Push<uint64_t>(st->st_dev);
   out->Push<uint32_t>(st->st_gid);
   out->Push<uint64_t>(st->st_ino);
-  out->Push<uint32_t>(kLinux_mode);
+  out->Push<uint32_t>(*kLinux_mode);
   out->Push<uint64_t>(st->st_ctime);
   out->Push<uint64_t>(st->st_nlink);
   out->Push<uint64_t>(st->st_rdev);
   out->Push<int64_t>(st->st_size);
   out->Push<uint32_t>(st->st_uid);
+  return PrimitiveStatus::OkStatus();
 }
 
 // Push meaningful stat attributes to MessageWriter.
-void PushStatFsAttributes(MessageWriter *out, struct statfs *st) {
-  int64_t kLinux_flags = TokLinuxStatFsFlags(st->f_flags);
+PrimitiveStatus PushStatFsAttributes(MessageWriter *out, struct statfs *st) {
+  absl::optional<int64_t> kLinux_flags = TokLinuxStatFsFlags(st->f_flags);
+  if (!kLinux_flags) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "PushStatFsAttributes: Conversion to kLinux_flags failed."};
+  }
   out->Push<int64_t>(st->f_type);
   out->Push<int64_t>(st->f_bsize);
   out->Push<uint64_t>(st->f_blocks);
@@ -622,10 +672,11 @@ void PushStatFsAttributes(MessageWriter *out, struct statfs *st) {
   out->Push<int32_t>(st->f_fsid.__val[1]);
   out->Push<int64_t>(st->f_namelen);
   out->Push<int64_t>(st->f_frsize);
-  out->Push<int64_t>(kLinux_flags);
+  out->Push<int64_t>(*kLinux_flags);
   for (int i = 0; i < ABSL_ARRAYSIZE(st->f_spare); ++i) {
     out->Push<int64_t>(st->f_spare[i]);
   }
+  return PrimitiveStatus::OkStatus();
 }
 
 PrimitiveStatus TestFstat(void *context, MessageReader *in,
@@ -646,8 +697,7 @@ PrimitiveStatus TestFstatFs(void *context, MessageReader *in,
   struct statfs st;
   int fd = in->next<int>();
   out->Push<int>(enc_untrusted_fstatfs(fd, &st));
-  PushStatFsAttributes(out, &st);
-  return PrimitiveStatus::OkStatus();
+  return PushStatFsAttributes(out, &st);
 }
 
 PrimitiveStatus TestLstat(void *context, MessageReader *in,
@@ -678,8 +728,7 @@ PrimitiveStatus TestStatFs(void *context, MessageReader *in,
   struct statfs st;
   const auto path_name = in->next();
   out->Push<int>(enc_untrusted_statfs(path_name.As<char>(), &st));
-  PushStatFsAttributes(out, &st);
-  return PrimitiveStatus::OkStatus();
+  return PushStatFsAttributes(out, &st);
 }
 
 PrimitiveStatus TestPread64(void *context, MessageReader *in,
@@ -732,8 +781,12 @@ PrimitiveStatus TestSysconf(void *context, MessageReader *in,
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
   int kLinux_name = in->next<int>();
-  int name = FromkLinuxSysconfConstant(kLinux_name);
-  out->Push<int64_t>(enc_untrusted_sysconf(name));
+  absl::optional<int> name = FromkLinuxSysconfConstant(kLinux_name);
+  if (!name) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestSysconf: Conversion from klinux_name failed."};
+  }
+  out->Push<int64_t>(enc_untrusted_sysconf(*name));
   return PrimitiveStatus::OkStatus();
 }
 
@@ -784,11 +837,15 @@ PrimitiveStatus TestClockGettime(void *context, MessageReader *in,
                                  MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
   auto klinux_clk_id = in->next<clockid_t>();
-  clockid_t clk_id = FromkLinuxClockId(klinux_clk_id);
+  absl::optional<clockid_t> clk_id = FromkLinuxClockId(klinux_clk_id);
+  if (!clk_id) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestClockGettime: Conversion from klinux_clk_id failed."};
+  }
 
   struct timespec tp;
   struct kLinux_timespec klinux_tp;
-  out->Push<int>(enc_untrusted_clock_gettime(clk_id, &tp));
+  out->Push<int>(enc_untrusted_clock_gettime(*clk_id, &tp));
   TokLinuxtimespec(&tp, &klinux_tp);
   out->Push<struct kLinux_timespec>(klinux_tp);
   return PrimitiveStatus::OkStatus();
@@ -884,8 +941,12 @@ PrimitiveStatus TestRaise(void *context, MessageReader *in,
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
   int klinux_sig = in->next<int>();
-  int sig = FromkLinuxSignalNumber(klinux_sig);
-  out->Push<int>(enc_untrusted_raise(sig));
+  absl::optional<int> sig = FromkLinuxSignalNumber(klinux_sig);
+  if (!sig) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestRaise: Conversion from klinux_sig failed."};
+  }
+  out->Push<int>(enc_untrusted_raise(*sig));
   return PrimitiveStatus::OkStatus();
 }
 
@@ -977,10 +1038,15 @@ PrimitiveStatus TestGetRusage(void *context, MessageReader *in,
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
   int klinux_who = in->next<int>();
 
+  absl::optional<int> who = FromkLinuxRusageTarget(klinux_who);
+  if (!who) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestGetRusage: Conversion from klinux_who failed."};
+  }
+
   struct rusage usage {};
   struct klinux_rusage klinux_usage {};
-  out->Push<int>(
-      enc_untrusted_getrusage(FromkLinuxRusageTarget(klinux_who), &usage));
+  out->Push<int>(enc_untrusted_getrusage(*who, &usage));
 
   if (!TokLinuxRusage(&usage, &klinux_usage)) {
     return {primitives::AbslStatusCode::kInvalidArgument,

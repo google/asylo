@@ -27,6 +27,7 @@
 
 #include "asylo/platform/system_call/metadata.h"
 #include "asylo/platform/system_call/serialize.h"
+#include "asylo/platform/system_call/type_conversions/manual_types_functions.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 
 namespace {
@@ -148,7 +149,7 @@ extern "C" int64_t enc_untrusted_syscall(int sysno, ...) {
     // successful (eg., lseek). The reliable way to check for syscall failure is
     // to therefore check both return value and presence of a non-zero errno.
     if (klinux_errno != 0) {
-      errno = FromkLinuxErrorNumber(klinux_errno);
+      errno = FromkLinuxErrno(klinux_errno);
     }
   }
   return result;

@@ -66,19 +66,13 @@ static void (*handle_signal_inside_enclave)(int, klinux_siginfo_t *,
 // Calls the function registered as the signal handler inside the enclave.
 void TranslateToBridgeAndHandleSignal(int klinux_signum, siginfo_t *info,
                                       void *ucontext) {
-  if (klinux_signum < 0) {
-    // Invalid incoming signal number.
-    return;
-  }
-
   // |info| is handled inside the enclave via the function pointer
   // |handle_signal_inside_enclave|, and therefore needs to have a consistent
   // type inside and outside the enclave. We utilize our definition of
   // klinux_siginfo_t for this purpose, instead of defining a new "bridge" type.
-  klinux_siginfo_t klinux_siginfo;
-  if (!TokLinuxSiginfo(info, &klinux_siginfo)) {
-    return;
-  }
+  klinux_siginfo_t klinux_siginfo = {};
+  klinux_siginfo.si_signo = info->si_signo;
+  klinux_siginfo.si_code = info->si_code;
 
   if (handle_signal_inside_enclave) {
     handle_signal_inside_enclave(klinux_signum, &klinux_siginfo, ucontext);

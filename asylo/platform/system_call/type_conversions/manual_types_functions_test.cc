@@ -34,6 +34,11 @@ namespace asylo {
 namespace system_call {
 namespace {
 
+TEST(ManualTypesFunctionsTest, LinuxErrnoTest) {
+  EXPECT_EQ(FromkLinuxErrno(kLinux_E2BIG), E2BIG);
+  EXPECT_EQ(FromkLinuxErrno(0x12344321), 0x1234C321);
+}
+
 TEST(ManualTypesFunctionsTest, SocketTypeTest) {
   std::vector<int> from_bits = {kLinux_SOCK_STREAM,    kLinux_SOCK_DGRAM,
                                 kLinux_SOCK_SEQPACKET, kLinux_SOCK_RAW,

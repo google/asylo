@@ -35,16 +35,48 @@
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>
 
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/system_call/sysno.h"
 #include "asylo/platform/system_call/system_call.h"
 
+namespace internal {
+// Technique to verify all values are true. This works by effectively comparing
+// the list of bools with true both prefixed and suffixed. e.g.
+//   If the input is (t, t), then we compare (t, t, t) with (t, t, t) == true.
+//   If Input is (t, f), then we compare (t, t, f) with (t, f, t) == false.
+//
+// This works by having `AllTrue`
+// "shift" the list of bool values passed to BoolPack left and right by a "true"
+// value then compares the resulting types. This ensures that both the
+// pre-pended and appended lists of bools are the same.
+template <bool...>
+struct BoolPack;
+
+template <bool... bs>
+using AllTrue = std::is_same<BoolPack<true, bs...>, BoolPack<bs..., true>>;
+
+template <typename T>
+struct IsPointerOrInt {
+  static constexpr bool value = std::is_pointer<T>::value ||
+                                std::is_integral<T>::value ||
+                                std::is_null_pointer<T>::value;
+};
+
+template <typename... Ts>
+using AllPointerOrInt = AllTrue<IsPointerOrInt<Ts>::value...>;
+
+}  // namespace internal
+
 // Ensures that the host call library is initialized, then dispatches the
 // syscall to enc_untrusted_syscall.
-template <class... Ts>
-int64_t EnsureInitializedAndDispatchSyscall(int sysno, Ts... args) {
+template <typename... Ts>
+int64_t EnsureInitializedAndDispatchSyscall(
+    typename std::enable_if<internal::AllPointerOrInt<Ts...>::value, int>::type
+        sysno,
+    Ts... args) {
   if (!enc_is_syscall_dispatcher_set()) {
     enc_set_dispatch_syscall(asylo::host_call::SystemCallDispatcher);
   }

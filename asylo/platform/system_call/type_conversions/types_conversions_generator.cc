@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/str_cat.h"
@@ -32,11 +33,8 @@
 // A struct describing properties and values of a enum desired to be generated
 // by the types conversions generator.
 struct EnumProperties {
-  int64_t default_value_host;
-  int64_t default_value_enclave;
   bool multi_valued;
   bool skip_conversions;
-  bool or_input_to_default_value;
   bool wrap_macros_with_if_defined;
   std::string data_type;
 
@@ -92,10 +90,10 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
   std::ostringstream os;
 
   // Generate result initialization.
-  os << "  " << enum_properties.data_type << " output = "
-     << (to_prefix ? enum_properties.default_value_host
-                   : enum_properties.default_value_enclave)
-     << ";\n";
+  os << "  " << enum_properties.data_type << " output = 0;\n";
+
+  // Catch empty input early and just bail out.
+  os << "  if (input == 0) { return 0; }\n";
 
   // Generate or-based enum result accumulation. Since there are cases that enum
   // may contain multiple bits, the value has to be checked explicitly.
@@ -118,11 +116,8 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
     }
   }
 
-  if (enum_properties.or_input_to_default_value) {
-    os << "  output |= static_cast<" << enum_properties.data_type
-       << ">(input);\n";
-  }
-  os << "  return output;\n";
+  os << "  if (output == 0) return absl::nullopt;\n"
+        "  return output;\n";
   return os.str();
 }
 
@@ -133,6 +128,7 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
 std::string GetIfBasedEnumBody(bool to_prefix, const std::string &enum_name,
                                const EnumProperties &enum_properties) {
   std::ostringstream os;
+
   for (const auto &enum_pair : enum_properties.values) {
     std::string input_val =
         to_prefix ? enum_pair.first
@@ -153,13 +149,7 @@ std::string GetIfBasedEnumBody(bool to_prefix, const std::string &enum_name,
   }
 
   // Generate code for handling default case.
-  int64_t default_output = to_prefix ? enum_properties.default_value_host
-                                     : enum_properties.default_value_enclave;
-  if (enum_properties.or_input_to_default_value) {
-    os << "  return " << default_output << " | input;\n";
-  } else {
-    os << "  return " << default_output << ";\n";
-  }
+  os << "  return absl::nullopt;\n";
   return os.str();
 }
 
@@ -203,16 +193,21 @@ void WriteEnumConversions(
     std::transform(enum_name_lower.begin(), enum_name_lower.end(),
                    enum_name_lower.begin(), ::tolower);
 
+    const std::string return_data_type =
+        absl::StrCat("absl::optional<", it.second.data_type, ">");
+
+    const absl::flat_hash_map<absl::string_view, absl::string_view> param_map =
+        {{"$klinux_prefix", klinux_prefix},
+         {"$enum_name", it.first},
+         {"$data_type", it.second.data_type},
+         {"$return_data_type", return_data_type}};
+
     std::string to_prefix_decl = absl::StrReplaceAll(
-        "$data_type To$klinux_prefix$enum_name($data_type input)",
-        {{"$klinux_prefix", klinux_prefix},
-         {"$enum_name", it.first},
-         {"$data_type", it.second.data_type}});
+        "$return_data_type To$klinux_prefix$enum_name($data_type input)",
+        param_map);
     std::string from_prefix_decl = absl::StrReplaceAll(
-        "$data_type From$klinux_prefix$enum_name($data_type input)",
-        {{"$klinux_prefix", klinux_prefix},
-         {"$enum_name", it.first},
-         {"$data_type", it.second.data_type}});
+        "$return_data_type From$klinux_prefix$enum_name($data_type input)",
+        param_map);
 
     // Write the function declarations to the header file.
     *os_h << "\n" << to_prefix_decl << "; \n";
@@ -369,10 +364,12 @@ void WriteTypesConversions(
 
   // Write all the includes.
   WriteMacroProvidedIncludes(os_h);
-  *os_cc << "#include "
+  *os_cc << "#include \"absl/types/optional.h\"\n"
+         << "#include "
             "\"asylo/platform/system_call/type_conversions/"
             "generated_types_functions.h\"\n";
-  *os_h << "#include "
+  *os_h << "#include \"absl/types/optional.h\"\n"
+        << "#include "
            "\"asylo/platform/system_call/type_conversions/"
            "generated_types.h\"\n";
 

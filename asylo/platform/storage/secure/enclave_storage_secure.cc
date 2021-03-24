@@ -50,6 +50,9 @@ int secure_open(const char *pathname, int flags, ...) {
     va_end(ap);
   }
 
+  // Remove the O_SECURE flag, since it's not understood by any lower layers.
+  flags &= ~O_SECURE;
+
   bool is_new_file = (enc_untrusted_access(pathname, F_OK) == -1);
   int fd = enc_untrusted_open(pathname, flags, mode);
   if (fd == -1) {
