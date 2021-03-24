@@ -21,6 +21,7 @@
 #include <utility>
 
 #include <gmock/gmock.h>
+#include "absl/random/random.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "asylo/util/logging.h"
@@ -36,9 +37,10 @@ namespace asylo {
 // [-2^(sizeof(int) * 8 - 1), 2^(sizeof(int) * 8 - 1) - 1]. Therefore
 // the amount of positive flags values is sizeof(int) * 8 - 2 to avoid
 // signed integer overflow.
-int random_flag() {
+int random_flag(absl::BitGen& bit_gen) {
   // Pick a random bit index
-  int index = rand()%(sizeof(int) * 8 - 1);
+  int index = absl::Uniform<int>(absl::IntervalClosed, bit_gen, 0,
+                                 (sizeof(int) * 8) - 2);
   return 1 << index;
 }
 
@@ -54,13 +56,14 @@ FuzzBitsetTranslationFunction(
                                                        all_cases_pairs->end());
   all_cases[0] = 0;
 
+  absl::BitGen bit_gen;
   // Grab multiple random flags at the same time
   for (int i = 0; i < iter_bound; i++) {
     // Test multiple flags in the defined domain
     int in = 0;
     absl::optional<int> out = 0;
     for (int j = 0; j < input.size(); j++) {
-      if (rand()%2) {
+      if (absl::Bernoulli(bit_gen, 0.5)) {
         in |= input[j];
         *out |= *output[j];
       }
@@ -73,7 +76,7 @@ FuzzBitsetTranslationFunction(
     in = 0;
     out.reset();
     for (int j = 0; j < sizeof(int64_t) * 8 / 8; j++) {
-      int flag = random_flag();
+      int flag = random_flag(bit_gen);
       auto found = std::find(input.begin(), input.end(), flag);
       size_t index = found - input.begin();
       // If flag is not in input, then OR it in without a translated

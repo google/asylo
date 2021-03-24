@@ -138,6 +138,7 @@ cc_test_and_cc_enclave_test(
         ":types_functions",
         "//asylo/test/util:finite_domain_fuzz",
         "//asylo/test/util:test_main",
+        "@com_google_absl//absl/random",
         "@com_google_googletest//:gtest",
     ],
 )

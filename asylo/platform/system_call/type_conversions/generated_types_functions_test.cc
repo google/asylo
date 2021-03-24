@@ -63,7 +63,6 @@ constexpr int kIterationCount = 6000;
 
 class GeneratedTypesFunctionsTest : public ::testing::Test {
  protected:
-
   template <typename T>
   void TestMultiValuedEnums(
       const std::vector<T> &from_bits, const std::vector<int64_t> &to_bits,

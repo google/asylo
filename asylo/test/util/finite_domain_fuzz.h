@@ -20,6 +20,7 @@
 #define ASYLO_TEST_UTIL_FINITE_DOMAIN_FUZZ_H_
 
 #include <gmock/gmock.h>
+#include "absl/random/random.h"
 #include "absl/types/optional.h"
 
 namespace asylo {
@@ -98,12 +99,14 @@ absl::optional<std::vector<std::pair<int, T>>> FuzzFiniteFunction(
   auto begin = input.begin();
   auto end = input.end();
 
+  absl::BitGen bit_gen;
   // Every number 0 through iter_bound which is not defined input
   for (int i = 0; i < iter_bound; i++) {
     if (find(begin, end, i) == end) {
       all_cases->push_back(std::make_pair(i, absl::nullopt));
     }
-    int rand_int = rand();
+    int rand_int =
+        absl::Uniform<int>(absl::IntervalClosed, bit_gen, INT_MIN, INT_MAX);
     if (find(begin, end, rand_int) == end) {
       all_cases->push_back(std::make_pair(rand_int, absl::nullopt));
     }
