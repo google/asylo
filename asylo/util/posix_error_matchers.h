@@ -21,7 +21,8 @@
 
 namespace asylo {
 
-/// Matches a `Status`-like object that contains the given POSIX error.
+/// Matches a `Status`-like object that contains the given POSIX error. Works on
+/// any `Status` that can be inspected by `GetErrno()`.
 ///
 /// \param errnum A POSIX error code.
 /// \return A GoogleTest matcher for POSIX errors representing `errnum`.

@@ -24,6 +24,9 @@
 #include <gtest/gtest.h>
 #include "absl/strings/str_format.h"
 
+// Suppress deprecation warnings because this file tests deprecated APIs.
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+
 namespace asylo {
 namespace error {
 namespace {

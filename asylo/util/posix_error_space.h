@@ -20,9 +20,11 @@
 #define ASYLO_UTIL_POSIX_ERROR_SPACE_H_
 
 #include <errno.h>
+
 #include <cerrno>
 #include <string>
 
+#include "absl/base/macros.h"
 #include "asylo/util/error_space.h"
 
 namespace asylo {
@@ -31,7 +33,14 @@ namespace error {
 /// The enum associated with the POSIX error-space. To avoid conflict with the
 /// macros defined in the <cerrno> system header, all the codes in this enum are
 /// prefixed with a "P_".
-enum PosixError {
+///
+/// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use the
+///             functions from asylo/util/posix_errors.h or the matchers from
+///             asylo/util/posix_error_matchers.h instead.
+enum ABSL_DEPRECATED(
+    "Deprecated as part of Asylo's absl::Status migration. Use the functions "
+    "from asylo/util/posix_errors.h or the matchers from "
+    "asylo/util/posix_error_matchers.h instead.") PosixError {
   P_E2BIG = E2BIG,
   P_EACCES = EACCES,
   P_EADDRINUSE = EADDRINUSE,
@@ -116,10 +125,26 @@ enum PosixError {
 };
 
 /// Binds the PosixErrorSpace class to the PosixError enum.
+///
+/// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use the
+///             functions from asylo/util/posix_errors.h or the matchers from
+///             asylo/util/posix_error_matchers.h instead.
+ABSL_DEPRECATED(
+    "Deprecated as part of Asylo's absl::Status migration. Use the functions "
+    "from asylo/util/posix_errors.h or the matchers from "
+    "asylo/util/posix_error_matchers.h instead.")
 ErrorSpace const *GetErrorSpace(ErrorSpaceAdlTag<PosixError> tag);
 
 /// An implementation of the ErrorSpace interface for POSIX error codes.
-class PosixErrorSpace : public ErrorSpaceImplementationHelper<PosixErrorSpace> {
+///
+/// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use the
+///             functions from asylo/util/posix_errors.h or the matchers from
+///             asylo/util/posix_error_matchers.h instead.
+class ABSL_DEPRECATED(
+    "Deprecated as part of Asylo's absl::Status migration. Use the functions "
+    "from asylo/util/posix_errors.h or the matchers from "
+    "asylo/util/posix_error_matchers.h instead.") PosixErrorSpace
+    : public ErrorSpaceImplementationHelper<PosixErrorSpace> {
  public:
   using code_type = PosixError;
 

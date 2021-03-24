@@ -51,10 +51,16 @@ Status PosixError(int errnum, absl::string_view message) {
   }
 
   if (message.empty()) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     return Status(static_cast<error::PosixError>(errnum), StrError(errnum));
+#pragma GCC diagnostic pop
   } else {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     return Status(static_cast<error::PosixError>(errnum),
                   absl::StrCat(message, ": ", StrError(errnum)));
+#pragma GCC diagnostic pop
   }
 }
 
@@ -63,7 +69,10 @@ Status LastPosixError(absl::string_view message) {
 }
 
 int GetErrno(const Status &status) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   if (status.error_space() == error::PosixErrorSpace::GetInstance()) {
+#pragma GCC diagnostic pop
     return status.raw_code();
   }
   return 0;

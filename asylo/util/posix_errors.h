@@ -31,7 +31,9 @@ namespace asylo {
 /// `Status` for POSIX error information.
 ///
 /// However, callers may rely on stability in the mapping between POSIX error
-/// numbers and `absl::StatusCode`s.
+/// numbers and `absl::StatusCode`s. Callers can also use this function to
+/// create `Status`es that are understandable by other code that uses the POSIX
+/// error space.
 ///
 /// \param errnum A POSIX error number. See errno(3).
 /// \param message An optional message to prepend to the POSIX error explanation
@@ -50,6 +52,9 @@ Status LastPosixError(absl::string_view message = "");
 
 /// Returns the POSIX error number that a `Status` represents, or zero if the
 /// `Status` does not represent a POSIX error.
+///
+/// This function understands `Status`es that were created in the POSIX error
+/// space.
 ///
 /// \param status A status object.
 /// \return The POSIX error number represented by `status`, or zero if `status`
