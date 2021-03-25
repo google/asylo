@@ -73,6 +73,14 @@ PolymorphicMatcher<FiniteDomainMatcher<Domain, Range>> IsFiniteRestrictionOf(
   return MakePolymorphicMatcher(FiniteDomainMatcher<Domain, Range>(f));
 }
 
+template <typename Domain, typename Range>
+PolymorphicMatcher<FiniteDomainMatcher<Domain, Range>> IsFiniteRestrictionOf(
+    const std::function<Range(Domain, bool)>& f) {
+  std::function<Range(Domain)> bound =
+      std::bind(f, std::placeholders::_1, false);
+  return MakePolymorphicMatcher(FiniteDomainMatcher<Domain, Range>(bound));
+}
+
 template <typename T, typename U>
 absl::optional<std::vector<std::pair<T, U>>> zip(const std::vector<T>& ts,
                                                  const std::vector<U>& us) {

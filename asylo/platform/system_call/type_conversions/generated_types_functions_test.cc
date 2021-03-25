@@ -66,14 +66,24 @@ class GeneratedTypesFunctionsTest : public ::testing::Test {
   template <typename T>
   void TestMultiValuedEnums(
       const std::vector<T> &from_bits, const std::vector<int64_t> &to_bits,
-      std::function<absl::optional<int64_t>(int64_t)> from_function,
-      std::function<absl::optional<int64_t>(int64_t)> to_function) {
+      std::function<absl::optional<int64_t>(int64_t, bool)> from_function,
+      std::function<absl::optional<int64_t>(int64_t, bool)> to_function) {
     EXPECT_THAT(FuzzBitsetTranslationFunction(
                     from_bits, MakeOptionalVector(to_bits), kIterationCount),
                 IsFiniteRestrictionOf(from_function));
     EXPECT_THAT(FuzzBitsetTranslationFunction(
                     to_bits, MakeOptionalVector(from_bits), kIterationCount),
                 IsFiniteRestrictionOf(to_function));
+
+    // The above tests run with the default of "ignore_unexpected_bits" set to
+    // true. Add an extra quick check to ensure that if ALL bits are set, we
+    // still get a good conversion. Since the converters are automatically
+    // generated, and identical code, this should be a sufficient test of the
+    // ignore_unexpected_bits functionality.
+    EXPECT_NE(from_function(0xffffffff, /*ignore_unexpected_bits=*/true),
+              absl::nullopt);
+    EXPECT_NE(to_function(0xffffffff, /*ignore_unexpected_bits=*/true),
+              absl::nullopt);
   }
 
   // Tests that all values map both ways between |from| and |to|. Any values not

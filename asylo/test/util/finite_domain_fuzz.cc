@@ -74,7 +74,7 @@ FuzzBitsetTranslationFunction(
     }
     // Test multiple flags in and outside the defined domain
     in = 0;
-    out.reset();
+    out = 0;
     for (int j = 0; j < sizeof(int64_t) * 8 / 8; j++) {
       int flag = random_flag(bit_gen);
       auto found = std::find(input.begin(), input.end(), flag);
@@ -83,9 +83,13 @@ FuzzBitsetTranslationFunction(
       // output counterpart.
       if (found == input.end()) {
         in |= flag;
+        // A single invalid input bit means the output is not valid.
+        out = absl::nullopt;
       } else {
         in |= input[index];
-        out = (out ? *out : 0) | *output[index];
+        if (out) {
+          out = *out | *output[index];
+        }
       }
     }
     auto insert_result = all_cases.insert({in, out});

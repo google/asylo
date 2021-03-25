@@ -28,7 +28,7 @@ namespace asylo {
 namespace io {
 
 int IOContextEpoll::EpollCtl(int op, int hostfd, struct epoll_event *event) {
-  struct epoll_event event_copy;
+  struct epoll_event event_copy = {};
   if (event) {
     event_copy.events = event->events;
   }

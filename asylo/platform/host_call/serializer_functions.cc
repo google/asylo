@@ -112,6 +112,9 @@ bool IsIfAddrSupported(const struct ifaddrs *entry) {
   if (entry->ifa_ifu.ifu_dstaddr && !IpCompliant(entry->ifa_ifu.ifu_dstaddr)) {
     return false;
   }
+  if (!TokLinuxIffFlag(entry->ifa_flags, /*ignore_unexpected_bits=*/true)) {
+    return false;
+  }
   return true;
 }
 
@@ -222,7 +225,8 @@ bool DeserializeIfAddrs(primitives::MessageReader *in, struct ifaddrs **out,
     }
 
     Extent ifa_name_buf = in->next();
-    absl::optional<int> ifa_flags = FromkLinuxIffFlag(in->next<unsigned int>());
+    int klinux_flags = in->next<unsigned int>();
+    absl::optional<int> ifa_flags = FromkLinuxIffFlag(klinux_flags);
     Extent klinux_ifa_addr_buf = in->next();
     Extent klinux_ifa_netmask_buf = in->next();
     Extent klinux_ifa_dstaddr_buf = in->next();
@@ -374,16 +378,17 @@ PrimitiveStatus SerializeIfAddrs(primitives::MessageWriter *writer,
 
   for (struct ifaddrs *addr = ifaddr_list; addr != nullptr;
        addr = addr->ifa_next) {
-    absl::optional<uint32_t> ifa_flags = TokLinuxIffFlag(addr->ifa_flags);
-
     // If the entry is of a format we don't support, don't include it.
-    if (!IsIfAddrSupported(addr) || !ifa_flags) {
+    if (!IsIfAddrSupported(addr)) {
       continue;
     }
 
     // We push 5 entries per ifaddr to output.
     writer->PushString(addr->ifa_name);
-    writer->Push<uint32_t>(*ifa_flags);
+
+    // TokLinuxIffFlag was checked for validity in IsIfAddrSupported.
+    writer->Push<uint32_t>(
+        *TokLinuxIffFlag(addr->ifa_flags, /*ignore_unexpected_bits=*/true));
 
     if (!explicit_klinux_conversion) {
       ASYLO_RETURN_IF_ERROR(writer->PushSockAddr(addr->ifa_addr));

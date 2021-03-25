@@ -27,6 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
+#include "absl/strings/string_view.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/system_call/type_conversions/types_macros.inc"
 
@@ -101,23 +102,25 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
     if (enum_properties.wrap_macros_with_if_defined) {
       os << "#if defined(" << enum_pair.first << ")\n";
     }
-    os << "  if ((input & "
-       << (to_prefix ? enum_pair.first
-                     : absl::StrCat(klinux_prefix, "_", enum_pair.first))
-       << ") == "
-       << (to_prefix ? enum_pair.first
-                     : absl::StrCat(klinux_prefix, "_", enum_pair.first))
-       << ") output |= static_cast<" << enum_properties.data_type << ">("
-       << (to_prefix ? absl::StrCat(klinux_prefix, "_", enum_pair.first)
-                     : enum_pair.first)
-       << ");\n";
+    const std::string input_bit =
+        to_prefix ? enum_pair.first
+                  : absl::StrCat(klinux_prefix, "_", enum_pair.first);
+    const std::string output_bit =
+        to_prefix ? absl::StrCat(klinux_prefix, "_", enum_pair.first)
+                  : enum_pair.first;
+    os << "  if ((input & " << input_bit << ") == " << input_bit << ") {\n"
+       << "    output |= static_cast<" << enum_properties.data_type << ">("
+       << output_bit << ");\n";
+    // Mask off each handled bit so that we can later catch any unexpected bits.
+    os << "    input &= ~" << input_bit << ";\n"
+       << "  }\n";
     if (enum_properties.wrap_macros_with_if_defined) {
       os << "#endif\n";
     }
   }
 
-  os << "  if (output == 0) return absl::nullopt;\n"
-        "  return output;\n";
+  os << "  if (input != 0 && !ignore_unexpected_bits) return absl::nullopt;\n"
+     << "  return output;\n";
   return os.str();
 }
 
@@ -196,39 +199,45 @@ void WriteEnumConversions(
     const std::string return_data_type =
         absl::StrCat("absl::optional<", it.second.data_type, ">");
 
-    const absl::flat_hash_map<absl::string_view, absl::string_view> param_map =
-        {{"$klinux_prefix", klinux_prefix},
-         {"$enum_name", it.first},
-         {"$data_type", it.second.data_type},
-         {"$return_data_type", return_data_type}};
+    absl::flat_hash_map<absl::string_view, absl::string_view> param_map = {
+        {"$klinux_prefix", klinux_prefix},
+        {"$enum_name", it.first},
+        {"$data_type", it.second.data_type},
+        {"$return_data_type", return_data_type}};
 
-    std::string to_prefix_decl = absl::StrReplaceAll(
-        "$return_data_type To$klinux_prefix$enum_name($data_type input)",
-        param_map);
-    std::string from_prefix_decl = absl::StrReplaceAll(
-        "$return_data_type From$klinux_prefix$enum_name($data_type input)",
-        param_map);
+    const absl::string_view to_prefix_format =
+        "$return_data_type "
+        "To$klinux_prefix$enum_name($data_type input$optional_parameter)";
+    const absl::string_view from_prefix_format =
+        "$return_data_type "
+        "From$klinux_prefix$enum_name($data_type input$optional_parameter)";
 
     // Write the function declarations to the header file.
-    *os_h << "\n" << to_prefix_decl << "; \n";
-    *os_h << "\n" << from_prefix_decl << "; \n";
+    param_map["$optional_parameter"] =
+        it.second.multi_valued ? ", bool ignore_unexpected_bits=false" : "";
+    *os_h << "\n" << absl::StrReplaceAll(to_prefix_format, param_map) << "; \n";
+    *os_h << "\n"
+          << absl::StrReplaceAll(from_prefix_format, param_map) << "; \n";
 
     // Write the function body to the cc file.
+    std::string to_body;
+    std::string from_body;
     if (it.second.multi_valued) {
-      *os_cc << "\n"
-             << to_prefix_decl << " {\n"
-             << GetOrBasedEnumBody(true, enum_name_lower, it.second) << "}\n";
-      *os_cc << "\n"
-             << from_prefix_decl << " {\n"
-             << GetOrBasedEnumBody(false, enum_name_lower, it.second) << "}\n";
+      to_body = GetOrBasedEnumBody(true, enum_name_lower, it.second);
+      from_body = GetOrBasedEnumBody(false, enum_name_lower, it.second);
     } else {
-      *os_cc << "\n"
-             << to_prefix_decl << " {\n"
-             << GetIfBasedEnumBody(true, enum_name_lower, it.second) << "}\n";
-      *os_cc << "\n"
-             << from_prefix_decl << " {\n"
-             << GetIfBasedEnumBody(false, enum_name_lower, it.second) << "}\n";
+      to_body = GetIfBasedEnumBody(true, enum_name_lower, it.second);
+      from_body = GetIfBasedEnumBody(false, enum_name_lower, it.second);
     }
+
+    param_map["$optional_parameter"] =
+        it.second.multi_valued ? ", bool ignore_unexpected_bits" : "";
+    *os_cc << "\n"
+           << absl::StrReplaceAll(to_prefix_format, param_map) << " {\n"
+           << to_body << "}\n";
+    *os_cc << "\n"
+           << absl::StrReplaceAll(from_prefix_format, param_map) << " {\n"
+           << from_body << "}\n";
   }
 }
 

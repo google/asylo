@@ -366,7 +366,8 @@ int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
     case F_GETFL: {
       int retval = EnsureInitializedAndDispatchSyscall(
           asylo::system_call::kSYS_fcntl, fd, *klinux_cmd, arg);
-      absl::optional<int> flags = FromkLinuxFileStatusFlag(retval);
+      absl::optional<int> flags =
+          FromkLinuxFileStatusFlag(retval, /*ignore_unexpected_bits=*/true);
       if (!flags) {
         errno = EINVAL;
         return -1;

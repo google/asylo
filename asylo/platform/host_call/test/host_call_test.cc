@@ -681,6 +681,7 @@ TEST_F(HostCallTest, TestOpenExistingFile) {
       absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
   int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  ASSERT_NE(fd, -1);
   ASSERT_THAT(write(fd, path.c_str(), path.length() + 1),
               Eq(path.length() + 1));
   ASSERT_THAT(access(path.c_str(), F_OK), Eq(0));
@@ -688,6 +689,7 @@ TEST_F(HostCallTest, TestOpenExistingFile) {
   MessageWriter in;
   in.PushString(path);
   in.Push<int>(/*value=flags*/ O_RDWR | O_CREAT | O_TRUNC);
+  in.Push<int>(/*value=mode*/ S_IRUSR | S_IWUSR);
 
   MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestOpen, &in, &out));
