@@ -287,23 +287,16 @@ Status SgxError(sgx_status_t sgx_status, absl::string_view message) {
   Status status(ToAbslStatusCode(sgx_status), message);
   SgxErrorCode code;
   code.set_sgx_status_code(sgx_status);
-  status.SetPayload(GetTypeUrl<SgxErrorCode>(),
-                    absl::Cord(code.SerializeAsString()));
+  SetProtoPayload(code, status);
   return status;
 }
 
 sgx_status_t GetSgxErrorCode(const Status &status) {
-  absl::optional<absl::Cord> payload =
-      status.GetPayload(GetTypeUrl<SgxErrorCode>());
-  if (!payload.has_value()) {
+  absl::optional<SgxErrorCode> code = GetProtoPayload<SgxErrorCode>(status);
+  if (!code.has_value()) {
     return SGX_SUCCESS;
   }
-  SgxErrorCode code;
-  if (!code.ParseFromString(std::string(payload.value())) ||
-      !code.has_sgx_status_code()) {
-    return SGX_SUCCESS;
-  }
-  return static_cast<sgx_status_t>(code.sgx_status_code());
+  return static_cast<sgx_status_t>(code->sgx_status_code());
 }
 
 }  // namespace asylo

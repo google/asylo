@@ -17,7 +17,14 @@
 #ifndef ASYLO_UTIL_STATUS_HELPERS_INTERNAL_H_
 #define ASYLO_UTIL_STATUS_HELPERS_INTERNAL_H_
 
+#include <string>
+#include <type_traits>
+
+#include "google/protobuf/any.pb.h"
+#include <google/protobuf/message.h>
 #include "absl/status/status.h"
+#include "absl/strings/cord.h"
+#include "absl/types/optional.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -61,6 +68,37 @@ struct ConvertStatusImpl {
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     return Status(from_status).ToOtherStatus<ToStatusT>();
 #pragma GCC diagnostic pop
+  }
+};
+
+template <typename MessageT, typename StatusT = Status>
+struct ProtoPayloadImpl {
+  static_assert(std::is_base_of<google::protobuf::Message, MessageT>::value,
+                "MessageT must be a protobuf message type");
+  static_assert(std::is_same<StatusT, Status>::value ||
+                    std::is_same<StatusT, absl::Status>::value,
+                "StatusT must either be ::asylo::Status or ::absl::Status");
+
+  static std::string GetTypeUrl() {
+    google::protobuf::Any any;
+    any.PackFrom(MessageT());
+    return std::string(any.type_url());
+  }
+
+  static absl::optional<MessageT> GetPayload(const StatusT &status) {
+    absl::optional<absl::Cord> payload = status.GetPayload(GetTypeUrl());
+    if (!payload.has_value()) {
+      return absl::nullopt;
+    }
+    MessageT message;
+    if (!message.ParseFromString(std::string(payload.value()))) {
+      return absl::nullopt;
+    }
+    return message;
+  }
+
+  static void SetPayload(const MessageT &message, StatusT &status) {
+    status.SetPayload(GetTypeUrl(), absl::Cord(message.SerializeAsString()));
   }
 };
 

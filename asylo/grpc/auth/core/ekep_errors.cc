@@ -33,22 +33,16 @@ Status EkepError(Abort_ErrorCode code, absl::string_view message) {
   Status status = absl::InternalError(message);
   Abort abort;
   abort.set_code(code);
-  status.SetPayload(GetTypeUrl<Abort>(), absl::Cord(abort.SerializeAsString()));
+  SetProtoPayload(abort, status);
   return status;
 }
 
 absl::optional<Abort_ErrorCode> GetEkepErrorCode(const Status &status) {
-  absl::optional<absl::Cord> payload = status.GetPayload(GetTypeUrl<Abort>());
-  if (!payload.has_value()) {
+  absl::optional<Abort> abort = GetProtoPayload<Abort>(status);
+  if (!abort.has_value()) {
     return absl::nullopt;
   }
-  Abort abort;
-  if (!abort.ParseFromString(std::string(payload.value()))) {
-    // This indicates that an Abort code exists but its value could not be
-    // determined.
-    return Abort::UNKNOWN_ERROR_CODE;
-  }
-  return abort.code();
+  return abort->code();
 }
 
 }  // namespace asylo

@@ -18,10 +18,8 @@
 #define ASYLO_UTIL_STATUS_HELPERS_H_
 
 #include <string>
-#include <type_traits>
 
-#include <google/protobuf/message.h>
-#include "absl/strings/str_cat.h"
+#include "absl/types/optional.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status.pb.h"
 #include "asylo/util/status_helpers_internal.h"
@@ -90,10 +88,37 @@ Status StatusFromProto(const StatusProto &status_proto);
 /// \return The type URL to use for `MessageT` payloads.
 template <typename MessageT>
 std::string GetTypeUrl() {
-  static_assert(std::is_base_of<google::protobuf::Message, MessageT>::value,
-                "MessageT must be a protobuf message type");
-  return absl::StrCat("type.googleapis.com/",
-                      MessageT::GetDescriptor()->full_name());
+  return internal::ProtoPayloadImpl<MessageT>::GetTypeUrl();
+}
+
+/// Gets the payload of type `MessageT` in `status`. `MessageT` must be a
+/// protobuf message type.
+///
+/// The `status` argument may be either an Asylo `Status` or an `absl::Status`.
+///
+/// \param status The status to find the payload in.
+/// \return The payload of type `MessageT` in `status`, or `absl::nullopt` if
+///         `status` contains no payload of the given type. Also returns
+///         `absl::nullopt` if there was a parsing error.
+template <typename MessageT, typename StatusT = Status>
+absl::optional<MessageT> GetProtoPayload(const StatusT &status) {
+  return internal::ProtoPayloadImpl<MessageT, StatusT>::GetPayload(status);
+}
+
+/// Adds a payload of type `MessageT` to `status`. `MessageT` must be a protobuf
+/// message type. Note that a `Status` can only have one payload of any given
+/// message type.
+///
+/// The message is embedded with the same type URL that would be used to pack
+/// the message into a `google::protobuf::Any`.
+///
+/// The `status` argument may be either an Asylo `Status` or an `absl::Status`.
+///
+/// \param message A protobuf message object.
+/// \param[in,out] status The status to add the payload to.
+template <typename MessageT, typename StatusT = Status>
+void SetProtoPayload(const MessageT &message, StatusT &status) {
+  internal::ProtoPayloadImpl<MessageT, StatusT>::SetPayload(message, status);
 }
 
 }  // namespace asylo

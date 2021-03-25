@@ -22,13 +22,17 @@
 #include <vector>
 
 #include <google/protobuf/stubs/status.h>
+#include "google/protobuf/struct.pb.h"
 #include "google/protobuf/timestamp.pb.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/status/status.h"
+#include "absl/strings/cord.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/platform/primitives/sgx/sgx_errors.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/util/error_codes.h"
 #include "asylo/util/status.h"
 #include "include/grpcpp/support/status.h"
@@ -39,6 +43,7 @@ namespace {
 
 using ::testing::Eq;
 using ::testing::HasSubstr;
+using ::testing::Optional;
 using ::testing::Test;
 using ::testing::Types;
 
@@ -185,6 +190,37 @@ TEST(StatusHelpersTest, GetTypeUrlReturnsExpectedUrl) {
               Eq("type.googleapis.com/asylo.EnclaveInput"));
   EXPECT_THAT(GetTypeUrl<google::protobuf::Timestamp>(),
               Eq("type.googleapis.com/google.protobuf.Timestamp"));
+}
+
+template <typename StatusT>
+class ProtoPayloadTest : public Test {};
+using PayloadStatusTypes = Types<Status, absl::Status>;
+TYPED_TEST_SUITE(ProtoPayloadTest, PayloadStatusTypes);
+
+TYPED_TEST(ProtoPayloadTest, GetReturnsNulloptIfNoMatchingPayload) {
+  TypeParam status = absl::DeadlineExceededError("foobar");
+  EXPECT_THAT(GetProtoPayload<google::protobuf::Struct>(status),
+              Eq(absl::nullopt));
+}
+
+TYPED_TEST(ProtoPayloadTest, GetReturnsNulloptIfPayloadFailsToParse) {
+  TypeParam status = absl::DeadlineExceededError("foobar");
+  status.SetPayload(GetTypeUrl<google::protobuf::Struct>(),
+                    absl::Cord("notaproto"));
+  EXPECT_THAT(GetProtoPayload<google::protobuf::Struct>(status),
+              Eq(absl::nullopt));
+}
+
+TYPED_TEST(ProtoPayloadTest, GetReturnsPayloadAddedBySet) {
+  google::protobuf::Struct proto;
+  google::protobuf::Value value;
+  value.set_string_value("bar");
+  proto.mutable_fields()->insert({"foo", value});
+
+  TypeParam status = absl::DeadlineExceededError("foobar");
+  SetProtoPayload(proto, status);
+  EXPECT_THAT(GetProtoPayload<google::protobuf::Struct>(status),
+              Optional(EqualsProto(proto)));
 }
 
 }  // namespace
