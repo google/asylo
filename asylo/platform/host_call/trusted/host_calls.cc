@@ -248,7 +248,7 @@ ssize_t enc_untrusted_write(int fd, const void *buf, size_t count) {
       asylo::system_call::kSYS_write, fd, buf, count));
   if (ret != -1 && ret > count) {
     ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_read: read result exceeds requested");
+        "enc_untrusted_write: write result exceeds requested");
   }
   return ret;
 }
