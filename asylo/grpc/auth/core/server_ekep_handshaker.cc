@@ -101,14 +101,12 @@ ServerEkepHandshaker::Result ServerEkepHandshaker::StartHandshake(
 
 void ServerEkepHandshaker::AbortHandshake(const Status &abort_status,
                                           std::string *output) {
-  Abort_ErrorCode error_code =
-      static_cast<Abort_ErrorCode>(abort_status.error_code());
+  Abort_ErrorCode error_code = GetEkepErrorCode(abort_status).value();
   LOG(ERROR) << abort_status;
 
   Abort abort;
   abort.set_code(error_code);
-  abort.set_message(std::string(abort_status.error_message().data(),
-                                abort_status.error_message().size()));
+  abort.set_message(std::string(abort_status.message()));
 
   google::protobuf::io::StringOutputStream outgoing_frame(output);
   Status status = EncodeFrame(ABORT, abort, &outgoing_frame);

@@ -680,7 +680,7 @@ int IOManager::Chown(const char *path, uid_t owner, gid_t group) {
 char *IOManager::RealPath(const char *path, char *resolved_path) {
   StatusOr<std::string> path_str_or = CanonicalizePath(path);
   if (!path_str_or.ok()) {
-    errno = path_str_or.status().error_code();
+    errno = GetErrno(path_str_or.status());
 
     return nullptr;
   }

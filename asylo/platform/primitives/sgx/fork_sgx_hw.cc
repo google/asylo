@@ -252,8 +252,8 @@ Status DecryptFromUntrustedMemory(AeadCryptor *cryptor,
 void CopyNonOkStatus(const Status &non_ok_status, absl::StatusCode *error_code,
                      char *error_message, size_t message_buffer_size) {
   *error_code = non_ok_status.code();
-  strncpy(error_message, non_ok_status.error_message().data(),
-          std::min(message_buffer_size, non_ok_status.error_message().size()));
+  strncpy(error_message, non_ok_status.message().data(),
+          std::min(message_buffer_size, non_ok_status.message().size()));
 }
 
 // Encrypts a whole memory region of size |source_size| at |source_base| in the

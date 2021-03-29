@@ -407,17 +407,16 @@ TEST(Asn1SchemaTest, NamedSchemaReadInvalidValues) {
   ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateOctetString("bad"));
   auto oid_read_result =
       NamedSchema("OBJECT IDENTIFIER", Asn1ObjectId())->Read(asn1);
-  EXPECT_THAT(oid_read_result, StatusIs(absl::StatusCode::kInvalidArgument));
-  EXPECT_THAT(std::string(oid_read_result.status().error_message()),
-              HasSubstr("Failed to read OBJECT IDENTIFIER"));
+  EXPECT_THAT(oid_read_result,
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       HasSubstr("Failed to read OBJECT IDENTIFIER")));
 
   ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateBoolean(false));
   auto sequence_read_result =
       NamedSchema("SEQUENCE OF ANY", Asn1SequenceOf(Asn1Any()))->Read(asn1);
   EXPECT_THAT(sequence_read_result,
-              StatusIs(absl::StatusCode::kInvalidArgument));
-  EXPECT_THAT(std::string(sequence_read_result.status().error_message()),
-              HasSubstr("Failed to read SEQUENCE OF ANY"));
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       HasSubstr("Failed to read SEQUENCE OF ANY")));
 }
 
 TEST(Asn1SchemaTest, NamedSchemaWriteValidValues) {
@@ -439,9 +438,8 @@ TEST(Asn1SchemaTest, NamedSchemaWriteInvalidValues) {
   Status expected(absl::StatusCode::kUnavailable, "barfoo");
 
   auto write_result = NamedSchema("Fail", FailSchema<int>(expected))->Write(12);
-  EXPECT_THAT(write_result, StatusIs(expected.CanonicalCode()));
-  EXPECT_THAT(std::string(write_result.status().error_message()),
-              HasSubstr("Failed to write Fail"));
+  EXPECT_THAT(write_result,
+              StatusIs(expected.code(), HasSubstr("Failed to write Fail")));
 }
 
 }  // namespace

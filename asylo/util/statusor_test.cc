@@ -35,7 +35,7 @@ namespace {
 
 using ::testing::Not;
 
-error::GoogleError kErrorCode = error::GoogleError::INVALID_ARGUMENT;
+absl::StatusCode kErrorCode = absl::StatusCode::kInvalidArgument;
 constexpr char kErrorMessage[] = "Invalid argument";
 
 const int kIntElement = 42;
@@ -206,8 +206,8 @@ TYPED_TEST_SUITE(StatusOrTest, TestTypes);
 TYPED_TEST(StatusOrTest, ConstructorDefault) {
   StatusOr<typename TypeParam::value_type> statusor;
   EXPECT_FALSE(statusor.ok());
-  EXPECT_EQ(statusor.status().error_code(),
-            static_cast<int>(error::GoogleError::UNKNOWN));
+  EXPECT_EQ(statusor.status().raw_code(),
+            static_cast<int>(absl::StatusCode::kUnknown));
 }
 
 // Verify that StatusOr can be constructed from a Status object.

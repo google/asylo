@@ -36,8 +36,8 @@ PrimitiveStatus MakePrimitiveStatus(const Status& status) {
                            error_message);
   }
 
-  return PrimitiveStatus{status.error_code(), status.error_message().data(),
-                         status.error_message().size()};
+  return PrimitiveStatus{status.raw_code(), status.message().data(),
+                         status.message().size()};
 }
 
 Status MakeStatus(const PrimitiveStatus& primitiveStatus) {

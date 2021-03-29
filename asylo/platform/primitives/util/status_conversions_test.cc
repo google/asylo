@@ -73,10 +73,10 @@ class StatusConversionsTest : public ::testing::Test {
 TEST_F(StatusConversionsTest, ValidateStatus) {
   Status generatedStatus = MakeStatus(reference_primitive_status_);
 
-  EXPECT_THAT(generatedStatus.error_code(),
+  EXPECT_THAT(generatedStatus.raw_code(),
               Eq(reference_primitive_status_.error_code()));
   EXPECT_THAT(generatedStatus.error_space(), Eq(google_error_space_));
-  EXPECT_THAT(generatedStatus.error_message(),
+  EXPECT_THAT(generatedStatus.message(),
               Eq(reference_primitive_status_.error_message()));
 }
 
@@ -86,9 +86,9 @@ TEST_F(StatusConversionsTest, PrimitiveStatusTestForStatusInGoogleError) {
   PrimitiveStatus generatedPrimitiveStatus =
       MakePrimitiveStatus(reference_google_error_status_);
   EXPECT_THAT(generatedPrimitiveStatus.error_code(),
-              Eq(reference_google_error_status_.error_code()));
+              Eq(reference_google_error_status_.raw_code()));
   EXPECT_THAT(generatedPrimitiveStatus.error_message(),
-              Eq(reference_google_error_status_.error_message()));
+              Eq(reference_google_error_status_.message()));
 }
 
 // Validate members in PrimitiveStatus set correctly when status has non google

@@ -211,7 +211,7 @@ Status ReadOidAnySequence(
         absl::StrFormat("Error reading value for OID %s: ", oid_string));
     if (!read_status.ok()) {
       if (read_status.code() == absl::StatusCode::kInvalidArgument) {
-        errors.push_back(std::string(read_status.error_message()));
+        errors.push_back(std::string(read_status.message()));
       } else {
         return read_status;
       }

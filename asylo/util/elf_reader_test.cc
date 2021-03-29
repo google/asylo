@@ -147,10 +147,8 @@ class ElfReaderTest : public ::testing::Test {
   void ExpectBadReaderInput(absl::string_view error_message) {
     auto create_from_span_result =
         ElfReader::CreateFromSpan(elf_file_mapping_.buffer());
-    EXPECT_THAT(create_from_span_result, Not(IsOk()));
     EXPECT_THAT(create_from_span_result,
-                StatusIs(absl::StatusCode::kInvalidArgument));
-    EXPECT_EQ(create_from_span_result.status().error_message(), error_message);
+                StatusIs(absl::StatusCode::kInvalidArgument, error_message));
   }
 
   // The mapping of the ELF file.
@@ -347,11 +345,10 @@ TEST_F(ElfReaderTest, ReturnsAppropriateErrorIfSectionNotFound) {
   ElfReader reader = create_from_span_result.ValueOrDie();
 
   auto get_section_data_result = reader.GetSectionData(kAbsentSectionName);
-  EXPECT_THAT(get_section_data_result, Not(IsOk()));
-  EXPECT_THAT(get_section_data_result, StatusIs(absl::StatusCode::kNotFound));
-  EXPECT_EQ(get_section_data_result.status().error_message(),
-            absl::StrCat("File does not contain a section called ",
-                         kAbsentSectionName));
+  EXPECT_THAT(get_section_data_result,
+              StatusIs(absl::StatusCode::kNotFound,
+                       absl::StrCat("File does not contain a section called ",
+                                    kAbsentSectionName)));
 }
 
 // Tests that GetSectionData returns an appropriate error if the requested
@@ -366,12 +363,11 @@ TEST_F(ElfReaderTest, ReturnsAppropriateErrorIfTargetSectionHasNoData) {
 
   auto get_section_data_result =
       reader.GetSectionData(absl::GetFlag(FLAGS_section_name));
-  EXPECT_THAT(get_section_data_result, Not(IsOk()));
-  EXPECT_THAT(get_section_data_result,
-              StatusIs(absl::StatusCode::kInvalidArgument));
-  EXPECT_EQ(get_section_data_result.status().error_message(),
-            absl::StrCat("Section ", absl::GetFlag(FLAGS_section_name),
-                         " has no data"));
+  EXPECT_THAT(
+      get_section_data_result,
+      StatusIs(absl::StatusCode::kInvalidArgument,
+               absl::StrCat("Section ", absl::GetFlag(FLAGS_section_name),
+                            " has no data")));
 }
 
 // Tests that CreateFromSpan returns an appropriate error if the input file is
@@ -381,11 +377,9 @@ TEST(ElfReaderFixturelessTest, ReturnsAppropriateErrorIfFileTooSmall) {
 
   auto create_from_span_result = ElfReader::CreateFromSpan(
       absl::Span<uint8_t>(too_small_buffer, sizeof(too_small_buffer)));
-  EXPECT_THAT(create_from_span_result, Not(IsOk()));
   EXPECT_THAT(create_from_span_result,
-              StatusIs(absl::StatusCode::kInvalidArgument));
-  EXPECT_EQ(create_from_span_result.status().error_message(),
-            "Unsupported file format: not a 64-bit ELF file");
+              StatusIs(absl::StatusCode::kInvalidArgument,
+                       "Unsupported file format: not a 64-bit ELF file"));
 }
 
 }  // namespace

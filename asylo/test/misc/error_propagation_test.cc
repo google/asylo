@@ -57,7 +57,7 @@ TEST_F(ErrorPropagationTest, ErrorCanonical) {
   Status status = client_->EnterAndRun(enclave_input, /*output=*/nullptr);
   EXPECT_THAT(status, Not(IsOk()));
   EXPECT_THAT(status, StatusIs(absl::StatusCode::kUnauthenticated));
-  EXPECT_EQ(status.error_message(), kErrorString);
+  EXPECT_EQ(status.message(), kErrorString);
 }
 
 // Tests end-to-end flow of returning an non-OK status with a non-canonical
@@ -69,7 +69,7 @@ TEST_F(ErrorPropagationTest, ErrorNonCanonical) {
   Status status = client_->EnterAndRun(enclave_input, /*output=*/nullptr);
   EXPECT_THAT(status, Not(IsOk()));
   EXPECT_THAT(status, PosixErrorIs(EINVAL));
-  EXPECT_THAT(status.error_message(), HasSubstr(kErrorString));
+  EXPECT_THAT(status.message(), HasSubstr(kErrorString));
 }
 
 }  // namespace

@@ -182,7 +182,7 @@ Status DcapIntelArchitecturalEnclaveInterface::SetPckCertificateChain(
     // Wrap the cert parsing error so that we always return INVALID_ARGUMENT if
     // the input cert chain cannot be parsed. The cert chain parsing code will
     // return other errors, which are potentially misleading.
-    return absl::InvalidArgumentError(parsed_chain.status().error_message());
+    return absl::InvalidArgumentError(parsed_chain.status().message());
   }
 
   SgxExtensions extensions;

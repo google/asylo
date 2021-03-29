@@ -71,11 +71,11 @@ struct StatusInfo;
 template <>
 struct StatusInfo<Status> {
   static int GetCanonicalCode(const Status &status) {
-    return status.CanonicalCode();
+    return static_cast<int>(status.code());
   }
 
   static std::string GetErrorMessage(const Status &status) {
-    return std::string(status.error_message());
+    return std::string(status.message());
   }
 
   static std::vector<Status> TestData() {

@@ -66,13 +66,13 @@ TEST(StatusTest, OkFailure) {
 }
 
 TEST(StatusTest, GetErrorCodeOkStatus) {
-  EXPECT_EQ(::asylo::OkStatus().error_code(),
+  EXPECT_EQ(::asylo::OkStatus().raw_code(),
             static_cast<int>(absl::StatusCode::kOk));
 }
 
 TEST(StatusTest, GetErrorCodeNonOkStatus) {
   ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
-  EXPECT_EQ(status.error_code(),
+  EXPECT_EQ(status.raw_code(),
             static_cast<int>(absl::StatusCode::kInvalidArgument));
 }
 
@@ -98,8 +98,7 @@ TEST(StatusTest, GetErrorSpaceNonOkStatus) {
 
 TEST(StatusTest, ToStringOkStatus) {
   ::asylo::Status status = OkStatus();
-  std::string error_code_name =
-      status.error_space()->String(status.error_code());
+  std::string error_code_name = status.error_space()->String(status.raw_code());
 
   // The ToString() representation for an ok Status should contain the error
   // code name.
@@ -109,8 +108,7 @@ TEST(StatusTest, ToStringOkStatus) {
 
 TEST(StatusTest, ToStringNonOkStatus) {
   ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
-  std::string error_code_name =
-      status.error_space()->String(status.error_code());
+  std::string error_code_name = status.error_space()->String(status.raw_code());
   std::string error_space_name = status.error_space()->SpaceName();
   // The format of ToString() is subject to change for a non-ok Status, but it
   // should contain the error space name, the error code name, and the error
@@ -234,8 +232,7 @@ TEST(StatusTest, CodeAndCanonicalCodeOk) {
 
 TEST(StatusTest, CodeAndCanonicalCodeNonOk) {
   ::asylo::Status status(absl::StatusCode::kInvalidArgument, kErrorMessage1);
-  EXPECT_EQ(status.code(), static_cast<absl::StatusCode>(status.error_code()));
-  EXPECT_EQ(status.CanonicalCode(), status.error_code());
+  EXPECT_EQ(status.code(), static_cast<absl::StatusCode>(status.raw_code()));
 }
 
 TEST(StatusTest, CodeAndCanonicalCodeNonOkNonCanonical) {
@@ -250,7 +247,7 @@ TEST(StatusTest, SaveTo) {
   ::asylo::StatusProto status_proto;
   status.SaveTo(&status_proto);
 
-  EXPECT_EQ(status_proto.code(), status.error_code());
+  EXPECT_EQ(status_proto.code(), status.raw_code());
   EXPECT_EQ(status_proto.error_message(), status.message());
   EXPECT_EQ(status_proto.space(), status.error_space()->SpaceName());
   EXPECT_EQ(status_proto.payloads().size(), 1);
@@ -268,7 +265,7 @@ TEST(StatusTest, RestoreFromOk) {
   ::asylo::Status status;
   status.RestoreFrom(status_proto);
 
-  EXPECT_EQ(status.error_code(), status_proto.code());
+  EXPECT_EQ(status.raw_code(), status_proto.code());
   // Error messages are ignored for OK status objects.
   EXPECT_TRUE(status.message().empty());
   EXPECT_EQ(status.error_space()->SpaceName(), status_proto.space());
@@ -397,7 +394,7 @@ TEST(StatusTest, ConstructFromProtobufStatusNonOk) {
   ::asylo::Status status(protobuf_status);
 
   EXPECT_THAT(status, Not(IsOk()));
-  EXPECT_EQ(status.error_code(), protobuf_status.error_code());
+  EXPECT_EQ(status.raw_code(), protobuf_status.error_code());
   EXPECT_EQ(status.message(),
             std::string(protobuf_status.error_message()));
 }
@@ -418,7 +415,7 @@ TEST(StatusTest, ConstructFromGrpcStatusNonOk) {
   EXPECT_THAT(status, Not(IsOk()));
 
   // Constructed object is always in the canonical error space.
-  EXPECT_EQ(status.error_code(), grpc_status.error_code());
+  EXPECT_EQ(status.raw_code(), grpc_status.error_code());
   EXPECT_EQ(status.message(), grpc_status.error_message());
 }
 
@@ -427,7 +424,7 @@ TEST(StatusTest, ConvertToGrpcStatusOk) {
   ::grpc::Status grpc_status = status.ToOtherStatus<::grpc::Status>();
 
   EXPECT_EQ(status.ok(), grpc_status.ok());
-  EXPECT_EQ(status.error_code(), grpc_status.error_code());
+  EXPECT_EQ(status.raw_code(), grpc_status.error_code());
   EXPECT_EQ(status.message(), grpc_status.error_message());
 }
 
@@ -436,7 +433,7 @@ TEST(StatusTest, ConvertToGrpcStatusNonOk) {
   ::grpc::Status grpc_status = status.ToOtherStatus<::grpc::Status>();
 
   EXPECT_EQ(status.ok(), grpc_status.ok());
-  EXPECT_EQ(status.error_code(), grpc_status.error_code());
+  EXPECT_EQ(status.raw_code(), grpc_status.error_code());
   EXPECT_EQ(status.message(), grpc_status.error_message());
 }
 
@@ -468,7 +465,7 @@ TEST(StatusTest, ConstructFromAbslStatusNonOk) {
   ::asylo::Status status(absl_status);
 
   EXPECT_THAT(status, Not(IsOk()));
-  EXPECT_EQ(status.error_code(), absl_status.raw_code());
+  EXPECT_EQ(status.raw_code(), absl_status.raw_code());
   EXPECT_EQ(status.message(), absl_status.message());
 }
 
@@ -477,7 +474,7 @@ TEST(StatusTest, TypeCastToAbslStatusOk) {
   ::absl::Status absl_status = status;
 
   EXPECT_EQ(status.ok(), absl_status.ok());
-  EXPECT_EQ(status.error_code(), absl_status.raw_code());
+  EXPECT_EQ(status.raw_code(), absl_status.raw_code());
   EXPECT_EQ(status.message(), absl_status.message());
 }
 
@@ -486,7 +483,7 @@ TEST(StatusTest, TypeCastToAbslStatusNonOk) {
   ::absl::Status absl_status = status;
 
   EXPECT_EQ(status.ok(), absl_status.ok());
-  EXPECT_EQ(status.error_code(), absl_status.raw_code());
+  EXPECT_EQ(status.raw_code(), absl_status.raw_code());
   EXPECT_EQ(status.message(), absl_status.message());
 }
 
@@ -510,7 +507,7 @@ TEST(StatusTest, TypeCastToAbslStatusOrNonOk) {
   absl::StatusOr<std::string> absl_statusor = status;
 
   EXPECT_EQ(absl_statusor.ok(), status.ok());
-  EXPECT_EQ(absl_statusor.status().raw_code(), status.error_code());
+  EXPECT_EQ(absl_statusor.status().raw_code(), status.raw_code());
   EXPECT_EQ(absl_statusor.status().message(), status.message());
 }
 

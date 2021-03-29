@@ -94,10 +94,8 @@ TEST_F(IntelEcdsaQuoteTest, ParseQuoteFailsDueToInputBufferBeingTooLarge) {
   packed_quote.push_back('x');
 
   Status status = ParseDcapPackedQuote(packed_quote).status();
-  EXPECT_THAT(status, StatusIs(absl::StatusCode::kInvalidArgument));
-  EXPECT_THAT(
-      std::string(status.error_message().begin(), status.error_message().end()),
-      HasSubstr("Expected signature data size of "));
+  EXPECT_THAT(status, StatusIs(absl::StatusCode::kInvalidArgument,
+                               HasSubstr("Expected signature data size of ")));
 }
 
 TEST_F(IntelEcdsaQuoteTest, ParseQuoteFailsDueToInputBufferBeingTooSmall) {

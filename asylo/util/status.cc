@@ -127,7 +127,7 @@ Status Status::ToCanonical() const {
   if (IsCanonical()) {
     return *this;
   }
-  Status canonical(CanonicalCode(), ToStringWithoutPayloads());
+  Status canonical(code(), ToStringWithoutPayloads());
   canonical.payloads_ = payloads_;
   return canonical;
 }
@@ -145,7 +145,7 @@ void Status::SaveTo(StatusProto *status_proto) const {
   status_proto->set_code(error_code_);
   status_proto->set_error_message(message_);
   status_proto->set_space(error_space_->SpaceName());
-  status_proto->set_canonical_code(CanonicalCode());
+  status_proto->set_canonical_code(static_cast<int>(code()));
   for (const auto &it : payloads_) {
     (*status_proto->mutable_payloads())[it.first] = std::string(it.second);
   }
@@ -237,8 +237,8 @@ std::string Status::ToStringWithoutPayloads() const {
 }
 
 bool operator==(const Status &lhs, const Status &rhs) {
-  return (lhs.error_code() == rhs.error_code()) &&
-         (lhs.error_message() == rhs.error_message()) &&
+  return (lhs.raw_code() == rhs.raw_code()) &&
+         (lhs.message() == rhs.message()) &&
          (lhs.error_space() == rhs.error_space()) &&
          (lhs.payloads_ == rhs.payloads_);
 }

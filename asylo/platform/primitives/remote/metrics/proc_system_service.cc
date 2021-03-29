@@ -24,6 +24,7 @@
 #include "asylo/platform/primitives/remote/metrics/proc_system.pb.h"
 #include "asylo/platform/primitives/remote/metrics/proc_system_parser.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 #include "include/grpc/support/time.h"
 #include "include/grpcpp/support/status.h"
@@ -37,8 +38,7 @@ namespace primitives {
   auto status = BuildProcStatResponse(response);
   if (!status.ok()) {
     LOG(ERROR) << status;
-    return ::grpc::Status(static_cast<::grpc::StatusCode>(status.error_code()),
-                          std::string(status.error_message()));
+    return ConvertStatus<::grpc::Status>(status);
   }
   return ::grpc::Status::OK;
 }

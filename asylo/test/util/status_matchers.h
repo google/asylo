@@ -196,11 +196,11 @@ class StatusMatcher : public ::testing::MatcherInterface<const Status &> {
       ::testing::MatchResultListener *listener) const override {
     if (!status.Is(code_)) {
       *listener << "whose error code is " << status.error_space()->SpaceName()
-                << "::" << status.error_space()->String(status.error_code());
+                << "::" << status.error_space()->String(status.raw_code());
       return false;
     }
     ::testing::StringMatchResultListener string_listener;
-    if (!message_matcher_.MatchAndExplain(std::string(status.error_message()),
+    if (!message_matcher_.MatchAndExplain(std::string(status.message()),
                                           &string_listener)) {
       std::string explanation = string_listener.str();
       *listener << "which has an error message "
