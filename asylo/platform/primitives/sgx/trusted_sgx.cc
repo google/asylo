@@ -306,15 +306,16 @@ PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
   if (sgx_params->input) {
     untrusted_cache->Free(const_cast<void *>(sgx_params->input));
   }
-  if (!TrustedPrimitives::IsOutsideEnclave(sgx_params->output,
-                                           sgx_params->output_size)) {
+  const void *output_pointer = sgx_params->output;
+  uint64_t output_size = sgx_params->output_size;
+  if (!TrustedPrimitives::IsOutsideEnclave(output_pointer, output_size)) {
     TrustedPrimitives::BestEffortAbort(
         "UntrustedCall: sgx_param output should be in untrusted memory");
   }
   if (sgx_params->output) {
     // For the results obtained in |output_buffer|, copy them to |output|
     // before freeing the buffer.
-    output->Deserialize(sgx_params->output, sgx_params->output_size);
+    output->Deserialize(output_pointer, output_size);
     TrustedPrimitives::UntrustedLocalFree(sgx_params->output);
   }
   return PrimitiveStatus::OkStatus();
