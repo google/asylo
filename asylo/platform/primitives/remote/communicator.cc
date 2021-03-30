@@ -99,7 +99,7 @@ class Communicator::ThreadActivityWorkQueue {
       if (wrapped_message->has_status()) {
         message_status = StatusFromProto(wrapped_message->status());
       }
-      if (!message_status.Is(absl::StatusCode::kUnknown)) {
+      if (message_status.code() != absl::StatusCode::kUnknown) {
         // Response received.
         return std::move(wrapped_message);
       }

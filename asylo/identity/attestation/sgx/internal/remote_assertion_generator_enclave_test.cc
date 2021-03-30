@@ -498,7 +498,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
       if (status.ok()) {
         success_count++;
       }
-      if (status.Is(absl::StatusCode::kAlreadyExists)) {
+      if (status.code() == absl::StatusCode::kAlreadyExists) {
         failure_count++;
       }
     });

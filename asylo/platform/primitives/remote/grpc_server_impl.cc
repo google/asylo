@@ -73,7 +73,7 @@ class ServerInvocation : public Communicator::Invocation {
   ~ServerInvocation() override {
     // Serialize into response.
     CommunicationMessage response;
-    if (status.Is(absl::StatusCode::kUnknown)) {
+    if (status.code() == absl::StatusCode::kUnknown) {
       // UNKNOWN status indicates request, cannot be returned with response.
       status = Status{
           absl::StatusCode::kFailedPrecondition,
