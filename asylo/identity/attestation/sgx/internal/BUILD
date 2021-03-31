@@ -906,6 +906,7 @@ sgx_cc_unsigned_enclave(
         "//asylo/util:logging",
         "//asylo/util:mutex_guarded",
         "//asylo/util:status",
+        "//asylo/util:status_helpers",
         "@com_google_absl//absl/memory",
     ],
 )
@@ -1003,6 +1004,7 @@ cc_library(
         "//asylo/identity/platform/sgx:sgx_identity_util",
         "//asylo/identity/provisioning/sgx/internal:pck_certificate_util",
         "//asylo/util:status",
+        "//asylo/util:status_helpers",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",

@@ -32,6 +32,7 @@
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/asn1.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
@@ -176,22 +177,14 @@ class NamedSchemaImpl : public Asn1Schema<ValueTypeT> {
 
   // From Asn1Schema.
   StatusOr<ValueTypeT> Read(const Asn1Value &asn1) const override {
-    StatusOr<ValueTypeT> result = schema_->Read(asn1);
-    if (!result.ok()) {
-      return result.status().WithPrependedContext(
-          absl::StrFormat("Failed to read %s", name_));
-    }
-    return result.ValueOrDie();
+    return WithContext(schema_->Read(asn1),
+                       absl::StrFormat("Failed to read %s", name_));
   }
 
   // From Asn1Schema.
   StatusOr<Asn1Value> Write(const ValueTypeT &value) const override {
-    StatusOr<Asn1Value> result = schema_->Write(value);
-    if (!result.ok()) {
-      return result.status().WithPrependedContext(
-          absl::StrFormat("Failed to write %s", name_));
-    }
-    return result.ValueOrDie();
+    return WithContext(schema_->Write(value),
+                       absl::StrFormat("Failed to write %s", name_));
   }
 
  private:

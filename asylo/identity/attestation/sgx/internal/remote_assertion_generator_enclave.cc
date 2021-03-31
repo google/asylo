@@ -37,6 +37,8 @@
 #include "asylo/identity/platform/sgx/internal/self_identity.h"
 #include "asylo/identity/platform/sgx/internal/sgx_identity_util_internal.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
+#include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -222,12 +224,11 @@ Status RemoteAssertionGeneratorEnclave::UpdateCerts(
   if (input.validate_certificate_chains()) {
     // Verify that all certificate chains are valid and that they certify the
     // current attestation key before saving them.
-    Status status = CheckCertificateChainsForAttestationPublicKey(
-        *attestation_public_key, input.certificate_chains(),
-        *GetSgxCertificateFactories(), verification_config_);
-    if (!status.ok()) {
-      return status.WithPrependedContext("Cannot update certificates");
-    }
+    ASYLO_RETURN_IF_ERROR(
+        WithContext(CheckCertificateChainsForAttestationPublicKey(
+                        *attestation_public_key, input.certificate_chains(),
+                        *GetSgxCertificateFactories(), verification_config_),
+                    "Cannot update certificates"));
   }
 
   if (input.output_sealed_secret()) {

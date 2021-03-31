@@ -53,6 +53,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
@@ -665,58 +666,52 @@ StatusOr<std::unique_ptr<X509Certificate>> X509CertificateBuilder::SignAndBuild(
   }
 
   bssl::UniquePtr<X509> x509(X509_new());
+  ASYLO_RETURN_IF_ERROR(WithContext(SetVersion(version, x509.get()),
+                                    "Failed to set X.509 version: "));
   ASYLO_RETURN_IF_ERROR(
-      SetVersion(version, x509.get())
-          .WithPrependedContext("Failed to set X.509 version: "));
+      WithContext(SetSerialNumber(*serial_number, x509.get()),
+                  "Failed to set certificate serial number: "));
+  ASYLO_RETURN_IF_ERROR(WithContext(SetIssuerName(issuer.value(), x509.get()),
+                                    "Failed to set certificate issuer name: "));
   ASYLO_RETURN_IF_ERROR(
-      SetSerialNumber(*serial_number, x509.get())
-          .WithPrependedContext("Failed to set certificate serial number: "));
+      WithContext(SetValidity(validity.value(), x509.get()),
+                  "Failed to set certificate validity period: "));
   ASYLO_RETURN_IF_ERROR(
-      SetIssuerName(issuer.value(), x509.get())
-          .WithPrependedContext("Failed to set certificate issuer name: "));
-  ASYLO_RETURN_IF_ERROR(
-      SetValidity(validity.value(), x509.get())
-          .WithPrependedContext("Failed to set certificate validity period: "));
-  ASYLO_RETURN_IF_ERROR(
-      SetSubjectName(subject.value(), x509.get())
-          .WithPrependedContext("Failed to set certificate subject name: "));
-  ASYLO_RETURN_IF_ERROR(
-      SetSubjectPublicKey(subject_public_key_der.value(), x509.get())
-          .WithPrependedContext(
-              "Failed to set certificate subject public key: "));
+      WithContext(SetSubjectName(subject.value(), x509.get()),
+                  "Failed to set certificate subject name: "));
+  ASYLO_RETURN_IF_ERROR(WithContext(
+      SetSubjectPublicKey(subject_public_key_der.value(), x509.get()),
+      "Failed to set certificate subject public key: "));
   if (authority_key_identifier.has_value()) {
-    ASYLO_RETURN_IF_ERROR(
-        SetAuthorityKeyId(authority_key_identifier.value(), x509.get())
-            .WithPrependedContext("Failed to set authority key identifier: "));
+    ASYLO_RETURN_IF_ERROR(WithContext(
+        SetAuthorityKeyId(authority_key_identifier.value(), x509.get()),
+        "Failed to set authority key identifier: "));
   }
   if (subject_key_identifier_method.has_value()) {
-    ASYLO_RETURN_IF_ERROR(
-        SetSubjectKeyId(subject_key_identifier_method.value(), x509.get())
-            .WithPrependedContext("Failed to set subject key identifier: "));
+    ASYLO_RETURN_IF_ERROR(WithContext(
+        SetSubjectKeyId(subject_key_identifier_method.value(), x509.get()),
+        "Failed to set subject key identifier: "));
   }
   if (key_usage.has_value()) {
     ASYLO_RETURN_IF_ERROR(
-        SetKeyUsage(key_usage.value(), x509.get())
-            .WithPrependedContext("Failed to set certificate key usage: "));
+        WithContext(SetKeyUsage(key_usage.value(), x509.get()),
+                    "Failed to set certificate key usage: "));
   }
   if (basic_constraints.has_value()) {
     ASYLO_RETURN_IF_ERROR(
-        SetBasicConstraints(basic_constraints.value(), x509.get())
-            .WithPrependedContext(
-                "Failed to set certificate basic constraints: "));
+        WithContext(SetBasicConstraints(basic_constraints.value(), x509.get()),
+                    "Failed to set certificate basic constraints: "));
   }
   if (crl_distribution_points.has_value()) {
-    ASYLO_RETURN_IF_ERROR(
-        SetCrlDistributionPoints(crl_distribution_points.value(), x509.get())
-            .WithPrependedContext(
-                "Failed to set certificate CRL distribution points: "));
+    ASYLO_RETURN_IF_ERROR(WithContext(
+        SetCrlDistributionPoints(crl_distribution_points.value(), x509.get()),
+        "Failed to set certificate CRL distribution points: "));
   }
-  ASYLO_RETURN_IF_ERROR(
-      AddExtensions(absl::MakeConstSpan(other_extensions), x509.get())
-          .WithPrependedContext("Failed to add certificate extensions: "));
-  ASYLO_RETURN_IF_ERROR(
-      issuer_key.SignX509(x509.get())
-          .WithPrependedContext("Failed to sign certificate: "));
+  ASYLO_RETURN_IF_ERROR(WithContext(
+      AddExtensions(absl::MakeConstSpan(other_extensions), x509.get()),
+      "Failed to add certificate extensions: "));
+  ASYLO_RETURN_IF_ERROR(WithContext(issuer_key.SignX509(x509.get()),
+                                    "Failed to sign certificate: "));
   return absl::WrapUnique(new X509Certificate(std::move(x509)));
 }
 

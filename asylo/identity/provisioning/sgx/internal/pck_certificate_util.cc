@@ -57,6 +57,7 @@
 #include "asylo/identity/provisioning/sgx/internal/tcb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
@@ -207,7 +208,8 @@ Status ReadOidAnySequence(
       errors.push_back(absl::StrCat("Unexpected OID: ", oid_string));
       continue;
     }
-    Status read_status = it->second.read_function(asn1).WithPrependedContext(
+    Status read_status = WithContext(
+        it->second.read_function(asn1),
         absl::StrFormat("Error reading value for OID %s: ", oid_string));
     if (!read_status.ok()) {
       if (read_status.code() == absl::StatusCode::kInvalidArgument) {
@@ -468,14 +470,11 @@ StatusOr<SgxExtensions> ExtractSgxExtensionsFromPckCert(
                   "PCK certificate is not an X.509 certificate");
   }
 
-  auto pck_extensions_result = pck_cert->GetOtherExtensions();
-  if (!pck_extensions_result.ok()) {
-    return pck_extensions_result.status().WithPrependedContext(
-        "PCK certificate does not contain extensions");
-  }
-  std::vector<X509Extension> pck_extensions =
-      std::move(pck_extensions_result).ValueOrDie();
-
+  std::vector<X509Extension> pck_extensions;
+  ASYLO_ASSIGN_OR_RETURN(
+      pck_extensions,
+      WithContext(pck_cert->GetOtherExtensions(),
+                  "PCK certificate does not contain extensions"));
   for (const X509Extension &extension : pck_extensions) {
     if (extension.oid == GetSgxExtensionsOid()) {
       return ReadSgxExtensions(extension.value);

@@ -75,6 +75,7 @@
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/time_conversions.h"
 

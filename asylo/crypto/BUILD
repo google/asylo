@@ -238,6 +238,7 @@ cc_library(
     deps = [
         ":asn1",
         "//asylo/util:status",
+        "//asylo/util:status_helpers",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings:str_format",
@@ -311,6 +312,7 @@ cc_library(
         "//asylo/identity/attestation/sgx/internal:attestation_key_certificate_impl",
         "//asylo/util:proto_enum_util",
         "//asylo/util:status",
+        "//asylo/util:status_helpers",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/strings",
@@ -374,6 +376,7 @@ cc_library(
         "//asylo/util:logging",
         "//asylo/util:proto_enum_util",
         "//asylo/util:status",
+        "//asylo/util:status_helpers",
         "@boringssl//:crypto",
         "@com_google_absl//absl/base",
         "@com_google_absl//absl/memory",

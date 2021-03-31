@@ -53,6 +53,7 @@
 #include "asylo/identity/platform/sgx/sgx_identity_expectation_matcher.h"
 #include "asylo/identity/platform/sgx/sgx_identity_util.h"
 #include "asylo/identity/provisioning/sgx/internal/pck_certificate_util.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -110,13 +111,11 @@ VerifyCertificateChainsAndExtractIntelCertificateChain(
     if (cert_chain_end_user_key_der != verifying_key_der) {
       continue;
     }
-    Status verified =
-        VerifyCertificateChain(absl::MakeConstSpan(certificate_vector), config);
-    if (!verified.ok()) {
-      return verified.WithPrependedContext(absl::StrCat(
-          "Failed to verify certificate chain with root cert ",
-          certificate_chain.certificates().rbegin()->ShortDebugString()));
-    }
+    ASYLO_RETURN_IF_ERROR(WithContext(
+        VerifyCertificateChain(absl::MakeConstSpan(certificate_vector), config),
+        absl::StrCat(
+            "Failed to verify certificate chain with root cert ",
+            certificate_chain.certificates().rbegin()->ShortDebugString())));
 
     if (*certificate_vector.back() == intel_root) {
       intel_cert_chain = std::move(certificate_vector);
@@ -173,13 +172,13 @@ Status VerifyAgeExpectation(const IdentityAclPredicate &age_expectation,
   ASYLO_ASSIGN_OR_RETURN(age_identity, SerializeSgxIdentity(age_sgx_identity));
   std::string explanation;
   SgxIdentityExpectationMatcher matcher;
-  StatusOr<bool> age_match_result = EvaluateIdentityAcl(
-      {age_identity}, age_expectation, matcher, &explanation);
-  if (!age_match_result.ok()) {
-    return age_match_result.status().WithPrependedContext(
-        "Error evaluating AGE identity expectation");
-  }
-  if (!age_match_result.ValueOrDie()) {
+  bool age_match;
+  ASYLO_ASSIGN_OR_RETURN(
+      age_match,
+      WithContext(EvaluateIdentityAcl({age_identity}, age_expectation, matcher,
+                                      &explanation),
+                  "Error evaluating AGE identity expectation"));
+  if (!age_match) {
     return absl::UnauthenticatedError(
         absl::StrCat("AGE identity did not match expectation: ", explanation));
   }

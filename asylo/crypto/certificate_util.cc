@@ -19,15 +19,19 @@
 #include "asylo/crypto/certificate_util.h"
 
 #include <cstdint>
+#include <memory>
 #include <utility>
 
 #include "absl/status/status.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "asylo/crypto/certificate_interface.h"
 #include "asylo/crypto/x509_certificate.h"
 #include "asylo/identity/attestation/sgx/internal/attestation_key_certificate_impl.h"
 #include "asylo/util/proto_enum_util.h"
+#include "asylo/util/status.h"
+#include "asylo/util/status_helpers.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -137,14 +141,12 @@ StatusOr<CertificateInterfaceVector> CreateCertificateChain(
                        " no mapping from format to factory for format ",
                        ProtoEnumValueName(cert.format())));
     }
-    auto certificate_result = (factory_iter->second)(cert);
-    if (!certificate_result.ok()) {
-      return certificate_result.status().WithPrependedContext(
-          absl::StrCat("Failed to create certificate at index ", i));
-    }
-
-    certificate_interface_chain.push_back(
-        std::move(certificate_result).ValueOrDie());
+    std::unique_ptr<CertificateInterface> certificate;
+    ASYLO_ASSIGN_OR_RETURN(
+        certificate,
+        WithContext((factory_iter->second)(cert),
+                    absl::StrCat("Failed to create certificate at index ", i)));
+    certificate_interface_chain.push_back(std::move(certificate));
   }
   return std::move(certificate_interface_chain);
 }
@@ -180,22 +182,16 @@ Status VerifyCertificateChain(CertificateInterfaceSpan certificate_chain,
       ca_count++;
     }
 
-    Status status = subject->Verify(*issuer, verification_config);
-    if (!status.ok()) {
-      return status.WithPrependedContext(
-          absl::StrCat("Failed to verify certificate at index ", i));
-    }
+    ASYLO_RETURN_IF_ERROR(
+        WithContext(subject->Verify(*issuer, verification_config),
+                    absl::StrCat("Failed to verify certificate at index ", i)));
   }
 
   const CertificateInterface *root = certificate_chain.rbegin()->get();
 
   // Root certificate should be self-signed.
-  Status status = root->Verify(*root, verification_config);
-  if (!status.ok()) {
-    return status.WithPrependedContext("Failed to verify root certificate");
-  }
-
-  return absl::OkStatus();
+  return WithContext(root->Verify(*root, verification_config),
+                     "Failed to verify root certificate");
 }
 
 StatusOr<Certificate> GetCertificateFromPem(absl::string_view pem_cert) {
