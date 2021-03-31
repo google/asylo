@@ -19,10 +19,12 @@
 
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status.pb.h"
 #include "asylo/util/status_helpers_internal.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 
@@ -119,6 +121,44 @@ absl::optional<MessageT> GetProtoPayload(const StatusT &status) {
 template <typename MessageT, typename StatusT = Status>
 void SetProtoPayload(const MessageT &message, StatusT &status) {
   internal::ProtoPayloadImpl<MessageT, StatusT>::SetPayload(message, status);
+}
+
+/// Returns the `Status` with the provided context prepended to its error
+/// message. Returns `OkStatus()` if the given `Status` is OK.
+///
+/// \param status A `Status` to add context to.
+/// \param context Additional context to add to the `Status`.
+/// \return `status` with `context` prepended, along with an appropriate
+///         separator.
+Status WithContext(const Status &status, absl::string_view context);
+
+/// As the `Status` overload above, but for `StatusOr<T>`.
+///
+/// \param status A `StatusOr<T>` to add context to, if it is not OK.
+/// \param context Additional context to add to the `Status`.
+/// \return `status_or` if it is OK, otherwise `status_or.status()` with
+///         `context` prepended to the error message.
+template <typename T>
+StatusOr<T> WithContext(StatusOr<T> status_or, absl::string_view context) {
+  if (status_or.ok()) {
+    return status_or;
+  }
+  return WithContext(status_or.status(), context);
+}
+
+/// As the `StatusOr<T>` overload above, but for `absl::StatusOr<T>`.
+///
+/// \param status An `absl::StatusOr<T>` to add context to, if it is not OK.
+/// \param context Additional context to add to the `absl::Status`.
+/// \return `status_or` if it is OK, otherwise `status_or.status()` with
+///         `context` prepended to the error message.
+template <typename T>
+absl::StatusOr<T> WithContext(absl::StatusOr<T> status_or,
+                              absl::string_view context) {
+  if (status_or.ok()) {
+    return status_or;
+  }
+  return WithContext(status_or.status(), context);
 }
 
 }  // namespace asylo

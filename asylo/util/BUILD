@@ -432,6 +432,7 @@ cc_test(
         "//asylo:enclave_cc_proto",
         "//asylo/platform/primitives/sgx:sgx_errors",
         "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/status",
