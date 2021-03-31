@@ -29,7 +29,7 @@ namespace primitives {
 PrimitiveStatus MakePrimitiveStatus(const Status &status);
 
 // Constructs an Asylo status object from a primitive status.
-Status MakeStatus(const PrimitiveStatus &primitiveStatus);
+Status MakeStatus(const PrimitiveStatus &primitive_status);
 
 }  // namespace primitives
 }  // namespace asylo
