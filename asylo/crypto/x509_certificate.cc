@@ -536,7 +536,8 @@ Status SetKeyUsage(KeyUsageInformation key_usage, X509 *x509) {
 // Sets the basic constraints in |x509|.
 Status SetBasicConstraints(BasicConstraints basic_constraints, X509 *x509) {
   bssl::UniquePtr<BASIC_CONSTRAINTS> bssl_constraints(BASIC_CONSTRAINTS_new());
-  bssl_constraints->ca = basic_constraints.is_ca ? 1 : 0;
+  // DER encodes TRUE as 0xff. See X.690 (08/2015) section 11.1.
+  bssl_constraints->ca = basic_constraints.is_ca ? 0xff : 0;
   if (basic_constraints.pathlen.has_value()) {
     Asn1Value integer;
     ASYLO_ASSIGN_OR_RETURN(integer, Asn1Value::CreateIntegerFromInt(
