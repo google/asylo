@@ -159,15 +159,17 @@ class grpc_enclave_channel_security_connector final
                                           on_peer_checked);
   }
 
-  bool check_call_host(absl::string_view host,
-                       grpc_auth_context *auth_context,
+
+  bool check_call_host(absl::string_view host, grpc_auth_context *auth_context,
                        grpc_closure *on_call_host_checked,
                        grpc_error **error) override {
     return true;
   }
 
-  void cancel_check_call_host(grpc_closure *on_call_host_checked,
-                              grpc_error *error) override {
+  void cancel_check_call_host(
+      grpc_closure *on_call_host_checked,
+      grpc_error *error) override {
+
     GRPC_ERROR_UNREF(error);
   }
 
@@ -219,6 +221,7 @@ class grpc_enclave_server_security_connector final
     enclave_security_connector_check_peer(this, peer, auth_context,
                                           on_peer_checked);
   }
+
 
   int cmp(const grpc_security_connector * /*other*/) const override {
     return 1;
