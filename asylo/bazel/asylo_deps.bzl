@@ -187,12 +187,12 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("boringssl"):
         http_archive(
             name = "boringssl",
-            # Commit from 2020 December 02
+            # Commit from 2021 May 04
             urls = [
-                "https://github.com/google/boringssl/archive/bdbe37905216bea8dd4d0fdee93f6ee415d3aa15.tar.gz",
+                "https://github.com/google/boringssl/archive/9c286f671cfb6d8d6288b93a167c2fd6b1a2aaf4.tar.gz",
             ],
-            sha256 = "ce183cb587c0a0f5982e441dff91cb5456d4c85cfa3fb12816e7a93f20645e51",
-            strip_prefix = "boringssl-bdbe37905216bea8dd4d0fdee93f6ee415d3aa15",
+            sha256 = "e1c5fbfc5ce0b2a65969bfe1273296e917816ff33f06ae0a288b725e0cfca988",
+            strip_prefix = "boringssl-9c286f671cfb6d8d6288b93a167c2fd6b1a2aaf4",
         )
 
     # RE2 regular-expression framework. Used by some unit-tests.
