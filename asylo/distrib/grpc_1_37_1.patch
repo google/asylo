@@ -1,4 +1,4 @@
-diff -Naur -x '*~' -x '*.orig' bazel/build_settings.bzl bazel/build_settings.bzl
+diff -Naur --no-dereference -x '*~' -x '*.orig' bazel/build_settings.bzl bazel/build_settings.bzl
 --- bazel/build_settings.bzl
 +++ bazel/build_settings.bzl
 @@ -0,0 +1,17 @@
@@ -19,7 +19,7 @@ diff -Naur -x '*~' -x '*.orig' bazel/build_settings.bzl bazel/build_settings.bzl
 +    ares_setting_info = _ares_setting_info,
 +    ares = _ares_setting,
 +)
-diff -Naur -x '*~' -x '*.orig' BUILD BUILD
+diff -Naur --no-dereference -x '*~' -x '*.orig' BUILD BUILD
 --- BUILD
 +++ BUILD
 @@ -29,6 +29,8 @@
@@ -31,7 +31,7 @@ diff -Naur -x '*~' -x '*.orig' BUILD BUILD
  load(
      "//bazel:grpc_build_system.bzl",
      "grpc_cc_library",
-@@ -37,11 +39,32 @@
+@@ -38,11 +40,32 @@
      "python_config_settings",
  )
  
@@ -63,12 +63,16 @@ diff -Naur -x '*~' -x '*.orig' BUILD BUILD
 +)
 +
  config_setting(
-     name = "grpc_allow_exceptions",
-     values = {"define": "GRPC_ALLOW_EXCEPTIONS=1"},
-diff -Naur -x '*~' -x '*.orig' include/grpc/impl/codegen/port_platform.h include/grpc/impl/codegen/port_platform.h
+     name = "grpc_no_xds",
+     values = {"define": "grpc_no_xds=true"},
+diff -Naur --no-dereference -x '*~' -x '*.orig' include/grpc/impl/codegen/port_platform.h include/grpc/impl/codegen/port_platform.h
 --- include/grpc/impl/codegen/port_platform.h
 +++ include/grpc/impl/codegen/port_platform.h
-@@ -180,6 +180,9 @@
+@@ -184,9 +184,13 @@
+ #define GPR_POSIX_SYNC 1
+ #define GPR_POSIX_STRING 1
+ #define GPR_POSIX_LOG 1
++#define GPR_POSIX_STAT 1
  #define GPR_POSIX_TIME 1
  #define GPR_POSIX_ENV 1
  #define GPR_ASYLO 1
@@ -78,10 +82,10 @@ diff -Naur -x '*~' -x '*.orig' include/grpc/impl/codegen/port_platform.h include
  #define GRPC_POSIX_SOCKET 1
  #define GRPC_POSIX_SOCKETADDR
  #define GRPC_POSIX_SOCKETUTILS 1
-diff -Naur -x '*~' -x '*.orig' test/core/end2end/generate_tests.bzl test/core/end2end/generate_tests.bzl
+diff -Naur --no-dereference -x '*~' -x '*.orig' test/core/end2end/generate_tests.bzl test/core/end2end/generate_tests.bzl
 --- test/core/end2end/generate_tests.bzl
 +++ test/core/end2end/generate_tests.bzl
-@@ -420,6 +420,7 @@
+@@ -422,6 +422,7 @@
              "end2end_tests.h",
          ],
          language = "C++",

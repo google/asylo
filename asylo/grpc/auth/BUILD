@@ -182,6 +182,7 @@ cc_test(
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc_secure",
+        "@com_github_grpc_grpc//:ref_counted_ptr",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",

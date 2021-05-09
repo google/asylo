@@ -39,7 +39,8 @@ grpc_enclave_channel_credentials::create_security_connector(
 
 // Creates a grpc_enclave_server_security_connector object.
 grpc_core::RefCountedPtr<grpc_server_security_connector>
-grpc_enclave_server_credentials::create_security_connector() {
+grpc_enclave_server_credentials::create_security_connector(
+    const grpc_channel_args * /* args */) {
   return grpc_enclave_server_security_connector_create(this->Ref());
 }
 

@@ -68,7 +68,7 @@ struct grpc_enclave_server_credentials final : public grpc_server_credentials {
       asylo::EnclaveCredentialsOptions options);
 
   grpc_core::RefCountedPtr<grpc_server_security_connector>
-  create_security_connector() override;
+  create_security_connector(const grpc_channel_args* /* args */) override;
 
   // Additional authenticated data provided by the server.
   std::string additional_authenticated_data;
