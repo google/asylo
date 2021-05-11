@@ -275,6 +275,16 @@ def asylo_deps(toolchain_path = None):
             strip_prefix = "grpc-1.37.1",
         )
 
+    # Apple build rules. Pulled in by grpc_deps(), but need a newer version to avoid error with Bazel-at-HEAD.
+    # Can be removed once https://github.com/bazelbuild/rules_apple/commit/a49fe1b808a42d7eb352d289234bbe2f43e8e1b0 is picked up by gRPC.
+    if not native.existing_rule("build_bazel_rules_apple"):
+        http_archive(
+            name = "build_bazel_rules_apple",
+            strip_prefix = "rules_apple-0.31.2",
+            sha256 = "06191d8c5f87b1f83426cdf6a6d5fc8df545786815801324a1494f46a8a9c3d3",
+            urls = ["https://github.com/bazelbuild/rules_apple/archive/0.31.2.tar.gz"],
+        )
+
     # Google benchmark.
     if not native.existing_rule("com_github_google_benchmark"):
         http_archive(
