@@ -194,11 +194,14 @@ class StatusMatcher : public ::testing::MatcherInterface<const Status &> {
   bool MatchAndExplain(
       const Status &status,
       ::testing::MatchResultListener *listener) const override {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     if (!status.Is(code_)) {
       *listener << "whose error code is " << status.error_space()->SpaceName()
                 << "::" << status.error_space()->String(status.raw_code());
       return false;
     }
+#pragma GCC diagnostic pop
     ::testing::StringMatchResultListener string_listener;
     if (!message_matcher_.MatchAndExplain(std::string(status.message()),
                                           &string_listener)) {

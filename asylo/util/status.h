@@ -117,7 +117,12 @@ class Status {
 
   /// Constructs an OK status object.
   ///
+  /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
+  ///             `absl::OkStatus()` or `asylo::OkStatus()` instead.
   /// \return A Status indicating no error occurred.
+  ABSL_DEPRECATED(
+      "Deprecated as part of Asylo's absl::Status migration. Use "
+      "absl::OkStatus() or asylo::OkStatus() instead.")
   static Status OkStatus();
 
   /// Copy this object to a status type `StatusT`. The method first converts the
@@ -182,7 +187,12 @@ class Status {
 
   /// Gets the integer error code for this object.
   ///
+  /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
+  ///             `raw_code()` instead.
   /// \return The associated integer error code.
+  ABSL_DEPRECATED(
+      "Deprecated as part of Asylo's absl::Status migration. Use raw_code() "
+      "instead.")
   int error_code() const;
 
   /// Gets the error code for this object as an `int`.
@@ -192,7 +202,12 @@ class Status {
 
   /// Gets the string error message for this object.
   ///
+  /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
+  ///             `message()` instead.
   /// \return The associated error message.
+  ABSL_DEPRECATED(
+      "Deprecated as part of Asylo's absl::Status migration. Use message() "
+      "instead.")
   absl::string_view error_message() const;
 
   /// Gets the string error message for this object.
@@ -202,7 +217,12 @@ class Status {
 
   /// Gets the error space for this object.
   ///
+  /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
+  ///             payloads instead of error spaces.
   /// \return The associated error space.
+  ABSL_DEPRECATED(
+      "Deprecated as part of Asylo's absl::Status migration. Use payloads "
+      "instead of error spaces.")
   const error::ErrorSpace *error_space() const;
 
   /// Indicates whether this object is OK (indicates no error).
@@ -231,11 +251,22 @@ class Status {
   ///   * The new error message is set to the `ToString()` representation of the
   ///     old Status object, excluding any payloads, in order to preserve the
   ///     previous error code information.
+  ///
+  /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
+  ///             payloads instead of error spaces.
+  ABSL_DEPRECATED(
+      "Deprecated as part of Asylo's absl::Status migration. Use payloads "
+      "instead of error spaces.")
   Status ToCanonical() const;
 
   /// Gets the canonical error code for this object's error code.
   ///
+  /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
+  ///             `code()` instead.
   /// \return A canonical `error::GoogleError` code.
+  ABSL_DEPRECATED(
+      "Deprecated as part of Asylo's absl::Status migration. Use code() "
+      "instead.")
   error::GoogleError CanonicalCode() const;
 
   /// Gets the canonical error code for this object.
@@ -286,8 +317,13 @@ class Status {
   /// This object is considered to be the same as `code if `code` matches both
   /// the error code and error space of this object.
   ///
+  /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
+  ///             payloads instead of error spaces.
   /// \return True if this object matches `code`.
   template <typename Enum>
+  ABSL_DEPRECATED(
+      "Deprecated as part of Asylo's absl::Status migration. Use payloads "
+      "instead of error spaces.")
   bool Is(Enum code) const {
     return (static_cast<int>(code) == error_code_) &&
            (error::error_enum_traits<Enum>::get_error_space() == error_space_);
@@ -295,10 +331,15 @@ class Status {
 
   /// Modifies this object to have `context` prepended to the error message.
   ///
+  /// \deprecated Deprecated as part of Asylo's `absl::Status` migration. Use
+  ///             `WithContext()` instead.
   /// \param context The context information to be prepended to the error
   ///        message.
   /// \return This object with the same error code and an error message of
   ///         `context` + ": " + the original error message.
+  ABSL_DEPRECATED(
+      "Deprecated as part of Asylo's absl::Status migration. Use WithContext() "
+      "from status_helpers.h instead.")
   Status WithPrependedContext(absl::string_view context);
 
   /// Gets the payload associated with the given type URL.
