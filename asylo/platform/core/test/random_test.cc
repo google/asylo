@@ -93,11 +93,11 @@ TEST(DevicesTest, RandomHandlerTest) {
         // Get random bytes.
         auto result1_or_error = ReadRandomBytes(path, read_bytes, align_bytes);
         ASYLO_ASSERT_OK(result1_or_error);
-        std::string result1 = result1_or_error.ValueOrDie();
+        std::string result1 = result1_or_error.value();
         // Get random bytes again.
         auto result2_or_error = ReadRandomBytes(path, read_bytes, align_bytes);
         ASYLO_ASSERT_OK(result2_or_error);
-        std::string result2 = result2_or_error.ValueOrDie();
+        std::string result2 = result2_or_error.value();
 
         // Check that we got different results (since it's random).
         // Skip if read_bytes less than 6 bytes; too likely to match by chance.
@@ -136,12 +136,12 @@ TEST(BoringSSLTest, RandomHandlerTest) {
   // Read bytes from Boring SSL.
   auto result1_or_error = ReadRandomBytesFromBoringSSL(read_bytes);
   ASYLO_ASSERT_OK(result1_or_error);
-  std::string result1 = result1_or_error.ValueOrDie();
+  std::string result1 = result1_or_error.value();
 
   // Read bytes from Boring SSL again.
   auto result2_or_error = ReadRandomBytesFromBoringSSL(read_bytes);
   ASYLO_ASSERT_OK(result2_or_error);
-  std::string result2 = result2_or_error.ValueOrDie();
+  std::string result2 = result2_or_error.value();
 
   // Check that we got different results (since it's random).
   EXPECT_NE(result1, result2);

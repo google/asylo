@@ -223,8 +223,8 @@ Communicator::LocateOrCreateThreadActivityWorkQueue(
             current_thread_context_ = nullptr;
             // May not end receiving a message.
             CHECK(!message_result.ok())
-                << "Received a message that is not a request, ignored: "
-                << message_result.ValueOrDie()->ShortDebugString();
+                << "Received a message that is not a request, ignored:"
+                << message_result.status();
           });
       if (!new_worker) {
         locked_threads_map->erase(it);
@@ -259,7 +259,7 @@ void Communicator::QueueMessageForThread(
   const auto thread_context_result =
       LocateOrCreateThreadActivityWorkQueue(invocation_thread_id);
   ASYLO_CHECK_OK(thread_context_result.status());
-  thread_context_result.ValueOrDie()->QueueMessage(std::move(wrapped_message));
+  thread_context_result.value()->QueueMessage(std::move(wrapped_message));
 }
 
 Status Communicator::CreateStub(const RemoteProxyConfig &config,
@@ -390,7 +390,7 @@ void Communicator::Invoke(
       invocation->status = thread_context_result.status();
       return;
     }
-    current_thread_context_ = thread_context_result.ValueOrDie();
+    current_thread_context_ = thread_context_result.value();
   }
   if (!current_thread_context_) {
     invocation->status = Status{

@@ -330,12 +330,12 @@ bool operator!=(const ObjectId &lhs, const ObjectId &rhs) {
 std::ostream &operator<<(std::ostream &out, const ObjectId &oid) {
   auto short_name_result = oid.GetShortName();
   if (short_name_result.ok()) {
-    return out << short_name_result.ValueOrDie();
+    return out << short_name_result.value();
   }
 
   auto oid_string_result = oid.GetOidString();
-  if (oid_string_result.ok() && !oid_string_result.ValueOrDie().empty()) {
-    return out << oid_string_result.ValueOrDie();
+  if (oid_string_result.ok() && !oid_string_result.value().empty()) {
+    return out << oid_string_result.value();
   }
 
   return out << "UNKNOWN_OID";
@@ -839,13 +839,13 @@ bool operator==(const Asn1Value &lhs, const Asn1Value &rhs) {
   }
   switch (maybe_type.value()) {
     case Asn1Type::kInteger:
-      return BN_cmp(lhs.GetInteger().ValueOrDie().get(),
-                    rhs.GetInteger().ValueOrDie().get()) == 0;
+      return BN_cmp(lhs.GetInteger().value().get(),
+                    rhs.GetInteger().value().get()) == 0;
     case Asn1Type::kEnumerated:
-      return BN_cmp(lhs.GetEnumerated().ValueOrDie().get(),
-                    rhs.GetEnumerated().ValueOrDie().get()) == 0;
+      return BN_cmp(lhs.GetEnumerated().value().get(),
+                    rhs.GetEnumerated().value().get()) == 0;
     case Asn1Type::kSequence:
-      return lhs.GetSequence().ValueOrDie() == rhs.GetSequence().ValueOrDie();
+      return lhs.GetSequence().value() == rhs.GetSequence().value();
     case Asn1Type::kBoolean:
     case Asn1Type::kBitString:
     case Asn1Type::kObjectId:

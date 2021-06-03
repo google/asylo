@@ -140,7 +140,7 @@ StatusOr<SgxType> FromRawSgxType(std::underlying_type<SgxTypeRaw>::type raw) {
 }
 
 ObjectId CreateOidOrDie(const std::string &oid_string) {
-  return ObjectId::CreateFromOidString(oid_string).ValueOrDie();
+  return ObjectId::CreateFromOidString(oid_string).value();
 }
 
 // Returns a singleton instance of SgxOidsStruct.
@@ -195,9 +195,8 @@ Status ReadOidAnySequence(
     Asn1Value asn1;
     std::tie(oid, asn1) = std::move(pair);
     auto oid_string_result = oid.GetOidString();
-    std::string oid_string = oid_string_result.ok()
-                                 ? oid_string_result.ValueOrDie()
-                                 : "<could not print OID>";
+    std::string oid_string = oid_string_result.ok() ? oid_string_result.value()
+                                                    : "<could not print OID>";
     if (!found_oids.insert(oid).second) {
       errors.push_back(absl::StrCat("Found repeated OID: ", oid_string));
       continue;
@@ -228,7 +227,7 @@ Status ReadOidAnySequence(
       auto oid_string_result = oid.GetOidString();
       errors.push_back(oid_string_result.ok()
                            ? absl::StrCat("Missing extension with OID ",
-                                          oid_string_result.ValueOrDie())
+                                          oid_string_result.value())
                            : "Missing extension");
     }
   }

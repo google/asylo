@@ -146,7 +146,7 @@ Communicator::ClientImpl::Create(const RemoteProxyConfig &config,
         client_config.GetOpenCensusMetricsConfig();
     if (config_result.ok()) {
       client->open_census_client_ = OpenCensusClient::Create(
-          client->grpc_channel_, config_result.ValueOrDie());
+          client->grpc_channel_, config_result.value());
     }
   }
 

@@ -86,7 +86,7 @@ class OpenCensusClientTest : public ::testing::Test {
         GrpcServerMainWrapper<MockProcSystemServiceServer>::Create(
             0, std::move(mock_parser), mock_parser_->kExpectedPid);
     CHECK(mock_server_request.ok());
-    mock_server_ = std::move(mock_server_request.ValueOrDie());
+    mock_server_ = std::move(mock_server_request.value());
 
     server_address_ = absl::StrCat("[::]:", mock_server_->port());
 
@@ -114,7 +114,7 @@ TEST_F(OpenCensusClientTest, SuccessfullyGetsMetrics) {
   config.view_name_root = "test_root";
 
   auto opencensus_client =
-      OpenCensusClient::Create(channel_request.ValueOrDie(), config);
+      OpenCensusClient::Create(channel_request.value(), config);
 
   while (output_.ReaderLock()->size() < 14) {
     absl::SleepFor(absl::Seconds(1));

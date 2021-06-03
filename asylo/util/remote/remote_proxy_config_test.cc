@@ -100,8 +100,8 @@ TEST(RemoteProxyClientConfigTest, OpenCensusMetricsConfigAddedCorrectly) {
       config->GetOpenCensusMetricsConfig();
 
   EXPECT_THAT(config_result, IsOk());
-  EXPECT_THAT(config_result.ValueOrDie().granularity, Eq(granularity));
-  EXPECT_THAT(config_result.ValueOrDie().view_name_root, StrEq(kViewNameRoot));
+  EXPECT_THAT(config_result.value().granularity, Eq(granularity));
+  EXPECT_THAT(config_result.value().view_name_root, StrEq(kViewNameRoot));
 }
 
 TEST(RemoteProxyServerConfigTest, DefaultsAreAsExpected) {

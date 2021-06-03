@@ -278,7 +278,7 @@ StatusOr<TcbLevel> TcbLevelFromJson(
       has_advisory_ids = true;
       ASYLO_ASSIGN_OR_RETURN(
           *tcb_level.mutable_advisory_ids(),
-          AdvisoryIdsFromJson(*get_advisory_ids_result.ValueOrDie()));
+          AdvisoryIdsFromJson(*get_advisory_ids_result.value()));
     }
   }
 

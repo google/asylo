@@ -141,13 +141,13 @@ Status RemoteEnclaveProxyServer::Start(
             MessageWriter in;
             in.PushByReference(in_config);
             auto local_enclave_client_result = local_enclave_client_factory_(
-                &in, std::move(exit_call_forwarder_result.ValueOrDie()));
+                &in, std::move(exit_call_forwarder_result.value()));
             if (!local_enclave_client_result.ok()) {
               invocation->status = local_enclave_client_result.status();
               return;
             }
             local_enclave_client_ =
-                std::move(local_enclave_client_result.ValueOrDie());
+                std::move(local_enclave_client_result.value());
             return;
           }
           case kSelectorRemoteDisconnect:

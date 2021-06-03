@@ -124,7 +124,7 @@ H AbslHashValue(H hash, const ObjectId &oid) {
   // matches /((0|[1-9][0-9]*)\.)*(0|[1-9][0-9]*)/). The exact requirements are
   // more strict, but the properties described above guarantee that the hash of
   // the OID string is a valid hash for an ObjectId.
-  return H::combine(std::move(hash), oid.GetOidString().ValueOrDie());
+  return H::combine(std::move(hash), oid.GetOidString().value());
 }
 
 // Represents a general ASN.1 value. Only some ASN.1 types are supported; see

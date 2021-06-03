@@ -110,7 +110,7 @@ class ForkSecurityTest : public ::testing::Test {
     if (!manager_result.ok()) {
       LOG(FATAL) << manager_result.status();
     }
-    manager_ = manager_result.ValueOrDie();
+    manager_ = manager_result.value();
   }
 
   void TearDown() override {

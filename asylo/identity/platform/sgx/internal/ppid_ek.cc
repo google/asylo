@@ -44,7 +44,7 @@ extern const absl::string_view kPpidEkTextProto =
 AsymmetricEncryptionKeyProto GetPpidEkProto() {
   return asylo::ParseTextProto<asylo::AsymmetricEncryptionKeyProto>(
              kPpidEkTextProto)
-      .ValueOrDie();
+      .value();
 }
 
 }  // namespace sgx

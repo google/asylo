@@ -89,7 +89,7 @@ struct Namer<EnclaveAssertionVerifier> {
   std::string operator()(const EnclaveAssertionVerifier &verifier) {
     return EnclaveAssertionAuthority::GenerateAuthorityId(
                verifier.IdentityType(), verifier.AuthorityType())
-        .ValueOrDie();
+        .value();
   }
 };
 

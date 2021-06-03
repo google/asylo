@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
   if (!manager_result.ok()) {
     LOG(QFATAL) << "Instance returned status: " << manager_result.status();
   }
-  asylo::EnclaveManager *manager = manager_result.ValueOrDie();
+  asylo::EnclaveManager *manager = manager_result.value();
 
   // Create an EnclaveLoadConfig object.
   asylo::EnclaveLoadConfig load_config;

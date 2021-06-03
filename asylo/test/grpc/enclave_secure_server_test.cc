@@ -102,7 +102,7 @@ TEST_F(EnclaveSecureGrpcTest, SimpleEnd2EndTest) {
 
   StatusOr<std::string> response = client.Hello(kName);
   ASSERT_THAT(response, IsOk());
-  EXPECT_EQ(response.ValueOrDie(), MessengerServer1::ResponseString(kName));
+  EXPECT_EQ(response.value(), MessengerServer1::ResponseString(kName));
 
   response = client.Hello("");
   EXPECT_THAT(response, Not(IsOk()));

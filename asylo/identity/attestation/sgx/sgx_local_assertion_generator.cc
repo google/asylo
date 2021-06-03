@@ -111,7 +111,7 @@ StatusOr<bool> SgxLocalAssertionGenerator::CanGenerate(
   }
 
   sgx::LocalAssertionRequestAdditionalInfo additional_info =
-      additional_info_result.ValueOrDie();
+      additional_info_result.value();
 
   return additional_info.local_attestation_domain() ==
          members_.ReaderLock()->attestation_domain;
@@ -131,7 +131,7 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
   }
 
   sgx::LocalAssertionRequestAdditionalInfo additional_info =
-      additional_info_result.ValueOrDie();
+      additional_info_result.value();
 
   if (additional_info.local_attestation_domain() !=
       members_.ReaderLock()->attestation_domain) {

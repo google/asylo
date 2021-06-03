@@ -64,13 +64,11 @@ IdentityAclPredicate CreateStrictPredicate(const SgxIdentity &identity) {
   GPR_ASSERT(expectation_result.ok());
 
   StatusOr<EnclaveIdentityExpectation> serialized_expectation_result =
-      SerializeSgxIdentityExpectation(
-          std::move(expectation_result).ValueOrDie());
+      SerializeSgxIdentityExpectation(std::move(expectation_result).value());
   GPR_ASSERT(serialized_expectation_result.ok());
 
   IdentityAclPredicate acl;
-  *acl.mutable_expectation() =
-      std::move(serialized_expectation_result).ValueOrDie();
+  *acl.mutable_expectation() = std::move(serialized_expectation_result).value();
   return acl;
 }
 

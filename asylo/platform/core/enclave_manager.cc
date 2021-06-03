@@ -246,10 +246,10 @@ Status EnclaveManager::LoadFakeEnclave(absl::string_view name,
   }
 
   // Add the client to the lookup tables.
-  EnclaveClient *client = result.ValueOrDie().get();
+  EnclaveClient *client = result.value().get();
   {
     absl::WriterMutexLock lock(&client_table_lock_);
-    client_by_name_.emplace(name, std::move(result).ValueOrDie());
+    client_by_name_.emplace(name, std::move(result).value());
     name_by_client_.emplace(client, name);
   }
 
@@ -320,10 +320,10 @@ Status EnclaveManager::LoadEnclave(const EnclaveLoadConfig &load_config) {
   }
 
   // Add the client to the lookup tables.
-  EnclaveClient *client = result.ValueOrDie().get();
+  EnclaveClient *client = result.value().get();
   {
     absl::WriterMutexLock lock(&client_table_lock_);
-    client_by_name_.emplace(name, std::move(result).ValueOrDie());
+    client_by_name_.emplace(name, std::move(result).value());
     name_by_client_.emplace(client, name);
 
     if (config.enable_fork()) {
@@ -365,7 +365,7 @@ primitives::Client *LoadEnclaveInChildProcess(absl::string_view enclave_name,
     errno = EFAULT;
     return nullptr;
   }
-  EnclaveManager *manager = manager_result.ValueOrDie();
+  EnclaveManager *manager = manager_result.value();
   auto *client =
       dynamic_cast<GenericEnclaveClient *>(manager->GetClient(enclave_name));
   EnclaveLoadConfig load_config = manager->GetLoadConfigFromClient(client);

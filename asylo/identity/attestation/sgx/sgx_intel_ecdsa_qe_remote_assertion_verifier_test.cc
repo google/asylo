@@ -117,13 +117,13 @@ class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
     auto body = TrivialRandomObject<sgx::ReportBody>();
     auto aad_generator =
         AdditionalAuthenticatedDataGenerator::CreateEkepAadGenerator();
-    body.reportdata.data = aad_generator->Generate(user_data).ValueOrDie();
+    body.reportdata.data = aad_generator->Generate(user_data).value();
     return body;
   }
 
   void SignQuoteHeaderAndReport(sgx::IntelQeQuote *quote,
                                 const sgx::ReportBody &qe_identity) const {
-    auto signing_key = EcdsaP256Sha256SigningKey::Create().ValueOrDie();
+    auto signing_key = EcdsaP256Sha256SigningKey::Create().value();
     ByteContainerView data_to_sign(quote,
                                    sizeof(quote->header) + sizeof(quote->body));
     Signature signature;
@@ -135,7 +135,7 @@ class SgxIntelEcdsaQeRemoteAssertionVerifierTest : public Test {
     quote->signature.body_signature.replace(32,
                                             signature.ecdsa_signature().s());
 
-    EccP256CurvePoint key_bytes = signing_key->GetPublicKeyPoint().ValueOrDie();
+    EccP256CurvePoint key_bytes = signing_key->GetPublicKeyPoint().value();
     static_assert(sizeof(quote->signature.public_key) == sizeof(key_bytes),
                   "Key size mismatch");
     quote->signature.public_key.assign(&key_bytes, sizeof(key_bytes));

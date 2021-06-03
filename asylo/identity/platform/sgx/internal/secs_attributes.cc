@@ -84,19 +84,19 @@ constexpr AttributeBit kMustBeSetAttributes[] = {
 
 SecsAttributeSet SecsAttributeSet::GetAllSupportedBits() {
   static const SecsAttributeSet set =
-      SecsAttributeSet::FromBits(kAllAttributeBits).ValueOrDie();
+      SecsAttributeSet::FromBits(kAllAttributeBits).value();
   return set;
 }
 
 SecsAttributeSet SecsAttributeSet::GetMustBeSetBits() {
   static const SecsAttributeSet set =
-      SecsAttributeSet::FromBits(kMustBeSetAttributes).ValueOrDie();
+      SecsAttributeSet::FromBits(kMustBeSetAttributes).value();
   return set;
 }
 
 SecsAttributeSet SecsAttributeSet::GetDefaultDoNotCareBits() {
   static const SecsAttributeSet set =
-      SecsAttributeSet::FromBits(kDefaultDoNotCareSecsAttributes).ValueOrDie();
+      SecsAttributeSet::FromBits(kDefaultDoNotCareSecsAttributes).value();
   return set;
 }
 

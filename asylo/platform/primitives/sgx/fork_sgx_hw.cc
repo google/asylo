@@ -21,6 +21,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -445,8 +446,7 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
                       ABSL_ARRAYSIZE(error_message));
       break;
     }
-    std::unique_ptr<AeadCryptor> cryptor =
-        std::move(cryptor_result.ValueOrDie());
+    std::unique_ptr<AeadCryptor> cryptor = std::move(cryptor_result.value());
 
     // Allocate and encrypt reserved data section to an untrusted snapshot.
     status = EncryptToSnapshot(cryptor.get(), enclave_layout.reserved_data_base,
@@ -745,7 +745,7 @@ Status RunEkepHandshake(EkepHandshaker *handshaker, bool is_parent,
         if (!unused_bytes_result.ok()) {
           return unused_bytes_result.status();
         }
-        size_t unused_bytes_size = unused_bytes_result.ValueOrDie().size();
+        size_t unused_bytes_size = unused_bytes_result.value().size();
         bytes_used -= unused_bytes_size;
       }
       // Remove the used data from the receiving buffer.
@@ -946,10 +946,10 @@ Status TransferSecureSnapshotKey(
 
   // Get peer identity from the handshake, and compare it with the identity
   // of the current enclave.
-  EnclaveIdentity peer_identity =
-      handshaker->GetPeerIdentities().ValueOrDie()->identities(0);
-
-  ASYLO_RETURN_IF_ERROR(ComparePeerAndSelfIdentity(peer_identity));
+  std::unique_ptr<EnclaveIdentities> peer_identities;
+  ASYLO_ASSIGN_OR_RETURN(peer_identities, handshaker->GetPeerIdentities());
+  ASYLO_RETURN_IF_ERROR(
+      ComparePeerAndSelfIdentity(peer_identities->identities(0)));
 
   // Initialize a cryptor with the AES128-GCM record protocol key from the EKEP
   // handshake.

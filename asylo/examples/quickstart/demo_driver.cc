@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
   file_enclave_config->set_enclave_path(enclave_path);
 
   // Load Enclave with prepared |EnclaveManager| and |load_config| message.
-  asylo::EnclaveManager *manager = manager_result.ValueOrDie();
+  asylo::EnclaveManager *manager = manager_result.value();
   auto status = manager->LoadEnclave(load_config);
   LOG_IF(QFATAL, !status.ok()) << "LoadEnclave failed with: " << status;
 

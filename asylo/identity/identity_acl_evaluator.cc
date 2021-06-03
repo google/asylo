@@ -64,7 +64,7 @@ StatusOr<bool> EvaluateAclOrPredicateGroup(
       return result;
     }
 
-    if (result.ValueOrDie()) {
+    if (result.value()) {
       return true;
     }
 
@@ -99,7 +99,7 @@ StatusOr<bool> EvaluateAclAndPredicateGroup(
       return result;
     }
 
-    match_result &= result.ValueOrDie();
+    match_result &= result.value();
 
     if (!local_explanation.empty()) {
       explanations.push_back(std::move(local_explanation));
@@ -139,11 +139,11 @@ StatusOr<bool> EvaluateAclNotPredicateGroup(
     return result;
   }
 
-  if (result.ValueOrDie() && explanation != nullptr) {
+  if (result.value() && explanation != nullptr) {
     *explanation = "NOT predicate was satisfied when it should not have been";
   }
 
-  return !result.ValueOrDie();
+  return !result.value();
 }
 
 // Uses |matcher| to evaluate whether |acl_group| is fulfilled by |identities|.
@@ -189,7 +189,7 @@ StatusOr<bool> EvaluateAclExpectation(
       return result;
     }
 
-    if (result.ValueOrDie()) {
+    if (result.value()) {
       return true;
     }
 

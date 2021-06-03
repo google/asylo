@@ -69,7 +69,7 @@ constexpr char kUnsupportedValueDerHex[] = "130f5072696e7461626c65537472696e67";
 // Prints a BIGNUM value.
 std::string PrintBignum(const BIGNUM &bignum) {
   std::pair<Sign, std::vector<uint8_t>> sign_and_bytes =
-      BigEndianBytesFromBignum(bignum).ValueOrDie();
+      BigEndianBytesFromBignum(bignum).value();
   return absl::StrCat(
       sign_and_bytes.first == Sign::kNegative ? "-" : "", "0x",
       absl::BytesToHexString(absl::string_view(
@@ -535,12 +535,12 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kInteger>> : public Test {
 
   static std::vector<ValueType> TestData() {
     bssl::UniquePtr<BIGNUM> test_data[] = {
-        std::move(BignumFromInteger(0)).ValueOrDie(),
-        std::move(BignumFromInteger(343)).ValueOrDie(),
-        std::move(BignumFromInteger(-1729)).ValueOrDie(),
-        std::move(BignumFromBigEndianBytes("0123456789abcdef")).ValueOrDie(),
+        std::move(BignumFromInteger(0)).value(),
+        std::move(BignumFromInteger(343)).value(),
+        std::move(BignumFromInteger(-1729)).value(),
+        std::move(BignumFromBigEndianBytes("0123456789abcdef")).value(),
         std::move(BignumFromBigEndianBytes("0123456789abcdef", Sign::kNegative))
-            .ValueOrDie()};
+            .value()};
     return std::vector<bssl::UniquePtr<BIGNUM>>(
         std::make_move_iterator(std::begin(test_data)),
         std::make_move_iterator(std::end(test_data)));
@@ -836,13 +836,13 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kObjectId>> : public Test {
   static constexpr Asn1Type Type() { return Asn1Type::kObjectId; }
 
   static std::vector<ValueType> TestData() {
-    return {ObjectId::CreateFromShortName("CN").ValueOrDie(),
-            ObjectId::CreateFromOidString("1.2").ValueOrDie(),
-            ObjectId::CreateFromOidString("1.2.840").ValueOrDie(),
-            ObjectId::CreateFromOidString("1.2.840.113549.1").ValueOrDie(),
-            ObjectId::CreateFromOidString("1.3.6.1.4.1.11129").ValueOrDie(),
-            ObjectId::CreateFromOidString("2.5").ValueOrDie(),
-            ObjectId::CreateFromOidString("2.5.8").ValueOrDie()};
+    return {ObjectId::CreateFromShortName("CN").value(),
+            ObjectId::CreateFromOidString("1.2").value(),
+            ObjectId::CreateFromOidString("1.2.840").value(),
+            ObjectId::CreateFromOidString("1.2.840.113549.1").value(),
+            ObjectId::CreateFromOidString("1.3.6.1.4.1.11129").value(),
+            ObjectId::CreateFromOidString("2.5").value(),
+            ObjectId::CreateFromOidString("2.5.8").value()};
   }
 
   static std::vector<std::vector<ValueType>> EqualTestData() { return {}; }
@@ -851,8 +851,8 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kObjectId>> : public Test {
 
   static void ExpectEqual(const ValueType &lhs, const ValueType &rhs) {
     EXPECT_THAT(lhs, Eq(rhs))
-        << absl::StrFormat("\"%s\" != \"%s\"", lhs.GetOidString().ValueOrDie(),
-                           rhs.GetOidString().ValueOrDie());
+        << absl::StrFormat("\"%s\" != \"%s\"", lhs.GetOidString().value(),
+                           rhs.GetOidString().value());
   }
 
   static StatusOr<Asn1Value> Create(const ValueType &value) {
@@ -890,15 +890,15 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kSequence>> : public Test {
   static constexpr Asn1Type Type() { return Asn1Type::kSequence; }
 
   static std::vector<ValueType> TestData() {
-    return {{},
-            {Asn1Value::CreateBoolean(false).ValueOrDie()},
-            {Asn1Value::CreateOctetString("foobar").ValueOrDie(),
-             Asn1Value::CreateBoolean(true).ValueOrDie(),
-             Asn1Value::CreateOctetString("raboof").ValueOrDie()},
-            {Asn1Value::CreateSequence(
-                 {Asn1Value::CreateBoolean(true).ValueOrDie(),
-                  Asn1Value::CreateBoolean(false).ValueOrDie()})
-                 .ValueOrDie()}};
+    return {
+        {},
+        {Asn1Value::CreateBoolean(false).value()},
+        {Asn1Value::CreateOctetString("foobar").value(),
+         Asn1Value::CreateBoolean(true).value(),
+         Asn1Value::CreateOctetString("raboof").value()},
+        {Asn1Value::CreateSequence({Asn1Value::CreateBoolean(true).value(),
+                                    Asn1Value::CreateBoolean(false).value()})
+             .value()}};
   }
 
   static std::vector<std::vector<ValueType>> EqualTestData() { return {}; }

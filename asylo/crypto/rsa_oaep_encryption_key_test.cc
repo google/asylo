@@ -470,8 +470,8 @@ TEST(AsymmetricEncryptionKeyTest, CreateFromDerAndPemProto) {
 
   ASYLO_ASSERT_OK(pem_key->SerializeToDer());
   ASYLO_ASSERT_OK(der_key->SerializeToDer());
-  EXPECT_THAT(pem_key->SerializeToDer().ValueOrDie(),
-              Eq(der_key->SerializeToDer().ValueOrDie()));
+  EXPECT_THAT(pem_key->SerializeToDer().value(),
+              Eq(der_key->SerializeToDer().value()));
 }
 
 TEST(AsymmetricEncryptionKeyTest, RoundTripProtoConversion) {

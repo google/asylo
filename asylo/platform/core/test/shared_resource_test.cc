@@ -39,7 +39,7 @@ TEST(EnclaveResourcesTest, ResourceLifeCycle) {
 
   EnclaveManager::Configure(EnclaveManagerOptions());
   SharedResourceManager *resources =
-      EnclaveManager::Instance().ValueOrDie()->shared_resources();
+      EnclaveManager::Instance().value()->shared_resources();
 
   // Installs a resource with a pointer to a value to set in its destructor.
   bool is_managed_resource_alive;
@@ -102,7 +102,7 @@ TEST(EnclaveResourcesTest, ResourceLifeCycle) {
 TEST(EnclaveResourcesTest, CustomDeleter) {
   EnclaveManager::Configure(EnclaveManagerOptions());
   SharedResourceManager *resources =
-      EnclaveManager::Instance().ValueOrDie()->shared_resources();
+      EnclaveManager::Instance().value()->shared_resources();
 
   // A custom cleanup policy to install for a resource.
   struct CustomCleanupStrategy {

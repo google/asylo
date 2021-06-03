@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
   // Set an SGX message extension to load_config.
   *load_config.MutableExtension(asylo::sgx_load_config) = sgx_config;
 
-  asylo::EnclaveManager *manager = manager_result.ValueOrDie();
+  asylo::EnclaveManager *manager = manager_result.value();
   asylo::Status status = manager->LoadEnclave(load_config);
   LOG_IF(QFATAL, !status.ok()) << "LoadEnclave failed with: " << status;
 

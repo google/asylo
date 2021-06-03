@@ -81,7 +81,7 @@ class CircleStatusImpl : public CircleStatus {
       auto client_result =
           CircleStatusImpl::Create(id, enclave_prefix, width, height);
       CHECK(client_result.ok()) << client_result.status();
-      circles_->emplace_back(std::move(client_result.ValueOrDie()));
+      circles_->emplace_back(std::move(client_result.value()));
     }
   }
 

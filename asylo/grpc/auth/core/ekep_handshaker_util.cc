@@ -35,7 +35,7 @@ const EnclaveAssertionGenerator *GetEnclaveAssertionGenerator(
   std::string authority_id =
       EnclaveAssertionAuthority::GenerateAuthorityId(
           description.identity_type(), description.authority_type())
-          .ValueOrDie();
+          .value();
   auto it = AssertionGeneratorMap::GetValue(authority_id);
   return (it == AssertionGeneratorMap::value_end()) ? nullptr : &*it;
 }
@@ -45,7 +45,7 @@ const EnclaveAssertionVerifier *GetEnclaveAssertionVerifier(
   std::string authority_id =
       EnclaveAssertionAuthority::GenerateAuthorityId(
           description.identity_type(), description.authority_type())
-          .ValueOrDie();
+          .value();
   auto it = AssertionVerifierMap::GetValue(authority_id);
   return (it == AssertionVerifierMap::value_end()) ? nullptr : &*it;
 }
@@ -79,7 +79,7 @@ Status EkepHandshakerOptions::Validate() const {
       return absl::InternalError("Failed to generate authority id");
     }
 
-    std::string authority_id = authority_id_result.ValueOrDie();
+    std::string authority_id = authority_id_result.value();
     if (AssertionGeneratorMap::GetValue(authority_id) ==
         AssertionGeneratorMap::value_end()) {
       return absl::InvalidArgumentError(absl::StrCat(
@@ -96,7 +96,7 @@ Status EkepHandshakerOptions::Validate() const {
       return absl::InternalError("Failed to generate authority id");
     }
 
-    std::string authority_id = authority_id_result.ValueOrDie();
+    std::string authority_id = authority_id_result.value();
     if (AssertionVerifierMap::GetValue(authority_id) ==
         AssertionVerifierMap::value_end()) {
       return absl::InvalidArgumentError(

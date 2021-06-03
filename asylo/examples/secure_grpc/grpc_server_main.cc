@@ -70,8 +70,7 @@ int main(int argc, char *argv[]) {
   LOG_IF(QFATAL, !port_result.ok())
       << "Retrieving port failed: " << port_result.status();
 
-  std::cout << "Server started on port " << port_result.ValueOrDie()
-            << std::endl;
+  std::cout << "Server started on port " << port_result.value() << std::endl;
 
   absl::SleepFor(absl::Seconds(absl::GetFlag(FLAGS_server_max_lifetime)));
 

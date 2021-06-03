@@ -63,7 +63,7 @@ int TakeSnapshot(char **output, size_t *output_len) {
     return status_serializer.Serialize(config_result.status());
   }
 
-  const asylo::EnclaveConfig *config = config_result.ValueOrDie();
+  const asylo::EnclaveConfig *config = config_result.value();
   if (!config->has_enable_fork() || !config->enable_fork()) {
     status = absl::FailedPreconditionError("Insecure fork not enabled");
     return status_serializer.Serialize(status);
@@ -92,7 +92,7 @@ int Restore(const char *snapshot_layout, size_t snapshot_layout_len,
     return status_serializer.Serialize(config_result.status());
   }
 
-  const asylo::EnclaveConfig *config = config_result.ValueOrDie();
+  const asylo::EnclaveConfig *config = config_result.value();
   if (!config->has_enable_fork() || !config->enable_fork()) {
     status = absl::FailedPreconditionError("Insecure fork not enabled");
     return status_serializer.Serialize(status);

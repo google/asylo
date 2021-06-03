@@ -75,7 +75,7 @@ TEST(SgxRemoteAssertionGeneratorClientTest,
   auto result = client.GenerateSgxRemoteAssertion(kUserData);
 
   ASSERT_THAT(result, IsOk());
-  EXPECT_THAT(result.ValueOrDie(), EqualsProto(assertion));
+  EXPECT_THAT(result.value(), EqualsProto(assertion));
 }
 
 // Tests that the SgxRemoteAssertionGeneratorClient correctly propagates the

@@ -278,19 +278,17 @@ MATCHER(Nullopt, negation ? "has a value" : "is equal to absl::nullopt") {
 // Uses kFakeSerialNumber for the serial number of the return builder.
 X509CertificateBuilder CreateMinimalBuilder() {
   X509NameEntry issuer_name_entry;
-  issuer_name_entry.field =
-      ObjectId::CreateFromLongName("commonName").ValueOrDie();
+  issuer_name_entry.field = ObjectId::CreateFromLongName("commonName").value();
   issuer_name_entry.value = "Fake CA";
 
   X509NameEntry subject_name_entry;
-  subject_name_entry.field =
-      ObjectId::CreateFromLongName("commonName").ValueOrDie();
+  subject_name_entry.field = ObjectId::CreateFromLongName("commonName").value();
   subject_name_entry.value = "Fake leaf certificate";
 
   X509CertificateBuilder builder;
   builder.version = X509Version::kVersion3;
   builder.serial_number =
-      std::move(BignumFromInteger(kFakeSerialNumber)).ValueOrDie();
+      std::move(BignumFromInteger(kFakeSerialNumber)).value();
   builder.issuer.emplace({issuer_name_entry});
   // Truncate the validity periods to seconds to match the precision of ASN.1
   // time structures.

@@ -119,25 +119,25 @@ class RsaX509SignerTest : public ::testing::Test {
     // Initialize X509Builder
     static constexpr int kSerialNumberByteSize = 20;
     static const asylo::X509Name *kIssuer = new asylo::X509Name(
-        {{asylo::ObjectId::CreateFromShortName("CN").ValueOrDie(),
+        {{asylo::ObjectId::CreateFromShortName("CN").value(),
           "Fake Certificate For Testing Only"},
-         {asylo::ObjectId::CreateFromShortName("O").ValueOrDie(),
+         {asylo::ObjectId::CreateFromShortName("O").value(),
           "Fake Certificate For Testing Only"},
-         {asylo::ObjectId::CreateFromShortName("OU").ValueOrDie(),
+         {asylo::ObjectId::CreateFromShortName("OU").value(),
           "Fake Certificate For Testing Only"},
-         {asylo::ObjectId::CreateFromShortName("L").ValueOrDie(), "Kirkland"},
-         {asylo::ObjectId::CreateFromShortName("ST").ValueOrDie(), "WA"},
-         {asylo::ObjectId::CreateFromShortName("C").ValueOrDie(), "US"}});
+         {asylo::ObjectId::CreateFromShortName("L").value(), "Kirkland"},
+         {asylo::ObjectId::CreateFromShortName("ST").value(), "WA"},
+         {asylo::ObjectId::CreateFromShortName("C").value(), "US"}});
     static const asylo::X509Name *kSubject = new asylo::X509Name(
-        {{asylo::ObjectId::CreateFromShortName("CN").ValueOrDie(),
+        {{asylo::ObjectId::CreateFromShortName("CN").value(),
           "Also a Fake Certificate For Testing Only"},
-         {asylo::ObjectId::CreateFromShortName("O").ValueOrDie(),
+         {asylo::ObjectId::CreateFromShortName("O").value(),
           "Also a Fake Certificate For Testing Only"},
-         {asylo::ObjectId::CreateFromShortName("OU").ValueOrDie(),
+         {asylo::ObjectId::CreateFromShortName("OU").value(),
           "Also a Fake Certificate For Testing Only"},
-         {asylo::ObjectId::CreateFromShortName("L").ValueOrDie(), "Kirkland"},
-         {asylo::ObjectId::CreateFromShortName("ST").ValueOrDie(), "WA"},
-         {asylo::ObjectId::CreateFromShortName("C").ValueOrDie(), "US"}});
+         {asylo::ObjectId::CreateFromShortName("L").value(), "Kirkland"},
+         {asylo::ObjectId::CreateFromShortName("ST").value(), "WA"},
+         {asylo::ObjectId::CreateFromShortName("C").value(), "US"}});
 
     // Set fake serial number.
     uint8_t serial_number_bytes[kSerialNumberByteSize] = {0};

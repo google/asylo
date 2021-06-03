@@ -146,7 +146,7 @@ asylo::Status GetSgxPlatformInfo(
 
   auto report_result =
       manager->AgeGeneratePceInfoSgxHardwareReport(pce_target_info, ppidek);
-  asylo::sgx::ReportProto report = report_result.ValueOrDie();
+  asylo::sgx::ReportProto report = report_result.value();
   ASYLO_ASSIGN_OR_RETURN(*cpu_svn, asylo::sgx::CpuSvnFromReportProto(report));
 
   asylo::SignatureScheme pck_signature_scheme;
@@ -252,7 +252,7 @@ int main(int argc, char **argv) {
     auto result = asylo::sgx::FakePce::CreateFromFakePki();
     LOG_IF(QFATAL, !result.ok())
         << "Failed to create FakePce: " << result.status();
-    intel_enclaves = std::move(result).ValueOrDie();
+    intel_enclaves = std::move(result).value();
   } else {
     intel_enclaves =
         absl::make_unique<asylo::sgx::DcapIntelArchitecturalEnclaveInterface>(
@@ -269,7 +269,7 @@ int main(int argc, char **argv) {
   std::unique_ptr<asylo::SgxInfrastructuralEnclaveManager>
       sgx_infra_enclave_manager =
           absl::make_unique<asylo::SgxInfrastructuralEnclaveManager>(
-              std::move(intel_enclaves), client_result.ValueOrDie());
+              std::move(intel_enclaves), client_result.value());
 
   if (absl::GetFlag(FLAGS_start_age) ==
       absl::GetFlag(FLAGS_print_sgx_platform_info)) {
@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
         << attestation_key_cert_result.status();
 
     *age_certificate_chain.add_certificates() =
-        std::move(attestation_key_cert_result).ValueOrDie();
+        std::move(attestation_key_cert_result).value();
 
     if (use_fake_pce) {
       asylo::sgx::AppendFakePckCertificateChain(&age_certificate_chain);
@@ -322,7 +322,7 @@ int main(int argc, char **argv) {
       auto ppiddk_or_status = GenerateRandomPpiddk(&ppidek);
       LOG_IF(QFATAL, !ppiddk_or_status.ok())
           << "Failed to generate random PPIDDK: " << ppiddk_or_status.status();
-      ppiddk = std::move(ppiddk_or_status).ValueOrDie();
+      ppiddk = std::move(ppiddk_or_status).value();
     }
 
     asylo::Status status = PrintSgxPlatformInfo(

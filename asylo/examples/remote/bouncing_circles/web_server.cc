@@ -215,7 +215,7 @@ void WebServer::WorkerThread::WorkerThreadRunner(WebServer *server) {
     if (!request_result.ok()) {
       continue;
     }
-    const auto request = request_result.ValueOrDie();
+    const auto request = request_result.value();
 
     // Locate handler (if any).
     const auto handler = server->GetHandler(request);

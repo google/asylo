@@ -67,7 +67,7 @@ class ElfReaderTest : public ::testing::Test {
       auto from_elf_file_result =
           FileMapping::CreateFromFile(absl::GetFlag(FLAGS_elf_file));
       CHECK(from_elf_file_result.ok());
-      elf_file_mapping = std::move(from_elf_file_result.ValueOrDie());
+      elf_file_mapping = std::move(from_elf_file_result.value());
 
       // Find the file's header.
       absl::Span<uint8_t> elf_file = elf_file_mapping.buffer();
@@ -178,19 +178,19 @@ TEST_F(ElfReaderTest, WorksOnValidInputs) {
       FileMapping::CreateFromFile(absl::GetFlag(FLAGS_expected_contents));
   ASSERT_THAT(from_data_file_result, IsOk());
   FileMapping expected_contents_mapping =
-      std::move(from_data_file_result.ValueOrDie());
+      std::move(from_data_file_result.value());
 
   ASSERT_GE(elf_file_mapping_.buffer().size(), sizeof(Elf64_Ehdr));
 
   auto create_from_span_result =
       ElfReader::CreateFromSpan(elf_file_mapping_.buffer());
   EXPECT_THAT(create_from_span_result, IsOk());
-  ElfReader reader = create_from_span_result.ValueOrDie();
+  ElfReader reader = create_from_span_result.value();
 
   auto get_section_data_result =
       reader.GetSectionData(absl::GetFlag(FLAGS_section_name));
   EXPECT_THAT(get_section_data_result, IsOk());
-  absl::Span<const uint8_t> section_data = get_section_data_result.ValueOrDie();
+  absl::Span<const uint8_t> section_data = get_section_data_result.value();
 
   EXPECT_EQ(section_data.size(), expected_contents_mapping.buffer().size());
   EXPECT_EQ(
@@ -342,7 +342,7 @@ TEST_F(ElfReaderTest, ReturnsAppropriateErrorIfSectionNotFound) {
   auto create_from_span_result =
       ElfReader::CreateFromSpan(elf_file_mapping_.buffer());
   ASSERT_THAT(create_from_span_result, IsOk());
-  ElfReader reader = create_from_span_result.ValueOrDie();
+  ElfReader reader = create_from_span_result.value();
 
   auto get_section_data_result = reader.GetSectionData(kAbsentSectionName);
   EXPECT_THAT(get_section_data_result,
@@ -359,7 +359,7 @@ TEST_F(ElfReaderTest, ReturnsAppropriateErrorIfTargetSectionHasNoData) {
   auto create_from_span_result =
       ElfReader::CreateFromSpan(elf_file_mapping_.buffer());
   ASSERT_THAT(create_from_span_result, IsOk());
-  ElfReader reader = create_from_span_result.ValueOrDie();
+  ElfReader reader = create_from_span_result.value();
 
   auto get_section_data_result =
       reader.GetSectionData(absl::GetFlag(FLAGS_section_name));

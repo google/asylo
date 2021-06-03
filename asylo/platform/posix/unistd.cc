@@ -48,7 +48,7 @@ pid_t ForkEnclave() {
     return -1;
   }
 
-  const asylo::EnclaveConfig *config = config_result.ValueOrDie();
+  const asylo::EnclaveConfig *config = config_result.value();
   if (!config->has_enable_fork()) {
     errno = EFAULT;
     return -1;
@@ -100,7 +100,7 @@ int gethostname(char *name, size_t len) {
     return -1;
   }
 
-  const asylo::EnclaveConfig *config = config_result.ValueOrDie();
+  const asylo::EnclaveConfig *config = config_result.value();
   if (!config->has_host_name()) {
     errno = EFAULT;
     return -1;

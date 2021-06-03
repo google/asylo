@@ -421,7 +421,7 @@ the `Initialize` method of the `TrustedApplication`:
   LOG_IF(QFATAL, !port_result.ok())
       << "Retrieving port failed: " << port_result.status();
 
-  std::cout << "Server started on port " << port_result.ValueOrDie()
+  std::cout << "Server started on port " << port_result.value()
             << std::endl;
 ```
 

@@ -73,7 +73,7 @@ struct Namer<NamedIdentityExpectationMatcher> {
   std::string operator()(const NamedIdentityExpectationMatcher &matcher) {
     return NamedIdentityExpectationMatcher::GetMatcherName(
                matcher.Description())
-        .ValueOrDie();
+        .value();
   }
 };
 

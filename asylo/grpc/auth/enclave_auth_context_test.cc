@@ -236,7 +236,7 @@ TEST_F(EnclaveAuthContextTest, FindEnclaveIdentitySuccess) {
       auth_context.FindEnclaveIdentity(good_identity_description_);
   ASSERT_THAT(identity_result, IsOk());
 
-  const EnclaveIdentity *identity = identity_result.ValueOrDie();
+  const EnclaveIdentity *identity = identity_result.value();
   EXPECT_EQ(identity->identity(), kIdentity);
   EXPECT_THAT(identity->description(), EqualsProto(good_identity_description_));
 }

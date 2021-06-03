@@ -799,7 +799,7 @@ TYPED_TEST_P(SigningKeyTest, SerializeToDerAndRestoreSigningKey) {
   ASYLO_ASSERT_OK(signing_key_result2);
 
   std::unique_ptr<typename TestFixture::SigningKeyType> signing_key2 =
-      std::move(signing_key_result2).ValueOrDie();
+      std::move(signing_key_result2).value();
 
   // Try to verify something signed by the original key.
   std::vector<uint8_t> message(this->message_size_);
@@ -827,7 +827,7 @@ TYPED_TEST_P(SigningKeyTest, RestoreFromAndSerializeToDerSigningKey) {
   ASYLO_ASSERT_OK(signing_key_result2);
 
   std::unique_ptr<typename TestFixture::SigningKeyType> signing_key2 =
-      std::move(signing_key_result2).ValueOrDie();
+      std::move(signing_key_result2).value();
 
   CleansingVector<uint8_t> serialized_key_bin_actual;
   ASYLO_ASSERT_OK_AND_ASSIGN(serialized_key_bin_actual,

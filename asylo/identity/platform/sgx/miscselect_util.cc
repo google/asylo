@@ -115,7 +115,7 @@ std::vector<absl::string_view> GetPrintableMiscselectList(uint32_t miscselect) {
   std::vector<absl::string_view> printable_list;
   for (MiscselectBit bit : kAllMiscselectBits) {
     StatusOr<bool> set_status = IsMiscselectBitSet(bit, miscselect);
-    if (set_status.ok() && set_status.ValueOrDie()) {
+    if (set_status.ok() && set_status.value()) {
       printable_list.push_back(GetMiscselectBitName(bit));
     }
   }

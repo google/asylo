@@ -491,7 +491,7 @@ EcdsaSigningKey<kSignatureScheme, kNid, kCoordinateSize, Hash>::Create(
 
   return absl::WrapUnique<EcdsaSigningKey>(
       new EcdsaSigningKey<kSignatureScheme, kNid, kCoordinateSize, Hash>(
-          std::move(private_key), std::move(public_key_result).ValueOrDie()));
+          std::move(private_key), std::move(public_key_result).value()));
 }
 
 template <SignatureScheme kSignatureScheme, int kNid, int32_t kCoordinateSize,

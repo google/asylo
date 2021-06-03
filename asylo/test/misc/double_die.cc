@@ -44,7 +44,7 @@ class DieTest {
       std::cerr << manager_result.status() << std::endl;
       exit(1);
     }
-    manager_ = manager_result.ValueOrDie();
+    manager_ = manager_result.value();
     std::cerr << "Init " << enclave_path << std::endl;
     std::string enclave_url = "/die";
 

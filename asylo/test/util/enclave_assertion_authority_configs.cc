@@ -42,8 +42,7 @@ EnclaveAssertionAuthorityConfig GetNullAssertionAuthorityTestConfig() {
 }
 
 EnclaveAssertionAuthorityConfig GetSgxLocalAssertionAuthorityTestConfig() {
-  return CreateSgxLocalAssertionAuthorityConfig(kAttestationDomain)
-      .ValueOrDie();
+  return CreateSgxLocalAssertionAuthorityConfig(kAttestationDomain).value();
 }
 
 EnclaveAssertionAuthorityConfig GetSgxAgeRemoteAssertionAuthorityTestConfig(
@@ -53,16 +52,15 @@ EnclaveAssertionAuthorityConfig GetSgxAgeRemoteAssertionAuthorityTestConfig(
   SgxIdentityExpectation age_sgx_identity_expectation =
       CreateSgxIdentityExpectation(std::move(age_identity),
                                    SgxIdentityMatchSpecOptions::DEFAULT)
-          .ValueOrDie();
+          .value();
 
   *age_identity_expectation.mutable_expectation() =
-      SerializeSgxIdentityExpectation(age_sgx_identity_expectation)
-          .ValueOrDie();
+      SerializeSgxIdentityExpectation(age_sgx_identity_expectation).value();
 
   return CreateSgxAgeRemoteAssertionAuthorityConfig(
              sgx::GetFakeSgxRootCertificate(), {}, std::move(server_address),
              age_identity_expectation)
-      .ValueOrDie();
+      .value();
 }
 
 EnclaveAssertionAuthorityConfig GetSgxAgeRemoteAssertionAuthorityTestConfig(
@@ -74,7 +72,7 @@ EnclaveAssertionAuthorityConfig GetSgxAgeRemoteAssertionAuthorityTestConfig(
       sgx::SecsAttributeSet::FromBits({sgx::AttributeBit::INIT,
                                        sgx::AttributeBit::DEBUG,
                                        sgx::AttributeBit::MODE64BIT})
-          .ValueOrDie();
+          .value();
   *age_code_identity->mutable_attributes() = attributes.ToProtoAttributes();
   sgx::SignerAssignedIdentity *age_signer_assigned_identity =
       age_identity.mutable_code_identity()->mutable_signer_assigned_identity();

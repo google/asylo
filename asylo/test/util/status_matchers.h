@@ -353,8 +353,7 @@ void PrintTo(const StatusOr<T> &statusor, std::ostream *os) {
   if (!statusor.ok()) {
     *os << statusor.status();
   } else {
-    *os << absl::StrCat("OK: ",
-                        ::testing::PrintToString(statusor.ValueOrDie()));
+    *os << absl::StrCat("OK: ", ::testing::PrintToString(statusor.value()));
   }
 }
 

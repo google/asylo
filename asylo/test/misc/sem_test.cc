@@ -295,7 +295,7 @@ TEST_F(ProducerConsumerTest, ProducerConsumer) {
   // a possible deadlock.
   auto heartbeat_or = LaunchHeartbeat(/*periodms=*/1000);
   ASSERT_THAT(heartbeat_or, IsOk());
-  auto heartbeat = std::move(heartbeat_or.ValueOrDie());
+  auto heartbeat = std::move(heartbeat_or.value());
 
   std::vector<pthread_t> threads;
   ASSERT_THAT(LaunchThreads(kNumThreads, ProducerTrampoline, this, &threads),

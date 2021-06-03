@@ -62,7 +62,7 @@ TEST_F(NullIdentityExpectationMatcherTest, MatcherExistsInStaticMap) {
   auto matcher_it = IdentityExpectationMatcherMap::GetValue(
       NamedIdentityExpectationMatcher::GetMatcherName(
           null_identity_.description())
-          .ValueOrDie());
+          .value());
   ASSERT_NE(matcher_it, IdentityExpectationMatcherMap::value_end());
 }
 

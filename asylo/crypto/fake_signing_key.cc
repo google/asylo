@@ -47,8 +47,8 @@ bool FakeVerifyingKey::operator==(const VerifyingKey &other) const {
   }
 
   if (serialize_to_der_result_.ok() &&
-      other_key->serialize_to_der_result_.ValueOrDie() !=
-          serialize_to_der_result_.ValueOrDie()) {
+      other_key->serialize_to_der_result_.value() !=
+          serialize_to_der_result_.value()) {
     return false;
   }
 
@@ -69,7 +69,7 @@ StatusOr<std::string> FakeVerifyingKey::SerializeToPem() const {
 Status FakeVerifyingKey::Verify(ByteContainerView message,
                                 ByteContainerView signature) const {
   ASYLO_RETURN_IF_ERROR(serialize_to_der_result_.status());
-  const std::string &key_der = serialize_to_der_result_.ValueOrDie();
+  const std::string &key_der = serialize_to_der_result_.value();
 
   if (signature.size() != key_der.size() + message.size()) {
     return Status(absl::StatusCode::kUnauthenticated,
@@ -105,7 +105,7 @@ SignatureScheme FakeSigningKey::GetSignatureScheme() const { return scheme_; }
 StatusOr<CleansingVector<uint8_t>> FakeSigningKey::SerializeToDer() const {
   ASYLO_RETURN_IF_ERROR(serialize_to_der_result_.status());
   return CopyToByteContainer<CleansingVector<uint8_t>>(
-      serialize_to_der_result_.ValueOrDie());
+      serialize_to_der_result_.value());
 }
 
 StatusOr<CleansingVector<char>> FakeSigningKey::SerializeToPem() const {
@@ -121,7 +121,7 @@ StatusOr<std::unique_ptr<VerifyingKey>> FakeSigningKey::GetVerifyingKey()
 Status FakeSigningKey::Sign(ByteContainerView message,
                             std::vector<uint8_t> *signature) const {
   ASYLO_RETURN_IF_ERROR(serialize_to_der_result_.status());
-  const std::string &key_der = serialize_to_der_result_.ValueOrDie();
+  const std::string &key_der = serialize_to_der_result_.value();
 
   signature->clear();
   std::copy(key_der.cbegin(), key_der.cend(), std::back_inserter(*signature));

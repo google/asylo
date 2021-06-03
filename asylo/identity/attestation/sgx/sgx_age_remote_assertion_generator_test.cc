@@ -198,7 +198,7 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
         enclave_manager_, absl::GetFlag(FLAGS_generator_test_enclave_path),
         enclave_config);
     ASYLO_RETURN_IF_ERROR(wrapper.status());
-    test_enclave_wrapper_ = wrapper.ValueOrDie().release();
+    test_enclave_wrapper_ = wrapper.value().release();
 
     return absl::OkStatus();
   }

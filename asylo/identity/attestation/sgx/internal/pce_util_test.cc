@@ -330,7 +330,7 @@ TEST_F(PceUtilTest, ParseRsa3072PublicKeySuccess) {
   auto result = ParseRsa3072PublicKey(absl::MakeSpan(public_key));
   ASYLO_ASSERT_OK(result);
 
-  bssl::UniquePtr<RSA> rsa = std::move(result).ValueOrDie();
+  bssl::UniquePtr<RSA> rsa = std::move(result).value();
 
   EXPECT_EQ(RSA_size(rsa.get()), modulus.size());
 
@@ -359,7 +359,7 @@ TEST_F(PceUtilTest, SerializeRsa3072PublicKeySuccess) {
 
   auto result = SerializeRsa3072PublicKey(rsa.get());
   ASYLO_ASSERT_OK(result);
-  std::vector<uint8_t> serialized_key = std::move(result).ValueOrDie();
+  std::vector<uint8_t> serialized_key = std::move(result).value();
   ASSERT_THAT(serialized_key,
               SizeIs(RSA_size(rsa.get()) + kRsa3072SerializedExponentSize));
 
@@ -429,12 +429,12 @@ TEST_F(PceUtilTest, ParseRsa3072PublicKeyRestoreFromSerializedKey) {
   auto result1 = SerializeRsa3072PublicKey(rsa1.get());
   ASYLO_ASSERT_OK(result1);
 
-  std::vector<uint8_t> serialized_key = std::move(result1).ValueOrDie();
+  std::vector<uint8_t> serialized_key = std::move(result1).value();
 
   auto result2 = ParseRsa3072PublicKey(absl::MakeSpan(serialized_key));
   ASYLO_ASSERT_OK(result2);
 
-  bssl::UniquePtr<RSA> rsa2(std::move(result2).ValueOrDie());
+  bssl::UniquePtr<RSA> rsa2(std::move(result2).value());
 
   // Verify that both keys have the same modulus size.
   EXPECT_EQ(RSA_size(rsa2.get()), RSA_size(rsa1.get()));

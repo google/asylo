@@ -46,7 +46,7 @@ class TestBackend {
           absl::make_unique<primitives::DispatchTable>()) {
     auto result = LoadTestEnclave(enclave_name, std::move(exit_call_provider));
     EXPECT_THAT(result.status(), IsOk());
-    return result.ValueOrDie();
+    return result.value();
   }
 
   // Allows to ignore memory leak checking on abort tests. Off by default.

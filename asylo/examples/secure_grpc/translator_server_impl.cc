@@ -51,7 +51,7 @@ TranslatorServerImpl::TranslatorServerImpl(asylo::IdentityAclPredicate acl)
                           "Failed to access authentication context");
   }
 
-  asylo::EnclaveAuthContext auth_context = auth_context_result.ValueOrDie();
+  asylo::EnclaveAuthContext auth_context = auth_context_result.value();
 
   // Now, check whether the peer is authorized to call this RPC.
   std::string explanation;
@@ -62,7 +62,7 @@ TranslatorServerImpl::TranslatorServerImpl(asylo::IdentityAclPredicate acl)
                           "Error occurred while evaluating ACL");
   }
 
-  if (!authorized_result.ValueOrDie()) {
+  if (!authorized_result.value()) {
     std::string combined_error =
         absl::StrCat("Peer is unauthorized for GetTranslation: ", explanation);
     std::cout << combined_error << std::endl;

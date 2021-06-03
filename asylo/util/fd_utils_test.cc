@@ -83,7 +83,7 @@ TEST(FdUtilsTest, ReadAllNoBlockWriteAllNoBlockNonBlockingPipe) {
   auto write_result = WriteAllNoBlock(pipe.write_fd(), kData);
   ASYLO_EXPECT_OK(write_result);
   EXPECT_THAT(ReadAllNoBlock(pipe.read_fd()),
-              IsOkAndHolds(StrEq({kData, write_result.ValueOrDie()})));
+              IsOkAndHolds(StrEq({kData, write_result.value()})));
 }
 
 // Test that ReadAllNoBlock() can read bytes from a non-blocking pipe after
@@ -100,7 +100,7 @@ TEST(FdUtilsTest, ReadAllNoBlockWriteAllNoBlockNonBlockingPipeMultithreaded) {
     barrier.Block();
     auto read_result = ReadAllNoBlock(pipe.read_fd());
     EXPECT_THAT(read_result, IsOk());
-    read_string = std::move(read_result).ValueOrDie();
+    read_string = std::move(read_result).value();
   });
 
   auto write_result = WriteAllNoBlock(pipe.write_fd(), kData);
@@ -108,7 +108,7 @@ TEST(FdUtilsTest, ReadAllNoBlockWriteAllNoBlockNonBlockingPipeMultithreaded) {
   barrier.Block();
 
   read_thread.join();
-  EXPECT_THAT(read_string, StrEq({kData, write_result.ValueOrDie()}));
+  EXPECT_THAT(read_string, StrEq({kData, write_result.value()}));
 }
 
 // Test that ReadAll() can read bytes from a blocking pipe after those bytes are

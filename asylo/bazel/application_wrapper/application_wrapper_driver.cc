@@ -52,5 +52,5 @@ int main(int argc, char *argv[]) {
       << main_return.status();
 
   // Return the return value from main().
-  return main_return.ValueOrDie();
+  return main_return.value();
 }

@@ -112,8 +112,7 @@ TYPED_TEST(ChannelTest, EndToEnd) {
   test::MessengerClient1 client(channel);
   StatusOr<std::string> result = client.Hello(kInput);
   ASSERT_THAT(result, IsOk());
-  EXPECT_EQ(result.ValueOrDie(),
-            test::MessengerServer1::ResponseString(kInput));
+  EXPECT_EQ(result.value(), test::MessengerServer1::ResponseString(kInput));
 
   // Shut down the server.
   ASSERT_THAT(launcher.Shutdown(), IsOk());

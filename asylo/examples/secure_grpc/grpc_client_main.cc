@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
       << " failed: " << run_result.status();
 
   std::cout << "Translation for \"" << word_to_translate << "\" is \""
-            << run_result.ValueOrDie() << "\"" << std::endl;
+            << run_result.value() << "\"" << std::endl;
 
   status = examples::secure_grpc::DestroyGrpcClientEnclave();
   LOG_IF(QFATAL, !status.ok())

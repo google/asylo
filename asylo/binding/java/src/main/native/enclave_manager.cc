@@ -33,7 +33,7 @@ Java_com_asylo_client_EnclaveManager_create(JNIEnv *env, jclass this_class) {
     return 0;
   }
 
-  asylo::EnclaveManager *manager = manager_result.ValueOrDie();
+  asylo::EnclaveManager *manager = manager_result.value();
   return reinterpret_cast<jlong>(manager);
 }
 

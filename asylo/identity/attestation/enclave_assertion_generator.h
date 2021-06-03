@@ -88,7 +88,7 @@ struct Namer<EnclaveAssertionGenerator> {
   std::string operator()(const EnclaveAssertionGenerator &generator) {
     return EnclaveAssertionAuthority::GenerateAuthorityId(
                generator.IdentityType(), generator.AuthorityType())
-        .ValueOrDie();
+        .value();
   }
 };
 

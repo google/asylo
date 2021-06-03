@@ -114,7 +114,7 @@ TEST_F(SgxLocalAssertionVerifierTest, VerifierFoundInStaticMap) {
       CODE_IDENTITY, sgx::kSgxLocalAssertionAuthority);
 
   ASYLO_ASSERT_OK(authority_id_result);
-  ASSERT_NE(AssertionVerifierMap::GetValue(authority_id_result.ValueOrDie()),
+  ASSERT_NE(AssertionVerifierMap::GetValue(authority_id_result.value()),
             AssertionVerifierMap::value_end());
 }
 

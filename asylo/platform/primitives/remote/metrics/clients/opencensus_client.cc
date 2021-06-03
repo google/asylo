@@ -119,7 +119,7 @@ std::unique_ptr<OpenCensusClient> OpenCensusClient::Create(
       }
 
       for (auto recorder : recorders) {
-        ((this)->*(recorder))(response_or_request.ValueOrDie());
+        ((this)->*(recorder))(response_or_request.value());
       }
 
       absl::SleepFor(config_.granularity);

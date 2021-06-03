@@ -129,7 +129,7 @@ TEST_F(SgxIntelEcdsaQeRemoteAssertionGeneratorTests,
       CODE_IDENTITY, kSgxIntelEcdsaQeRemoteAssertionAuthority);
 
   ASSERT_THAT(authority_id_result, IsOk());
-  ASSERT_NE(AssertionGeneratorMap::GetValue(authority_id_result.ValueOrDie()),
+  ASSERT_NE(AssertionGeneratorMap::GetValue(authority_id_result.value()),
             AssertionGeneratorMap::value_end());
 }
 

@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
 
   const auto run_status =
       ProcessMainWrapper<RemoteEnclaveProxyServer>::RunUntilTerminated(
-          std::move(config_or_request.ValueOrDie()),
+          std::move(config_or_request.value()),
           [](MessageWriter *enclave_params,
              std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
             return LocalEnclaveFactory::Get(enclave_params,

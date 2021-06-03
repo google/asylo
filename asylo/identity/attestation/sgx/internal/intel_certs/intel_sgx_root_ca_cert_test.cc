@@ -34,12 +34,11 @@ X509Name GetExpectedRootIssuerName() {
   // The Intel PCK Certificate spec says that the root is "CN=Intel SGX Root CA,
   // O=Intel Corporation, L=Santa Clara, ST=CA, C=US".
   // https://download.01.org/intel-sgx/latest/dcap-latest/linux/docs/Intel_SGX_PCK_Certificate_CRL_Spec-1.1.pdf
-  return {
-      {ObjectId::CreateFromShortName("CN").ValueOrDie(), "Intel SGX Root CA"},
-      {ObjectId::CreateFromShortName("O").ValueOrDie(), "Intel Corporation"},
-      {ObjectId::CreateFromShortName("L").ValueOrDie(), "Santa Clara"},
-      {ObjectId::CreateFromShortName("ST").ValueOrDie(), "CA"},
-      {ObjectId::CreateFromShortName("C").ValueOrDie(), "US"}};
+  return {{ObjectId::CreateFromShortName("CN").value(), "Intel SGX Root CA"},
+          {ObjectId::CreateFromShortName("O").value(), "Intel Corporation"},
+          {ObjectId::CreateFromShortName("L").value(), "Santa Clara"},
+          {ObjectId::CreateFromShortName("ST").value(), "CA"},
+          {ObjectId::CreateFromShortName("C").value(), "US"}};
 }
 
 TEST(IntelSgxRootCaCertTest, IsIntelCertValidPem) {

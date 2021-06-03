@@ -231,7 +231,7 @@ TEST_P(AeadKeyTest, AeadKeyTestInvalidKey) {
       InstantiateSafeBytesFromHexString<sizeof(kAesGcmBadKeyString)>(
           kAesGcmBadKeyString);
   ASYLO_ASSERT_OK(bad_key_result);
-  auto bad_key = bad_key_result.ValueOrDie();
+  auto bad_key = bad_key_result.value();
 
   StatusOr<std::unique_ptr<AeadKey>> bad_test_key_result =
       GetParam().factory(bad_key);

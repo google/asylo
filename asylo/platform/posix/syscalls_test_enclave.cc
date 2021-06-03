@@ -778,7 +778,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     auto fd_or_error = OpenFile(path, O_CREAT | O_RDWR, 0644);
     if (fd_or_error.ok()) {
       return Status(absl::StatusCode::kInternal,
-                    absl::StrCat("File descriptor: ", fd_or_error.ValueOrDie(),
+                    absl::StrCat("File descriptor: ", fd_or_error.value(),
                                  " is used while the rlimit is set to: ",
                                  file_descriptor_used));
     }

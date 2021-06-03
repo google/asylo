@@ -150,7 +150,7 @@ template <>
 struct Namer<SecretSealer> {
   std::string operator()(const SecretSealer &sealer) {
     return SecretSealer::GenerateSealerId(sealer.RootType(), sealer.RootName())
-        .ValueOrDie();
+        .value();
   }
 };
 

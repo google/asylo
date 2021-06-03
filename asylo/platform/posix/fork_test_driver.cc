@@ -38,7 +38,7 @@ class ForkTest : public ::testing::Test {
   void SetUp() override {
     EnclaveManager::Configure(EnclaveManagerOptions());
     StatusOr<EnclaveManager *> manager_result = EnclaveManager::Instance();
-    manager_ = manager_result.ValueOrDie();
+    manager_ = manager_result.value();
     EnclaveConfig config;
     *config.add_enclave_assertion_authority_configs() =
         GetSgxLocalAssertionAuthorityTestConfig();
@@ -56,7 +56,7 @@ class ForkTest : public ::testing::Test {
     *load_config.MutableExtension(sgx_load_config) = sgx_config;
 
     // Load Enclave with prepared |EnclaveManager| and |load_config| message.
-    asylo::EnclaveManager *manager = manager_result.ValueOrDie();
+    asylo::EnclaveManager *manager = manager_result.value();
     ASSERT_THAT(manager->LoadEnclave(load_config), IsOk());
 
     client_ = manager_->GetClient("/fork_test");

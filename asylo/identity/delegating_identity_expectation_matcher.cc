@@ -35,7 +35,7 @@ StatusOr<bool> DelegatingIdentityExpectationMatcher::MatchAndExplain(
   // IdentityExpectationMatcherMap.
   auto matcher_it = IdentityExpectationMatcherMap::GetValue(
       NamedIdentityExpectationMatcher::GetMatcherName(identity.description())
-          .ValueOrDie());
+          .value());
   if (matcher_it == IdentityExpectationMatcherMap::value_end()) {
     return absl::InternalError(
         absl::StrCat("No matcher exists for identity with description ",
@@ -53,7 +53,7 @@ StatusOr<bool> DelegatingIdentityExpectationMatcher::MatchAndExplain(
     if (IdentityExpectationMatcherMap::GetValue(
             NamedIdentityExpectationMatcher::GetMatcherName(
                 expectation.reference_identity().description())
-                .ValueOrDie()) == IdentityExpectationMatcherMap::value_end()) {
+                .value()) == IdentityExpectationMatcherMap::value_end()) {
       return absl::InternalError(absl::StrCat(
           "No matcher exists for matching expectation "
           "with reference-identity description ",

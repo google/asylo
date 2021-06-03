@@ -31,7 +31,7 @@ namespace asylo {
 size_t AssertionDescriptionHasher::operator()(
     const AssertionDescription &description) const {
   return std::hash<std::string>()(
-      SerializeAssertionDescription(description).ValueOrDie());
+      SerializeAssertionDescription(description).value());
 }
 
 bool AssertionDescriptionEq::operator()(const AssertionDescription &lhs,

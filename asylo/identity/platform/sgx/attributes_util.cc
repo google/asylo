@@ -146,7 +146,7 @@ std::vector<absl::string_view> GetPrintableAttributeList(
   std::vector<absl::string_view> printable_list;
   for (AttributeBit bit : kAllAttributeBits) {
     StatusOr<bool> set_status = IsAttributeBitSet(bit, attributes);
-    if (set_status.ok() && set_status.ValueOrDie()) {
+    if (set_status.ok() && set_status.value()) {
       printable_list.push_back(GetAttributeName(bit));
     }
   }

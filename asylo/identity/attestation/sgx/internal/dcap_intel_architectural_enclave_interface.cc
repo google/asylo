@@ -187,7 +187,7 @@ Status DcapIntelArchitecturalEnclaveInterface::SetPckCertificateChain(
 
   SgxExtensions extensions;
   ASYLO_ASSIGN_OR_RETURN(extensions, ExtractSgxExtensionsFromPckCert(
-                                         *parsed_chain.ValueOrDie().front()));
+                                         *parsed_chain.value().front()));
 
   sgx_ql_config_t config;
   config.version = SGX_QL_CONFIG_VERSION_1;
@@ -201,7 +201,7 @@ Status DcapIntelArchitecturalEnclaveInterface::SetPckCertificateChain(
   config.cert_pce_isv_svn = extensions.tcb.pce_svn().value();
 
   std::string cert_data;
-  for (const auto &parsed_cert : parsed_chain.ValueOrDie()) {
+  for (const auto &parsed_cert : parsed_chain.value()) {
     Certificate proto_cert;
     ASYLO_ASSIGN_OR_RETURN(
         proto_cert, parsed_cert->ToCertificateProto(Certificate::X509_PEM));

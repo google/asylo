@@ -214,7 +214,7 @@ TEST(PlatformProvisioningTest, ValidReportCanBeConvertedToHardwareReport) {
 
   std::string expected_hex = ConvertTrivialObjectToHexString<Report>(expected);
   std::string actual_hex =
-      ConvertTrivialObjectToHexString(report_result.ValueOrDie());
+      ConvertTrivialObjectToHexString(report_result.value());
   EXPECT_THAT(actual_hex, Eq(expected_hex));
 }
 
@@ -231,7 +231,7 @@ TEST(PlatformProvisioningTest, ValidTargetInfoProtoCanBeConvertedToTargetinfo) {
   std::string expected_hex =
       ConvertTrivialObjectToHexString<Targetinfo>(expected);
   std::string actual_hex =
-      ConvertTrivialObjectToHexString(targetinfo_result.ValueOrDie());
+      ConvertTrivialObjectToHexString(targetinfo_result.value());
   EXPECT_THAT(actual_hex, Eq(expected_hex));
 }
 

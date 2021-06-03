@@ -945,7 +945,7 @@ absl::optional<int64_t> X509Certificate::CertPathLength() const {
     return absl::nullopt;
   }
   absl::optional<BasicConstraints> basic_constraints =
-      basic_constraints_result.ValueOrDie();
+      basic_constraints_result.value();
   return basic_constraints.has_value() ? basic_constraints->pathlen
                                        : absl::nullopt;
 }

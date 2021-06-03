@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
   if (!manager_result.ok()) {
     LOG(QFATAL) << "EnclaveManager unavailable: " << manager_result.status();
   }
-  asylo::EnclaveManager *manager = manager_result.ValueOrDie();
+  asylo::EnclaveManager *manager = manager_result.value();
   std::cout << "Loading " << absl::GetFlag(FLAGS_enclave_path) << std::endl;
 
   // Create an EnclaveLoadConfig object.

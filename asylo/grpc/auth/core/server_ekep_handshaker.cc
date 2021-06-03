@@ -238,7 +238,7 @@ Status ServerEkepHandshaker::HandleClientPrecommit(
     if (FindAssertionDescription(accepted_peer_assertions_, offer_desc) !=
         accepted_peer_assertions_.cend()) {
       auto result = GetEnclaveAssertionVerifier(offer_desc)->CanVerify(offer);
-      if (result.ok() && result.ValueOrDie()) {
+      if (result.ok() && result.value()) {
         expected_peer_assertions_.push_back(offer_desc);
       }
     }
@@ -258,7 +258,7 @@ Status ServerEkepHandshaker::HandleClientPrecommit(
         self_assertions_.cend()) {
       auto result =
           GetEnclaveAssertionGenerator(request_desc)->CanGenerate(request);
-      if (result.ok() && result.ValueOrDie()) {
+      if (result.ok() && result.value()) {
         promised_assertions_.push_back(request);
       }
     }

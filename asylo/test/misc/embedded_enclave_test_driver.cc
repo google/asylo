@@ -39,7 +39,7 @@ TEST(EmbeddedEnclaveTest, EnclaveLoadsAndRuns) {
   EnclaveManager::Configure(EnclaveManagerOptions());
   auto manager_result = EnclaveManager::Instance();
   ASSERT_THAT(manager_result, IsOk());
-  EnclaveManager *manager = manager_result.ValueOrDie();
+  EnclaveManager *manager = manager_result.value();
 
   // Create an EnclaveLoadConfig object.
   EnclaveLoadConfig load_config;

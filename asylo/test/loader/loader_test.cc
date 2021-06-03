@@ -97,7 +97,7 @@ class LoaderTest : public ::testing::Test {
     if (!manager_result.ok()) {
       LOG(FATAL) << manager_result.status();
     }
-    manager_ = manager_result.ValueOrDie();
+    manager_ = manager_result.value();
   }
 
   EnclaveManager *manager_;

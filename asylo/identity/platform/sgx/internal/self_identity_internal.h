@@ -43,7 +43,7 @@ SelfIdentity::SelfIdentity() {
 
   Report report = HardwareInterface::CreateDefault()
                       ->GetReport(*tinfo, *reportdata)
-                      .ValueOrDie();
+                      .value();
 
   cpusvn = report.body.cpusvn;
   miscselect = report.body.miscselect;

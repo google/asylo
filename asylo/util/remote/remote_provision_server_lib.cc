@@ -65,7 +65,7 @@ grpc::Status ProvisionServiceImpl::Provision(
   }
   // Return location of the enclave in the file system, accessible by the
   // proxy.
-  response->set_enclave_path(filename_or_status.ValueOrDie());
+  response->set_enclave_path(filename_or_status.value());
   return grpc::Status::OK;
 }
 

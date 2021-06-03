@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   asylo::sgx::PlatformInfo platform_info;
   auto platform_info_result = asylo::sgx::GetPlatformInfoFromFlags();
   if (platform_info_result.ok()) {
-    platform_info = std::move(platform_info_result).ValueOrDie();
+    platform_info = std::move(platform_info_result).value();
   }
 
   // Fill any missing fields that were not explicitly passed via flags from the
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
     platform_info_result = asylo::sgx::GetPlatformInfoFromDcap("report_oracle");
     ASYLO_CHECK_OK(platform_info_result.status());
 
-    platform_info.FillEmptyFields(platform_info_result.ValueOrDie());
+    platform_info.FillEmptyFields(platform_info_result.value());
 
     QCHECK(platform_info.ppid.has_value()) << "Missing PPID";
     QCHECK(platform_info.cpu_svn.has_value()) << "Missing CPUSVN";
@@ -71,13 +71,13 @@ int main(int argc, char *argv[]) {
     QCHECK(platform_info.pce_id.has_value()) << "Missing PCEID";
   }
 
-  auto cert_result = client_result.ValueOrDie()->GetPckCertificate(
+  auto cert_result = client_result.value()->GetPckCertificate(
       platform_info.ppid, platform_info.cpu_svn, platform_info.pce_svn,
       platform_info.pce_id);
   ASYLO_CHECK_OK(cert_result.status()) << "Error fetching certificate(s).";
 
-  ASYLO_CHECK_OK(asylo::sgx::WriteOutputAccordingToFlags(
-      std::move(cert_result).ValueOrDie()));
+  ASYLO_CHECK_OK(
+      asylo::sgx::WriteOutputAccordingToFlags(std::move(cert_result).value()));
 
   return 0;
 }

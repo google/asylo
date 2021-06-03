@@ -540,7 +540,7 @@ ReturnType IOManager::CallWithHandler(const char *path, IOAction action) {
     return ErrorValue<ReturnType>::value;
   }
 
-  absl::string_view canonical_path = status.ValueOrDie();
+  absl::string_view canonical_path = status.value();
   VirtualPathHandler *handler = HandlerForPath(canonical_path);
   if (handler) {
     // Invoke the path handler if one is installed.
@@ -565,8 +565,8 @@ ReturnType IOManager::CallWithHandler(const char *path1, const char *path2,
     return ErrorValue<ReturnType>::value;
   }
 
-  absl::string_view canonical_path1 = status1.ValueOrDie();
-  absl::string_view canonical_path2 = status2.ValueOrDie();
+  absl::string_view canonical_path1 = status1.value();
+  absl::string_view canonical_path2 = status2.value();
   VirtualPathHandler *handler1 = HandlerForPath(canonical_path1);
   VirtualPathHandler *handler2 = HandlerForPath(canonical_path2);
   if (handler1 != handler2) {
@@ -609,7 +609,7 @@ Status IOManager::SetCurrentWorkingDirectory(absl::string_view path) {
   StatusOr<std::string> working_directory = CanonicalizePath(path);
   Status status = working_directory.status();
   if (status.ok()) {
-    current_working_directory_ = working_directory.ValueOrDie();
+    current_working_directory_ = working_directory.value();
   }
 
   return status;
@@ -684,7 +684,7 @@ char *IOManager::RealPath(const char *path, char *resolved_path) {
 
     return nullptr;
   }
-  std::string path_str = path_str_or.ValueOrDie();
+  std::string path_str = path_str_or.value();
   if (resolved_path) {
     snprintf(resolved_path, PATH_MAX, "%s", path_str.c_str());
     return resolved_path;

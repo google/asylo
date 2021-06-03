@@ -120,12 +120,10 @@ StatusOr<IntT> IntegerFromBignum(const BIGNUM &bignum) {
   static BIGNUM *int_t_min = nullptr;
   static BIGNUM *int_t_max = nullptr;
   absl::call_once(once_init, [] {
-    int_t_min = BignumFromInteger(std::numeric_limits<IntT>::min())
-                    .ValueOrDie()
-                    .release();
-    int_t_max = BignumFromInteger(std::numeric_limits<IntT>::max())
-                    .ValueOrDie()
-                    .release();
+    int_t_min =
+        BignumFromInteger(std::numeric_limits<IntT>::min()).value().release();
+    int_t_max =
+        BignumFromInteger(std::numeric_limits<IntT>::max()).value().release();
   });
 
   if (BN_cmp(&bignum, int_t_min) == -1 || BN_cmp(&bignum, int_t_max) == 1) {

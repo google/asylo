@@ -52,7 +52,9 @@ class ParseTextProtoOrDieHelper {
 
   template <typename T>
   operator T() const {
-    return ParseTextProto<T>(text_).ValueOrDie();
+    auto parse_result = ParseTextProto<T>(text_);
+    ASYLO_CHECK_OK(parse_result.status());
+    return *parse_result;
   }
 
  private:

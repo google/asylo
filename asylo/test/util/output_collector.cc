@@ -45,7 +45,7 @@ OutputCollector::OutputCollector(int fd)
   // the original one.
   auto get_flags_result = GetFdFlags(target_fd_);
   ASYLO_CHECK_OK(get_flags_result.status());
-  ASYLO_CHECK_OK(SetFdFlags(pipe_fds[1], get_flags_result.ValueOrDie()));
+  ASYLO_CHECK_OK(SetFdFlags(pipe_fds[1], get_flags_result.value()));
 
   CHECK_NE(dup2(pipe_fds[1], target_fd_), -1) << strerror(errno);
   CHECK_NE(close(pipe_fds[1]), -1) << strerror(errno);

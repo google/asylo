@@ -136,7 +136,7 @@ class EnclaveServer final : public TrustedApplication {
       if (!service_result.ok()) {
         return service_result.status();
       }
-      service_ = std::move(service_result).ValueOrDie();
+      service_ = std::move(service_result).value();
     }
     if (service_ == nullptr) {
       return Status(absl::StatusCode::kInternal, "No gRPC service configured");

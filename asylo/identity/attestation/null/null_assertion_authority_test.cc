@@ -75,7 +75,7 @@ class NullAssertionAuthorityTest : public ::testing::Test {
     std::string map_key = EnclaveAssertionAuthority::GenerateAuthorityId(
                               null_assertion_description.identity_type(),
                               null_assertion_description.authority_type())
-                              .ValueOrDie();
+                              .value();
 
     auto generator = AssertionGeneratorMap::GetValue(map_key);
     ASSERT_NE(generator, AssertionGeneratorMap::value_end());

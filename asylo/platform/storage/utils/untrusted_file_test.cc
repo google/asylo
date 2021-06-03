@@ -47,7 +47,7 @@ TEST(UntrustedFileTest, WriteRead) {
     EXPECT_EQ(record, i);
   }
 
-  EXPECT_EQ(file.Size().ValueOrDie(), kCount * sizeof(int));
+  EXPECT_EQ(file.Size().value(), kCount * sizeof(int));
 }
 
 TEST(UntrustedFileTest, WriteHoles) {
@@ -55,7 +55,7 @@ TEST(UntrustedFileTest, WriteHoles) {
   asylo::platform::storage::FdCloser closer(fd);
 
   UntrustedFile file(fd);
-  EXPECT_EQ(file.Size().ValueOrDie(), 0);
+  EXPECT_EQ(file.Size().value(), 0);
   constexpr int kCount = 1024;
   constexpr int kBlockSize = 256;
 

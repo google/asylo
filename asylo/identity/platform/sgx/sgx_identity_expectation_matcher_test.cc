@@ -46,8 +46,7 @@ TEST(SgxIdentityExpectationMatcherTest, MatcherExistsInStaticMap) {
   SetSgxIdentityDescription(&description);
 
   auto matcher_it = IdentityExpectationMatcherMap::GetValue(
-      NamedIdentityExpectationMatcher::GetMatcherName(description)
-          .ValueOrDie());
+      NamedIdentityExpectationMatcher::GetMatcherName(description).value());
   ASSERT_NE(matcher_it, IdentityExpectationMatcherMap::value_end());
 }
 
@@ -74,7 +73,7 @@ TEST(SgxIdentityExpectationMatcherTest, MatcherPositive) {
       expectation.reference_identity(), expectation, &explanation);
   ASSERT_THAT(matcher_result, IsOk())
       << sgx::FormatProto(sgx_identity_expectation);
-  EXPECT_TRUE(matcher_result.ValueOrDie())
+  EXPECT_TRUE(matcher_result.value())
       << sgx::FormatProto(sgx_identity_expectation);
   EXPECT_THAT(explanation, Eq(""));
 }
@@ -100,7 +99,7 @@ TEST(SgxIdentityExpectationMatcherTest, MatchAndExplain) {
   auto result = matcher.MatchAndExplain(identity, expectation, &explanation);
   ASYLO_ASSERT_OK(result.status());
 
-  if (result.ValueOrDie()) {
+  if (result.value()) {
     EXPECT_THAT(explanation, IsEmpty());
   } else {
     EXPECT_THAT(explanation, Not(IsEmpty()));

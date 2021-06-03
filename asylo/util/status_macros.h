@@ -81,7 +81,7 @@ do {                                                                        \
 } while (false)
 
 /// Evaluates an expression `rexpr` that returns a `StatusOr`-like
-/// object with `.ok()`, `.status()`, and `.ValueOrDie()` methods.  If
+/// object with `.ok()`, `.status()`, and `.value()` methods.  If
 /// the result is OK, moves its value into the variable defined by
 /// `lhs`, otherwise returns the result of the `.status()` from the
 /// current function. The error result of `.status` is returned
@@ -112,13 +112,13 @@ do {                                                                        \
 ///   std::unique_ptr<T> ptr;
 ///   ASYLO_ASSIGN_OR_RETURN(ptr, MaybeGetPtr(arg));
 /// ```
-#define ASYLO_ASSIGN_OR_RETURN(lhs, rexpr)                \
-do {                                                      \
-  auto _asylo_status_or_value = (rexpr);                  \
-  if (ABSL_PREDICT_FALSE(!_asylo_status_or_value.ok())) { \
-    return _asylo_status_or_value.status();               \
-  }                                                       \
-  lhs = std::move(_asylo_status_or_value).ValueOrDie();   \
-} while (false)
+#define ASYLO_ASSIGN_OR_RETURN(lhs, rexpr)                  \
+  do {                                                      \
+    auto _asylo_status_or_value = (rexpr);                  \
+    if (ABSL_PREDICT_FALSE(!_asylo_status_or_value.ok())) { \
+      return _asylo_status_or_value.status();               \
+    }                                                       \
+    lhs = std::move(_asylo_status_or_value).value();        \
+  } while (false)
 
 #endif  // ASYLO_UTIL_STATUS_MACROS_H_

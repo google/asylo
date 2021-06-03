@@ -147,19 +147,19 @@ class FakeEnclave {
     valid_attributes_ = value;
   }
   void add_valid_attribute(AttributeBit bit) {
-    valid_attributes_ |= SecsAttributeSet::FromBits({bit}).ValueOrDie();
+    valid_attributes_ |= SecsAttributeSet::FromBits({bit}).value();
   }
   void remove_valid_attribute(AttributeBit bit) {
-    valid_attributes_ &= ~SecsAttributeSet::FromBits({bit}).ValueOrDie();
+    valid_attributes_ &= ~SecsAttributeSet::FromBits({bit}).value();
   }
   void set_required_attributes(const SecsAttributeSet &value) {
     required_attributes_ = value;
   }
   void add_required_attribute(AttributeBit bit) {
-    required_attributes_ |= SecsAttributeSet::FromBits({bit}).ValueOrDie();
+    required_attributes_ |= SecsAttributeSet::FromBits({bit}).value();
   }
   void remove_required_attribute(AttributeBit bit) {
-    required_attributes_ &= ~SecsAttributeSet::FromBits({bit}).ValueOrDie();
+    required_attributes_ &= ~SecsAttributeSet::FromBits({bit}).value();
   }
 
   // Accessors

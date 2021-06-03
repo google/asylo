@@ -72,7 +72,7 @@ TEST_F(FileMappingTest, MapsFileSuccessfully) {
       FileMapping::CreateFromFile(absl::GetFlag(FLAGS_test_file));
   ASSERT_THAT(from_file_result, IsOk());
 
-  FileMapping mapping = std::move(from_file_result.ValueOrDie());
+  FileMapping mapping = std::move(from_file_result.value());
   EXPECT_EQ(mapping.buffer().size(), expected_file_contents_.size());
   EXPECT_EQ(memcmp(mapping.buffer().data(), expected_file_contents_.data(),
                    mapping.buffer().size()),
@@ -87,7 +87,7 @@ TEST_F(FileMappingTest, MapExhibitsCopyOnWriteSemantics) {
       FileMapping::CreateFromFile(absl::GetFlag(FLAGS_test_file));
   ASSERT_THAT(outer_from_file_result, IsOk());
 
-  FileMapping outer_mapping = std::move(outer_from_file_result.ValueOrDie());
+  FileMapping outer_mapping = std::move(outer_from_file_result.value());
   ASSERT_EQ(outer_mapping.buffer().size(), expected_file_contents_.size());
   ASSERT_EQ(
       memcmp(outer_mapping.buffer().data(), expected_file_contents_.data(),
@@ -105,7 +105,7 @@ TEST_F(FileMappingTest, MapExhibitsCopyOnWriteSemantics) {
     ASSERT_THAT(inner_from_file_result, IsOk());
 
     // Check that the new mapping has the same contents as the original file.
-    FileMapping inner_mapping = std::move(inner_from_file_result.ValueOrDie());
+    FileMapping inner_mapping = std::move(inner_from_file_result.value());
     EXPECT_EQ(inner_mapping.buffer().size(), expected_file_contents_.size());
     EXPECT_EQ(
         memcmp(inner_mapping.buffer().data(), expected_file_contents_.data(),
