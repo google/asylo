@@ -115,6 +115,9 @@ extern "C" int64_t enc_untrusted_syscall(int sysno, ...) {
   // Copy outputs back into pointer parameters.
   auto response_reader =
       asylo::system_call::MessageReader({response_buffer, response_size});
+  if (response_reader.sysno() != sysno) {
+    error_handler("system_call.cc: Unexpected sysno in response");
+  }
   const asylo::primitives::PrimitiveStatus response_status =
       response_reader.Validate();
   if (!response_status.ok()) {
