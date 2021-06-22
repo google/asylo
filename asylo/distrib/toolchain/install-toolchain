@@ -28,8 +28,8 @@ readonly gcc_default="gcc-${gcc_tag//\//-}.tar.gz"  # github renames the archive
 readonly gcc_default_sha="9d4f845f88a4eab077e777725fafd768239ede9baed6e452909e48d7abeb97c1"
 readonly binutils_default=binutils-2.24.tar.gz
 readonly binutils_default_sha="4930b2886309112c00a279483eaef2f0f8e1b1b62010e0239c16b22af7c346d4"
-readonly newlib_default=newlib-3.3.0.tar.gz
-readonly newlib_default_sha="58dd9e3eaedf519360d92d84205c3deef0b3fc286685d1c562e245914ef72c66"
+readonly newlib_default=newlib-4.1.0.tar.gz
+readonly newlib_default_sha="f296e372f51324224d387cc116dc37a6bd397198756746f93a2b02e9a5d40154"
 
 # Writes an message to stderr.
 err() {

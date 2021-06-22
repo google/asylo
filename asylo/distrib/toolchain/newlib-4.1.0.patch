@@ -1,5 +1,5 @@
-diff -Naur ../newlib-3.3.0/config.sub ./config.sub
---- ../newlib-3.3.0/config.sub
+diff -Naur ../newlib-4.1.0/config.sub ./config.sub
+--- ../newlib-4.1.0/config.sub
 +++ ./config.sub
 @@ -1362,7 +1362,7 @@
  	     | morphos* | superux* | rtmk* | windiss* \
@@ -10,10 +10,10 @@ diff -Naur ../newlib-3.3.0/config.sub ./config.sub
  	     | midnightbsd* | amdhsa* | unleashed* | emscripten*)
  	# Remember, each alternative MUST END IN *, to match a version number.
  		;;
-diff -Naur ../newlib-3.3.0/libgloss/configure ./libgloss/configure
---- ../newlib-3.3.0/libgloss/configure
+diff -Naur ../newlib-4.1.0/libgloss/configure ./libgloss/configure
+--- ../newlib-4.1.0/libgloss/configure
 +++ ./libgloss/configure
-@@ -2419,6 +2419,11 @@
+@@ -2424,6 +2424,11 @@
  	subdirs="$subdirs i386"
  
  	;;
@@ -25,10 +25,10 @@ diff -Naur ../newlib-3.3.0/libgloss/configure ./libgloss/configure
    m32r-*-*)
  	subdirs="$subdirs m32r"
  
-diff -Naur ../newlib-3.3.0/libgloss/configure.in ./libgloss/configure.in
---- ../newlib-3.3.0/libgloss/configure.in
+diff -Naur ../newlib-4.1.0/libgloss/configure.in ./libgloss/configure.in
+--- ../newlib-4.1.0/libgloss/configure.in
 +++ ./libgloss/configure.in
-@@ -48,6 +48,10 @@
+@@ -51,6 +51,10 @@
    i[[3456]]86-*-elf* | i[[3456]]86-*-coff*)
  	AC_CONFIG_SUBDIRS([i386])
  	;;
@@ -39,8 +39,8 @@ diff -Naur ../newlib-3.3.0/libgloss/configure.in ./libgloss/configure.in
    m32r-*-*)
  	AC_CONFIG_SUBDIRS([m32r])
  	;;
-diff -Naur ../newlib-3.3.0/libgloss/enclave/config.h.in ./libgloss/enclave/config.h.in
---- ../newlib-3.3.0/libgloss/enclave/config.h.in
+diff -Naur ../newlib-4.1.0/libgloss/enclave/config.h.in ./libgloss/enclave/config.h.in
+--- ../newlib-4.1.0/libgloss/enclave/config.h.in
 +++ ./libgloss/enclave/config.h.in
 @@ -0,0 +1,22 @@
 +/* config.h.in.  Generated automatically from configure.in by autoheader.  */
@@ -65,8 +65,8 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/config.h.in ./libgloss/enclave/confi
 +
 +/* symbol prefix */
 +#undef __SYMBOL_PREFIX
-diff -Naur ../newlib-3.3.0/libgloss/enclave/configure ./libgloss/enclave/configure
---- ../newlib-3.3.0/libgloss/enclave/configure
+diff -Naur ../newlib-4.1.0/libgloss/enclave/configure ./libgloss/enclave/configure
+--- ../newlib-4.1.0/libgloss/enclave/configure
 +++ ./libgloss/enclave/configure
 @@ -0,0 +1,4148 @@
 +#! /bin/sh
@@ -4217,8 +4217,8 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/configure ./libgloss/enclave/configu
 +
 +
 +
-diff -Naur ../newlib-3.3.0/libgloss/enclave/configure.in ./libgloss/enclave/configure.in
---- ../newlib-3.3.0/libgloss/enclave/configure.in
+diff -Naur ../newlib-4.1.0/libgloss/enclave/configure.in ./libgloss/enclave/configure.in
+--- ../newlib-4.1.0/libgloss/enclave/configure.in
 +++ ./libgloss/enclave/configure.in
 @@ -0,0 +1,196 @@
 +# Copyright (c) 1995, 1996 Cygnus Support
@@ -4417,8 +4417,8 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/configure.in ./libgloss/enclave/conf
 +AC_OUTPUT
 +
 +
-diff -Naur ../newlib-3.3.0/libgloss/enclave/enclave.c ./libgloss/enclave/enclave.c
---- ../newlib-3.3.0/libgloss/enclave/enclave.c
+diff -Naur ../newlib-4.1.0/libgloss/enclave/enclave.c ./libgloss/enclave/enclave.c
+--- ../newlib-4.1.0/libgloss/enclave/enclave.c
 +++ ./libgloss/enclave/enclave.c
 @@ -0,0 +1,113 @@
 +#include <grp.h>
@@ -4534,8 +4534,8 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/enclave.c ./libgloss/enclave/enclave
 +                     (uint64_t)ptr, len};
 +  return enclave_syscall(SYS_write, args, 3);
 +}
-diff -Naur ../newlib-3.3.0/libgloss/enclave/enclave.specs ./libgloss/enclave/enclave.specs
---- ../newlib-3.3.0/libgloss/enclave/enclave.specs
+diff -Naur ../newlib-4.1.0/libgloss/enclave/enclave.specs ./libgloss/enclave/enclave.specs
+--- ../newlib-4.1.0/libgloss/enclave/enclave.specs
 +++ ./libgloss/enclave/enclave.specs
 @@ -0,0 +1,11 @@
 +%rename link_gcc_c_sequence                enclave_link_gcc_c_sequence
@@ -4549,8 +4549,8 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/enclave.specs ./libgloss/enclave/enc
 +*link_gcc_c_sequence:
 +%(enclave_link_gcc_c_sequence) --start-group %G %(enclave_libc) %(enclave_libgloss) --end-group
 +
-diff -Naur ../newlib-3.3.0/libgloss/enclave/enclave_syscalls.h ./libgloss/enclave/enclave_syscalls.h
---- ../newlib-3.3.0/libgloss/enclave/enclave_syscalls.h
+diff -Naur ../newlib-4.1.0/libgloss/enclave/enclave_syscalls.h ./libgloss/enclave/enclave_syscalls.h
+--- ../newlib-4.1.0/libgloss/enclave/enclave_syscalls.h
 +++ ./libgloss/enclave/enclave_syscalls.h
 @@ -0,0 +1,25 @@
 +#ifndef THIRD_PARTY_NEWLIB_SRC_LIBGLOSS_ENCLAVE_ENCLAVE_SYSCALLS_H_
@@ -4578,8 +4578,8 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/enclave_syscalls.h ./libgloss/enclav
 +#endif
 +
 +#endif  // THIRD_PARTY_NEWLIB_SRC_LIBGLOSS_ENCLAVE_ENCLAVE_SYSCALLS_H_
-diff -Naur ../newlib-3.3.0/libgloss/enclave/getauxval.c ./libgloss/enclave/getauxval.c
---- ../newlib-3.3.0/libgloss/enclave/getauxval.c
+diff -Naur ../newlib-4.1.0/libgloss/enclave/getauxval.c ./libgloss/enclave/getauxval.c
+--- ../newlib-4.1.0/libgloss/enclave/getauxval.c
 +++ ./libgloss/enclave/getauxval.c
 @@ -0,0 +1,7 @@
 +#include <sys/auxv.h>
@@ -4589,8 +4589,8 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/getauxval.c ./libgloss/enclave/getau
 +  errno = ENOSYS;
 +  return -1;
 +}
-diff -Naur ../newlib-3.3.0/libgloss/enclave/Makefile.in ./libgloss/enclave/Makefile.in
---- ../newlib-3.3.0/libgloss/enclave/Makefile.in
+diff -Naur ../newlib-4.1.0/libgloss/enclave/Makefile.in ./libgloss/enclave/Makefile.in
+--- ../newlib-4.1.0/libgloss/enclave/Makefile.in
 +++ ./libgloss/enclave/Makefile.in
 @@ -0,0 +1,137 @@
 +# Copyright (c) 1998 Cygnus Support
@@ -4730,8 +4730,8 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/Makefile.in ./libgloss/enclave/Makef
 +	touch $@
 +
 +all-recursive: stmp-targ-include
-diff -Naur ../newlib-3.3.0/libgloss/enclave/mman.c ./libgloss/enclave/mman.c
---- ../newlib-3.3.0/libgloss/enclave/mman.c
+diff -Naur ../newlib-4.1.0/libgloss/enclave/mman.c ./libgloss/enclave/mman.c
+--- ../newlib-4.1.0/libgloss/enclave/mman.c
 +++ ./libgloss/enclave/mman.c
 @@ -0,0 +1,113 @@
 +/*
@@ -4847,8 +4847,8 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/mman.c ./libgloss/enclave/mman.c
 +  errno = ENOSYS;
 +  return -1;
 +}
-diff -Naur ../newlib-3.3.0/libgloss/enclave/signal.c ./libgloss/enclave/signal.c
---- ../newlib-3.3.0/libgloss/enclave/signal.c
+diff -Naur ../newlib-4.1.0/libgloss/enclave/signal.c ./libgloss/enclave/signal.c
+--- ../newlib-4.1.0/libgloss/enclave/signal.c
 +++ ./libgloss/enclave/signal.c
 @@ -0,0 +1,41 @@
 +#ifndef _GNU_SOURCE
@@ -4892,8 +4892,8 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/signal.c ./libgloss/enclave/signal.c
 +  }
 +  return oldact.sa_handler;
 +}
-diff -Naur ../newlib-3.3.0/libgloss/enclave/syscall.c ./libgloss/enclave/syscall.c
---- ../newlib-3.3.0/libgloss/enclave/syscall.c
+diff -Naur ../newlib-4.1.0/libgloss/enclave/syscall.c ./libgloss/enclave/syscall.c
+--- ../newlib-4.1.0/libgloss/enclave/syscall.c
 +++ ./libgloss/enclave/syscall.c
 @@ -0,0 +1,7 @@
 +#include <errno.h>
@@ -4903,8 +4903,8 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/syscall.c ./libgloss/enclave/syscall
 +  errno = ENOSYS;
 +  return -1;
 +}
-diff -Naur ../newlib-3.3.0/libgloss/enclave/warning.h ./libgloss/enclave/warning.h
---- ../newlib-3.3.0/libgloss/enclave/warning.h
+diff -Naur ../newlib-4.1.0/libgloss/enclave/warning.h ./libgloss/enclave/warning.h
+--- ../newlib-4.1.0/libgloss/enclave/warning.h
 +++ ./libgloss/enclave/warning.h
 @@ -0,0 +1,44 @@
 +#ifndef __WARNING_H__
@@ -4951,8 +4951,8 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/warning.h ./libgloss/enclave/warning
 +                #name " is not implemented and will always fail")
 +
 +#endif /* __WARNING_H__ */
-diff -Naur ../newlib-3.3.0/libgloss/enclave/xattr.c ./libgloss/enclave/xattr.c
---- ../newlib-3.3.0/libgloss/enclave/xattr.c
+diff -Naur ../newlib-4.1.0/libgloss/enclave/xattr.c ./libgloss/enclave/xattr.c
+--- ../newlib-4.1.0/libgloss/enclave/xattr.c
 +++ ./libgloss/enclave/xattr.c
 @@ -0,0 +1,55 @@
 +#include <sys/syscall.h>
@@ -5010,10 +5010,10 @@ diff -Naur ../newlib-3.3.0/libgloss/enclave/xattr.c ./libgloss/enclave/xattr.c
 +  uint64_t args[] = {fd, (uint64_t)list, size};
 +  return enclave_syscall(SYS_flistxattr, args, 3);
 +}
-diff -Naur ../newlib-3.3.0/newlib/configure.host ./newlib/configure.host
---- ../newlib-3.3.0/newlib/configure.host
+diff -Naur ../newlib-4.1.0/newlib/configure.host ./newlib/configure.host
+--- ../newlib-4.1.0/newlib/configure.host
 +++ ./newlib/configure.host
-@@ -909,6 +909,22 @@
+@@ -920,6 +920,22 @@
  	syscall_dir=syscalls	
  	newlib_cflags="${newlib_cflags} -DSMALL_DTOA -DSMALL_MEMORY"
  	;;
@@ -5031,13 +5031,13 @@ diff -Naur ../newlib-3.3.0/newlib/configure.host ./newlib/configure.host
 +	newlib_cflags="${newlib_cflags} -D_NO_POSIX_SPAWN"
 +	newlib_cflags="${newlib_cflags} -DHAVE_FCNTL"
 +	newlib_cflags="${newlib_cflags} -DHAVE_MKDIR"
-+  newlib_cflags="${newlib_cflags} -DSIGNAL_PROVIDED"
++	newlib_cflags="${newlib_cflags} -DSIGNAL_PROVIDED"
 +	;;
    xc16x-*)
            syscall_dir=syscalls
          ;;
-diff -Naur ../newlib-3.3.0/newlib/libc/include/machine/_endian.h ./newlib/libc/include/machine/_endian.h
---- ../newlib-3.3.0/newlib/libc/include/machine/_endian.h
+diff -Naur ../newlib-4.1.0/newlib/libc/include/machine/_endian.h ./newlib/libc/include/machine/_endian.h
+--- ../newlib-4.1.0/newlib/libc/include/machine/_endian.h
 +++ ./newlib/libc/include/machine/_endian.h
 @@ -33,3 +33,16 @@
  #define	_BYTE_ORDER	_BIG_ENDIAN
@@ -5056,8 +5056,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/include/machine/_endian.h ./newlib/libc/i
 +#ifndef __BYTE_ORDER
 +#define __BYTE_ORDER _BYTE_ORDER
 +#endif
-diff -Naur ../newlib-3.3.0/newlib/libc/include/malloc.h ./newlib/libc/include/malloc.h
---- ../newlib-3.3.0/newlib/libc/include/malloc.h
+diff -Naur ../newlib-4.1.0/newlib/libc/include/malloc.h ./newlib/libc/include/malloc.h
+--- ../newlib-4.1.0/newlib/libc/include/malloc.h
 +++ ./newlib/libc/include/malloc.h
 @@ -50,6 +50,12 @@
  extern void _free_r (struct _reent *, void *);
@@ -5072,8 +5072,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/include/malloc.h ./newlib/libc/include/ma
  extern void *realloc (void *, size_t);
  #ifdef __CYGWIN__
  #undef _realloc_r
-diff -Naur ../newlib-3.3.0/newlib/libc/include/pthread.h ./newlib/libc/include/pthread.h
---- ../newlib-3.3.0/newlib/libc/include/pthread.h
+diff -Naur ../newlib-4.1.0/newlib/libc/include/pthread.h ./newlib/libc/include/pthread.h
+--- ../newlib-4.1.0/newlib/libc/include/pthread.h
 +++ ./newlib/libc/include/pthread.h
 @@ -71,7 +71,9 @@
      pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -5115,8 +5115,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/include/pthread.h ./newlib/libc/include/p
  
  int	pthread_rwlockattr_init (pthread_rwlockattr_t *__attr);
  int	pthread_rwlockattr_destroy (pthread_rwlockattr_t *__attr);
-diff -Naur ../newlib-3.3.0/newlib/libc/include/regex.h ./newlib/libc/include/regex.h
---- ../newlib-3.3.0/newlib/libc/include/regex.h
+diff -Naur ../newlib-4.1.0/newlib/libc/include/regex.h ./newlib/libc/include/regex.h
+--- ../newlib-4.1.0/newlib/libc/include/regex.h
 +++ ./newlib/libc/include/regex.h
 @@ -38,6 +38,7 @@
  #define	_REGEX_H_
@@ -5126,8 +5126,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/include/regex.h ./newlib/libc/include/reg
  
  /* types */
  typedef off_t regoff_t;
-diff -Naur ../newlib-3.3.0/newlib/libc/include/signal.h ./newlib/libc/include/signal.h
---- ../newlib-3.3.0/newlib/libc/include/signal.h
+diff -Naur ../newlib-4.1.0/newlib/libc/include/signal.h ./newlib/libc/include/signal.h
+--- ../newlib-4.1.0/newlib/libc/include/signal.h
 +++ ./newlib/libc/include/signal.h
 @@ -5,6 +5,10 @@
  #include <sys/cdefs.h>
@@ -5140,8 +5140,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/include/signal.h ./newlib/libc/include/si
  _BEGIN_STD_C
  
  typedef int	sig_atomic_t;		/* Atomic entity type (ANSI) */
-diff -Naur ../newlib-3.3.0/newlib/libc/include/stdint.h ./newlib/libc/include/stdint.h
---- ../newlib-3.3.0/newlib/libc/include/stdint.h
+diff -Naur ../newlib-4.1.0/newlib/libc/include/stdint.h ./newlib/libc/include/stdint.h
+--- ../newlib-4.1.0/newlib/libc/include/stdint.h
 +++ ./newlib/libc/include/stdint.h
 @@ -9,6 +9,10 @@
  #ifndef _STDINT_H
@@ -5154,8 +5154,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/include/stdint.h ./newlib/libc/include/st
  #include <machine/_default_types.h>
  #include <sys/_intsup.h>
  #include <sys/_stdint.h>
-diff -Naur ../newlib-3.3.0/newlib/libc/include/sys/features.h ./newlib/libc/include/sys/features.h
---- ../newlib-3.3.0/newlib/libc/include/sys/features.h
+diff -Naur ../newlib-4.1.0/newlib/libc/include/sys/features.h ./newlib/libc/include/sys/features.h
+--- ../newlib-4.1.0/newlib/libc/include/sys/features.h
 +++ ./newlib/libc/include/sys/features.h
 @@ -400,6 +400,17 @@
  # define _POSIX_VERSION 199009L
@@ -5175,8 +5175,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/include/sys/features.h ./newlib/libc/incl
  #ifdef __CYGWIN__
  
  #if __POSIX_VISIBLE >= 200809
-diff -Naur ../newlib-3.3.0/newlib/libc/include/sys/resource.h ./newlib/libc/include/sys/resource.h
---- ../newlib-3.3.0/newlib/libc/include/sys/resource.h
+diff -Naur ../newlib-4.1.0/newlib/libc/include/sys/resource.h ./newlib/libc/include/sys/resource.h
+--- ../newlib-4.1.0/newlib/libc/include/sys/resource.h
 +++ ./newlib/libc/include/sys/resource.h
 @@ -3,6 +3,10 @@
  
@@ -5199,8 +5199,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/include/sys/resource.h ./newlib/libc/incl
 +
  #endif
  
-diff -Naur ../newlib-3.3.0/newlib/libc/include/sys/signal.h ./newlib/libc/include/sys/signal.h
---- ../newlib-3.3.0/newlib/libc/include/sys/signal.h
+diff -Naur ../newlib-4.1.0/newlib/libc/include/sys/signal.h ./newlib/libc/include/sys/signal.h
+--- ../newlib-4.1.0/newlib/libc/include/sys/signal.h
 +++ ./newlib/libc/include/sys/signal.h
 @@ -44,16 +44,47 @@
    void  *sival_ptr;    /* Pointer signal value */
@@ -5435,8 +5435,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/include/sys/signal.h ./newlib/libc/includ
  #ifdef __cplusplus
  }
  #endif
-diff -Naur ../newlib-3.3.0/newlib/libc/include/sys/stat.h ./newlib/libc/include/sys/stat.h
---- ../newlib-3.3.0/newlib/libc/include/sys/stat.h
+diff -Naur ../newlib-4.1.0/newlib/libc/include/sys/stat.h ./newlib/libc/include/sys/stat.h
+--- ../newlib-4.1.0/newlib/libc/include/sys/stat.h
 +++ ./newlib/libc/include/sys/stat.h
 @@ -142,8 +142,11 @@
  int	stat (const char *__restrict __path, struct stat *__restrict __sbuf );
@@ -5451,8 +5451,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/include/sys/stat.h ./newlib/libc/include/
  int	mknod (const char *__path, mode_t __mode, dev_t __dev );
  #endif
  
-diff -Naur ../newlib-3.3.0/newlib/libc/include/sys/_types.h ./newlib/libc/include/sys/_types.h
---- ../newlib-3.3.0/newlib/libc/include/sys/_types.h
+diff -Naur ../newlib-4.1.0/newlib/libc/include/sys/_types.h ./newlib/libc/include/sys/_types.h
+--- ../newlib-4.1.0/newlib/libc/include/sys/_types.h
 +++ ./newlib/libc/include/sys/_types.h
 @@ -205,8 +205,11 @@
  typedef	__uint32_t	__socklen_t;
@@ -5467,10 +5467,10 @@ diff -Naur ../newlib-3.3.0/newlib/libc/include/sys/_types.h ./newlib/libc/includ
  typedef	long		__suseconds_t;	/* microseconds (signed) */
  typedef	unsigned long	__useconds_t;	/* microseconds (unsigned) */
  
-diff -Naur ../newlib-3.3.0/newlib/libc/include/time.h ./newlib/libc/include/time.h
---- ../newlib-3.3.0/newlib/libc/include/time.h
+diff -Naur ../newlib-4.1.0/newlib/libc/include/time.h ./newlib/libc/include/time.h
+--- ../newlib-4.1.0/newlib/libc/include/time.h
 +++ ./newlib/libc/include/time.h
-@@ -316,15 +316,6 @@
+@@ -296,15 +296,6 @@
  
  #endif /* _POSIX_CPUTIME */
  
@@ -5486,8 +5486,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/include/time.h ./newlib/libc/include/time
  #ifdef __cplusplus
  }
  #endif
-diff -Naur ../newlib-3.3.0/newlib/libc/include/unistd.h ./newlib/libc/include/unistd.h
---- ../newlib-3.3.0/newlib/libc/include/unistd.h
+diff -Naur ../newlib-4.1.0/newlib/libc/include/unistd.h ./newlib/libc/include/unistd.h
+--- ../newlib-4.1.0/newlib/libc/include/unistd.h
 +++ ./newlib/libc/include/unistd.h
 @@ -1,6 +1,16 @@
  #ifndef _UNISTD_H_
@@ -5507,8 +5507,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/include/unistd.h ./newlib/libc/include/un
 +#endif
  
  #endif /* _UNISTD_H_ */
-diff -Naur ../newlib-3.3.0/newlib/libc/locale/lctype.c ./newlib/libc/locale/lctype.c
---- ../newlib-3.3.0/newlib/libc/locale/lctype.c
+diff -Naur ../newlib-4.1.0/newlib/libc/locale/lctype.c ./newlib/libc/locale/lctype.c
+--- ../newlib-4.1.0/newlib/libc/locale/lctype.c
 +++ ./newlib/libc/locale/lctype.c
 @@ -82,6 +82,7 @@
      }
@@ -5518,8 +5518,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/locale/lctype.c ./newlib/libc/locale/lcty
  #endif
    return ret;
  }
-diff -Naur ../newlib-3.3.0/newlib/libc/locale/lmessages.c ./newlib/libc/locale/lmessages.c
---- ../newlib-3.3.0/newlib/libc/locale/lmessages.c
+diff -Naur ../newlib-4.1.0/newlib/libc/locale/lmessages.c ./newlib/libc/locale/lmessages.c
+--- ../newlib-4.1.0/newlib/libc/locale/lmessages.c
 +++ ./newlib/libc/locale/lmessages.c
 @@ -101,6 +101,7 @@
      }
@@ -5529,8 +5529,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/locale/lmessages.c ./newlib/libc/locale/l
  #endif
    return ret;
  }
-diff -Naur ../newlib-3.3.0/newlib/libc/locale/lmonetary.c ./newlib/libc/locale/lmonetary.c
---- ../newlib-3.3.0/newlib/libc/locale/lmonetary.c
+diff -Naur ../newlib-4.1.0/newlib/libc/locale/lmonetary.c ./newlib/libc/locale/lmonetary.c
+--- ../newlib-4.1.0/newlib/libc/locale/lmonetary.c
 +++ ./newlib/libc/locale/lmonetary.c
 @@ -128,6 +128,7 @@
      }
@@ -5540,8 +5540,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/locale/lmonetary.c ./newlib/libc/locale/l
  #endif
    return ret;
  }
-diff -Naur ../newlib-3.3.0/newlib/libc/locale/lnumeric.c ./newlib/libc/locale/lnumeric.c
---- ../newlib-3.3.0/newlib/libc/locale/lnumeric.c
+diff -Naur ../newlib-4.1.0/newlib/libc/locale/lnumeric.c ./newlib/libc/locale/lnumeric.c
+--- ../newlib-4.1.0/newlib/libc/locale/lnumeric.c
 +++ ./newlib/libc/locale/lnumeric.c
 @@ -84,6 +84,7 @@
      }
@@ -5551,8 +5551,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/locale/lnumeric.c ./newlib/libc/locale/ln
  #endif
    return ret;
  }
-diff -Naur ../newlib-3.3.0/newlib/libc/locale/timelocal.c ./newlib/libc/locale/timelocal.c
---- ../newlib-3.3.0/newlib/libc/locale/timelocal.c
+diff -Naur ../newlib-4.1.0/newlib/libc/locale/timelocal.c ./newlib/libc/locale/timelocal.c
+--- ../newlib-4.1.0/newlib/libc/locale/timelocal.c
 +++ ./newlib/libc/locale/timelocal.c
 @@ -185,6 +185,7 @@
      }
@@ -5562,10 +5562,10 @@ diff -Naur ../newlib-3.3.0/newlib/libc/locale/timelocal.c ./newlib/libc/locale/t
  #endif
    return (ret);
  }
-diff -Naur ../newlib-3.3.0/newlib/libc/posix/opendir.c ./newlib/libc/posix/opendir.c
---- ../newlib-3.3.0/newlib/libc/posix/opendir.c
+diff -Naur ../newlib-4.1.0/newlib/libc/posix/opendir.c ./newlib/libc/posix/opendir.c
+--- ../newlib-4.1.0/newlib/libc/posix/opendir.c
 +++ ./newlib/libc/posix/opendir.c
-@@ -41,13 +41,21 @@
+@@ -37,13 +37,21 @@
  #include <fcntl.h>
  #include <stdlib.h>
  #include <unistd.h>
@@ -5583,12 +5583,12 @@ diff -Naur ../newlib-3.3.0/newlib/libc/posix/opendir.c ./newlib/libc/posix/opend
 +		close (fd);
 +		errno = ENOTDIR;
 +		return NULL;
-+  }
++	}
  	if ((dirp = (DIR *)malloc(sizeof(DIR))) == NULL) {
  		close (fd);
  		return NULL;
-diff -Naur ../newlib-3.3.0/newlib/libc/stdlib/malloc.c ./newlib/libc/stdlib/malloc.c
---- ../newlib-3.3.0/newlib/libc/stdlib/malloc.c
+diff -Naur ../newlib-4.1.0/newlib/libc/stdlib/malloc.c ./newlib/libc/stdlib/malloc.c
+--- ../newlib-4.1.0/newlib/libc/stdlib/malloc.c
 +++ ./newlib/libc/stdlib/malloc.c
 @@ -158,15 +158,48 @@
  
@@ -5639,8 +5639,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/stdlib/malloc.c ./newlib/libc/stdlib/mall
    _free_r (_REENT, aptr);
  }
  
-diff -Naur ../newlib-3.3.0/newlib/libc/stdlib/mprec.c ./newlib/libc/stdlib/mprec.c
---- ../newlib-3.3.0/newlib/libc/stdlib/mprec.c
+diff -Naur ../newlib-4.1.0/newlib/libc/stdlib/mprec.c ./newlib/libc/stdlib/mprec.c
+--- ../newlib-4.1.0/newlib/libc/stdlib/mprec.c
 +++ ./newlib/libc/stdlib/mprec.c
 @@ -305,7 +305,7 @@
      {
@@ -5656,8 +5656,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/stdlib/mprec.c ./newlib/libc/stdlib/mprec
  	return 0;
  }
 -
-diff -Naur ../newlib-3.3.0/newlib/libc/stdlib/realloc.c ./newlib/libc/stdlib/realloc.c
---- ../newlib-3.3.0/newlib/libc/stdlib/realloc.c
+diff -Naur ../newlib-4.1.0/newlib/libc/stdlib/realloc.c ./newlib/libc/stdlib/realloc.c
+--- ../newlib-4.1.0/newlib/libc/stdlib/realloc.c
 +++ ./newlib/libc/stdlib/realloc.c
 @@ -10,10 +10,29 @@
  
@@ -5689,8 +5689,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/stdlib/realloc.c ./newlib/libc/stdlib/rea
    return _realloc_r (_REENT, ap, nbytes);
  }
  
-diff -Naur ../newlib-3.3.0/newlib/libc/string/local.h ./newlib/libc/string/local.h
---- ../newlib-3.3.0/newlib/libc/string/local.h
+diff -Naur ../newlib-4.1.0/newlib/libc/string/local.h ./newlib/libc/string/local.h
+--- ../newlib-4.1.0/newlib/libc/string/local.h
 +++ ./newlib/libc/string/local.h
 @@ -1,5 +1,5 @@
  #include <_ansi.h>
@@ -5699,8 +5699,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/string/local.h ./newlib/libc/string/local
  
  /* internal function to compute width of wide char. */
  int __wcwidth (wint_t);
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/configure ./newlib/libc/sys/configure
---- ../newlib-3.3.0/newlib/libc/sys/configure
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/configure ./newlib/libc/sys/configure
+--- ../newlib-4.1.0/newlib/libc/sys/configure
 +++ ./newlib/libc/sys/configure
 @@ -791,6 +791,7 @@
  arm
@@ -5719,8 +5719,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/configure ./newlib/libc/sys/configure
  	epiphany) subdirs="$subdirs epiphany"
   ;;
  	h8300hms) subdirs="$subdirs h8300hms"
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/configure.in ./newlib/libc/sys/configure.in
---- ../newlib-3.3.0/newlib/libc/sys/configure.in
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/configure.in ./newlib/libc/sys/configure.in
+--- ../newlib-4.1.0/newlib/libc/sys/configure.in
 +++ ./newlib/libc/sys/configure.in
 @@ -27,6 +27,7 @@
  	arm) AC_CONFIG_SUBDIRS(arm) ;;
@@ -5730,8 +5730,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/configure.in ./newlib/libc/sys/config
  	epiphany) AC_CONFIG_SUBDIRS(epiphany) ;;
  	h8300hms) AC_CONFIG_SUBDIRS(h8300hms) ;;
  	h8500hms) AC_CONFIG_SUBDIRS(h8500hms) ;;
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/configure ./newlib/libc/sys/enclave/configure
---- ../newlib-3.3.0/newlib/libc/sys/enclave/configure
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/configure ./newlib/libc/sys/enclave/configure
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/configure
 +++ ./newlib/libc/sys/enclave/configure
 @@ -0,0 +1,4747 @@
 +#! /bin/sh
@@ -10481,8 +10481,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/configure ./newlib/libc/sys/e
 +$as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 +fi
 +
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/configure.in ./newlib/libc/sys/enclave/configure.in
---- ../newlib-3.3.0/newlib/libc/sys/enclave/configure.in
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/configure.in ./newlib/libc/sys/enclave/configure.in
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/configure.in
 +++ ./newlib/libc/sys/enclave/configure.in
 @@ -0,0 +1,12 @@
 +dnl This is the newlib/libc/sys/enclave configure.in file.
@@ -10497,38 +10497,38 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/configure.in ./newlib/libc/sy
 +
 +AC_CONFIG_FILES([Makefile])
 +AC_OUTPUT
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/crt0.S ./newlib/libc/sys/enclave/crt0.S
---- ../newlib-3.3.0/newlib/libc/sys/enclave/crt0.S
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/crt0.S ./newlib/libc/sys/enclave/crt0.S
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/crt0.S
 +++ ./newlib/libc/sys/enclave/crt0.S
 @@ -0,0 +1,2 @@
 +// The Enclave toolchain has no concept of startup routines. This file is
 +// included for compatibility with the newlib build system.
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/arpa/inet.h ./newlib/libc/sys/enclave/include/arpa/inet.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/arpa/inet.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/arpa/inet.h ./newlib/libc/sys/enclave/include/arpa/inet.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/arpa/inet.h
 +++ ./newlib/libc/sys/enclave/include/arpa/inet.h
 @@ -0,0 +1,4 @@
 +#ifndef _ARPA_INET_H_
 +#define _ARPA_INET_H_
 +
 +#endif  // _ARPA_INET_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/arpa/nameser_compat.h ./newlib/libc/sys/enclave/include/arpa/nameser_compat.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/arpa/nameser_compat.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/arpa/nameser_compat.h ./newlib/libc/sys/enclave/include/arpa/nameser_compat.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/arpa/nameser_compat.h
 +++ ./newlib/libc/sys/enclave/include/arpa/nameser_compat.h
 @@ -0,0 +1,4 @@
 +#ifndef _ARPA_NAMESER_COMPAT_H_
 +#define _ARPA_NAMESER_COMPAT_H_
 +
 +#endif  // _ARPA_NAMESER_COMPAT_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/arpa/nameser.h ./newlib/libc/sys/enclave/include/arpa/nameser.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/arpa/nameser.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/arpa/nameser.h ./newlib/libc/sys/enclave/include/arpa/nameser.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/arpa/nameser.h
 +++ ./newlib/libc/sys/enclave/include/arpa/nameser.h
 @@ -0,0 +1,4 @@
 +#ifndef _ARPA_NAMESER_H_
 +#define _ARPA_NAMESER_H_
 +
 +#endif  // _ARPA_NAMESER_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/bits/wordsize.h ./newlib/libc/sys/enclave/include/bits/wordsize.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/bits/wordsize.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/bits/wordsize.h ./newlib/libc/sys/enclave/include/bits/wordsize.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/bits/wordsize.h
 +++ ./newlib/libc/sys/enclave/include/bits/wordsize.h
 @@ -0,0 +1,12 @@
 +#ifndef _BITS_WORDSIZE_H_
@@ -10543,24 +10543,24 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/bits/wordsize.h ./new
 +#endif
 +
 +#endif  // _BITS_WORDSIZE_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/byteswap.h ./newlib/libc/sys/enclave/include/byteswap.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/byteswap.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/byteswap.h ./newlib/libc/sys/enclave/include/byteswap.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/byteswap.h
 +++ ./newlib/libc/sys/enclave/include/byteswap.h
 @@ -0,0 +1,4 @@
 +#ifndef _BYTESWAP_H_
 +#define _BYTESWAP_H_
 +
 +#endif  // _BYTESWAP_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/dlfcn.h ./newlib/libc/sys/enclave/include/dlfcn.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/dlfcn.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/dlfcn.h ./newlib/libc/sys/enclave/include/dlfcn.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/dlfcn.h
 +++ ./newlib/libc/sys/enclave/include/dlfcn.h
 @@ -0,0 +1,4 @@
 +#ifndef _DLFCN_H_
 +#define _DLFCN_H_
 +
 +#endif  // _DLFCN_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/endian.h ./newlib/libc/sys/enclave/include/endian.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/endian.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/endian.h ./newlib/libc/sys/enclave/include/endian.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/endian.h
 +++ ./newlib/libc/sys/enclave/include/endian.h
 @@ -0,0 +1,6 @@
 +#ifndef _ENDIAN_H
@@ -10569,8 +10569,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/endian.h ./newlib/lib
 +#include <machine/endian.h>
 +
 +#endif  // _ENDIAN_H
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/features.h ./newlib/libc/sys/enclave/include/features.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/features.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/features.h ./newlib/libc/sys/enclave/include/features.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/features.h
 +++ ./newlib/libc/sys/enclave/include/features.h
 @@ -0,0 +1,11 @@
 +#ifndef _FEATURES_H
@@ -10584,16 +10584,16 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/features.h ./newlib/l
 +
 +
 +#endif  // _FEATURES_H
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/ifaddrs.h ./newlib/libc/sys/enclave/include/ifaddrs.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/ifaddrs.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/ifaddrs.h ./newlib/libc/sys/enclave/include/ifaddrs.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/ifaddrs.h
 +++ ./newlib/libc/sys/enclave/include/ifaddrs.h
 @@ -0,0 +1,4 @@
 +#ifndef _IFADDRS_H_
 +#define _IFADDRS_H_
 +
 +#endif  // _IFADDRS_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/limits.h ./newlib/libc/sys/enclave/include/limits.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/limits.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/limits.h ./newlib/libc/sys/enclave/include/limits.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/limits.h
 +++ ./newlib/libc/sys/enclave/include/limits.h
 @@ -0,0 +1,11 @@
 +#ifndef _LIMITS_H_
@@ -10607,8 +10607,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/limits.h ./newlib/lib
 +#include <sys/syslimits.h>
 +
 +#endif  // _LIMITS_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/linux/random.h ./newlib/libc/sys/enclave/include/linux/random.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/linux/random.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/linux/random.h ./newlib/libc/sys/enclave/include/linux/random.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/linux/random.h
 +++ ./newlib/libc/sys/enclave/include/linux/random.h
 @@ -0,0 +1,8 @@
 +#ifndef THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_LINUX_RANDOM_H_
@@ -10619,8 +10619,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/linux/random.h ./newl
 +#define RNDGETENTCNT _IOR( 'R', 0x00, int )
 +
 +#endif  // THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_LINUX_RANDOM_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/machine/_types.h ./newlib/libc/sys/enclave/include/machine/_types.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/machine/_types.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/machine/_types.h ./newlib/libc/sys/enclave/include/machine/_types.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/machine/_types.h
 +++ ./newlib/libc/sys/enclave/include/machine/_types.h
 @@ -0,0 +1,40 @@
 +#ifndef _MACHINE__TYPES_H
@@ -10663,8 +10663,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/machine/_types.h ./ne
 +
 +#endif  // _MACHINE__TYPES_H
 +
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/memory.h ./newlib/libc/sys/enclave/include/memory.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/memory.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/memory.h ./newlib/libc/sys/enclave/include/memory.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/memory.h
 +++ ./newlib/libc/sys/enclave/include/memory.h
 @@ -0,0 +1,6 @@
 +#ifndef _MEMORY_H
@@ -10673,48 +10673,48 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/memory.h ./newlib/lib
 +#include <string.h>
 +
 +#endif  // _MEMORY_H
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/net/if.h ./newlib/libc/sys/enclave/include/net/if.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/net/if.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/net/if.h ./newlib/libc/sys/enclave/include/net/if.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/net/if.h
 +++ ./newlib/libc/sys/enclave/include/net/if.h
 @@ -0,0 +1,4 @@
 +#ifndef _NET_IF_H_
 +#define _NET_IF_H_
 +
 +#endif  // _NET_IF_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/netdb.h ./newlib/libc/sys/enclave/include/netdb.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/netdb.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/netdb.h ./newlib/libc/sys/enclave/include/netdb.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/netdb.h
 +++ ./newlib/libc/sys/enclave/include/netdb.h
 @@ -0,0 +1,4 @@
 +#ifndef _NETDB_H_
 +#define _NETDB_H_
 +
 +#endif  // _NETDB_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/netinet/in.h ./newlib/libc/sys/enclave/include/netinet/in.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/netinet/in.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/netinet/in.h ./newlib/libc/sys/enclave/include/netinet/in.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/netinet/in.h
 +++ ./newlib/libc/sys/enclave/include/netinet/in.h
 @@ -0,0 +1,4 @@
 +#ifndef _NETINET_IN_H_
 +#define _NETINET_IN_H_
 +
 +#endif  // _NETINET_IN_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/netinet/tcp.h ./newlib/libc/sys/enclave/include/netinet/tcp.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/netinet/tcp.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/netinet/tcp.h ./newlib/libc/sys/enclave/include/netinet/tcp.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/netinet/tcp.h
 +++ ./newlib/libc/sys/enclave/include/netinet/tcp.h
 @@ -0,0 +1,4 @@
 +#ifndef _NETINET_TCP_H_
 +#define _NETINET_TCP_H_
 +
 +#endif  // _NETINET_TCP_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/netinet/udp.h ./newlib/libc/sys/enclave/include/netinet/udp.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/netinet/udp.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/netinet/udp.h ./newlib/libc/sys/enclave/include/netinet/udp.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/netinet/udp.h
 +++ ./newlib/libc/sys/enclave/include/netinet/udp.h
 @@ -0,0 +1,4 @@
 +#ifndef _NETINET_UDP_H_
 +#define _NETINET_UDP_H_
 +
 +#endif  // _NETINET_UDP_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/_newlib_version.h ./newlib/libc/sys/enclave/include/_newlib_version.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/_newlib_version.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/_newlib_version.h ./newlib/libc/sys/enclave/include/_newlib_version.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/_newlib_version.h
 +++ ./newlib/libc/sys/enclave/include/_newlib_version.h
 @@ -0,0 +1,11 @@
 +/* _newlib_version.h.  Generated from _newlib_version.hin by configure.  */
@@ -10728,8 +10728,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/_newlib_version.h ./n
 +#define __NEWLIB_PATCHLEVEL__ 0
 +
 +#endif /* !_NEWLIB_VERSION_H__ */
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/nl_types.h ./newlib/libc/sys/enclave/include/nl_types.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/nl_types.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/nl_types.h ./newlib/libc/sys/enclave/include/nl_types.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/nl_types.h
 +++ ./newlib/libc/sys/enclave/include/nl_types.h
 @@ -0,0 +1,25 @@
 +#ifndef THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_NL_TYPES_H_
@@ -10757,24 +10757,24 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/nl_types.h ./newlib/l
 +#endif
 +
 +#endif  // THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_NL_TYPES_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/poll.h ./newlib/libc/sys/enclave/include/poll.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/poll.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/poll.h ./newlib/libc/sys/enclave/include/poll.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/poll.h
 +++ ./newlib/libc/sys/enclave/include/poll.h
 @@ -0,0 +1,4 @@
 +#ifndef _POLL_H_
 +#define _POLL_H_
 +
 +#endif  // _POLL_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/semaphore.h ./newlib/libc/sys/enclave/include/semaphore.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/semaphore.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/semaphore.h ./newlib/libc/sys/enclave/include/semaphore.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/semaphore.h
 +++ ./newlib/libc/sys/enclave/include/semaphore.h
 @@ -0,0 +1,4 @@
 +#ifndef _SEMAPHORE_H_
 +#define _SEMAPHORE_H_
 +
 +#endif  // _SEMAPHORE_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/auxv.h ./newlib/libc/sys/enclave/include/sys/auxv.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/auxv.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/auxv.h ./newlib/libc/sys/enclave/include/sys/auxv.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/auxv.h
 +++ ./newlib/libc/sys/enclave/include/sys/auxv.h
 @@ -0,0 +1,14 @@
 +#ifndef _SYS_AUXV_H
@@ -10791,8 +10791,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/auxv.h ./newlib/l
 +#endif
 +
 +#endif
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/dirent.h ./newlib/libc/sys/enclave/include/sys/dirent.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/dirent.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/dirent.h ./newlib/libc/sys/enclave/include/sys/dirent.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/dirent.h
 +++ ./newlib/libc/sys/enclave/include/sys/dirent.h
 @@ -0,0 +1,23 @@
 +#ifndef _SYS_DIRENT_H
@@ -10818,32 +10818,32 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/dirent.h ./newlib
 +
 +
 +#endif  // _SYS_DIRENT_H
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/epoll.h ./newlib/libc/sys/enclave/include/sys/epoll.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/epoll.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/epoll.h ./newlib/libc/sys/enclave/include/sys/epoll.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/epoll.h
 +++ ./newlib/libc/sys/enclave/include/sys/epoll.h
 @@ -0,0 +1,4 @@
 +#ifndef _SYS_EPOLL_H_
 +#define _SYS_EPOLL_H_
 +
 +#endif  // _SYS_EPOLL_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/eventfd.h ./newlib/libc/sys/enclave/include/sys/eventfd.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/eventfd.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/eventfd.h ./newlib/libc/sys/enclave/include/sys/eventfd.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/eventfd.h
 +++ ./newlib/libc/sys/enclave/include/sys/eventfd.h
 @@ -0,0 +1,4 @@
 +#ifndef _SYS_EVENTFD_H_
 +#define _SYS_EVENTFD_H_
 +
 +#endif  // _SYS_EVENTFD_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/inotify.h ./newlib/libc/sys/enclave/include/sys/inotify.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/inotify.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/inotify.h ./newlib/libc/sys/enclave/include/sys/inotify.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/inotify.h
 +++ ./newlib/libc/sys/enclave/include/sys/inotify.h
 @@ -0,0 +1,4 @@
 +#ifndef _SYS_INOTIFY_H_
 +#define _SYS_INOTIFY_H_
 +
 +#endif  // _SYS_INOTIFY_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/ioccom.h ./newlib/libc/sys/enclave/include/sys/ioccom.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/ioccom.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/ioccom.h ./newlib/libc/sys/enclave/include/sys/ioccom.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/ioccom.h
 +++ ./newlib/libc/sys/enclave/include/sys/ioccom.h
 @@ -0,0 +1,65 @@
 +/*-
@@ -10911,8 +10911,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/ioccom.h ./newlib
 +#define	_IOWR(g,n,t)	_IOC(IOC_INOUT,	(g), (n), sizeof(t))
 +
 +#endif /* !_SYS_IOCCOM_H_ */
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/ioctl.h ./newlib/libc/sys/enclave/include/sys/ioctl.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/ioctl.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/ioctl.h ./newlib/libc/sys/enclave/include/sys/ioctl.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/ioctl.h
 +++ ./newlib/libc/sys/enclave/include/sys/ioctl.h
 @@ -0,0 +1,26 @@
 +#ifndef _SYS_IOCTL_H_
@@ -10941,8 +10941,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/ioctl.h ./newlib/
 +#endif
 +
 +#endif  /* _SYS_IOCTL_H_ */
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/mman.h ./newlib/libc/sys/enclave/include/sys/mman.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/mman.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/mman.h ./newlib/libc/sys/enclave/include/sys/mman.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/mman.h
 +++ ./newlib/libc/sys/enclave/include/sys/mman.h
 @@ -0,0 +1,78 @@
 +/*
@@ -11023,16 +11023,16 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/mman.h ./newlib/l
 +#endif
 +
 +#endif  // _SYS_MMAN_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/poll.h ./newlib/libc/sys/enclave/include/sys/poll.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/poll.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/poll.h ./newlib/libc/sys/enclave/include/sys/poll.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/poll.h
 +++ ./newlib/libc/sys/enclave/include/sys/poll.h
 @@ -0,0 +1,4 @@
 +#ifndef _SYS_POLL_H_
 +#define _SYS_POLL_H_
 +
 +#endif  // _SYS_POLL_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 +++ ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 @@ -0,0 +1,130 @@
 +#ifndef _SYS__PTHREADTYPES_H
@@ -11165,16 +11165,16 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h .
 +};
 +
 +#endif  // _SYS__PTHREADTYPES_H
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/socket.h ./newlib/libc/sys/enclave/include/sys/socket.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/socket.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/socket.h ./newlib/libc/sys/enclave/include/sys/socket.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/socket.h
 +++ ./newlib/libc/sys/enclave/include/sys/socket.h
 @@ -0,0 +1,4 @@
 +#ifndef _SYS_SOCKET_H_
 +#define _SYS_SOCKET_H_
 +
 +#endif  // _SYS_SOCKET_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/_statfs.h ./newlib/libc/sys/enclave/include/sys/_statfs.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/_statfs.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/_statfs.h ./newlib/libc/sys/enclave/include/sys/_statfs.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/_statfs.h
 +++ ./newlib/libc/sys/enclave/include/sys/_statfs.h
 @@ -0,0 +1,23 @@
 +#ifndef THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_SYS__STATFS_H_
@@ -11200,8 +11200,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/_statfs.h ./newli
 +#endif
 +
 +#endif  // THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_SYS__STATFS_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/statfs.h ./newlib/libc/sys/enclave/include/sys/statfs.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/statfs.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/statfs.h ./newlib/libc/sys/enclave/include/sys/statfs.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/statfs.h
 +++ ./newlib/libc/sys/enclave/include/sys/statfs.h
 @@ -0,0 +1,78 @@
 +#ifndef THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_SYS_STATFS_H_
@@ -11282,8 +11282,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/statfs.h ./newlib
 +#endif
 +
 +#endif  // THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_SYS_STATFS_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/statvfs.h ./newlib/libc/sys/enclave/include/sys/statvfs.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/statvfs.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/statvfs.h ./newlib/libc/sys/enclave/include/sys/statvfs.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/statvfs.h
 +++ ./newlib/libc/sys/enclave/include/sys/statvfs.h
 @@ -0,0 +1,32 @@
 +#ifndef THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_SYS_STATVFS_H_
@@ -11318,8 +11318,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/statvfs.h ./newli
 +#endif
 +
 +#endif  // THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_SYS_STATVFS_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/syscall.h ./newlib/libc/sys/enclave/include/sys/syscall.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/syscall.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/syscall.h ./newlib/libc/sys/enclave/include/sys/syscall.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/syscall.h
 +++ ./newlib/libc/sys/enclave/include/sys/syscall.h
 @@ -0,0 +1,340 @@
 +#ifndef _SYS_SYSCALL_H_
@@ -11662,8 +11662,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/syscall.h ./newli
 +#define SYS_rseq 334
 +
 +#endif  // _SYS_SYSCALL_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/syslimits.h ./newlib/libc/sys/enclave/include/sys/syslimits.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/syslimits.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/syslimits.h ./newlib/libc/sys/enclave/include/sys/syslimits.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/syslimits.h
 +++ ./newlib/libc/sys/enclave/include/sys/syslimits.h
 @@ -0,0 +1,8 @@
 +#ifndef _SYS_SYSLIMITS_H_
@@ -11674,56 +11674,56 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/syslimits.h ./new
 +#define PIPE_BUF 4096
 +
 +#endif  // _SYS_SYSLIMITS_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/syslog.h ./newlib/libc/sys/enclave/include/sys/syslog.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/syslog.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/syslog.h ./newlib/libc/sys/enclave/include/sys/syslog.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/syslog.h
 +++ ./newlib/libc/sys/enclave/include/sys/syslog.h
 @@ -0,0 +1,4 @@
 +#ifndef _SYS_SYSLOG_H_
 +#define _SYS_SYSLOG_H_
 +
 +#endif  // _SYS_SYSLOG_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/sysmacros.h ./newlib/libc/sys/enclave/include/sys/sysmacros.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/sysmacros.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/sysmacros.h ./newlib/libc/sys/enclave/include/sys/sysmacros.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/sysmacros.h
 +++ ./newlib/libc/sys/enclave/include/sys/sysmacros.h
 @@ -0,0 +1,4 @@
 +#ifndef _SYS_SYSMACROS_H_
 +#define _SYS_SYSMACROS_H_
 +
 +#endif  // _SYS_SYSMACROS_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/ucontext.h ./newlib/libc/sys/enclave/include/sys/ucontext.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/ucontext.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/ucontext.h ./newlib/libc/sys/enclave/include/sys/ucontext.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/ucontext.h
 +++ ./newlib/libc/sys/enclave/include/sys/ucontext.h
 @@ -0,0 +1,4 @@
 +#ifndef _SYS_UCONTEXT_H_
 +#define _SYS_UCONTEXT_H_
 +
 +#endif  // _SYS_UCONTEXT_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/uio.h ./newlib/libc/sys/enclave/include/sys/uio.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/uio.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/uio.h ./newlib/libc/sys/enclave/include/sys/uio.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/uio.h
 +++ ./newlib/libc/sys/enclave/include/sys/uio.h
 @@ -0,0 +1,4 @@
 +#ifndef _SYS_UIO_H_
 +#define _SYS_UIO_H_
 +
 +#endif  // _SYS_UIO_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/un.h ./newlib/libc/sys/enclave/include/sys/un.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/un.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/un.h ./newlib/libc/sys/enclave/include/sys/un.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/un.h
 +++ ./newlib/libc/sys/enclave/include/sys/un.h
 @@ -0,0 +1,4 @@
 +#ifndef _SYS_UN_H_
 +#define _SYS_UN_H_
 +
 +#endif  // _SYS_UN_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/utsname.h ./newlib/libc/sys/enclave/include/sys/utsname.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/utsname.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/utsname.h ./newlib/libc/sys/enclave/include/sys/utsname.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/utsname.h
 +++ ./newlib/libc/sys/enclave/include/sys/utsname.h
 @@ -0,0 +1,4 @@
 +#ifndef _SYS_UTSNAME_H_
 +#define _SYS_UTSNAME_H_
 +
 +#endif  // _SYS_UTSNAME_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/xattr.h ./newlib/libc/sys/enclave/include/sys/xattr.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/xattr.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/xattr.h ./newlib/libc/sys/enclave/include/sys/xattr.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/sys/xattr.h
 +++ ./newlib/libc/sys/enclave/include/sys/xattr.h
 @@ -0,0 +1,32 @@
 +#ifndef _XATTR_H_
@@ -11758,8 +11758,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/sys/xattr.h ./newlib/
 +#endif
 +
 +#endif  // _XATTR_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/syscall.h ./newlib/libc/sys/enclave/include/syscall.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/syscall.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/syscall.h ./newlib/libc/sys/enclave/include/syscall.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/syscall.h
 +++ ./newlib/libc/sys/enclave/include/syscall.h
 @@ -0,0 +1,6 @@
 +#ifndef _SYSCALL_H_
@@ -11768,16 +11768,16 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/syscall.h ./newlib/li
 +#include <sys/syscall.h>
 +
 +#endif  // _SYSCALL_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/include/ucontext.h ./newlib/libc/sys/enclave/include/ucontext.h
---- ../newlib-3.3.0/newlib/libc/sys/enclave/include/ucontext.h
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/include/ucontext.h ./newlib/libc/sys/enclave/include/ucontext.h
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/include/ucontext.h
 +++ ./newlib/libc/sys/enclave/include/ucontext.h
 @@ -0,0 +1,4 @@
 +#ifndef _UCONTEXT_H_
 +#define _UCONTEXT_H_
 +
 +#endif  // _UCONTEXT_H_
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/Makefile.am ./newlib/libc/sys/enclave/Makefile.am
---- ../newlib-3.3.0/newlib/libc/sys/enclave/Makefile.am
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/Makefile.am ./newlib/libc/sys/enclave/Makefile.am
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/Makefile.am
 +++ ./newlib/libc/sys/enclave/Makefile.am
 @@ -0,0 +1,16 @@
 +AUTOMAKE_OPTIONS = cygnus
@@ -11796,8 +11796,8 @@ diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/Makefile.am ./newlib/libc/sys
 +
 +ACLOCAL_AMFLAGS = -I ../../.. -I ../../../..
 +CONFIG_STATUS_DEPENDENCIES = $(newlib_basedir)/configure.host
-diff -Naur ../newlib-3.3.0/newlib/libc/sys/enclave/Makefile.in ./newlib/libc/sys/enclave/Makefile.in
---- ../newlib-3.3.0/newlib/libc/sys/enclave/Makefile.in
+diff -Naur ../newlib-4.1.0/newlib/libc/sys/enclave/Makefile.in ./newlib/libc/sys/enclave/Makefile.in
+--- ../newlib-4.1.0/newlib/libc/sys/enclave/Makefile.in
 +++ ./newlib/libc/sys/enclave/Makefile.in
 @@ -0,0 +1,465 @@
 +# Makefile.in generated by automake 1.11.6 from Makefile.am.
