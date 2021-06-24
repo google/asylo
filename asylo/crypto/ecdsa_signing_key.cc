@@ -140,7 +140,7 @@ bool PublicKeyCompare(const EC_KEY *key1, const EC_KEY *key2) {
          (EC_POINT_cmp(group, point, other_point, /*ctx=*/nullptr) == 0);
 }
 
-StatusOr<std::string> SerializePublicKeyToDer(const EC_KEY *public_key) {
+StatusOr<std::string> BsslSerializePublicKeyToDer(const EC_KEY *public_key) {
   uint8_t *key = nullptr;
   int length = i2d_EC_PUBKEY(public_key, &key);
   if (length <= 0) {
@@ -150,7 +150,7 @@ StatusOr<std::string> SerializePublicKeyToDer(const EC_KEY *public_key) {
   return std::string(reinterpret_cast<char *>(key), length);
 }
 
-StatusOr<std::string> SerializePublicKeyToPem(EC_KEY *public_key) {
+StatusOr<std::string> BsslSerializePublicKeyToPem(EC_KEY *public_key) {
   bssl::UniquePtr<BIO> key_bio(BIO_new(BIO_s_mem()));
   if (!PEM_write_bio_EC_PUBKEY(key_bio.get(), public_key)) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
@@ -248,7 +248,7 @@ StatusOr<bssl::UniquePtr<EC_KEY>> CreatePrivateEcKeyFromPem(
   return std::move(key);
 }
 
-StatusOr<CleansingVector<uint8_t>> SerializePrivateKeyToDer(
+StatusOr<CleansingVector<uint8_t>> BsslSerializePrivateKeyToDer(
     const EC_KEY *private_key) {
   CBB buffer;
   if (!CBB_init(&buffer, /*initial_capacity=*/0) ||
@@ -270,7 +270,8 @@ StatusOr<CleansingVector<uint8_t>> SerializePrivateKeyToDer(
   return serialized_key;
 }
 
-StatusOr<CleansingVector<char>> SerializePrivateKeyToPem(EC_KEY *private_key) {
+StatusOr<CleansingVector<char>> BsslSerializePrivateKeyToPem(
+    EC_KEY *private_key) {
   bssl::UniquePtr<BIO> key_bio(BIO_new(BIO_s_mem()));
   if (!PEM_write_bio_ECPrivateKey(key_bio.get(), private_key,
                                   /*enc=*/nullptr, /*kstr=*/nullptr, /*klen=*/0,

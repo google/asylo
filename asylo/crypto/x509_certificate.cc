@@ -264,6 +264,20 @@ StatusOr<std::string> ToDerEncoding(X509 *x509) {
   return std::string(data, length);
 }
 
+StatusOr<std::string> ToDerEncoding(X509_REQ *x509_req) {
+  bssl::UniquePtr<BIO> x509_bio(BIO_new(BIO_s_mem()));
+  if (i2d_X509_REQ_bio(x509_bio.get(), x509_req) != 1) {
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+
+  char *data;
+  long length = BIO_get_mem_data(x509_bio.get(), &data);
+  if (length <= 0) {
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+  return std::string(data, length);
+}
+
 // Returns a std::vector<char> with the same contents as |str|. This is useful
 // for obtaining a non-const char * based on a string. The returned vector ends
 // with a null byte.
@@ -385,6 +399,15 @@ Status SetVersion(X509Version version, X509 *x509) {
   return absl::OkStatus();
 }
 
+// Sets the PKCS 10 version in |x509_req|.
+Status SetVersion(Pkcs10Version version, X509_REQ *x509_req) {
+  if (X509_REQ_set_version(x509_req,
+                           static_cast<long>(version)) != 1) {
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+  return absl::OkStatus();
+}
+
 // Sets the serial number in |x509|.
 Status SetSerialNumber(const BIGNUM &serial_number, X509 *x509) {
   if (BN_is_negative(&serial_number)) {
@@ -438,6 +461,16 @@ Status SetSubjectName(const X509Name &name, X509 *x509) {
   return absl::OkStatus();
 }
 
+// Sets the subject name in |x509_req|.
+Status SetSubjectName(const X509Name &name, X509_REQ *x509_req) {
+  bssl::UniquePtr<X509_NAME> x509_name;
+  ASYLO_ASSIGN_OR_RETURN(x509_name, WriteName(name));
+  if (X509_REQ_set_subject_name(x509_req, x509_name.get()) != 1) {
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+  return absl::OkStatus();
+}
+
 // Sets the subject key in |x509|.
 Status SetSubjectPublicKey(absl::string_view subject_key_der, X509 *x509) {
   const unsigned char *der_data =
@@ -448,6 +481,22 @@ Status SetSubjectPublicKey(absl::string_view subject_key_der, X509 *x509) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   if (X509_set_pubkey(x509, evp_pkey.get()) != 1) {
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+  return absl::OkStatus();
+}
+
+// Sets the subject key in |x509_req|.
+Status SetSubjectPublicKey(absl::string_view subject_key_der,
+                           X509_REQ *x509_req) {
+  const unsigned char *der_data =
+      reinterpret_cast<const unsigned char *>(subject_key_der.data());
+  bssl::UniquePtr<EVP_PKEY> evp_pkey(d2i_PUBKEY(
+      /*out=*/nullptr, &der_data, subject_key_der.size()));
+  if (evp_pkey == nullptr) {
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+  if (X509_REQ_set_pubkey(x509_req, evp_pkey.get()) != 1) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
   return absl::OkStatus();
@@ -716,6 +765,37 @@ StatusOr<std::unique_ptr<X509Certificate>> X509CertificateBuilder::SignAndBuild(
   return absl::WrapUnique(new X509Certificate(std::move(x509)));
 }
 
+StatusOr<std::string> X509CsrBuilder::SignAndBuild() const {
+  if (!subject.has_value()) {
+    return Status(absl::StatusCode::kInvalidArgument,
+                  "Cannot SignAndBuild without a subject");
+  }
+
+  if (key == nullptr) {
+    return Status(absl::StatusCode::kInvalidArgument,
+                  "Cannot SignAndBuild without a key");
+  }
+
+  bssl::UniquePtr<X509_REQ> x509_req(X509_REQ_new());
+  if (x509_req == nullptr) {
+    return Status(absl::StatusCode::kInternal, "Error allocating X509_REQ");
+  }
+
+  ASYLO_RETURN_IF_ERROR(SetVersion(version, x509_req.get()));
+
+  ASYLO_RETURN_IF_ERROR(SetSubjectName(subject.value(), x509_req.get()));
+
+  std::string public_key_der;
+  ASYLO_ASSIGN_OR_RETURN(public_key_der, key->SerializePublicKeyToDer());
+
+  ASYLO_RETURN_IF_ERROR(SetSubjectPublicKey(public_key_der, x509_req.get()));
+
+  ASYLO_RETURN_IF_ERROR(
+      WithContext(key->SignX509Req(x509_req.get()), "Failed to sign CSR: "));
+
+  return ToDerEncoding(x509_req.get());
+}
+
 StatusOr<std::unique_ptr<X509Certificate>> X509Certificate::Create(
     const Certificate &certificate) {
   switch (certificate.format()) {
@@ -820,21 +900,12 @@ StatusOr<bssl::UniquePtr<X509_REQ>> CertificateSigningRequestToX509Req(
 
 StatusOr<CertificateSigningRequest> X509ReqToDerCertificateSigningRequest(
     const X509_REQ &x509_req) {
-  bssl::UniquePtr<BIO> x509_bio(BIO_new(BIO_s_mem()));
-  if (i2d_X509_REQ_bio(x509_bio.get(), const_cast<X509_REQ *>(&x509_req)) !=
-      1) {
-    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
-  }
-
-  char *data;
-  long length = BIO_get_mem_data(x509_bio.get(), &data);
-  if (length <= 0) {
-    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
-  }
+  std::string der;
+  ASYLO_ASSIGN_OR_RETURN(der, ToDerEncoding(const_cast<X509_REQ *>(&x509_req)));
 
   CertificateSigningRequest csr;
   csr.set_format(CertificateSigningRequest::PKCS10_DER);
-  csr.set_data(data, length);
+  csr.set_data(der);
   return csr;
 }
 

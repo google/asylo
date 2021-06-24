@@ -58,6 +58,11 @@ enum class X509Version {
   kVersion3 = 2,
 };
 
+// The versions of the PKCS 10 specification.
+enum class Pkcs10Version {
+  kVersion1 = 0,
+};
+
 // Represents an entry in an X.509 Name. The |value| field is UTF-8 encoded but
 // will typically be an ASCII string.
 struct X509NameEntry {
@@ -182,6 +187,27 @@ struct X509CertificateBuilder {
   // X509Certificate.
   StatusOr<std::unique_ptr<X509Certificate>> SignAndBuild(
       const X509Signer &issuer_key) const;
+};
+
+// Represents the data needed to create an X.509 certificate signing request.
+//
+// Some of the absl::optional<...> fields in X509CsrBuilder are in fact
+// required, and SignAndBuild() will fail if they are absent. This is to prevent
+// users from forgetting to set them.
+struct X509CsrBuilder {
+  // The X.509 version to use.
+  Pkcs10Version version = Pkcs10Version::kVersion1;
+
+  // The Name structure corresponding to the certificate's subject. Required.
+  absl::optional<X509Name> subject;
+
+  // The key to certify. Required.
+  std::unique_ptr<asylo::X509Signer> key;
+
+  // Builds an X.509 CSR using the data in this builder, signs the
+  // certificate using |key|, and returns the certificate as a DER-encoded
+  // PKCS 10 CSR.
+  StatusOr<std::string> SignAndBuild() const;
 };
 
 // An implementation of CertificateInterface that can parse and verify

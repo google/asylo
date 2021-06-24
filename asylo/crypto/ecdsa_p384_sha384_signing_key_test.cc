@@ -155,10 +155,10 @@ class EcdsaP384Sha384SigningKeyTest
   using CurvePointType = EccP384CurvePoint;
 
   EcdsaP384Sha384SigningKeyTest()
-      : EcdsaSigningKeyTest(kTestSigningKeyDer, kTestSigningKeyPem,
-                            kTestSigningKeyDerProto, kTestSigningKeyPemProto,
-                            kTestMessageHex, kBadGroup, kMessageSize,
-                            SignatureScheme::ECDSA_P384_SHA384) {}
+      : EcdsaSigningKeyTest(
+            kTestSigningKeyDer, kTestSigningKeyPem, kTestSigningKeyDerProto,
+            kTestSigningKeyPemProto, kTestMessageHex, kBadGroup, kMessageSize,
+            SignatureScheme::ECDSA_P384_SHA384, kTestVerifyingKeyDer) {}
 };
 
 using SigningKeyTypes = testing::Types<EcdsaP384Sha384SigningKeyTest>;

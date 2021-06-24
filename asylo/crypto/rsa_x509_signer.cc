@@ -137,6 +137,10 @@ Status RsaX509Signer::SignX509(X509* x509) const {
   return absl::OkStatus();
 }
 
+Status RsaX509Signer::SignX509Req(X509_REQ* x509_req) const {
+  return absl::UnimplementedError("SignX509Req unsupported for RsaX509Signer");
+}
+
 RsaX509Signer::RsaX509Signer(bssl::UniquePtr<RSA> private_key,
                              SignatureAlgorithm signature_algorithm)
     : private_key_(std::move(private_key)),

@@ -19,6 +19,8 @@
 
 #include <openssl/base.h>
 
+#include <string>
+
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -34,10 +36,16 @@ class X509Signer {
   // to |serialized_key|.
   virtual StatusOr<CleansingVector<char>> SerializeToPem() const = 0;
 
+  virtual StatusOr<std::string> SerializePublicKeyToDer() const = 0;
+
   // Signs |x509|. Returns a non-OK Status if the signing operation failed. This
   // method treats |x509| as an in-out parameter.
   //
   virtual Status SignX509(X509 *x509) const = 0;
+
+  // Signs |x509_req|. Returns a non-OK Status if the signing operation failed.
+  // This method treats |x509_req| as an in-out parameter.
+  virtual Status SignX509Req(X509_REQ *x509_req) const = 0;
 };
 
 }  // namespace asylo

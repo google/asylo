@@ -19,6 +19,7 @@
 
 #include <openssl/base.h>
 #include <openssl/bn.h>
+#include <openssl/x509.h>
 
 #include <algorithm>
 #include <cctype>
@@ -276,7 +277,7 @@ MATCHER(Nullopt, negation ? "has a value" : "is equal to absl::nullopt") {
 // optional fields set to absl::nullopt and no |other_extensions|.
 //
 // Uses kFakeSerialNumber for the serial number of the return builder.
-X509CertificateBuilder CreateMinimalBuilder() {
+X509CertificateBuilder CreateMinimalCertificateBuilder() {
   X509NameEntry issuer_name_entry;
   issuer_name_entry.field = ObjectId::CreateFromLongName("commonName").value();
   issuer_name_entry.value = "Fake CA";
@@ -300,6 +301,19 @@ X509CertificateBuilder CreateMinimalBuilder() {
   builder.subject.emplace({subject_name_entry});
   builder.subject_public_key_der.emplace(
       absl::HexStringToBytes(kTestRootPublicKeyDerHex));
+  return builder;
+}
+
+X509CsrBuilder CreateMinimalCsrBuilder() {
+  X509NameEntry subject_name;
+  subject_name.field = ObjectId::CreateFromLongName("commonName").value();
+  subject_name.value = "Intermediate CA";
+
+  X509CsrBuilder builder;
+  builder.subject.emplace({subject_name});
+  builder.key = EcdsaP256Sha256SigningKey::CreateFromDer(
+                    absl::HexStringToBytes(kTestPrivateKeyDerHex))
+                    .value();
   return builder;
 }
 
@@ -807,7 +821,8 @@ TEST_F(X509CertificateTest, KeyUsageNoExtension) {
   EXPECT_THAT(x509->KeyUsage(), Eq(absl::nullopt));
 }
 
-TEST_F(X509CertificateTest, SignAndBuildSucceedsWithExtensions) {
+TEST_F(X509CertificateTest,
+       X509CertificateBuilderSignAndBuildSucceedsWithExtensions) {
   constexpr char kFakeOid[] = "1.3.6.1.4.1.11129.24.1729";
 
   X509Extension other_extension;
@@ -817,7 +832,7 @@ TEST_F(X509CertificateTest, SignAndBuildSucceedsWithExtensions) {
   ASYLO_ASSERT_OK_AND_ASSIGN(other_extension.value,
                              Asn1Value::CreateOctetString("foobar"));
 
-  X509CertificateBuilder builder = CreateMinimalBuilder();
+  X509CertificateBuilder builder = CreateMinimalCertificateBuilder();
   builder.authority_key_identifier = {8, 6, 7, 5, 3, 0, 9};
   builder.subject_key_identifier_method =
       SubjectKeyIdMethod::kSubjectPublicKeySha1;
@@ -940,8 +955,9 @@ TEST_F(X509CertificateTest, SignAndBuildSucceedsWithExtensions) {
   }
 }
 
-TEST_F(X509CertificateTest, SignAndBuildSucceedsWithoutExtensions) {
-  X509CertificateBuilder builder = CreateMinimalBuilder();
+TEST_F(X509CertificateTest,
+       X509CertificateBuilderSignAndBuildSucceedsWithoutExtensions) {
+  X509CertificateBuilder builder = CreateMinimalCertificateBuilder();
 
   std::unique_ptr<SigningKey> signing_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
@@ -996,33 +1012,34 @@ TEST_F(X509CertificateTest, SignAndBuildSucceedsWithoutExtensions) {
   EXPECT_THAT(certificate->GetOtherExtensions(), IsOkAndHolds(IsEmpty()));
 }
 
-TEST_F(X509CertificateTest, SignAndBuildFailsWithMissingFields) {
+TEST_F(X509CertificateTest,
+       X509CertificateBuilderSignAndBuildFailsWithMissingFields) {
   std::unique_ptr<SigningKey> signing_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       signing_key, EcdsaP256Sha256SigningKey::CreateFromDer(
                        absl::HexStringToBytes(kTestPrivateKeyDerHex)));
 
-  X509CertificateBuilder builder = CreateMinimalBuilder();
+  X509CertificateBuilder builder = CreateMinimalCertificateBuilder();
   BN_set_negative(builder.serial_number.get(), /*sign=*/1);
   EXPECT_THAT(builder.SignAndBuild(*signing_key),
               StatusIs(absl::StatusCode::kInvalidArgument));
 
-  builder = CreateMinimalBuilder();
+  builder = CreateMinimalCertificateBuilder();
   builder.issuer.reset();
   EXPECT_THAT(builder.SignAndBuild(*signing_key),
               StatusIs(absl::StatusCode::kInvalidArgument));
 
-  builder = CreateMinimalBuilder();
+  builder = CreateMinimalCertificateBuilder();
   builder.validity.reset();
   EXPECT_THAT(builder.SignAndBuild(*signing_key),
               StatusIs(absl::StatusCode::kInvalidArgument));
 
-  builder = CreateMinimalBuilder();
+  builder = CreateMinimalCertificateBuilder();
   builder.subject.reset();
   EXPECT_THAT(builder.SignAndBuild(*signing_key),
               StatusIs(absl::StatusCode::kInvalidArgument));
 
-  builder = CreateMinimalBuilder();
+  builder = CreateMinimalCertificateBuilder();
   builder.subject_public_key_der.reset();
   EXPECT_THAT(builder.SignAndBuild(*signing_key),
               StatusIs(absl::StatusCode::kInvalidArgument));
@@ -1092,6 +1109,31 @@ TEST_F(X509CertificateTest, X509NameEntryOutputUnknown) {
   std::ostringstream out;
   out << entry;
   EXPECT_THAT(out.str(), Eq("UNKNOWN_OID=should not happen"));
+}
+
+TEST_F(X509CertificateTest, X509CsrBuilderSignAndBuildFailsMissingKey) {
+  X509CsrBuilder builder = CreateMinimalCsrBuilder();
+  builder.key = nullptr;
+  EXPECT_THAT(builder.SignAndBuild(),
+              StatusIs(absl::StatusCode::kInvalidArgument));
+}
+
+TEST_F(X509CertificateTest, X509CsrBuilderSignAndBuildFailsMissingSubject) {
+  X509CsrBuilder builder = CreateMinimalCsrBuilder();
+  builder.subject = absl::nullopt;
+  EXPECT_THAT(builder.SignAndBuild(),
+              StatusIs(absl::StatusCode::kInvalidArgument));
+}
+
+TEST_F(X509CertificateTest, X509CsrBuilderSignAndBuildSucceeds) {
+  X509CsrBuilder builder = CreateMinimalCsrBuilder();
+  CertificateSigningRequest csr;
+  csr.set_format(CertificateSigningRequest::PKCS10_DER);
+  ASYLO_ASSERT_OK_AND_ASSIGN(*csr.mutable_data(), builder.SignAndBuild());
+  bssl::UniquePtr<X509_REQ> req;
+  ASYLO_ASSERT_OK_AND_ASSIGN(req, CertificateSigningRequestToX509Req(csr));
+  bssl::UniquePtr<EVP_PKEY> pkey(X509_REQ_get_pubkey(req.get()));
+  EXPECT_EQ(X509_REQ_verify(req.get(), pkey.get()), 1);
 }
 
 }  // namespace

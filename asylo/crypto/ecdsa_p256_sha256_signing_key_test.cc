@@ -152,10 +152,10 @@ class EcdsaP256Sha256SigningKeyTest
   using CurvePointType = EccP256CurvePoint;
 
   EcdsaP256Sha256SigningKeyTest()
-      : EcdsaSigningKeyTest(kTestSigningKeyDer, kTestSigningKeyPem,
-                            kTestSigningKeyDerProto, kTestSigningKeyPemProto,
-                            kTestMessageHex, kBadGroup, kMessageSize,
-                            SignatureScheme::ECDSA_P256_SHA256) {}
+      : EcdsaSigningKeyTest(
+            kTestSigningKeyDer, kTestSigningKeyPem, kTestSigningKeyDerProto,
+            kTestSigningKeyPemProto, kTestMessageHex, kBadGroup, kMessageSize,
+            SignatureScheme::ECDSA_P256_SHA256, kTestVerifyingKeyDer) {}
 };
 
 typedef testing::Types<EcdsaP256Sha256SigningKeyTest> SigningKeyTypes;

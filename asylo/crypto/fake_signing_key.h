@@ -109,8 +109,16 @@ class FakeSigningKey : public SigningKey {
   // Unimplemented.
   Status Sign(ByteContainerView message, Signature *signature) const override;
 
+  // From X509Signer.
+
+  // Unimplemented.
+  StatusOr<std::string> SerializePublicKeyToDer() const override;
+
   // Unimplemented.
   Status SignX509(X509 *x509) const override;
+
+  // Unimplemented.
+  Status SignX509Req(X509_REQ *x509_req) const override;
 
  private:
   const SignatureScheme scheme_;

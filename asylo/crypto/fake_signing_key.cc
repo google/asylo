@@ -135,9 +135,17 @@ Status FakeSigningKey::Sign(ByteContainerView message,
                 "Sign overload unimplemented");
 }
 
-Status FakeSigningKey::SignX509(X509 *x509) const {
+StatusOr<std::string> FakeSigningKey::SerializePublicKeyToDer() const {
   return Status(absl::StatusCode::kUnimplemented,
-                "SignX509 overload unimplemented");
+                "SerializePublicKeyToDer unimplemented");
+}
+
+Status FakeSigningKey::SignX509(X509 *x509) const {
+  return Status(absl::StatusCode::kUnimplemented, "SignX509 unimplemented");
+}
+
+Status FakeSigningKey::SignX509Req(X509_REQ *x509_req) const {
+  return Status(absl::StatusCode::kUnimplemented, "SignX509Req unimplemented");
 }
 
 }  // namespace asylo

@@ -46,12 +46,14 @@ class RsaX509Signer : public X509Signer {
 
   int KeySizeInBits() const;
 
-  StatusOr<std::string> SerializePublicKeyToDer() const;
+  StatusOr<std::string> SerializePublicKeyToDer() const override;
 
   // From X509Signer.
   StatusOr<CleansingVector<char>> SerializeToPem() const override;
 
   Status SignX509(X509* x509) const override;
+
+  Status SignX509Req(X509_REQ* x509_req) const override;
 
  private:
   RsaX509Signer(bssl::UniquePtr<RSA> private_key,

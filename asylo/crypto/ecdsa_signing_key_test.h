@@ -574,12 +574,16 @@ class EcdsaSigningKeyTest : public ::testing::Test {
    *   message_size          - the size of messages to be signed, used to
    *                           dynamically generate messages for tests.
    *   sig_scheme            - the associated enum value from SignatureScheme.
+   *   verifying_key_der     - the DER-encoded public key of signing_key_der.
+   *
+   * All the DER-encoded values should be hex-encoded.
    */
   EcdsaSigningKeyTest(std::string signing_key_der, std::string signing_key_pem,
                       std::string signing_key_der_proto,
                       std::string signing_key_pem_proto,
                       std::string test_message_hex, int bad_group,
-                      int message_size, SignatureScheme sig_scheme)
+                      int message_size, SignatureScheme sig_scheme,
+                      std::string verifying_key_der)
       : signing_key_der_(signing_key_der),
         signing_key_pem_(signing_key_pem),
         signing_key_der_proto_(signing_key_der_proto),
@@ -587,7 +591,8 @@ class EcdsaSigningKeyTest : public ::testing::Test {
         test_message_hex_(test_message_hex),
         bad_group_(bad_group),
         message_size_(message_size),
-        sig_scheme_(sig_scheme) {}
+        sig_scheme_(sig_scheme),
+        verifying_key_der_(verifying_key_der) {}
 
   void SetUp() override {
     ASYLO_ASSERT_OK_AND_ASSIGN(signing_key_, T::Create());
@@ -611,6 +616,7 @@ class EcdsaSigningKeyTest : public ::testing::Test {
   int bad_group_;
   int message_size_;
   SignatureScheme sig_scheme_;
+  std::string verifying_key_der_;
 };
 
 // Verify that CreateFromProto() fails when the signature scheme is incorrect.
@@ -873,6 +879,15 @@ TYPED_TEST_P(SigningKeyTest, ExportAndImportRawPublicKey) {
   ASYLO_EXPECT_OK(verifier->Verify("sign this stuff", signature));
 }
 
+TYPED_TEST_P(SigningKeyTest, SerializePublicKeyToDerSucceeds) {
+  std::unique_ptr<SigningKey> signer;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      signer, TestFixture::SigningKeyType::CreateFromDer(
+                  absl::HexStringToBytes(this->signing_key_der_)));
+  EXPECT_THAT(signer->SerializePublicKeyToDer(),
+              IsOkAndHolds(absl::HexStringToBytes(this->verifying_key_der_)));
+}
+
 REGISTER_TYPED_TEST_SUITE_P(
     SigningKeyTest, SigningKeyCreateFromProtoWithUnknownSignatureSchemeFails,
     SigningKeyCreateFromProtoWithVerifyingKeyTypeFails,
@@ -885,7 +900,7 @@ REGISTER_TYPED_TEST_SUITE_P(
     SerializeToDerAndRestoreSigningKey, RestoreFromAndSerializeToDerSigningKey,
     CreateSigningKeyFromInvalidDerSerializationFails,
     CreateSigningKeyFromInvalidPemSerializationFails,
-    ExportAndImportRawPublicKey);
+    ExportAndImportRawPublicKey, SerializePublicKeyToDerSucceeds);
 
 }  // namespace asylo
 

@@ -95,6 +95,21 @@ Status BsslSignX509(X509 *x509, EC_KEY *private_key) {
   return absl::OkStatus();
 }
 
+template <class Hash>
+Status BsslSignX509Req(X509_REQ *x509_req, EC_KEY *private_key) {
+  bssl::UniquePtr<EVP_PKEY> evp_pkey(EVP_PKEY_new());
+  if (EVP_PKEY_set1_EC_KEY(evp_pkey.get(), private_key) != 1) {
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+
+  Hash hasher;
+  if (X509_REQ_sign(x509_req, evp_pkey.get(), hasher.GetBsslHashFunction()) ==
+      0) {
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+  return absl::OkStatus();
+}
+
 // Boring SSL Helper functions to create keys.
 StatusOr<bssl::UniquePtr<EC_KEY>> GetPublicEcKeyFromDer(
     ByteContainerView serialized_key);
@@ -110,11 +125,12 @@ StatusOr<bssl::UniquePtr<EC_KEY>> CreatePrivateEcKeyFromPem(
     ByteContainerView serialized_key);
 
 // Boring SSL Helper functions to serialize keys.
-StatusOr<std::string> SerializePublicKeyToDer(const EC_KEY *public_key);
-StatusOr<std::string> SerializePublicKeyToPem(EC_KEY *public_key);
-StatusOr<CleansingVector<uint8_t>> SerializePrivateKeyToDer(
+StatusOr<std::string> BsslSerializePublicKeyToDer(const EC_KEY *public_key);
+StatusOr<std::string> BsslSerializePublicKeyToPem(EC_KEY *public_key);
+StatusOr<CleansingVector<uint8_t>> BsslSerializePrivateKeyToDer(
     const EC_KEY *private_key);
-StatusOr<CleansingVector<char>> SerializePrivateKeyToPem(EC_KEY *private_key);
+StatusOr<CleansingVector<char>> BsslSerializePrivateKeyToPem(
+    EC_KEY *private_key);
 
 // Boring SSL Helper functions for signing and verifying.
 Status EcdsaSign(std::vector<uint8_t> *signature, ByteContainerView digest,
@@ -195,11 +211,11 @@ class EcdsaVerifyingKey : public VerifyingKey {
   }
 
   StatusOr<std::string> SerializeToDer() const override {
-    return SerializePublicKeyToDer(public_key_.get());
+    return BsslSerializePublicKeyToDer(public_key_.get());
   }
 
   StatusOr<std::string> SerializeToPem() const override {
-    return SerializePublicKeyToPem(public_key_.get());
+    return BsslSerializePublicKeyToPem(public_key_.get());
   }
 
   Status Verify(ByteContainerView message,
@@ -277,11 +293,11 @@ class EcdsaSigningKey : public SigningKey {
   }
 
   StatusOr<CleansingVector<uint8_t>> SerializeToDer() const override {
-    return SerializePrivateKeyToDer(private_key_.get());
+    return BsslSerializePrivateKeyToDer(private_key_.get());
   }
 
   StatusOr<CleansingVector<char>> SerializeToPem() const override {
-    return SerializePrivateKeyToPem(private_key_.get());
+    return BsslSerializePrivateKeyToPem(private_key_.get());
   }
 
   StatusOr<std::unique_ptr<VerifyingKey>> GetVerifyingKey() const override {
@@ -310,8 +326,18 @@ class EcdsaSigningKey : public SigningKey {
     return absl::OkStatus();
   }
 
+  // From X509Signer.
+
+  StatusOr<std::string> SerializePublicKeyToDer() const override {
+    return BsslSerializePublicKeyToDer(public_key_.get());
+  }
+
   Status SignX509(X509 *x509) const override {
     return BsslSignX509<Hash>(x509, private_key_.get());
+  }
+
+  Status SignX509Req(X509_REQ *x509_req) const override {
+    return BsslSignX509Req<Hash>(x509_req, private_key_.get());
   }
 
   StatusOr<EccCurvePoint<kCoordinateSize>> GetPublicKeyPoint() const;
