@@ -18,6 +18,7 @@
 
 #include <openssl/base.h>
 #include <openssl/ec.h>
+#include <openssl/ec_key.h>
 
 #include <cstdint>
 #include <string>
@@ -26,6 +27,7 @@
 
 #include "absl/status/status.h"
 #include "absl/strings/string_view.h"
+#include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/statusor.h"
 
@@ -34,14 +36,34 @@ namespace internal {
 
 // Returns an EC_KEY containing the public key corresponding to |private_key|.
 StatusOr<bssl::UniquePtr<EC_KEY>> CreatePublicKeyFromPrivateKey(
-    const EC_KEY *private_key, int nid) {
+    EC_KEY *private_key, int nid) {
   bssl::UniquePtr<EC_KEY> public_key(EC_KEY_new_by_curve_name(nid));
   if (!public_key) {
-    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+    return Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("Error creating public key: ", BsslLastErrorString()));
+  }
+  if (EC_KEY_get0_public_key(private_key) == nullptr) {
+    bssl::UniquePtr<EC_POINT> key_point(
+        EC_POINT_new(EC_KEY_get0_group(private_key)));
+    if (!EC_POINT_mul(EC_KEY_get0_group(private_key), key_point.get(),
+                      EC_KEY_get0_private_key(private_key), /*q=*/nullptr,
+                      /*m=*/nullptr, /*ctx=*/nullptr)) {
+      return Status(
+          absl::StatusCode::kInternal,
+          absl::StrCat("Error computing public key: ", BsslLastErrorString()));
+    }
+    if (!EC_KEY_set_public_key(private_key, key_point.get())) {
+      return Status(absl::StatusCode::kInternal,
+                    absl::StrCat("Error setting computed public key: ",
+                                 BsslLastErrorString()));
+    }
   }
   if (!EC_KEY_set_public_key(public_key.get(),
                              EC_KEY_get0_public_key(private_key))) {
-    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+    return Status(
+        absl::StatusCode::kInternal,
+        absl::StrCat("Error setting public key: ", BsslLastErrorString()));
   }
 
   return std::move(public_key);
@@ -242,6 +264,19 @@ StatusOr<bssl::UniquePtr<EC_KEY>> CreatePrivateEcKeyFromPem(
   bssl::UniquePtr<EC_KEY> key(PEM_read_bio_ECPrivateKey(
       key_bio.get(), /*x=*/nullptr, /*cb=*/nullptr, /*u=*/nullptr));
   if (!key) {
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+
+  return std::move(key);
+}
+
+StatusOr<bssl::UniquePtr<EC_KEY>> CreatePrivateEcKeyFromScalar(
+    int nid, const BIGNUM *scalar) {
+  bssl::UniquePtr<EC_KEY> key(EC_KEY_new_by_curve_name(nid));
+  if (!key) {
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+  if (!EC_KEY_set_private_key(key.get(), scalar)) {
     return Status(absl::StatusCode::kInternal, BsslLastErrorString());
   }
 

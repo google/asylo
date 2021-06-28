@@ -569,6 +569,7 @@ class EcdsaSigningKeyTest : public ::testing::Test {
    *   signing_key_pem       - the PEM-encoded equivalent of signing_key_der.
    *   signing_key_der_proto - an AsymmetricKeyProto containing signing_key_der.
    *   signing_key_pem_proto - an AsymmetricKeyProto containing signing_key_pem.
+   *   signing_key_scalar     - the scalar in signing_key_der.
    *   test_message_hex      - the contents of a message to be signed.
    *   bad_group             - incorrect NID group.
    *   message_size          - the size of messages to be signed, used to
@@ -581,6 +582,7 @@ class EcdsaSigningKeyTest : public ::testing::Test {
   EcdsaSigningKeyTest(std::string signing_key_der, std::string signing_key_pem,
                       std::string signing_key_der_proto,
                       std::string signing_key_pem_proto,
+                      std::string signing_key_scalar,
                       std::string test_message_hex, int bad_group,
                       int message_size, SignatureScheme sig_scheme,
                       std::string verifying_key_der)
@@ -588,6 +590,7 @@ class EcdsaSigningKeyTest : public ::testing::Test {
         signing_key_pem_(signing_key_pem),
         signing_key_der_proto_(signing_key_der_proto),
         signing_key_pem_proto_(signing_key_pem_proto),
+        signing_key_scalar_(signing_key_scalar),
         test_message_hex_(test_message_hex),
         bad_group_(bad_group),
         message_size_(message_size),
@@ -612,6 +615,7 @@ class EcdsaSigningKeyTest : public ::testing::Test {
   std::string signing_key_pem_;
   std::string signing_key_der_proto_;
   std::string signing_key_pem_proto_;
+  std::string signing_key_scalar_;
   std::string test_message_hex_;
   int bad_group_;
   int message_size_;
@@ -678,6 +682,30 @@ TYPED_TEST_P(SigningKeyTest, SigningKeyCreateFromProtoSuccess) {
   ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(this->signing_key_pem_proto_,
                                                   &der_key_proto));
   ASYLO_EXPECT_OK(TestFixture::SigningKeyType::CreateFromProto(der_key_proto));
+}
+
+TYPED_TEST_P(SigningKeyTest,
+             SigningKeyCreateFromScalarWithMismatchedCoordinateSizeFails) {
+  EXPECT_THAT(TestFixture::SigningKeyType::CreateFromScalar("not right size"),
+              StatusIs(absl::StatusCode::kInvalidArgument));
+}
+
+TYPED_TEST_P(SigningKeyTest, SigningKeyCreateFromScalarSuccess) {
+  std::unique_ptr<SigningKey> key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      key, TestFixture::SigningKeyType::CreateFromScalar(
+               absl::HexStringToBytes(this->signing_key_scalar_)));
+
+  CleansingVector<uint8_t> key_der;
+  ASYLO_ASSERT_OK_AND_ASSIGN(key_der, key->SerializeToDer());
+  EXPECT_EQ(ByteContainerView(key_der),
+            absl::HexStringToBytes(this->signing_key_der_));
+
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(verifying_key, key->GetVerifyingKey());
+  std::vector<uint8_t> signature;
+  ASYLO_ASSERT_OK(key->Sign(this->test_message_hex_, &signature));
+  ASYLO_EXPECT_OK(verifying_key->Verify(this->test_message_hex_, signature));
 }
 
 // Verify that Create() fails when the key has an incorrect group.
@@ -893,7 +921,9 @@ REGISTER_TYPED_TEST_SUITE_P(
     SigningKeyCreateFromProtoWithVerifyingKeyTypeFails,
     SigningKeyCreateFromProtoWithUnknownEncodingFails,
     SigningKeyCreateFromProtoWithMismatchedEncodingFails,
-    SigningKeyCreateFromProtoSuccess, CreateSigningKeyWithBadGroupFails,
+    SigningKeyCreateFromProtoSuccess,
+    SigningKeyCreateFromScalarWithMismatchedCoordinateSizeFails,
+    SigningKeyCreateFromScalarSuccess, CreateSigningKeyWithBadGroupFails,
     SignatureScheme, CreateSigningKeyFromPemMatchesDer,
     CreateSigningKeyFromDerMatchesPem, SerializeToKeyProtoUnknownFailure,
     SerializeToKeyProtoSuccess, SignAndVerify, SignAndVerifySignatureOverloads,

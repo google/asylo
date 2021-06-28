@@ -62,6 +62,10 @@ constexpr char kTestSigningKeyPemProto[] = R"pb(
   key: "-----BEGIN EC PRIVATE KEY-----\nMHcCAQEEIP4d1debEdG6Xy974ETYt+78I5b3fpA8qR/OY3pSX+gwoAoGCCqGSM49\nAwEHoUQDQgAE6u2lED6JGU9Dv+DYRPPnnwAJV/w8kjfH6o3c1n4ix1zXURnqmqAv\nds7Ky78bL+Ycafye6tof4ppWfWzrRo4WvQ==\n-----END EC PRIVATE KEY-----"
 )pb";
 
+// The scalar in kTestSigningKeyDer.
+constexpr char kTestSigningKeyScalar[] =
+    "fe1dd5d79b11d1ba5f2f7be044d8b7eefc2396f77e903ca91fce637a525fe830";
+
 constexpr char kTestMessageHex[] = "436f66666565206973206c6966652e0a";
 
 constexpr char kTestSignatureHex[] =
@@ -152,10 +156,11 @@ class EcdsaP256Sha256SigningKeyTest
   using CurvePointType = EccP256CurvePoint;
 
   EcdsaP256Sha256SigningKeyTest()
-      : EcdsaSigningKeyTest(
-            kTestSigningKeyDer, kTestSigningKeyPem, kTestSigningKeyDerProto,
-            kTestSigningKeyPemProto, kTestMessageHex, kBadGroup, kMessageSize,
-            SignatureScheme::ECDSA_P256_SHA256, kTestVerifyingKeyDer) {}
+      : EcdsaSigningKeyTest(kTestSigningKeyDer, kTestSigningKeyPem,
+                            kTestSigningKeyDerProto, kTestSigningKeyPemProto,
+                            kTestSigningKeyScalar, kTestMessageHex, kBadGroup,
+                            kMessageSize, SignatureScheme::ECDSA_P256_SHA256,
+                            kTestVerifyingKeyDer) {}
 };
 
 typedef testing::Types<EcdsaP256Sha256SigningKeyTest> SigningKeyTypes;

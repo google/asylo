@@ -58,6 +58,11 @@ constexpr char kTestSigningKeyPemProto[] = R"pb(
   key: "-----BEGIN EC PRIVATE KEY-----\nMIGkAgEBBDC20Jaso+VVel5uqPSfEQyUDgLL3NL3wPdWFrh5XPv96CPvM/gBJc+O\neFiUNPCk972gBwYFK4EEACKhZANiAARak/nVZ/YplI/l66ucYsE5roPpAM1sU2l3\n6tLu74I4/HdQZf0x0HpKOfg5YaKo0pRei8LSK4XppWvp7IGC8NY/PDi1rO4K9THy\nQS4xRlfEoOIC4o+jjQaSVLdLBME6aZY=\n-----END EC PRIVATE KEY-----"
 )pb";
 
+// The scalar in kTestSigningKeyDer.
+constexpr char kTestSigningKeyScalar[] =
+    "b6d096aca3e5557a5e6ea8f49f110c940e02cbdcd2f7c0f75616b8795cfbfde823ef33f801"
+    "25cf8e78589434f0a4f7bd";
+
 constexpr char kTestMessageHex[] =
     "7468697320697320612074657374206d6573736167650a";
 
@@ -155,10 +160,11 @@ class EcdsaP384Sha384SigningKeyTest
   using CurvePointType = EccP384CurvePoint;
 
   EcdsaP384Sha384SigningKeyTest()
-      : EcdsaSigningKeyTest(
-            kTestSigningKeyDer, kTestSigningKeyPem, kTestSigningKeyDerProto,
-            kTestSigningKeyPemProto, kTestMessageHex, kBadGroup, kMessageSize,
-            SignatureScheme::ECDSA_P384_SHA384, kTestVerifyingKeyDer) {}
+      : EcdsaSigningKeyTest(kTestSigningKeyDer, kTestSigningKeyPem,
+                            kTestSigningKeyDerProto, kTestSigningKeyPemProto,
+                            kTestSigningKeyScalar, kTestMessageHex, kBadGroup,
+                            kMessageSize, SignatureScheme::ECDSA_P384_SHA384,
+                            kTestVerifyingKeyDer) {}
 };
 
 using SigningKeyTypes = testing::Types<EcdsaP384Sha384SigningKeyTest>;

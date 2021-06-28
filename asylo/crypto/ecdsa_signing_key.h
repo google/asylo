@@ -60,7 +60,7 @@ namespace internal {
 
 // Helper functions.
 StatusOr<bssl::UniquePtr<EC_KEY>> CreatePublicKeyFromPrivateKey(
-    const EC_KEY *private_key, int nid);
+    EC_KEY *private_key, int nid);
 Status CheckKeyProtoValues(const AsymmetricSigningKeyProto &key_proto,
                            AsymmetricSigningKeyProto::KeyType expected_type,
                            SignatureScheme signature_scheme);
@@ -123,6 +123,8 @@ StatusOr<bssl::UniquePtr<EC_KEY>> CreatePrivateEcKeyFromDer(
     int nid, ByteContainerView serialized_key);
 StatusOr<bssl::UniquePtr<EC_KEY>> CreatePrivateEcKeyFromPem(
     ByteContainerView serialized_key);
+StatusOr<bssl::UniquePtr<EC_KEY>> CreatePrivateEcKeyFromScalar(
+    int nid, const BIGNUM *scalar);
 
 // Boring SSL Helper functions to serialize keys.
 StatusOr<std::string> BsslSerializePublicKeyToDer(const EC_KEY *public_key);
@@ -280,6 +282,11 @@ class EcdsaSigningKey : public SigningKey {
   static StatusOr<std::unique_ptr<
       EcdsaSigningKey<kSignatureScheme, kNid, kCoordinateSize, Hash>>>
   CreateFromProto(const AsymmetricSigningKeyProto &key_proto);
+
+  // Creates an ECDSA signing key from the given |scalar|.
+  static StatusOr<std::unique_ptr<
+      EcdsaSigningKey<kSignatureScheme, kNid, kCoordinateSize, Hash>>>
+  CreateFromScalar(ByteContainerView scalar);
 
   // Creates an ECDSA signing key from the given |private_key|.
   static StatusOr<std::unique_ptr<
@@ -474,7 +481,8 @@ Status EcdsaVerifyingKey<kSignatureScheme, kNid, kCoordinateSize, Hash>::Verify(
                            public_key_.get());
 }
 
-// EcdsaSigningKey methods CreateFromProto, Create, and methods from SigningKey.
+// EcdsaSigningKey methods CreateFromProto, Create, CreateFromScalar, and
+// methods from SigningKey.
 
 template <SignatureScheme kSignatureScheme, int kNid, int32_t kCoordinateSize,
           class Hash>
@@ -496,6 +504,28 @@ EcdsaSigningKey<kSignatureScheme, kNid, kCoordinateSize, Hash>::CreateFromProto(
   return Status(absl::StatusCode::kUnimplemented,
                 absl::StrFormat("Asymmetric key encoding (%d) unsupported",
                                 key_proto.encoding()));
+}
+
+template <SignatureScheme kSignatureScheme, int kNid, int32_t kCoordinateSize,
+          class Hash>
+StatusOr<std::unique_ptr<
+    EcdsaSigningKey<kSignatureScheme, kNid, kCoordinateSize, Hash>>>
+EcdsaSigningKey<kSignatureScheme, kNid, kCoordinateSize,
+                Hash>::CreateFromScalar(ByteContainerView scalar) {
+  if (scalar.size() != kCoordinateSize) {
+    return Status(absl::StatusCode::kInvalidArgument,
+                  absl::StrFormat("Size of scalar (%d) must be %d",
+                                  scalar.size(), kCoordinateSize));
+  }
+
+  bssl::UniquePtr<BIGNUM> bignum_scalar;
+  ASYLO_ASSIGN_OR_RETURN(bignum_scalar, BignumFromBigEndianBytes(scalar));
+
+  bssl::UniquePtr<EC_KEY> key;
+  ASYLO_ASSIGN_OR_RETURN(
+      key, CreatePrivateEcKeyFromScalar(kNid, bignum_scalar.get()));
+
+  return Create(std::move(key));
 }
 
 template <SignatureScheme kSignatureScheme, int kNid, int32_t kCoordinateSize,
