@@ -99,6 +99,7 @@ cc_library(
         "//asylo/util/remote:remote_loader_cc_proto",
         "//asylo/util/remote:remote_proxy_config",
         "@com_github_grpc_grpc//:grpc++",
+        "@com_github_grpc_grpc//:grpc++_codegen_base",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/container:flat_hash_set",

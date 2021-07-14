@@ -1084,6 +1084,7 @@ cc_test_and_cc_enclave_test(
         "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
+        "@com_github_grpc_grpc//:grpc++_codegen_base",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/status",
         "@com_google_googletest//:gtest",

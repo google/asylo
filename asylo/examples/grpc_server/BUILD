@@ -189,6 +189,8 @@ cc_library(
         ":translator_server_cc_proto",
         "//asylo/util:status",
         "//asylo/util:status_helpers",
+        "@com_github_grpc_grpc//:gpr",
+        "@com_github_grpc_grpc//:gpr_codegen",
         "@com_github_grpc_grpc//:grpc",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/memory",
