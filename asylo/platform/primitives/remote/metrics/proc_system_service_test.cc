@@ -57,6 +57,7 @@ TEST_F(ProcSystemServiceTest, SuccessfullyBuildsResponse) {
       for (int i = 0; i < 10000; i++) {
         sum += i;
       }
+      (void)sum;
     }
     exit(0);
   }
