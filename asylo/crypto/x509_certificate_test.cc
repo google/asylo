@@ -1128,7 +1128,7 @@ TEST_F(X509CertificateTest, X509CsrBuilderSignAndBuildFailsMissingSubject) {
 TEST_F(X509CertificateTest, X509CsrBuilderSignAndBuildSucceeds) {
   X509CsrBuilder builder = CreateMinimalCsrBuilder();
   CertificateSigningRequest csr;
-  csr.set_format(CertificateSigningRequest::PKCS10_DER);
+  csr.set_format(CertificateSigningRequest::PKCS10_PEM);
   ASYLO_ASSERT_OK_AND_ASSIGN(*csr.mutable_data(), builder.SignAndBuild());
   bssl::UniquePtr<X509_REQ> req;
   ASYLO_ASSERT_OK_AND_ASSIGN(req, CertificateSigningRequestToX509Req(csr));

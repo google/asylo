@@ -264,6 +264,20 @@ StatusOr<std::string> ToDerEncoding(X509 *x509) {
   return std::string(data, length);
 }
 
+StatusOr<std::string> ToPemEncoding(X509_REQ *x509_req) {
+  bssl::UniquePtr<BIO> x509_bio(BIO_new(BIO_s_mem()));
+  if (PEM_write_bio_X509_REQ(x509_bio.get(), x509_req) != 1) {
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+
+  char *data;
+  long length = BIO_get_mem_data(x509_bio.get(), &data);
+  if (length <= 0) {
+    return Status(absl::StatusCode::kInternal, BsslLastErrorString());
+  }
+  return std::string(data, length);
+}
+
 StatusOr<std::string> ToDerEncoding(X509_REQ *x509_req) {
   bssl::UniquePtr<BIO> x509_bio(BIO_new(BIO_s_mem()));
   if (i2d_X509_REQ_bio(x509_bio.get(), x509_req) != 1) {
@@ -793,7 +807,7 @@ StatusOr<std::string> X509CsrBuilder::SignAndBuild() const {
   ASYLO_RETURN_IF_ERROR(
       WithContext(key->SignX509Req(x509_req.get()), "Failed to sign CSR: "));
 
-  return ToDerEncoding(x509_req.get());
+  return ToPemEncoding(x509_req.get());
 }
 
 StatusOr<std::unique_ptr<X509Certificate>> X509Certificate::Create(

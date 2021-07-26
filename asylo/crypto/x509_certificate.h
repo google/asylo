@@ -205,7 +205,7 @@ struct X509CsrBuilder {
   std::unique_ptr<asylo::X509Signer> key;
 
   // Builds an X.509 CSR using the data in this builder, signs the
-  // certificate using |key|, and returns the certificate as a DER-encoded
+  // certificate using |key|, and returns the certificate as a PEM-encoded
   // PKCS 10 CSR.
   StatusOr<std::string> SignAndBuild() const;
 };
