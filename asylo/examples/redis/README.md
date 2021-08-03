@@ -114,7 +114,7 @@ Asylo provides an application wrapper which makes it easy to run external user
 applications in Asylo. To make use of it, create a BUILD file in your workspace,
 and add the following lines to it.
 
-```BUILD
+```build
 licenses(["notice"])
 
 load("@com_google_asylo//asylo/bazel:asylo.bzl", "cc_enclave_binary")
@@ -236,7 +236,7 @@ contains an SGX local assertion authority config.
 NOTE: The security features of Asylo `fork()` are absent when running in
 simulation mode.
 
-```BUILD
+```build
 licenses(["notice"])
 
 load("@com_google_asylo//asylo/bazel:asylo.bzl", "cc_enclave_binary")
