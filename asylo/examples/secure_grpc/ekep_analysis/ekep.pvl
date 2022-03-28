@@ -1,0 +1,212 @@
+(**
+Copyright 2022 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*)
+
+#ifndef _EKEP_PVL
+#define _EKEP_PVL
+
+#include "authenticated_encryption.pvl"
+#include "diffie_hellman.pvl"
+#include "named_tuples.pvl"
+
+(* This library defines all the types used only in EKEP.
+ * Cryptographic types and data structures are defined in their own headers.
+ *)
+
+(** Alerts. *)
+type Alert.
+const kBadMessage: Alert [data].
+const kDeserializationFailed: Alert [data].
+const kBadProtocolVersion: Alert [data].
+const kBadHandshakeCipher: Alert [data].
+const kBadRecordProtocol: Alert [data].
+const kBadAuthenticator: Alert [data].
+const kBadAssertionType: Alert [data].
+const kBadAssertion: Alert [data].
+const kProtocolError: Alert [data].
+const kInternalError: Alert [data].
+const kBadEphemeralParameters: Alert [data].
+(* The kOk message is used to handle status cases that are not errors. *)
+const kOk: Alert [data].
+
+(** HMAC context strings are represented as bitstrings. *)
+type HkdfContext.
+const EkepHandshakeV1: HkdfContext [data].
+const EkepRecordProtocolV1: HkdfContext [data].
+
+(** Sentinel strings for HMAC. *)
+const EkepHandshakeV1ServerFinish: bitstring [data].
+const EkepHandshakeV1ClientFinish: bitstring [data].
+
+(** Names of principals. *)
+type Name.
+
+(** Kinds of identities of principals. Anyone can get a signed Identity from
+SGX that binds a public key to a Name. However, only the client can get
+identities of kind kClientId, and only the server can get identities of kind
+kServerId. This part of the type system models the notion of being able to
+learn from SGX about properties of a communicating remote or local party, and
+it is one of the features of EKEP that distinguishes it from previous
+key-exchange protocols. *)
+type IdentityKind.
+const kClientId: IdentityKind.
+const kServerId: IdentityKind.
+const kOtherId: IdentityKind.
+
+(** Descriptions of Assertions. *)
+type AssertionDescription.
+const kSgxAssertionDescription: AssertionDescription [data].
+
+(** Empty options for the precommit. *)
+type Options.
+const kEmptyOptions: Options [data].
+
+(** An explicit type for challenges. *)
+type Challenge.
+
+(** Transcripts are used as part of the material that key derivation operates
+on. *)
+type Transcript0.
+type Transcript1.
+type Transcript2.
+type Transcript3.
+type Transcript4.
+type Transcript5.
+
+(* Signing and verification with asymmetric algorithms. *)
+
+(** Keys used for signing in an (unspecified) asymmetric algorithm. *)
+type SigningKey.
+
+(** Keys used for verification in an (unspecified) asymmetric algorithm. *)
+type VerifyingKey.
+
+(** Produces the public key that corresponds to a signing key. *)
+fun pubKey(SigningKey): VerifyingKey.
+
+type Signature.
+
+(** Signs |message| with a key, producing a signature. *)
+fun sign(SigningKey, (*message=*)bitstring): Signature.
+
+(** Gets the |message| from a signature under key |k|. *)
+reduc forall message: bitstring, key: SigningKey;
+  getMessage(sign(key, message)) = message.
+
+(** Checks a signature under a |key| and produces its |message| if the signature
+passes verification. *)
+reduc forall message: bitstring, key: SigningKey;
+  checkSignature(pubKey(key), sign(key, message)) = message.
+
+(** An Id associates a public key with a list of assertions. *)
+DEFINE_DATA_TYPE2(Id,
+                  publicKey, G,
+                  assertion, Signature).
+
+(** A ClientSgxMessage is sent from a client to SGX to get an assertion. *)
+DEFINE_DATA_TYPE4(ClientSgxMessage,
+                  name, Name,
+                  kind, IdentityKind,
+                  publicKey, G,
+                  transcript, Transcript1).
+
+(** A ServerSgxMessage is sent from a server to SGX to get an assertion. *)
+DEFINE_DATA_TYPE4(ServerSgxMessage,
+                  name, Name,
+                  kind, IdentityKind,
+                  publicKey, G,
+                  transcript, Transcript2).
+
+fun signClientSgx(SigningKey, ClientSgxMessage): Signature.
+reduc forall message: ClientSgxMessage, key: SigningKey;
+  checkClientSgxSignature(pubKey(key), signClientSgx(key, message)) = message.
+
+fun signServerSgx(SigningKey, ServerSgxMessage): Signature.
+reduc forall message: ServerSgxMessage, key: SigningKey;
+  checkServerSgxSignature(pubKey(key), signServerSgx(key, message)) = message.
+
+(** HmacAuthTag is the symmetric equivalent of a digital signature. *)
+type HmacAuthTag.
+
+(** HmacKey is the type of keys used to compute HMACs. *)
+type HmacKey.
+
+(** Computes an HMAC for a given bitstring message. *)
+fun hmac(HmacKey, (*message=*)bitstring): HmacAuthTag.
+
+fun hmacVerify(HmacKey, (*message=*)bitstring, HmacAuthTag): bool
+reduc
+  forall key: HmacKey, message: bitstring;
+    hmacVerify(key, message, hmac(key, message)) = true otherwise
+  forall key: HmacKey, message: bitstring, tag: HmacAuthTag;
+    hmacVerify(key, message, tag) = false.
+
+fun hmacClientSgx(HmacKey, ClientSgxMessage): HmacAuthTag.
+fun hmacClientSgxVerify(HmacKey, ClientSgxMessage, HmacAuthTag): bool
+reduc
+  forall key: HmacKey, message: ClientSgxMessage;
+    hmacClientSgxVerify(
+        key, message, hmacClientSgx(key, message)) = true otherwise
+  forall key: HmacKey, message: ClientSgxMessage, tag: HmacAuthTag;
+    hmacClientSgxVerify(key, message, tag) = false.
+
+fun hmacServerSgx(HmacKey, ServerSgxMessage): HmacAuthTag.
+fun hmacServerSgxVerify(HmacKey, ServerSgxMessage, HmacAuthTag): bool
+reduc
+  forall key: HmacKey, message: ServerSgxMessage;
+    hmacServerSgxVerify(
+        key, message, hmacServerSgx(key, message)) = true otherwise
+  forall key: HmacKey, message: ServerSgxMessage, tag: HmacAuthTag;
+    hmacServerSgxVerify(key, message, tag) = false.
+
+
+(** MasterSecret is produced from the output of HKDF1. *)
+type MasterSecret.
+
+(** Produces a master key using HKDF. *)
+fun hkdfMaster(HkdfContext, (*secret=*)G, Transcript3): MasterSecret.
+
+(** Produces an auth key using HKDF. *)
+fun hkdfAuth(HkdfContext, (*secret=*)G, Transcript3): HmacKey.
+
+(** Produces a record key using HKDF. *)
+fun hkdfRecordKey(HkdfContext, MasterSecret, Transcript5): RecordKey.
+
+(** Creates Transcript 0 from a client precommit message. *)
+fun CreateTranscript0(Challenge): Transcript0 [data, typeConverter].
+
+(** Extends Transcript 0 to Transcript 1, using a server precommit message. *)
+fun ExtendToTranscript1(Transcript0, Challenge): Transcript1 [data].
+
+(** Extends Transcript 1 to Transcript 2, using a client ID message. *)
+fun ExtendToTranscript2(
+    Transcript1, (*clientId=*)Signature): Transcript2 [data].
+
+(** Extends Transcript 2 to Transcript 3, using a server ID message. *)
+fun ExtendToTranscript3(
+    Transcript2, (*serverId=*)Signature): Transcript3 [data].
+
+(** Extends Transcript 3 to Transcript 4, using an HMAC auth tag from the server
+finish message. *)
+fun ExtendToTranscript4(Transcript3, (*serverFinish=*)HmacAuthTag):
+    Transcript4 [data].
+
+(** Extends Transcript 4 to Transcript 5, using an HMAC auth tag from the client
+finish message. *)
+fun ExtendToTranscript5(Transcript4, (*clientFinish=*)HmacAuthTag):
+    Transcript5 [data].
+
+
+#endif  /* _EKEP_PVL */

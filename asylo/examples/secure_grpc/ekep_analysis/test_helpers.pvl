@@ -1,0 +1,63 @@
+(**
+Copyright 2022 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*)
+
+#ifndef _TEST_HELPERS_PVL
+#define _TEST_HELPERS_PVL
+
+(** A fixed channel that the adversary listens on to get Success and Failure
+messages. *)
+channel test_channel.
+
+(** Success is a constant used by the test code; it represents a successful
+test. *)
+free Success: bitstring [private].
+
+(** Failure is a constant used by the test code; it represents a failed test. *)
+free Failure: bitstring [private].
+
+(** A test succeeds if the attacker cannot get the Failure bitstring. *)
+query attacker(Failure).
+
+(** Converts a predicate into Success/Failure. *)
+letfun Expect(predicate: bool) =
+  if predicate then Success else Failure.
+
+(** Outputs Success/Failure on test_channel if the predicate is true. *)
+#define EXPECT_TRUE(p) \
+  out(test_channel, Expect(p))
+
+(** Outputs Success/Failure on test_channel if the predicate is false. *)
+#define EXPECT_FALSE(p) \
+  out(test_channel, Expect(not(p)))
+
+(** Defines a function Eq_<t> that works in tests and converts equality to
+Success/Failure. *)
+#define DEFINE_EXPECT_EQ_FUN(t) \
+  letfun Eq_##t(lhs: t, rhs: t) = \
+    if lhs = rhs then Success else Failure
+
+(** Converts equality to Success/Failure. *)
+letfun Eq_bitstring(lhs: bitstring, rhs: bitstring) =
+  if lhs = rhs then Success else Failure.
+
+(** Expects the truth of a general predicate, using Eq_* *)
+#define EXPECT(predicate) \
+  out(test_channel, predicate)
+
+(** EXPECT_EQ is EXPECT on bitstrings. *)
+#define EXPECT_EQ(lhs, rhs) EXPECT(Eq_bitstring(lhs, rhs))
+
+#endif  /* _TEST_HELPERS_PVL */

@@ -1,0 +1,43 @@
+(**
+Copyright 2022 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*)
+
+#include "ekep.pvl"
+
+#include "test_helpers.pvl"
+
+free m0: bitstring.
+free m1: bitstring.
+
+free k0: HmacKey.
+free k1: HmacKey.
+
+DEFINE_EXPECT_EQ_FUN(HmacAuthTag).
+
+(** Checks that HMAC verification works and fails in its expected cases. *)
+let TestHmac() =
+  let t0 = hmac(k0, m0) in
+  let t1 = hmac(k0, m1) in
+  let tk1 = hmac(k1, m0) in
+  EXPECT(Eq_HmacAuthTag(t0, t0));
+  EXPECT_TRUE(hmacVerify(k0, m0, t0));
+  EXPECT_TRUE(hmacVerify(k0, m1, t1));
+  EXPECT_FALSE(hmacVerify(k0, m0, t1));
+  EXPECT_FALSE(hmacVerify(k0, m1, t0));
+  EXPECT_FALSE(hmacVerify(k1, m0, t0));
+  EXPECT_FALSE(hmacVerify(k0, m0, tk1)).
+
+process
+  TestHmac()

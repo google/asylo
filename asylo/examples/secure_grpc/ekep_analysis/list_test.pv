@@ -1,0 +1,66 @@
+(**
+Copyright 2022 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*)
+
+#include "list.pvl"
+
+#include "test_helpers.pvl"
+
+free b0: bitstring.
+free b1: bitstring.
+free b2: bitstring.
+free b3: bitstring.
+free b4: bitstring.
+
+(** Checks that List_elem works on List1. *)
+let TestElemList1() =
+  let l1_0 = List1(b0) in
+  EXPECT_TRUE(List_elem(b0, l1_0));
+  EXPECT_FALSE(List_elem(b1, l1_0)).
+
+(** Checks that List_some_intersection works on List1, List1 arguments. *)
+let TestFirstIntersection1_1() =
+  let l1_0 = List1(b0) in
+  let l1_1 = List1(b1) in
+  EXPECT_EQ(b0, List_some_intersection(l1_0, l1_0)).
+
+(** Checks that List_eq works on all List1 cases. *)
+let TestEq1() =
+  let l1_0 = List1(b0) in
+  let l1_1 = List1(b1) in
+  EXPECT_TRUE(List_eq(l1_0, l1_0));
+  EXPECT_FALSE(List_eq(l1_0, l1_1)).
+
+(** Checks that List_has_intersection works for List1. *)
+let TestHasIntersection1() =
+  let l1_0 = List1(b0) in
+  let l1_0_again = List1(b0) in
+  let l1_1 = List1(b1) in
+  EXPECT_TRUE(List_has_intersection(l1_0, l1_0));
+  EXPECT_TRUE(List_has_intersection(l1_0, l1_0_again));
+  EXPECT_FALSE(List_has_intersection(l1_1, l1_0)).
+
+(** Checks that List_is_subset works for List1. *)
+let TestIsSubset1() =
+  EXPECT_TRUE(List_is_subset(List1(b0), List1(b0)));
+  EXPECT_FALSE(List_is_subset(List1(b0), List1(b1))).
+
+process
+  ( TestElemList1()
+  | TestFirstIntersection1_1()
+  | TestEq1()
+  | TestHasIntersection1()
+  | TestIsSubset1()
+  )
