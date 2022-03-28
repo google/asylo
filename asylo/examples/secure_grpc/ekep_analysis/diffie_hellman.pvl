@@ -1,0 +1,42 @@
+(**
+Copyright 2022 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*)
+
+#ifndef _DIFFIE_HELLMAN_PVL
+#define _DIFFIE_HELLMAN_PVL
+
+(** The base group used in Diffie-Hellman *)
+type G.
+
+(** The exponent field used in Diffie-Hellman. *)
+type Z.
+
+(** Converts a field element in Z to a bitstring. *)
+fun Z2b(Z): bitstring [data, typeConverter].
+
+(** Converts a group element in G to a bitstring. *)
+fun G2b(G): bitstring [data, typeConverter].
+
+(** A constant, public base element for Diffie-Hellman computations. *)
+const g:G [data].
+
+(** Computes the exponentiation |base|^|exponent|. *)
+fun exp((*base=*)G, (*exponent=*)Z): G.
+
+(* Adds the fact that (g^x)^y = (g^y)^x to the equational theory. *)
+equation forall x: Z, y: Z;
+      exp(exp(g, x), y) = exp(exp(g, y), x).
+
+#endif  /* _DIFFIE_HELLMAN_PVL */

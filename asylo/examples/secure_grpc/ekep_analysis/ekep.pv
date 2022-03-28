@@ -1,0 +1,262 @@
+(**
+Copyright 2022 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*)
+
+#include "authenticated_encryption.pvl"
+#include "diffie_hellman.pvl"
+#include "ekep.pvl"
+
+channel c.
+
+(** The server says that its Transcript5 is |transcript| in a session with
+the Diffie-Hellman shared key |dh|. *)
+event serverTranscript5((*dh=*)G, Transcript5).
+
+(** The client says that its Transcript5 is |transcript| in a session with
+the Diffie-Hellman shared key |dh|. *)
+event clientTranscript5((*dh=*)G, Transcript5).
+
+(** The |client| says that it agreed on a |sharedSecret| with the |server|. *)
+event clientBoundIdentity(
+    (*server=*)Name, (*client=*)Name, (*sharedSecret=*)G).
+
+(** The |server| says that it agreed on a |sharedSecret| with the |client|. *)
+event serverBoundIdentity(
+    (*server=*)Name, (*client=*)Name, (*sharedSecret=*)G).
+
+event clientSentMessage((*message=*)bitstring).
+event serverReceivedMessage((*message=*)bitstring).
+
+(** If the client and server compute |cTranscript| and |sTranscript|
+respectively as the Transcript5 values in the same EKEP session (identified by
+the Diffie-Hellman shared key |dh|), then the client and server computed the
+same transcripts.
+*)
+query dh: G, cTranscript: Transcript5, sTranscript: Transcript5;
+  (event(clientTranscript5(dh, cTranscript)) &&
+   event(serverTranscript5(dh, sTranscript))) ==>
+   (cTranscript = sTranscript).
+
+(** If the client and server get public identities from a given connection, then
+those identities match. *)
+query idS: Name, idC: Name, idXS: Name, idXC: Name, ss: G;
+  (event(clientBoundIdentity(idXS, idC, ss)) &&
+   event(serverBoundIdentity(idS, idXC, ss))) ==>
+  (idXS = idS && idXC = idC).
+
+(** If the client and server establish a connection and the server receives a
+message on that connects, then the client sent that message. *)
+query ss: G, m: bitstring;
+  event(serverReceivedMessage(m)) ==>
+  inj-event(clientSentMessage(m)).
+
+(** The attacker cannot obtain the unique secret message exchanged between
+client and server. *)
+query attacker(new message).
+
+(** Implements the client side of EKEP. *)
+let Client(clientName: Name, clientSgxKey: HmacKey, sgxPubKey: VerifyingKey,
+           message: bitstring) =
+  (* Send Client Precommit. *)
+  new clientPrecommit: Challenge;
+  out(c, clientPrecommit);
+  let transcript0 = CreateTranscript0(clientPrecommit) in
+
+  (* Receive Server Precommit. *)
+  in(c, serverPrecommit: Challenge);
+  let transcript1 = ExtendToTranscript1(transcript0, serverPrecommit) in
+
+  (* Compute Client Id. *)
+  new clientPrivateKey: Z;
+  let clientPublicKey = exp(g, clientPrivateKey) in
+
+  (* Create a message for SGX to sign, and create an HMAC of this message that
+  SGX can verify as coming from the client. This models the channel that SGX has
+  with the client software. *)
+  let clientSgxMessage = BuildClientSgxMessage(
+      clientName, kClientId, clientPublicKey, transcript1) in
+  let clientSgxTag = hmacClientSgx(clientSgxKey, clientSgxMessage) in
+  out(c, (clientSgxMessage, clientSgxTag));
+  in(c, clientId: Signature);
+
+  (* Make sure that the signature is valid, comes from SGX, and is for the right
+  message. *)
+  let (=clientSgxMessage) = checkClientSgxSignature(sgxPubKey, clientId) in
+
+  (* Send Client Id. *)
+  out(c, clientId);
+  let transcript2 = ExtendToTranscript2(transcript1, clientId) in
+
+  (* Receive Server Id. *)
+  in(c, serverId: Signature);
+
+  (* Check that the Server Id is a valid signature from SGX for the kServerId
+  IdentityKind. *)
+  let serverSgxMessage = checkServerSgxSignature(sgxPubKey, serverId) in
+  if ServerSgxMessage_kind(serverSgxMessage) <> kServerId then
+    out(c, kBadAssertion) else
+  let xName = ServerSgxMessage_name(serverSgxMessage) in
+  let serverPublicKey = ServerSgxMessage_publicKey(serverSgxMessage) in
+  let transcript3 = ExtendToTranscript3(transcript2, serverId) in
+
+  (* Derive EKEP secrets. *)
+  let sharedSecret = exp(serverPublicKey, clientPrivateKey) in
+  let masterSecret = hkdfMaster(EkepHandshakeV1, sharedSecret, transcript3) in
+  let authKey = hkdfAuth(EkepHandshakeV1, sharedSecret, transcript3) in
+
+  (* Receive Server Finish. *)
+  in(c, serverFinish: HmacAuthTag);
+  let transcript4 = ExtendToTranscript4(transcript3, serverFinish) in
+
+  (* Validate Server Finish. *)
+  if not(hmacVerify(authKey, EkepHandshakeV1ServerFinish, serverFinish)) then
+    out(c, kBadAuthenticator) else
+  event clientBoundIdentity(xName, clientName, sharedSecret);
+
+  (* Compute Client Finish. *)
+  let clientFinish = hmac(authKey, EkepHandshakeV1ClientFinish) in
+  out(c, clientFinish);
+  let transcript5 = ExtendToTranscript5(transcript4, clientFinish) in
+  event clientTranscript5(sharedSecret, transcript5);
+
+  (* Derive Record key. *)
+  let recordKey =
+      hkdfRecordKey(EkepRecordProtocolV1, masterSecret, transcript5) in
+
+  (* The EKEP handshake ends here. After this, the client sends a message using
+  the negotiated record protocol. *)
+  event clientSentMessage(message);
+  out(c, enc(recordKey, message)).
+
+(** Implements the server side of EKEP. *)
+let Server(serverName: Name, serverSgxKey: HmacKey, sgxPubKey: VerifyingKey) =
+  (* Receive Client Precommit. *)
+  in(c, clientPrecommit: Challenge);
+  let transcript0 = CreateTranscript0(clientPrecommit) in
+
+  (* Send Server Precommit. *)
+  new serverPrecommit: Challenge;
+  out(c, serverPrecommit);
+  let transcript1 = ExtendToTranscript1(transcript0, serverPrecommit) in
+
+  (* Receive Client Id. *)
+  in(c, clientId: Signature);
+
+  (* Check that the Client Id is a valid signature from SGX for the kClientId
+  IdentityKind. *)
+  let clientSgxMessage = checkClientSgxSignature(sgxPubKey, clientId) in
+  if ClientSgxMessage_kind(clientSgxMessage) <> kClientId then
+    out(c, kBadAssertion) else
+  let xName = ClientSgxMessage_name(clientSgxMessage) in
+  let clientPublicKey = ClientSgxMessage_publicKey(clientSgxMessage) in
+  let transcript2 = ExtendToTranscript2(transcript1, clientId) in
+
+  (* Compute Server Id *)
+  new serverPrivateKey: Z;
+  let serverPublicKey = exp(g, serverPrivateKey) in
+
+  (* Create a message for SGX to sign, and create an HMAC of this message that
+  SGX can verify as coming from the client. This models the channel that SGX has
+  with the server software. *)
+  let serverSgxMessage = BuildServerSgxMessage(
+      serverName, kServerId, serverPublicKey, transcript2) in
+  let serverSgxTag = hmacServerSgx(serverSgxKey, serverSgxMessage) in
+  out(c, (serverSgxMessage, serverSgxTag));
+  in(c, serverId: Signature);
+
+  (* Make sure that the signature is valid, comes from SGX, and is for the right
+  message. *)
+  let (=serverSgxMessage) = checkServerSgxSignature(sgxPubKey, serverId) in
+
+  (* Send Server Id. *)
+  out(c, serverId);
+  let transcript3 = ExtendToTranscript3(transcript2, serverId) in
+
+  (* Derive EKEP secrets. *)
+  let sharedSecret = exp(clientPublicKey, serverPrivateKey) in
+  let masterSecret = hkdfMaster(EkepHandshakeV1, sharedSecret, transcript3) in
+  let authKey = hkdfAuth(EkepHandshakeV1, sharedSecret, transcript3) in
+
+  (* Compute Server Finish. *)
+  let serverFinish = hmac(authKey, EkepHandshakeV1ServerFinish) in
+
+  (* Send Server Finish. *)
+  out(c, serverFinish);
+  let transcript4 = ExtendToTranscript4(transcript3, serverFinish) in
+
+  (* Receive Client Finish. *)
+  in(c, clientFinish: HmacAuthTag);
+  let transcript5 = ExtendToTranscript5(transcript4, clientFinish) in
+  if not(hmacVerify(authKey, EkepHandshakeV1ClientFinish, clientFinish)) then
+    (* Note that the server is not allowed to send an error if client validation
+    fails. Instead, it silently closes the connection. *)
+    0 else
+  event serverTranscript5(sharedSecret, transcript5);
+
+  (* Derive Record key. *)
+  event serverBoundIdentity(serverName, xName, sharedSecret);
+  let recordKey =
+      hkdfRecordKey(EkepRecordProtocolV1, masterSecret, transcript5) in
+
+  (* The EKEP handshake ends here. After this, the server receives a message
+  using the negotiated record protocol. *)
+  in(c, encryptedClientMessage: bitstring);
+  let decryptedClientMessage = dec(recordKey, encryptedClientMessage) in
+  event serverReceivedMessage(decryptedClientMessage).
+
+(** SgxAttestationForClient provides SGX signatures for clients. *)
+let SgxAttestationForClient(clientSgxMacKey: HmacKey, sgxPrivKey: SigningKey) =
+  in(c, (message: ClientSgxMessage, tag: HmacAuthTag));
+  let kind = ClientSgxMessage_kind(message) in
+  if kind = kClientId then
+  if hmacClientSgxVerify(clientSgxMacKey, message, tag) then
+  out(c, signClientSgx(sgxPrivKey, message)).
+
+(** SgxAttestationForServer provides SGX signatures for servers. *)
+let SgxAttestationForServer(serverSgxMacKey: HmacKey, sgxPrivKey: SigningKey) =
+  in(c, (message: ServerSgxMessage, tag: HmacAuthTag));
+  if ServerSgxMessage_kind(message) = kServerId then
+  if hmacServerSgxVerify(serverSgxMacKey, message, tag) then
+  out(c, signServerSgx(sgxPrivKey, message)).
+
+(** SgxAttestationForOther provides SGX signatures for the adversary. *)
+let SgxAttestationForOther(sgxPrivKey: SigningKey) =
+  in(c, (name: Name, publicKey: G, transcript: bitstring));
+  out(c, sign(sgxPrivKey, (name, kOtherId, publicKey, transcript))).
+
+process
+  new clientSgxMacKey: HmacKey;
+  new serverSgxMacKey: HmacKey;
+
+  new serverName: Name;
+  new clientName: Name;
+  out(c, clientName);
+  out(c, serverName);
+
+  new sgxPrivKey: SigningKey;
+  let sgxPubKey = pubKey(sgxPrivKey) in
+  out(c, sgxPubKey);
+
+  new message: bitstring;
+
+  ( (! Server(serverName, serverSgxMacKey, sgxPubKey) )
+  | (! Client(clientName, clientSgxMacKey, sgxPubKey, message) )
+  | (! SgxAttestationForClient(clientSgxMacKey, sgxPrivKey) )
+  | (! SgxAttestationForServer(serverSgxMacKey, sgxPrivKey) )
+  | (! SgxAttestationForOther(sgxPrivKey) )
+  (* Expose the client and server's long-term identity keys in phase 1 to test
+  perfect forward secrecy in the protocol. *)
+  | ( phase 1; out(c, clientSgxMacKey); out(c, serverSgxMacKey) )
+  )

@@ -1,0 +1,77 @@
+(**
+Copyright 2022 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*)
+
+#ifndef _LIST_PVL
+#define _LIST_PVL
+
+(** List is used in protocols for holding configuration options. Note that
+instances of this List can never be empty, by construction. Also note that this
+is actually a bounded List, of max length 1. *)
+type List.
+
+(** Constructs a List with one element. *)
+fun List1(bitstring): List [data, typeConverter].
+
+(* Checks if a given bitstring is an element of a List. *)
+fun List_elem(bitstring, List): bool
+reduc
+  (* Lists of length 1. *)
+  forall x0: bitstring, l: List;
+    List_elem(x0, List1(x0)) = true otherwise
+  forall x0: bitstring, l0: List;
+    List_elem(x0, l0) = false.
+
+(** Gets some element that is in the intersection of two Lists. Fails if there
+is no such element. *)
+fun List_some_intersection(List, List): bitstring
+reduc
+  forall x0: bitstring;
+    List_some_intersection(List1(x0), List1(x0)) = x0.
+
+(** Check if the first list is a subset of the second. *)
+fun List_is_subset(List, List): bool
+reduc
+  forall x0: bitstring;
+    List_is_subset(List1(x0), List1(x0)) = true otherwise
+  forall l0: List, l1: List;
+    List_is_subset(l0, l1) = false.
+
+(** Checks the equality of two lists. Equality depends on order as well as
+contents. *)
+fun List_eq(List, List): bool
+reduc
+  forall x0: bitstring;
+    List_eq(List1(x0), List1(x0)) = true otherwise
+  forall l0: List, l1: List;
+    List_eq(l0, l1) = false.
+
+(** Catches failed list operations and reports whether failure occurred. *)
+fun List_is_fail(List): bool
+reduc
+  List_is_fail(fail) = true otherwise
+  forall l: List; List_is_fail(l) = false.
+
+(** Catches failed bitstring operations and reports whether failure occurred. *)
+fun bitstring_is_fail(bitstring): bool
+reduc
+  bitstring_is_fail(fail) = true otherwise
+  forall b: bitstring; bitstring_is_fail(b) = false.
+
+(** Checks whether or not two lists intersect. *)
+letfun List_has_intersection(l0: List, l1: List) =
+  not(bitstring_is_fail(List_some_intersection(l0, l1))).
+
+#endif  /* _LIST_PVL */

@@ -1,0 +1,123 @@
+(**
+Copyright 2022 Google LLC
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*)
+
+#include "named_tuples.pvl"
+
+#include "list.pvl"
+#include "test_helpers.pvl"
+
+type key.
+type userData.
+
+DEFINE_EXPECT_EQ_FUN(key).
+DEFINE_EXPECT_EQ_FUN(userData).
+
+free k: key.
+free ud: userData.
+
+DEFINE_DATA_TYPE2(NamedTuple2, secretKey, key, context, userData).
+
+(** Checks that the accessors defined by DEFINE_DATA_TYPE2 work. *)
+let TestDataType2() =
+  let nt = BuildNamedTuple2(k, ud) in
+  EXPECT(Eq_key(k, NamedTuple2_secretKey(nt)));
+  EXPECT(Eq_userData(ud, NamedTuple2_context(nt))).
+
+free d: bitstring.
+free pk: key.
+free t: bitstring.
+
+DEFINE_DATA_TYPE3(Assertion, description, bitstring, publicKey, key,
+                  transcript, bitstring).
+
+let TestDataType3() =
+  let a = BuildAssertion(d, pk, t) in
+  EXPECT_EQ(d, Assertion_description(a));
+  EXPECT(Eq_key(pk, Assertion_publicKey(a)));
+  EXPECT_EQ(t, Assertion_transcript(a)).
+
+(** Constants to use in the tests. *)
+free version: bitstring.
+free cipher: bitstring.
+free protocol: bitstring.
+free ad: bitstring.
+free offer: bitstring.
+free request: bitstring.
+free c: bitstring.
+
+DEFINE_DATA_TYPE5(Params, ekepVersions, List, handshakeCiphers, List,
+                  nextProtocols, List, offers, List, requests, List).
+
+(** Checks that the accessors defined by DEFINE_DATA_TYPE5 work. *)
+let TestDataType5() =
+  let ev = List1(version) in
+  let hc = List1(cipher) in
+  let np = List1(protocol) in
+  let o = List1(offer) in
+  let r = List1(request) in
+  let p = BuildParams(ev, hc, np, o, r) in
+  EXPECT_TRUE(List_eq(ev, Params_ekepVersions(p)));
+  EXPECT_TRUE(List_eq(hc, Params_handshakeCiphers(p)));
+  EXPECT_TRUE(List_eq(np, Params_nextProtocols(p)));
+  EXPECT_TRUE(List_eq(o, Params_offers(p)));
+  EXPECT_TRUE(List_eq(r, Params_requests(p))).
+
+DEFINE_DATA_TYPE6(Precommit, ekepVersions, List, handshakeCiphers, List,
+                  nextProtocols, List, aad, bitstring, offers, List, requests,
+                  List).
+
+(** Checks that the accessors defined by DEFINE_DATA_TYPE6 work. *)
+let TestDataType6() =
+  let ev = List1(version) in
+  let hc = List1(cipher) in
+  let np = List1(protocol) in
+  let o = List1(offer) in
+  let r = List1(request) in
+  let p = BuildPrecommit(ev, hc, np, ad, o, r) in
+  EXPECT_TRUE(List_eq(ev, Precommit_ekepVersions(p)));
+  EXPECT_TRUE(List_eq(hc, Precommit_handshakeCiphers(p)));
+  EXPECT_TRUE(List_eq(np, Precommit_nextProtocols(p)));
+  EXPECT_EQ(ad, Precommit_aad(p));
+  EXPECT_TRUE(List_eq(o, Precommit_offers(p)));
+  EXPECT_TRUE(List_eq(r, Precommit_requests(p))).
+
+DEFINE_DATA_TYPE7(P7, ekepVersions, List, handshakeCiphers, List,
+                  nextProtocols, List, aad, bitstring, offers, List, requests,
+                  List, challenge, bitstring).
+
+(** Checks that the accessors defined by DEFINE_DATA_TYPE7 work. *)
+let TestDataType7() =
+  let ev = List1(version) in
+  let hc = List1(cipher) in
+  let np = List1(protocol) in
+  let o = List1(offer) in
+  let r = List1(request) in
+  let p = BuildP7(ev, hc, np, ad, o, r, c) in
+  EXPECT_TRUE(List_eq(ev, P7_ekepVersions(p)));
+  EXPECT_TRUE(List_eq(hc, P7_handshakeCiphers(p)));
+  EXPECT_TRUE(List_eq(np, P7_nextProtocols(p)));
+  EXPECT_EQ(ad, P7_aad(p));
+  EXPECT_TRUE(List_eq(o, P7_offers(p)));
+  EXPECT_TRUE(List_eq(r, P7_requests(p)));
+  EXPECT_EQ(c, P7_challenge(p)).
+
+
+process
+  ( TestDataType2()
+  | TestDataType3()
+  | TestDataType5()
+  | TestDataType6()
+  | TestDataType7() )
