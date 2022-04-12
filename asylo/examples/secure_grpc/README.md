@@ -359,7 +359,7 @@ authorized to make the RPC.
     example.
 *   An explanation of
     [SGX local attestation](https://software.intel.com/en-us/node/702983).
-*   See [A Formal Analysis of EKEP](/asylo/examples/secure_grpc/ekep_analysis/README.md)
+*   See [A Formal Analysis of EKEP](https://github.com/google/ekep-analysis/)
     for a ProVerif-based security analysis of the EKEP protocol.
 
 <!-- Footnotes themselves at the bottom. -->
